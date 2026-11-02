@@ -2,11 +2,11 @@
   "name": "Ben Blaze · rigged character study",
   "units": "One world unit equals one calibrated sprite pixel",
   "floorY": -0.5,
-  "crownY": 32.5,
+  "crownY": 31,
   "helmet": {
-    "width": 10.8,
-    "depth": 10.4,
-    "rimY": 25.8,
+    "width": 9.7,
+    "depth": 9.2,
+    "rimY": 25.3,
     "brimTipZ": 7.4
   },
   "head": {
@@ -165,5 +165,5 @@
   ],
   "reviewTolerancePixels": 2,
   "jarReference": "https://github.com/liminal-hq/jar/tree/527c5c34f62a8467e133249615a19fe7ca45040e/apps/jar/src/render/models",
-  "notes": "Full volumetric geometry with a reusable skinned skeleton. SVG layers are projected only onto surfaces; body depth is not an SVG extrusion. The asymmetrical holster stays on Ben's right hip."
+  "notes": "Full volumetric geometry with a reusable skinned skeleton. SVG layers are projected only onto surfaces; body depth is not an SVG extrusion. The asymmetrical holster stays on Ben's right hip. Helmet dimensions describe the coloured shell inside the sprite outline."
 }

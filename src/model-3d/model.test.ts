@@ -15,6 +15,7 @@ import {
   createBenClips,
   poseNames,
   serialisePose,
+  sampleRunFoot,
 } from "./poses.ts";
 import config from "../../source/ben-3d.json";
 
@@ -122,6 +123,91 @@ describe("Ben volumetric character", () => {
       for (const bone of model.skeleton.bones)
         expect(bone.matrixWorld.elements.every(Number.isFinite)).toBe(true);
     }
+  });
+  test("shirt, jeans and arms remain connected surfaces across their joints", () => {
+    for (const name of [
+      "Shirt_torso",
+      "Jeans_continuous",
+      "right_arm_continuous",
+      "left_arm_continuous",
+    ]) {
+      const geometry = model.meshes.find(
+          (mesh) => mesh.name === name,
+        )!.geometry,
+        index = geometry.index!,
+        count = geometry.getAttribute("position").count,
+        parent = Uint32Array.from({ length: count }, (_, i) => i);
+      const root = (value: number): number => {
+        while (parent[value] !== value) {
+          parent[value] = parent[parent[value]];
+          value = parent[value];
+        }
+        return value;
+      };
+      for (let i = 0; i < index.count; i += 3) {
+        const a = root(index.getX(i)),
+          b = root(index.getX(i + 1)),
+          c = root(index.getX(i + 2));
+        parent[b] = a;
+        parent[c] = a;
+      }
+      expect(new Set(Array.from(parent, (_, i) => root(i))).size).toBe(1);
+    }
+  });
+  test("hair conforms to the skull and the sewn collar has an open neckline", () => {
+    applyBenPose(model, "Standing");
+    const hair = model.meshes
+      .find((mesh) => mesh.name === "Brown_blond_hair")!
+      .geometry.getAttribute("position");
+    for (let i = 0; i < hair.count; i++) {
+      const distance = Math.hypot(
+        hair.getX(i) / 4.15,
+        (hair.getY(i) - 23.2) / 3.3,
+        (hair.getZ(i) - 0.2) / 3.65,
+      );
+      expect(distance).toBeGreaterThanOrEqual(1);
+      expect(distance).toBeLessThan(1.03);
+    }
+    const collar = model.meshes.find(
+      (mesh) => mesh.name === "White_shirt_collar",
+    )!;
+    expect(
+      new THREE.Raycaster(
+        new THREE.Vector3(0, 25, 0),
+        new THREE.Vector3(0, -1, 0),
+      ).intersectObject(collar),
+    ).toHaveLength(0);
+  });
+  test("running plants each foot backwards and recovers it forwards with forward knees", () => {
+    let previous = Infinity;
+    for (const phase of [0, 0.1, 0.2, 0.3, 0.4]) {
+      const foot = sampleRunFoot(phase);
+      expect(foot.stance).toBe(true);
+      expect(foot.z).toBeLessThan(previous);
+      previous = foot.z;
+      applyBenPose(model, "Run", phase);
+      const ankle = model.bones.rightFoot.getWorldPosition(new THREE.Vector3());
+      expect(
+        ankle.distanceTo(new THREE.Vector3(-2.3, foot.y, foot.z)),
+      ).toBeLessThan(0.02);
+      const hip = model.bones.rightThigh.getWorldPosition(new THREE.Vector3()),
+        knee = model.bones.rightShin.getWorldPosition(new THREE.Vector3()),
+        along = (hip.z + ankle.z) / 2;
+      expect(knee.z).toBeGreaterThan(along - 0.05);
+    }
+    previous = -Infinity;
+    for (const phase of [0.5, 0.6, 0.7, 0.8, 0.9]) {
+      const foot = sampleRunFoot(phase);
+      expect(foot.stance).toBe(false);
+      expect(foot.z).toBeGreaterThan(previous);
+      previous = foot.z;
+    }
+    expect(
+      Math.abs(
+        sampleRunFoot(0.5 - 0.0001).toe - sampleRunFoot(0.5 + 0.0001).toe,
+      ),
+    ).toBeLessThan(0.1);
+    expect(sampleRunFoot(0.75).y).toBeGreaterThan(sampleRunFoot(0.25).y + 1.5);
   });
   test("GLB round trip retains skinned geometry, bones, clips and phone visibility tracks", async () => {
     const clips = createBenClips(model);

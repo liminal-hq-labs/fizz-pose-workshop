@@ -19,16 +19,16 @@ export const poseNames = [
 ] as const;
 export type BenPose = (typeof poseNames)[number];
 const rad = THREE.MathUtils.degToRad;
-function aimArm(
+function aimChain(
   model: BenModel,
-  side: "right" | "left",
+  names: readonly [string, string, string],
   target: THREE.Vector3,
   pole: THREE.Vector3,
 ): void {
   model.root.updateMatrixWorld(true);
-  const upper = model.bones[side + "UpperArm"],
-    lower = model.bones[side + "Forearm"],
-    hand = model.bones[side + "Hand"];
+  const upper = model.bones[names[0]],
+    lower = model.bones[names[1]],
+    hand = model.bones[names[2]];
   const origin = upper.getWorldPosition(new THREE.Vector3()),
     goal = model.root.localToWorld(target.clone()),
     poleWorld = model.root.localToWorld(pole.clone());
@@ -70,6 +70,65 @@ function aimArm(
   setDirection(upper, lower, elbow.clone().sub(origin));
   setDirection(lower, hand, goal.clone().sub(elbow));
 }
+function aimArm(
+  model: BenModel,
+  side: "right" | "left",
+  target: THREE.Vector3,
+  pole: THREE.Vector3,
+): void {
+  aimChain(
+    model,
+    [side + "UpperArm", side + "Forearm", side + "Hand"],
+    target,
+    pole,
+  );
+}
+export function sampleRunFoot(time: number): {
+  phase: number;
+  z: number;
+  y: number;
+  pitch: number;
+  toe: number;
+  stance: boolean;
+} {
+  const phase = ((time % 1) + 1) % 1,
+    stance = phase < 0.5,
+    t = stance ? phase * 2 : (phase - 0.5) * 2;
+  const z = stance
+    ? THREE.MathUtils.lerp(3.2, -3.2, t)
+    : THREE.MathUtils.lerp(-3.2, 3.2, t * t * (3 - 2 * t)) -
+      6.4 * (2 * t * t * t - 3 * t * t + t);
+  const pitch = stance
+    ? THREE.MathUtils.lerp(-12, 0, THREE.MathUtils.smoothstep(t, 0, 0.2)) +
+      25 * THREE.MathUtils.smoothstep(t, 0.7, 1)
+    : THREE.MathUtils.lerp(25, -12, t);
+  const toe = stance
+    ? -pitch * THREE.MathUtils.smoothstep(t, 0.65, 1)
+    : -25 * (1 - THREE.MathUtils.smoothstep(t, 0, 0.3));
+  const a = rad(pitch),
+    b = rad(toe);
+  let lowest = Infinity;
+  for (const depth of [-3.4, -1.5, 0, 2, 2.9, 3.9, 5.8, 6.8]) {
+    const w = THREE.MathUtils.smoothstep(depth, 2.2, 3.9),
+      y = -4,
+      z = depth;
+    const bentY = -2.2 + (y + 2.2) * Math.cos(b) - (z - 2.9) * Math.sin(b),
+      bentZ = 2.9 + (y + 2.2) * Math.sin(b) + (z - 2.9) * Math.cos(b);
+    lowest = Math.min(
+      lowest,
+      THREE.MathUtils.lerp(y, bentY, w) * Math.cos(a) -
+        THREE.MathUtils.lerp(z, bentZ, w) * Math.sin(a),
+    );
+  }
+  return {
+    phase,
+    z,
+    y: -0.5 - lowest + (stance ? 0 : 2.2 * Math.sin(Math.PI * t)),
+    pitch,
+    toe,
+    stance,
+  };
+}
 export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
   resetRig(model);
   model.bones.phone.scale.setScalar(pose === "Phone" ? 1 : 0);
@@ -80,7 +139,7 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
     b[name].rotation.set(rad(x), rad(y), rad(z));
   };
   if (pose === "Run") {
-    b.pelvis.position.y += 0.25 * Math.cos(time * Math.PI * 4);
+    b.pelvis.position.y += -1.1 + 0.15 * Math.cos(time * Math.PI * 4);
     turn("spine", 12, 0, 0);
     turn("chest", 0, s * 4, 0);
     turn("neck", -7, -s * 2, 0);
@@ -90,10 +149,6 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
     ] as const) {
       turn(side + "UpperArm", sign * c * 42, 0, 0);
       turn(side + "Forearm", -75, 0, 0);
-      turn(side + "Thigh", -sign * c * 32, 0, 0);
-      turn(side + "Shin", Math.max(0, sign * s) * 64 + 12, 0, 0);
-      turn(side + "Foot", -10 + sign * c * 10, 0, 0);
-      turn(side + "Toe", Math.max(0, sign * s) * 20, 0, 0);
     }
   } else if (pose === "Jump") {
     b.pelvis.position.y += 3.5;
@@ -152,6 +207,34 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
     turn("leftShin", 35);
   }
   model.root.updateMatrixWorld(true);
+  if (pose === "Run")
+    for (const [side, offset] of [
+      ["right", 0],
+      ["left", 0.5],
+    ] as const) {
+      const foot = sampleRunFoot(time + offset),
+        x = model.rest[side + "Foot"].x;
+      aimChain(
+        model,
+        [side + "Thigh", side + "Shin", side + "Foot"],
+        new THREE.Vector3(x, foot.y, foot.z),
+        new THREE.Vector3(x, 6, 6),
+      );
+      const parent = model.bones[side + "Foot"].parent!,
+        inverse = parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+      model.bones[side + "Foot"].quaternion.copy(
+        inverse
+          .multiply(model.root.getWorldQuaternion(new THREE.Quaternion()))
+          .multiply(
+            new THREE.Quaternion().setFromAxisAngle(
+              new THREE.Vector3(1, 0, 0),
+              rad(foot.pitch),
+            ),
+          ),
+      );
+      model.bones[side + "Toe"].rotation.x = rad(foot.toe);
+      model.root.updateMatrixWorld(true);
+    }
   if (pose === "Phone") {
     aimArm(
       model,

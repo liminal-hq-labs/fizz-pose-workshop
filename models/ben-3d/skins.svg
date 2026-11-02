@@ -5,4 +5,5 @@
   <path id="helmet-stripe" fill="#ffffff" d="M-.38 -6.1H.38V6.1H-.38Z"/>
   <path id="stunner-panel" fill="#ff55ff" d="M-.42 -.6H.42V.6H-.42Z"/>
   <path id="phone-mark" fill="#ffff55" d="M-.12 -.4H.16L.05 -.08H.3L-.16 .45L-.03 .05H-.25Z"/>
+  <path id="helmet-vent" fill="#00aa00" d="M-.2 -.65Q-.32 -.65 -.32 -.4V.4Q-.32 .65 -.2 .65H.2Q.32 .65 .32 .4V-.4Q.32 -.65 .2 -.65Z"/>
 </svg>
