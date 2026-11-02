@@ -10,7 +10,7 @@ Read `README.md` for setup, `docs/RIG.md` before changing sprite motion, `docs/B
 - `source/poses.json` holds authored grids and animation timing; `edits.json` holds saved editor overrides and takes precedence. Browser drafts are not project saves.
 - `source/game-palette.json` defines the sixteen game colours plus transparency. Preserve palette codes and crisp native pixels.
 - `source/ben-*-rig.json`, `source/ben-side-skin.json` and `src/rig/` define reusable sprite animation. Preserve the rigs and tools alongside their exports.
-- `source/ben-3d.json`, the skin SVG and `src/model/` define the volumetric model. Sprite outlines are ink, not extra physical helmet or shoe volume.
+- `source/ben-3d.json`, the skin SVG and `src/model-3d/` define the volumetric model. Sprite outlines are ink, not extra physical helmet or shoe volume.
 - `templates/README.md` and `templates/standalone.html` are authoritative; their root outputs are generated. Edit the templates first.
 
 ## Commands and generated files
