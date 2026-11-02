@@ -51,9 +51,9 @@
         "bottom": 34
       },
       "shoes": {
-        "width": 9,
-        "height": 4,
-        "top": 31,
+        "width": 7,
+        "height": 3,
+        "top": 32,
         "bottom": 34
       },
       "differences": {
@@ -61,8 +61,8 @@
         "headWidth": 0,
         "torsoWidth": 0,
         "helmetWidth": 0,
-        "shoeWidth": 0,
-        "shoeHeight": -1
+        "shoeWidth": -2,
+        "shoeHeight": -2
       },
       "withinTolerance": true
     },
@@ -101,8 +101,8 @@
       },
       "shoes": {
         "width": 10,
-        "height": 4,
-        "top": 31,
+        "height": 3,
+        "top": 32,
         "bottom": 34
       },
       "differences": {
@@ -111,7 +111,7 @@
         "torsoWidth": -1,
         "helmetWidth": 0,
         "shoeWidth": 0,
-        "shoeHeight": -1
+        "shoeHeight": -2
       },
       "withinTolerance": true
     },
@@ -150,8 +150,8 @@
       },
       "shoes": {
         "width": 9,
-        "height": 4,
-        "top": 31,
+        "height": 3,
+        "top": 32,
         "bottom": 34
       },
       "differences": {
@@ -160,7 +160,7 @@
         "torsoWidth": -1,
         "helmetWidth": 0,
         "shoeWidth": -1,
-        "shoeHeight": -1
+        "shoeHeight": -2
       },
       "withinTolerance": true
     },
@@ -198,9 +198,9 @@
         "bottom": 34
       },
       "shoes": {
-        "width": 9,
-        "height": 4,
-        "top": 31,
+        "width": 7,
+        "height": 3,
+        "top": 32,
         "bottom": 34
       },
       "differences": {
@@ -208,8 +208,8 @@
         "headWidth": 0,
         "torsoWidth": 0,
         "helmetWidth": 0,
-        "shoeWidth": 1,
-        "shoeHeight": -1
+        "shoeWidth": -1,
+        "shoeHeight": -2
       },
       "withinTolerance": true
     },
@@ -248,8 +248,8 @@
       },
       "shoes": {
         "width": 9,
-        "height": 4,
-        "top": 31,
+        "height": 3,
+        "top": 32,
         "bottom": 34
       },
       "differences": {
@@ -258,7 +258,7 @@
         "torsoWidth": -1,
         "helmetWidth": 0,
         "shoeWidth": -1,
-        "shoeHeight": -1
+        "shoeHeight": -2
       },
       "withinTolerance": true
     },
@@ -297,8 +297,8 @@
       },
       "shoes": {
         "width": 10,
-        "height": 4,
-        "top": 31,
+        "height": 3,
+        "top": 32,
         "bottom": 34
       },
       "differences": {
@@ -307,7 +307,7 @@
         "torsoWidth": -1,
         "helmetWidth": 0,
         "shoeWidth": 0,
-        "shoeHeight": -1
+        "shoeHeight": -2
       },
       "withinTolerance": true
     }

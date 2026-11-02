@@ -151,12 +151,12 @@ export interface ShoeSection {
 }
 export const runnerSections: readonly ShoeSection[] = [
   { z: -2.5, width: 0, top: 0.05, bottom: 0.05, seam: 0.05 },
-  { z: -2.15, width: 0.85, top: 1.85, bottom: -0.32, seam: 0.3 },
-  { z: -1.4, width: 1.15, top: 2.75, bottom: -0.5, seam: 0.28 },
-  { z: -0.35, width: 1.55, top: 3.0, bottom: -0.5, seam: 0.18 },
-  { z: 1.55, width: 2.2, top: 2.05, bottom: -0.5, seam: 0.13 },
-  { z: 3.8, width: 1.97, top: 1.55, bottom: -0.4, seam: 0.25 },
-  { z: 5.6, width: 1.3, top: 1.2, bottom: -0.12, seam: 0.4 },
+  { z: -2.15, width: 0.697, top: 1.54, bottom: -0.32, seam: 0.176 },
+  { z: -1.4, width: 0.943, top: 2.2976, bottom: -0.5, seam: 0.124 },
+  { z: -0.35, width: 1.271, top: 2.5256, bottom: -0.5, seam: 0.044 },
+  { z: 1.55, width: 1.804, top: 1.6936, bottom: -0.5, seam: 0.004 },
+  { z: 3.8, width: 1.6154, top: 1.264, bottom: -0.4, seam: 0.12 },
+  { z: 5.6, width: 1.066, top: 1, bottom: -0.12, seam: 0.296 },
   { z: 6.2, width: 0, top: 0.4, bottom: 0.4, seam: 0.4 },
 ];
 export function runnerProfile(z: number): ShoeSection {
