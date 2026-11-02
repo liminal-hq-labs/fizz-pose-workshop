@@ -202,7 +202,7 @@
 <rect x="12" y="22" width="1" height="1" fill="#ffffff"/>
 <rect x="13" y="22" width="1" height="1" fill="#ffffff"/>
 <rect x="14" y="22" width="1" height="1" fill="#ffffff"/>
-<rect x="15" y="22" width="1" height="1" fill="#ffffff"/>
+<rect x="15" y="22" width="1" height="1" fill="#aaaaaa"/>
 <rect x="16" y="22" width="1" height="1" fill="#000000"/>
 <rect x="6" y="23" width="1" height="1" fill="#000000"/>
 <rect x="7" y="23" width="1" height="1" fill="#555555"/>
@@ -210,9 +210,9 @@
 <rect x="9" y="23" width="1" height="1" fill="#ffff55"/>
 <rect x="10" y="23" width="1" height="1" fill="#ffffff"/>
 <rect x="11" y="23" width="1" height="1" fill="#555555"/>
-<rect x="12" y="23" width="1" height="1" fill="#ffffff"/>
-<rect x="13" y="23" width="1" height="1" fill="#ffffff"/>
-<rect x="14" y="23" width="1" height="1" fill="#5555ff"/>
+<rect x="12" y="23" width="1" height="1" fill="#000000"/>
+<rect x="13" y="23" width="1" height="1" fill="#000000"/>
+<rect x="14" y="23" width="1" height="1" fill="#000000"/>
 <rect x="15" y="23" width="1" height="1" fill="#000000"/>
 <rect x="7" y="24" width="1" height="1" fill="#000000"/>
 <rect x="8" y="24" width="1" height="1" fill="#0000aa"/>
