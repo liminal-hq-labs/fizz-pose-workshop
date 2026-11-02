@@ -41,9 +41,9 @@ export function initialiseEditor(data: WorkshopData): void {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => section.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('#pixel-canvas'), native = $<HTMLCanvasElement>('#native-preview');
   const select = $<HTMLSelectElement>('#edit-frame');
-  const standing = ["ben_stand", "ben_standRight", "ben_standFront"].filter(name => Object.hasOwn(data.frames, name));
+  const standing = ["ben_stand", "ben_standRight", "ben_standFront", "ben_frontLookUp", "ben_frontBendHalf", "ben_frontBendFull"].filter(name => Object.hasOwn(data.frames, name));
   const frameNames = [...standing, ...Object.keys(data.frames).filter(name => !standing.includes(name))];
-  const labels: Record<string, string> = { ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner", ben_standFront: "ben_standFront — Stand front · camera-facing" };
+  const labels: Record<string, string> = { ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner", ben_standFront: "ben_standFront — Stand front · camera-facing", ben_frontLookUp: "ben_frontLookUp — Look up · camera-facing", ben_frontBendHalf: "ben_frontBendHalf — Bend forward · halfway", ben_frontBendFull: "ben_frontBendFull — Bend forward · helmet crown" };
   select.replaceChildren(...frameNames.map(name => { const option = document.createElement("option"); option.value = name; option.textContent = labels[name] ?? name; return option; }));
   select.value = frameName;
   const status = (text: string): void => { $('#editor-status').textContent = text; };
