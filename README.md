@@ -12,6 +12,32 @@ Drafts are stored in this browser for this local address. **Save to project** wr
 
 The app entry is `index.html`; `preview.html` redirects to the app. `src/` contains the gallery, editor, styles and edit validation. `vite.config.js` handles the development save endpoint and packages the image exports for builds. Generated frame overrides in `edits.json` take precedence over generator artwork; per-frame reset restores the project version loaded by the page.
 
+## Game palette
+
+The editable sprites use exactly the game's sixteen EGA colours plus transparent (`.`). `source/game-palette.json` mirrors `packages/engine/src/palette.ts` from the game repository. The untouched original reference keeps its original colours. Imports and older browser drafts are converted to game codes before validation. Saved edits and all generated sprite exports use the game palette.
+
+| Code | Colour | Hex |
+|---|---|---|
+| `.` | Transparent | None |
+| `k` | Black | `#000000` |
+| `B` | Blue | `#0000aa` |
+| `G` | Green | `#00aa00` |
+| `C` | Cyan | `#00aaaa` |
+| `R` | Dark red | `#aa0000` |
+| `M` | Magenta | `#aa00aa` |
+| `N` | Brown | `#aa5500` |
+| `L` | Light grey | `#aaaaaa` |
+| `D` | Dark grey | `#555555` |
+| `b` | Bright blue | `#5555ff` |
+| `g` | Bright green | `#55ff55` |
+| `c` | Bright cyan | `#55ffff` |
+| `r` | Bright red | `#ff5555` |
+| `m` | Bright magenta | `#ff55ff` |
+| `y` | Yellow | `#ffff55` |
+| `W` | White | `#ffffff` |
+
+Legacy codes map as follows: `K` → `k`, `Q` → `G`, `h` → `W`, `V` → `N`, `O` → `N`, `s` → `b`, and `A` → `B`. Other codes remain unchanged. Skin maps to white to match the game's Ben, muted denim to bright blue, and orange/tan to brown. The mapping in `source/colour-map.json` is intentional rather than a nearest-RGB conversion.
+
 ## Artwork
 
 The three-quarter side-view keeps the original 16 × 32 standing proportions on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid retains the original design, translated by (4, 4) into the shared canvas, with the original foreground shoe mirrored to face left and its toe extended one pixel left without moving the ankle. The foreground heel extends one pixel right through its red upper, white sole and grey underside, with its outer black outline moved to match. The matching rear shoe is raised two pixels for perspective, with its toe extended one pixel left while its ankle stays in place. A stepped black outline separates the foreground toe from the raised rear shoe and continues upward towards the ankle. The original yellow belt dot is retained; the front trouser leg and shoe mask the overlapping rear shoe pixels. The untouched original remains in `source/classic-fizz-original.json` and the comparison image. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.

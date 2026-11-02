@@ -9,7 +9,10 @@ import json, math, shutil
 
 ROOT = Path(__file__).resolve().parent
 ORIGINAL = json.loads((ROOT / 'source' / 'classic-fizz-original.json').read_text())
-PALETTE = {**ORIGINAL['palette'], 'b': '#5555ff', 'A': '#334488', 'N': '#aa5500'}
+GAME_PALETTE = json.loads((ROOT / 'source/game-palette.json').read_text())
+COLOUR_MAP = json.loads((ROOT / 'source/colour-map.json').read_text())
+# The drawing source retains its original codes; exported sprites use only game codes.
+PALETTE = {**ORIGINAL['palette'], **GAME_PALETTE, 'A': '#334488'}
 # Start from the untouched native study, including its yellow belt detail.
 BASE = list(ORIGINAL['grid'])
 # Mirror the original shoe. Raise the rear copy for perspective, then restore the front
@@ -197,6 +200,10 @@ if edits_path.exists():
             raise ValueError(f'Invalid edited frame: {name}')
         FRAMES[name] = frame
 
+for frame in FRAMES.values():
+    frame['grid'] = [''.join(COLOUR_MAP.get(code, code) for code in row) for row in frame['grid']]
+PALETTE = GAME_PALETTE
+
 ANIMATIONS={
 'walk-run':(['ben_run1','ben_run2','ben_run3','ben_run4'],[140]*4),
 'pogo':(['ben_pogo','ben_pogo2'],[180,140]),
@@ -206,11 +213,12 @@ ANIMATIONS={
 for d in ['N','NE','E','SE','S','SW','W','NW']: ANIMATIONS['overworld-'+d]=([f'benMap_{d}0',f'benMap_{d}1'],[180,180])
 
 for folder in ['frames','animations','sheets']: (ROOT/folder).mkdir(exist_ok=True)
-def raster(frame):
+def raster(frame, palette=None):
+    palette = PALETTE if palette is None else palette
     im=Image.new('RGBA',(frame['width'],frame['height']))
     for y,row in enumerate(frame['grid']):
         for x,c in enumerate(row):
-            if PALETTE[c]:im.putpixel((x,y),tuple(bytes.fromhex(PALETTE[c][1:]))+(255,))
+            if palette[c]:im.putpixel((x,y),tuple(bytes.fromhex(palette[c][1:]))+(255,))
     return im
 
 def rects(frame):
@@ -242,11 +250,11 @@ for i,(name,frame) in enumerate(FRAMES.items()):
 sheet.save(ROOT/'sheets'/'ben-poses.png')
 (ROOT/'assets.json').write_text(json.dumps({'palette':PALETTE,'frames':FRAMES,'animations':{n:{'frames':fs,'durationsMs':ts} for n,(fs,ts) in ANIMATIONS.items()},'sheet':positions},indent=2)+'\n')
 # Render the comparison directly from the vendored native grid.
-raster({'width':16,'height':32,'grid':ORIGINAL['grid']}).resize((96,192),Image.Resampling.NEAREST).save(ROOT/'original-study.png')
+raster({'width':16,'height':32,'grid':ORIGINAL['grid']}, ORIGINAL['palette']).resize((96,192),Image.Resampling.NEAREST).save(ROOT/'original-study.png')
 
 html='''<!doctype html><html lang="en-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Classic Fizz · Ben Pose Workshop</title><style>
 :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101719;color:#e8f1e5}*{box-sizing:border-box}body{max-width:1400px;margin:auto;padding:32px}h1{font-size:clamp(2rem,5vw,3.6rem);margin:.3em 0}h2{margin-top:48px}p{max-width:840px;line-height:1.6;color:#b4c7bc}.eyebrow{color:#a9ee73;letter-spacing:.16em;font-size:.8rem}nav,.controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0;align-items:center}a{color:#b8ef92}button,select,input{font:inherit}button,select{background:#23372d;color:#e8f1e5;border:1px solid #607c62;border-radius:6px;padding:8px 12px}label{display:flex;gap:8px;align-items:center}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}article{border:1px solid #344a3f;border-radius:12px;overflow:hidden;background:#17231e}article h3,article p{margin:16px}article p{font-size:.85rem}.stage{height:300px;display:flex;align-items:center;justify-content:center;background-color:#20302c;background-image:linear-gradient(45deg,#ffffff05 25%,transparent 25%,transparent 75%,#ffffff05 75%),linear-gradient(45deg,#ffffff05 25%,transparent 25%,transparent 75%,#ffffff05 75%);background-size:16px 16px;background-position:0 0,8px 8px}.stage img,.stage canvas{image-rendering:pixelated;max-width:100%;object-fit:contain}.stage canvas{transform:scaleX(var(--facing,1))}.compass{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.compass article .stage{height:190px}.compass h3{font-size:1rem}.original{display:flex;gap:32px;flex-wrap:wrap}.original article{min-width:240px}.small{font-size:.85rem}footer{margin-top:40px;color:#9bb3a4}@media(max-width:600px){body{padding:16px}.compass{gap:6px}.compass article h3{margin:8px}.compass article .stage{height:128px}.compass article p{display:none}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-</style></head><body><div class="eyebrow">LIEUTENANT FIZZ / ART WORKSHOP</div><h1>Classic Fizz, in motion.</h1><p>The original native three-quarter Ben expanded into a complete pose study: the original flat-topped green helmet, broken white-and-green stripe, grey helmet rim, warm face, gold Fizz emblem, cyan denim seams and red high-tops. Side-view actions share a padded 24 × 44 canvas. The overworld uses a separate top-down 24 × 24 design.</p><nav><a href="#comparison">Original & derived stance</a><a href="#motion">Action loops</a><a href="#overworld">Eight-direction overworld</a><a href="#poses">All frames</a><a href="assets.json">Editable grids & timing</a></nav><div class="controls"><button id="play">Pause animations</button><label>Preview scale <select id="scale"><option value="4">4×</option><option value="6" selected>6×</option></select></label><label><input id="flip" type="checkbox">Face left (side-view)</label><label>Speed <select id="speed"><option value="0.5">Half speed</option><option value="1" selected>Normal</option><option value="2">Double speed</option></select></label></div><p class="small">Animations show pose sequences for art review. Timing is a workshop choice; the game simulation controls actual action timing. Download individual transparent PNG/SVG frames, animated SVG/GIF loops or the sprite sheet from this folder.</p><h2 id="comparison">Original & derived stanceed stance</h2><div class="original"><article><div class="stage"><img src="original-study.png" alt="Original native Classic Fizz study" width="96" height="192"></div><h3>Original · 16 × 32</h3></article><article><div class="stage"><canvas data-frame="ben_stand" aria-label="Original Classic Fizz on the shared pose canvas" role="img"></canvas></div><h3>Original base · padded 24 × 44</h3></article></div><h2 id="motion">Action loops</h2><div class="grid" id="motions"></div><h2 id="overworld">Top-down overworld · eight directions</h2><p>A helmet crown seen from above, a directional brim, foreshortened body and alternating footsteps. Each direction has two walk frames. North faces away; south reveals the face below the brim.</p><div class="compass" id="compass"></div><h2 id="poses">Every game pose, reinterpreted</h2><p>Includes all sixteen side-view pose names from the game, two additional run phases and a recoil frame. The current two overworld frames are replaced here by sixteen directional frames.</p><div class="grid" id="frames"></div><footer>Standalone art study. The original files and game assets are preserved. <a href="README.md">Asset notes</a> · <a href="sheets/ben-poses.png">PNG sprite sheet</a></footer><script>
+</style></head><body><div class="eyebrow">LIEUTENANT FIZZ / ART WORKSHOP</div><h1>Classic Fizz, in motion.</h1><p>The original native three-quarter Ben expanded into a complete pose study: the original flat-topped green helmet, broken white-and-green stripe, grey helmet rim, white EGA face, gold Fizz emblem, cyan denim seams and red high-tops. Side-view actions share a padded 24 × 44 canvas. The overworld uses a separate top-down 24 × 24 design.</p><nav><a href="#comparison">Original & derived stance</a><a href="#motion">Action loops</a><a href="#overworld">Eight-direction overworld</a><a href="#poses">All frames</a><a href="assets.json">Editable grids & timing</a></nav><div class="controls"><button id="play">Pause animations</button><label>Preview scale <select id="scale"><option value="4">4×</option><option value="6" selected>6×</option></select></label><label><input id="flip" type="checkbox">Face left (side-view)</label><label>Speed <select id="speed"><option value="0.5">Half speed</option><option value="1" selected>Normal</option><option value="2">Double speed</option></select></label></div><p class="small">Animations show pose sequences for art review. Timing is a workshop choice; the game simulation controls actual action timing. Download individual transparent PNG/SVG frames, animated SVG/GIF loops or the sprite sheet from this folder.</p><h2 id="comparison">Original & derived stance</h2><div class="original"><article><div class="stage"><img src="original-study.png" alt="Original native Classic Fizz study" width="96" height="192"></div><h3>Original · 16 × 32</h3></article><article><div class="stage"><canvas data-frame="ben_stand" aria-label="Original Classic Fizz on the shared pose canvas" role="img"></canvas></div><h3>Original base · padded 24 × 44</h3></article></div><h2 id="motion">Action loops</h2><div class="grid" id="motions"></div><h2 id="overworld">Top-down overworld · eight directions</h2><p>A helmet crown seen from above, a directional brim, foreshortened body and alternating footsteps. Each direction has two walk frames. North faces away; south reveals the face below the brim.</p><div class="compass" id="compass"></div><h2 id="poses">Every game pose, reinterpreted</h2><p>Includes all sixteen side-view pose names from the game, two additional run phases and a recoil frame. The current two overworld frames are replaced here by sixteen directional frames.</p><div class="grid" id="frames"></div><footer>Standalone art study. The original files and game assets are preserved. <a href="README.md">Asset notes</a> · <a href="sheets/ben-poses.png">PNG sprite sheet</a></footer><script>
 '''
 html+='const DATA = '+json.dumps({'palette':PALETTE,'frames':FRAMES,'animations':{n:{'frames':fs,'durationsMs':ts} for n,(fs,ts) in ANIMATIONS.items()}})+';\n'
 html+='''const motionNames={'walk-run':'Walk / run','pogo':'Pogo · extend / compress','climb':'Ladder climb','mantle':'Ledge pull-up · grip / haul / push','fizz-blaster':'Fizz Blaster · recoil'};
@@ -275,6 +283,32 @@ Drafts are stored in this browser for this local address. **Save to project** wr
 `bun run generate` rebuilds assets with saved edits applied. `bun run test` checks pixel history and frame validation. `bun run build` creates `dist/` with the editor and image exports; `bun run preview` serves that build. The built editor supports browser drafts and JSON/PNG export; saving to project requires `bun run dev`.
 
 The app entry is `index.html`; `preview.html` redirects to the app. `src/` contains the gallery, editor, styles and edit validation. `vite.config.js` handles the development save endpoint and packages the image exports for builds. Generated frame overrides in `edits.json` take precedence over generator artwork; per-frame reset restores the project version loaded by the page.
+
+## Game palette
+
+The editable sprites use exactly the game's sixteen EGA colours plus transparent (`.`). `source/game-palette.json` mirrors `packages/engine/src/palette.ts` from the game repository. The untouched original reference keeps its original colours. Imports and older browser drafts are converted to game codes before validation. Saved edits and all generated sprite exports use the game palette.
+
+| Code | Colour | Hex |
+|---|---|---|
+| `.` | Transparent | None |
+| `k` | Black | `#000000` |
+| `B` | Blue | `#0000aa` |
+| `G` | Green | `#00aa00` |
+| `C` | Cyan | `#00aaaa` |
+| `R` | Dark red | `#aa0000` |
+| `M` | Magenta | `#aa00aa` |
+| `N` | Brown | `#aa5500` |
+| `L` | Light grey | `#aaaaaa` |
+| `D` | Dark grey | `#555555` |
+| `b` | Bright blue | `#5555ff` |
+| `g` | Bright green | `#55ff55` |
+| `c` | Bright cyan | `#55ffff` |
+| `r` | Bright red | `#ff5555` |
+| `m` | Bright magenta | `#ff55ff` |
+| `y` | Yellow | `#ffff55` |
+| `W` | White | `#ffffff` |
+
+Legacy codes map as follows: `K` → `k`, `Q` → `G`, `h` → `W`, `V` → `N`, `O` → `N`, `s` → `b`, and `A` → `B`. Other codes remain unchanged. Skin maps to white to match the game's Ben, muted denim to bright blue, and orange/tan to brown. The mapping in `source/colour-map.json` is intentional rather than a nearest-RGB conversion.
 
 ## Artwork
 

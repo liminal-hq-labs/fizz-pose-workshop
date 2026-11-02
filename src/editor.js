@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { createHistory, setPixel, validateFrames } from './model.js';
+import { normaliseFrames } from './palette.js';
 
 export function initialiseEditor(data) {
   const baseline = structuredClone(data.frames);
@@ -23,7 +24,7 @@ export function initialiseEditor(data) {
       </div>
       <div>
         <div class="editor-tools"><button data-tool="pencil" aria-pressed="true">Pencil</button><button data-tool="eraser" aria-pressed="false">Eraser</button><button data-tool="picker" aria-pressed="false">Pick colour</button></div>
-        <div class="palette" aria-label="Sprite palette"></div><p id="selected-colour" class="small"></p>
+        <p class="small">Game EGA palette · 16 colours + transparent</p><div class="palette" aria-label="Game EGA palette: sixteen colours and transparent"></div><p id="selected-colour" class="small"></p>
         <div class="editor-tools"><button id="undo">Undo</button><button id="redo">Redo</button><button id="reset-frame">Reset frame</button></div>
         <div class="editor-tools"><button id="save-project">Save to project</button><button id="export-json">Export JSON</button><button id="export-png">Export PNG</button><label class="file-label">Import JSON<input id="import-json" type="file" accept=".json,application/json"></label></div>
         <p id="editor-status" role="status" aria-live="polite"></p>
@@ -50,7 +51,7 @@ export function initialiseEditor(data) {
   try {
     const stored = localStorage.getItem(draftKey);
     if (stored) {
-      const frames = validateFrames(JSON.parse(stored), baseline, data.palette);
+      const frames = validateFrames(normaliseFrames(JSON.parse(stored)), baseline, data.palette);
       Object.assign(data.frames, frames);
       dirty = JSON.stringify(data.frames) !== JSON.stringify(baseline);
       status(dirty ? 'Restored your browser draft. Save to project when ready.' : 'Project loaded.');
@@ -143,7 +144,7 @@ export function initialiseEditor(data) {
   $('#import-json').onchange = async event => {
     const file = event.target.files[0]; if (!file) return;
     try {
-      finish(); const parsed = JSON.parse(await file.text()); const frames = validateFrames(parsed.frames ?? parsed, baseline, data.palette);
+      finish(); const parsed = JSON.parse(await file.text()); const frames = validateFrames(normaliseFrames(parsed.frames ?? parsed), baseline, data.palette);
       for (const [name, frame] of Object.entries(frames)) {
         const before = { name, frame: structuredClone(data.frames[name]) };
         data.frames[name] = frame; history.record(before, { name, frame });
