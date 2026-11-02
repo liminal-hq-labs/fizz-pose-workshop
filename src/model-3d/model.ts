@@ -340,10 +340,12 @@ export function createBenModel(svg: string): BenModel {
       arm =
         THREE.MathUtils.smoothstep(Math.abs(p.x), 2.8, 4.8) *
         THREE.MathUtils.smoothstep(p.y, 14.8, 16.0),
-      chest = THREE.MathUtils.smoothstep(p.y, 13, 18);
+      chest = THREE.MathUtils.smoothstep(p.y, 13, 18),
+      waist = THREE.MathUtils.smoothstep(p.y, 11.2, 14);
     return {
-      spine: (1 - arm) * (1 - chest),
-      chest: (1 - arm) * chest,
+      pelvis: (1 - arm) * (1 - waist),
+      spine: (1 - arm) * waist * (1 - chest),
+      chest: (1 - arm) * waist * chest,
       [side + "UpperArm"]: arm,
     };
   };
@@ -559,15 +561,15 @@ export function createBenModel(svg: string): BenModel {
     );
     const cuff = Array.from({ length: 49 }, (_, i) => {
       const a = (i / 48) * Math.PI * 2,
-        x = 0.92 * Math.cos(a),
-        depth = -0.55 + 0.78 * Math.sin(a);
+        x = 0.8 * Math.cos(a),
+        depth = -0.2 + 0.6 * Math.sin(a);
       return new THREE.Vector3(
         ankle.x + x,
         runnerTop(x, depth) + 0.025,
         z + depth,
       );
     });
-    tube(side + "_ankle_binding", cuff, 0.06, foot, "r");
+    tube(side + "_ankle_binding", cuff, 0.035, foot, "r");
     for (let j = 0; j < 5; j++) {
       const depth = 0.05 + j * 0.4;
       const points = [-0.52, 0, 0.52].map(
@@ -577,7 +579,7 @@ export function createBenModel(svg: string): BenModel {
       tube(side + "_lace", points, 0.055, foot, "W");
     }
     const sideSeam = Array.from({ length: 16 }, (_, i) => {
-      const depth = -2.45 + (i / 15) * 3.9,
+      const depth = -1.85 + (i / 15) * 3.1,
         p = runnerProfile(depth),
         y = p.seam + 0.35;
       const a = Math.asin(

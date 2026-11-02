@@ -6,7 +6,13 @@
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { createBenModel } from "../src/model-3d/model.ts";
-import { createBenClips } from "../src/model-3d/poses.ts";
+import sideRig from "../source/ben-side-rig.json";
+import { sampleRunRig } from "../src/rig/run.ts";
+import {
+  createBenClips,
+  applyBenPose,
+  sampleRunFoot,
+} from "../src/model-3d/poses.ts";
 import { installThreeToolRuntime } from "./three-runtime.ts";
 import config from "../source/ben-3d.json";
 
@@ -42,6 +48,48 @@ await writeFile(
   ) + "\n",
 );
 await writeFile(new URL("skins.svg", output), svg);
+const samples = Array.from({ length: 61 }, (_, i) => {
+  const phase = i / 60,
+    reference = sampleRunRig(sideRig, phase);
+  applyBenPose(model, "Run", phase);
+  return {
+    phase,
+    sourceWaistDelta: sideRig.root[1] - reference.root[1],
+    modelWaistDelta:
+      model.bones.pelvis.position.y - (model.rest.pelvis.y - 1.1),
+    modelPelvisY: model.bones.pelvis.position.y,
+    sourceTorsoDegrees: (reference.torsoAngle * 180) / Math.PI,
+    modelTorsoDegrees: (model.bones.spine.rotation.x * 180) / Math.PI,
+    nearStance: sampleRunFoot(phase).stance,
+    farStance: sampleRunFoot(phase + 0.5).stance,
+    sourceNearStance: reference.nearFoot.stance,
+    sourceFarStance: reference.farFoot.stance,
+  };
+});
+await mkdir(new URL("review/", output), { recursive: true });
+await writeFile(
+  new URL("review/run-body-motion.json", output),
+  JSON.stringify(
+    {
+      reference: "source/ben-side-rig.json",
+      bobAmplitude: sideRig.torso.bobAmplitude,
+      bobLag: sideRig.torso.bobLag,
+      stanceFraction: sideRig.stride.stanceFraction,
+      runPelvisOffset: -1.1,
+      maxWaistError: Math.max(
+        ...samples.map((s) => Math.abs(s.sourceWaistDelta - s.modelWaistDelta)),
+      ),
+      maxTorsoDegreesError: Math.max(
+        ...samples.map((s) =>
+          Math.abs(s.sourceTorsoDegrees - s.modelTorsoDegrees),
+        ),
+      ),
+      samples,
+    },
+    null,
+    2,
+  ) + "\n",
+);
 model.dispose();
 console.log(
   `Exported rigged Ben: ${config.bones.length} bones, ${clips.length} clips, ${(glb.byteLength / 1024).toFixed(0)} KiB GLB.`,

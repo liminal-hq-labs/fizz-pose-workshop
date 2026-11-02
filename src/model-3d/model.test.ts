@@ -18,6 +18,8 @@ import {
   sampleRunFoot,
 } from "./poses.ts";
 import { cycleProfile } from "./equipment.ts";
+import sideRig from "../../source/ben-side-rig.json";
+import { sampleRunRig } from "../rig/run.ts";
 import config from "../../source/ben-3d.json";
 
 installThreeToolRuntime();
@@ -218,7 +220,7 @@ describe("Ben volumetric character", () => {
   });
   test("running plants each foot backwards and recovers it forwards with forward knees", () => {
     let previous = Infinity;
-    for (const phase of [0, 0.1, 0.2, 0.3, 0.4]) {
+    for (const phase of [0, 0.04, 0.08, 0.12, 0.16, 0.2]) {
       const foot = sampleRunFoot(phase);
       expect(foot.stance).toBe(true);
       expect(foot.z).toBeLessThan(previous);
@@ -236,7 +238,7 @@ describe("Ben volumetric character", () => {
       expect(knee.z).toBeGreaterThan(along - 0.05);
     }
     previous = -Infinity;
-    for (const phase of [0.5, 0.6, 0.7, 0.8, 0.9]) {
+    for (const phase of [0.45, 0.55, 0.65, 0.75, 0.85]) {
       const foot = sampleRunFoot(phase);
       expect(foot.stance).toBe(false);
       expect(foot.z).toBeGreaterThan(previous);
@@ -244,10 +246,52 @@ describe("Ben volumetric character", () => {
     }
     expect(
       Math.abs(
-        sampleRunFoot(0.5 - 0.0001).toe - sampleRunFoot(0.5 + 0.0001).toe,
+        sampleRunFoot(sideRig.stride.stanceFraction - 0.0001).toe -
+          sampleRunFoot(sideRig.stride.stanceFraction + 0.0001).toe,
       ),
     ).toBeLessThan(0.1);
-    expect(sampleRunFoot(0.75).y).toBeGreaterThan(sampleRunFoot(0.25).y + 1.5);
+    expect(sampleRunFoot(0.75).y).toBeGreaterThan(sampleRunFoot(0.1).y + 1.5);
+  });
+  test("3D waist bob, torso pitch and contact phases follow the continuous sprite rig", () => {
+    let low = Infinity,
+      high = -Infinity;
+    for (let i = 0; i <= 60; i++) {
+      const time = i / 60,
+        reference = sampleRunRig(sideRig, time);
+      applyBenPose(model, "Run", time);
+      const bob = model.bones.pelvis.position.y - (model.rest.pelvis.y - 1.1);
+      expect(bob).toBeCloseTo(sideRig.root[1] - reference.root[1], 6);
+      expect(model.bones.spine.rotation.x).toBeCloseTo(reference.torsoAngle, 6);
+      expect(sampleRunFoot(time).stance).toBe(reference.nearFoot.stance);
+      expect(sampleRunFoot(time + 0.5).stance).toBe(reference.farFoot.stance);
+      low = Math.min(low, bob);
+      high = Math.max(high, bob);
+    }
+    expect(high - low).toBeGreaterThan(1.45);
+  });
+  test("shirt hem stays anchored to the pelvis as the torso leans and bobs", () => {
+    const shirt = model.meshes.find((mesh) => mesh.name === "Shirt_torso")!,
+      positions = shirt.geometry.getAttribute("position"),
+      hem = Array.from({ length: positions.count }, (_, i) => i).filter(
+        (i) => positions.getY(i) < 11.15,
+      );
+    expect(hem.length).toBeGreaterThan(10);
+    const inverse =
+      model.skeleton.boneInverses[
+        model.skeleton.bones.indexOf(model.bones.pelvis)
+      ];
+    for (const time of [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]) {
+      applyBenPose(model, "Run", time);
+      for (const i of hem) {
+        const expected = new THREE.Vector3()
+          .fromBufferAttribute(positions, i)
+          .applyMatrix4(inverse)
+          .applyMatrix4(model.bones.pelvis.matrixWorld);
+        expect(
+          shirt.getVertexPosition(i, new THREE.Vector3()).distanceTo(expected),
+        ).toBeLessThan(0.0001);
+      }
+    }
   });
   test("GLB round trip retains skinned geometry, bones, clips and phone visibility tracks", async () => {
     const clips = createBenClips(model);

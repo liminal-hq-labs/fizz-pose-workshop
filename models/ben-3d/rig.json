@@ -37,10 +37,10 @@
   },
   "shoes": {
     "width": 4.4,
-    "length": 9.6,
-    "height": 3.75,
+    "length": 8.7,
+    "height": 3.5,
     "toeZ": 6.2,
-    "heelZ": -3.4
+    "heelZ": -2.5
   },
   "bones": [
     "pelvis",

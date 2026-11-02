@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import * as THREE from "three";
+import sideRig from "../../source/ben-side-rig.json";
+import { sampleRunRig } from "../rig/run.ts";
 import config from "../../source/ben-3d.json";
 import { runnerProfile } from "./equipment.ts";
 import { resetRig } from "./rig.ts";
@@ -94,6 +96,34 @@ const soleContacts = Array.from({ length: 81 }, (_, i) => {
   const z = THREE.MathUtils.lerp(config.shoes.heelZ, config.shoes.toeZ, i / 80);
   return { z, y: runnerProfile(z).bottom - ankleRestY };
 });
+export function sampleRunBody(time: number): {
+  bob: number;
+  lean: number;
+  shoulderYaw: number;
+  arms: readonly [
+    { upper: number; forearm: number },
+    { upper: number; forearm: number },
+  ];
+} {
+  const pose = sampleRunRig(sideRig, time),
+    angles = ([a, b, c]: typeof pose.nearArm): {
+      upper: number;
+      forearm: number;
+    } => {
+      const upper = Math.atan2(b[0] - a[0], b[1] - a[1]),
+        lower = Math.atan2(c[0] - b[0], c[1] - b[1]);
+      return {
+        upper: -upper - pose.torsoAngle,
+        forearm: -Math.atan2(Math.sin(lower - upper), Math.cos(lower - upper)),
+      };
+    };
+  return {
+    bob: sideRig.root[1] - pose.root[1],
+    lean: pose.torsoAngle,
+    shoulderYaw: pose.torsoTurn * THREE.MathUtils.degToRad(4),
+    arms: [angles(pose.nearArm), angles(pose.farArm)],
+  };
+}
 export function sampleRunFoot(time: number): {
   phase: number;
   z: number;
@@ -103,12 +133,17 @@ export function sampleRunFoot(time: number): {
   stance: boolean;
 } {
   const phase = ((time % 1) + 1) % 1,
-    stance = phase < 0.5,
-    t = stance ? phase * 2 : (phase - 0.5) * 2;
+    stance = phase < sideRig.stride.stanceFraction,
+    t = stance
+      ? phase / sideRig.stride.stanceFraction
+      : (phase - sideRig.stride.stanceFraction) /
+        (1 - sideRig.stride.stanceFraction);
   const z = stance
     ? THREE.MathUtils.lerp(3.2, -3.2, t)
     : THREE.MathUtils.lerp(-3.2, 3.2, t * t * (3 - 2 * t)) -
-      6.4 * (2 * t * t * t - 3 * t * t + t);
+      ((6.4 * (1 - sideRig.stride.stanceFraction)) /
+        sideRig.stride.stanceFraction) *
+        (2 * t * t * t - 3 * t * t + t);
   const pitch = stance
     ? THREE.MathUtils.lerp(-12, 0, THREE.MathUtils.smoothstep(t, 0, 0.2)) +
       25 * THREE.MathUtils.smoothstep(t, 0.7, 1)
@@ -134,7 +169,7 @@ export function sampleRunFoot(time: number): {
   return {
     phase,
     z,
-    y: -0.5 - lowest + (stance ? 0 : 2.2 * Math.sin(Math.PI * t)),
+    y: -0.5 - lowest + (stance ? 0 : 4.0 * Math.sin(Math.PI * t)),
     pitch,
     toe,
     stance,
@@ -144,22 +179,20 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
   resetRig(model);
   model.bones.phone.scale.setScalar(pose === "Phone" ? 1 : 0);
   const b = model.bones,
-    s = Math.sin(time * Math.PI * 2),
-    c = Math.cos(time * Math.PI * 2);
+    s = Math.sin(time * Math.PI * 2);
   const turn = (name: string, x = 0, y = 0, z = 0): void => {
     b[name].rotation.set(rad(x), rad(y), rad(z));
   };
   if (pose === "Run") {
-    b.pelvis.position.y += -1.1 + 0.15 * Math.cos(time * Math.PI * 4);
-    turn("spine", 12, 0, 0);
-    turn("chest", 0, s * 4, 0);
-    turn("neck", -7, -s * 2, 0);
-    for (const [side, sign] of [
-      ["right", 1],
-      ["left", -1],
-    ] as const) {
-      turn(side + "UpperArm", sign * c * 42, 0, 0);
-      turn(side + "Forearm", -75, 0, 0);
+    const body = sampleRunBody(time);
+    b.pelvis.position.y += -1.1 + body.bob;
+    b.spine.rotation.x = body.lean;
+    b.chest.rotation.y = body.shoulderYaw;
+    turn("neck", -THREE.MathUtils.radToDeg(body.lean) * 0.5, -s * 2, 0);
+    for (const side of ["right", "left"] as const) {
+      const arm = body.arms[side === "right" ? 0 : 1];
+      b[side + "UpperArm"].rotation.x = arm.upper;
+      b[side + "Forearm"].rotation.x = arm.forearm;
     }
   } else if (pose === "Jump") {
     b.pelvis.position.y += 3.5;

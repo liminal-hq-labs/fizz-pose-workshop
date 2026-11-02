@@ -152,7 +152,11 @@ try {
         8,
       ),
       helmet = renderedBounds(view.helmet);
-    const sourceShoes = bounds(sourceMask, 30, 34),
+    const sourceShoes = bounds(
+        (x, y) => sourceMask(x, y) && frame.grid[y][x] !== "k",
+        30,
+        34,
+      ),
       shoes = renderedBounds(view.shoes);
     paste(plate, decodeCapture(view.image), i, 0);
     for (let y = 0; y < 440; y++)
@@ -301,6 +305,7 @@ try {
     referenceMasks: {
       helmet: "Coloured helmet and rim, excluding the black sprite outline",
       torso: "Clothing and arms, excluding the black sprite outline",
+      shoes: "Coloured uppers and soles, excluding the black sprite outline",
       head: "Head meshes only, excluding the fitted helmet",
       overall: "Complete sprite envelope",
     },

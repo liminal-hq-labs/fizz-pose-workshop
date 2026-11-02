@@ -4,6 +4,7 @@
   "referenceMasks": {
     "helmet": "Coloured helmet and rim, excluding the black sprite outline",
     "torso": "Clothing and arms, excluding the black sprite outline",
+    "shoes": "Coloured uppers and soles, excluding the black sprite outline",
     "head": "Head meshes only, excluding the fitted helmet",
     "overall": "Complete sprite envelope"
   },
@@ -44,7 +45,7 @@
         "bottom": 12
       },
       "sourceShoes": {
-        "width": 11,
+        "width": 9,
         "height": 5,
         "top": 30,
         "bottom": 34
@@ -60,7 +61,7 @@
         "headWidth": 0,
         "torsoWidth": 0,
         "helmetWidth": 0,
-        "shoeWidth": -2,
+        "shoeWidth": 0,
         "shoeHeight": -1
       },
       "withinTolerance": true
@@ -93,13 +94,13 @@
         "bottom": 14
       },
       "sourceShoes": {
-        "width": 12,
+        "width": 10,
         "height": 5,
         "top": 30,
         "bottom": 34
       },
       "shoes": {
-        "width": 11,
+        "width": 10,
         "height": 4,
         "top": 31,
         "bottom": 34
@@ -109,7 +110,7 @@
         "headWidth": -1,
         "torsoWidth": -1,
         "helmetWidth": 0,
-        "shoeWidth": -1,
+        "shoeWidth": 0,
         "shoeHeight": -1
       },
       "withinTolerance": true
@@ -142,13 +143,13 @@
         "bottom": 11
       },
       "sourceShoes": {
-        "width": 12,
+        "width": 10,
         "height": 5,
         "top": 30,
         "bottom": 34
       },
       "shoes": {
-        "width": 10,
+        "width": 9,
         "height": 4,
         "top": 31,
         "bottom": 34
@@ -158,7 +159,7 @@
         "headWidth": -2,
         "torsoWidth": -1,
         "helmetWidth": 0,
-        "shoeWidth": -2,
+        "shoeWidth": -1,
         "shoeHeight": -1
       },
       "withinTolerance": true
@@ -191,7 +192,7 @@
         "bottom": 12
       },
       "sourceShoes": {
-        "width": 10,
+        "width": 8,
         "height": 5,
         "top": 30,
         "bottom": 34
@@ -207,7 +208,7 @@
         "headWidth": 0,
         "torsoWidth": 0,
         "helmetWidth": 0,
-        "shoeWidth": -1,
+        "shoeWidth": 1,
         "shoeHeight": -1
       },
       "withinTolerance": true
@@ -240,13 +241,13 @@
         "bottom": 9
       },
       "sourceShoes": {
-        "width": 12,
+        "width": 10,
         "height": 5,
         "top": 30,
         "bottom": 34
       },
       "shoes": {
-        "width": 10,
+        "width": 9,
         "height": 4,
         "top": 31,
         "bottom": 34
@@ -256,7 +257,7 @@
         "headWidth": -2,
         "torsoWidth": -1,
         "helmetWidth": 0,
-        "shoeWidth": -2,
+        "shoeWidth": -1,
         "shoeHeight": -1
       },
       "withinTolerance": true
@@ -289,13 +290,13 @@
         "bottom": 14
       },
       "sourceShoes": {
-        "width": 12,
+        "width": 10,
         "height": 5,
         "top": 30,
         "bottom": 34
       },
       "shoes": {
-        "width": 11,
+        "width": 10,
         "height": 4,
         "top": 31,
         "bottom": 34
@@ -305,7 +306,7 @@
         "headWidth": -2,
         "torsoWidth": -1,
         "helmetWidth": 0,
-        "shoeWidth": -1,
+        "shoeWidth": 0,
         "shoeHeight": -1
       },
       "withinTolerance": true
