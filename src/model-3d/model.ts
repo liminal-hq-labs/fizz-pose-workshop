@@ -602,9 +602,9 @@ export function createBenModel(svg: string): BenModel {
       "shoe-badge",
       foot,
       (u, v) => {
-        const depth = -1.35 + u * 0.7,
+        const depth = 0.05 + u * 0.7,
           p = runnerProfile(depth),
-          y = 1.6 - v * 0.65,
+          y = 1.35 - v * 0.65,
           a = Math.asin(
             Math.min(1, ((y - p.seam) / (p.top - p.seam)) ** (1 / 0.75)),
           );
