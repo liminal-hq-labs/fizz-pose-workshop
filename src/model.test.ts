@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { test, expect } from 'bun:test';
-import { createHistory, setPixel, validateFrames } from './model.js';
+import { createHistory, setPixel, validateFrames } from './model.ts';
 
 const frames = { ben: { width: 2, height: 2, grid: ['..', 'RR'] } };
 const palette = { '.': null, R: '#aa0000' };

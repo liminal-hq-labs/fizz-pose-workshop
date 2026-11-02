@@ -5,8 +5,8 @@
 
 import { test, expect } from 'bun:test';
 import palette from '../source/game-palette.json';
-import { normaliseFrames } from './palette.js';
-import { validateFrames } from './model.js';
+import { normaliseFrames } from './palette.ts';
+import { validateFrames } from './model.ts';
 
 test('offers sixteen distinct opaque colours plus transparency', () => {
   expect(Object.keys(palette)).toHaveLength(17);

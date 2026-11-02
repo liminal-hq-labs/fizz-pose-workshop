@@ -3,16 +3,22 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-import { createHistory, setPixel, validateFrames } from './model.js';
-import { normaliseFrames } from './palette.js';
+import { createHistory, setPixel, validateFrames } from './model.ts';
+import { normaliseFrames } from './palette.ts';
 
-export function initialiseEditor(data) {
+import type { Frame, WorkshopData } from './types.ts';
+
+interface EditorState { name: string; frame: Frame }
+interface Point { x: number; y: number }
+
+export function initialiseEditor(data: WorkshopData): void {
   const baseline = structuredClone(data.frames);
-  const history = createHistory();
-  let frameName = 'ben_stand', colour = 'r', tool = 'pencil', stroke = null, previous = null;
+  const history = createHistory<EditorState>();
+  let frameName = 'ben_stand', colour = 'r', tool = 'pencil';
+  let stroke: EditorState | null = null, previous: Point | null = null;
   let dirty = false, saving = false;
   const draftKey = 'classic-fizz-workshop-draft-v1';
-  const section = document.querySelector('#editor');
+  const section = document.querySelector<HTMLElement>('#editor')!;
   section.innerHTML = `
     <h2 id="editor-heading">A pixel at a time.</h2>
     <p>Pick a frame and draw directly on the grid. Every gallery and animation preview updates as you paint.</p>
@@ -32,14 +38,14 @@ export function initialiseEditor(data) {
         <canvas id="native-preview" role="img" aria-label="Current frame at native resolution"></canvas>
       </div>
     </div>`;
-  const $ = selector => section.querySelector(selector);
-  const canvas = $('#pixel-canvas'), native = $('#native-preview');
-  const select = $('#edit-frame');
+  const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => section.querySelector<T>(selector)!;
+  const canvas = $<HTMLCanvasElement>('#pixel-canvas'), native = $<HTMLCanvasElement>('#native-preview');
+  const select = $<HTMLSelectElement>('#edit-frame');
   select.replaceChildren(...Object.keys(data.frames).map(name => { const option = document.createElement('option'); option.value = name; option.textContent = name; return option; }));
   select.value = frameName;
-  const status = text => { $('#editor-status').textContent = text; };
-  function snapshot() { return { name: frameName, frame: structuredClone(data.frames[frameName]) }; }
-  function apply(state) { frameName = state.name; data.frames[frameName] = state.frame; select.value = frameName; changed(); }
+  const status = (text: string): void => { $('#editor-status').textContent = text; };
+  function snapshot(): EditorState { return { name: frameName, frame: structuredClone(data.frames[frameName]) }; }
+  function apply(state: EditorState): void { frameName = state.name; data.frames[frameName] = state.frame; select.value = frameName; changed(); }
   function draft() {
     try { localStorage.setItem(draftKey, JSON.stringify(data.frames)); }
     catch { status('Browser storage is unavailable. Export JSON or save to project to keep your edits.'); }
@@ -58,10 +64,10 @@ export function initialiseEditor(data) {
     } else status('Project loaded. Select a colour and draw.');
   } catch { status('The saved browser draft could not be read. The project frames are loaded.'); }
 
-  function selectTool(next) { tool = next; section.querySelectorAll('[data-tool]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.tool === tool))); }
-  function selectColour(code) {
+  function selectTool(next: string): void { tool = next; section.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.tool === tool))); }
+  function selectColour(code: string): void {
     colour = code;
-    section.querySelectorAll('[data-colour]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.colour === code)));
+    section.querySelectorAll<HTMLButtonElement>('[data-colour]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.colour === code)));
     $('#selected-colour').textContent = code === '.' ? 'Transparent' : `${code} · ${data.palette[code]}`;
   }
   for (const [code, hex] of Object.entries(data.palette)) {
@@ -72,8 +78,8 @@ export function initialiseEditor(data) {
     button.onclick = () => { selectColour(code); selectTool('pencil'); };
     $('.palette').append(button);
   }
-  section.querySelectorAll('[data-tool]').forEach(button => { button.onclick = () => selectTool(button.dataset.tool); });
-  function drawFrame(context, frame, scale) {
+  section.querySelectorAll<HTMLButtonElement>('[data-tool]').forEach(button => { button.onclick = () => selectTool(button.dataset.tool!); });
+  function drawFrame(context: CanvasRenderingContext2D, frame: Frame, scale: number): void {
     for (let y = 0; y < frame.height; y++) for (let x = 0; x < frame.width; x++) {
       const hex = data.palette[frame.grid[y][x]];
       if (hex) { context.fillStyle = hex; context.fillRect(x * scale, y * scale, scale, scale); }
@@ -82,26 +88,26 @@ export function initialiseEditor(data) {
   function render() {
     const frame = data.frames[frameName], scale = 12;
     canvas.width = frame.width * scale; canvas.height = frame.height * scale;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d')!;
     for (let y = 0; y < frame.height; y++) for (let x = 0; x < frame.width; x++) {
       ctx.fillStyle = (x + y) % 2 ? '#334139' : '#29372f'; ctx.fillRect(x * scale, y * scale, scale, scale);
     }
     drawFrame(ctx, frame, scale);
-    if ($('#show-grid').checked) {
+    if ($<HTMLInputElement>('#show-grid').checked) {
       ctx.strokeStyle = '#ffffff24'; ctx.lineWidth = 1; ctx.beginPath();
       for (let x = 0; x <= frame.width; x++) { ctx.moveTo(x * scale + .5, 0); ctx.lineTo(x * scale + .5, canvas.height); }
       for (let y = 0; y <= frame.height; y++) { ctx.moveTo(0, y * scale + .5); ctx.lineTo(canvas.width, y * scale + .5); }
       ctx.stroke();
     }
-    native.width = frame.width; native.height = frame.height; drawFrame(native.getContext('2d'), frame, 1);
-    $('#undo').disabled = !history.canUndo; $('#redo').disabled = !history.canRedo;
+    native.width = frame.width; native.height = frame.height; drawFrame(native.getContext('2d')!, frame, 1);
+    $<HTMLButtonElement>('#undo').disabled = !history.canUndo; $<HTMLButtonElement>('#redo').disabled = !history.canRedo;
     $('#pixel-position').textContent = `${frame.width} × ${frame.height} pixels · ${frameName} · native orientation`;
   }
-  function point(event) {
+  function point(event: PointerEvent): Point {
     const frame = data.frames[frameName], box = canvas.getBoundingClientRect();
     return { x: Math.floor((event.clientX - box.left) / box.width * frame.width), y: Math.floor((event.clientY - box.top) / box.height * frame.height) };
   }
-  function paint(event) {
+  function paint(event: PointerEvent): void {
     const frame = data.frames[frameName], { x, y } = point(event);
     if (x < 0 || y < 0 || x >= frame.width || y >= frame.height) { previous = null; return; }
     $('#pixel-position').textContent = `${frameName} · x ${x}, y ${y}`;
@@ -126,23 +132,24 @@ export function initialiseEditor(data) {
   canvas.onpointermove = event => { if (stroke) paint(event); };
   canvas.onpointerup = canvas.onpointercancel = canvas.onlostpointercapture = finish;
   select.onchange = () => { finish(); frameName = select.value; render(); };
-  $('#show-grid').onchange = render;
-  $('#undo').onclick = () => { finish(); const state = history.undo(); if (state) apply(state); };
-  $('#redo').onclick = () => { finish(); const state = history.redo(); if (state) apply(state); };
+  $<HTMLInputElement>('#show-grid').onchange = render;
+  $<HTMLButtonElement>('#undo').onclick = () => { finish(); const state = history.undo(); if (state) apply(state); };
+  $<HTMLButtonElement>('#redo').onclick = () => { finish(); const state = history.redo(); if (state) apply(state); };
   $('#reset-frame').onclick = () => { finish(); const before = snapshot(); data.frames[frameName] = structuredClone(baseline[frameName]); if (history.record(before, snapshot())) changed(); };
   section.addEventListener('keydown', event => {
-    if (event.target.matches('input,select')) return;
+    if (event.target instanceof Element && event.target.matches('input,select')) return;
     if ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
       event.preventDefault(); $(event.shiftKey || event.key.toLowerCase() === 'y' ? '#redo' : '#undo').click();
     }
   });
-  function download(blob, name) {
+  function download(blob: Blob, name: string): void {
     const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   $('#export-json').onclick = () => { finish(); download(new Blob([JSON.stringify({ frames: data.frames }, null, 2) + '\n'], { type: 'application/json' }), 'ben-edited-frames.json'); };
   $('#export-png').onclick = () => { finish(); native.toBlob(blob => { if (blob) download(blob, frameName + '.png'); }); };
-  $('#import-json').onchange = async event => {
-    const file = event.target.files[0]; if (!file) return;
+  $<HTMLInputElement>('#import-json').onchange = async event => {
+    const input = $<HTMLInputElement>('#import-json');
+    const file = input.files?.[0]; if (!file) return;
     try {
       finish(); const parsed = JSON.parse(await file.text()); const frames = validateFrames(normaliseFrames(parsed.frames ?? parsed), baseline, data.palette);
       for (const [name, frame] of Object.entries(frames)) {
@@ -150,12 +157,12 @@ export function initialiseEditor(data) {
         data.frames[name] = frame; history.record(before, { name, frame });
       }
       changed(); status(`Imported ${Object.keys(frames).length} frames. Save to project to rebuild exports.`);
-    } catch (error) { status(error.message); }
-    event.target.value = '';
+    } catch (error) { status(error instanceof Error ? error.message : 'Could not complete the operation.'); }
+    input.value = '';
   };
-  $('#save-project').onclick = async () => {
+  $<HTMLButtonElement>('#save-project').onclick = async () => {
     if (saving) return;
-    finish(); const savedFrames = structuredClone(data.frames); saving = true; $('#save-project').disabled = true; status('Saving project and rebuilding image exports…');
+    finish(); const savedFrames = structuredClone(data.frames); saving = true; $<HTMLButtonElement>('#save-project').disabled = true; status('Saving project and rebuilding image exports…');
     try {
       const response = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(savedFrames) });
       if (!response.ok) {
@@ -164,11 +171,11 @@ export function initialiseEditor(data) {
       }
       Object.assign(baseline, savedFrames); dirty = JSON.stringify(data.frames) !== JSON.stringify(savedFrames); draft();
       status(dirty ? 'Saved the submitted frames. Newer edits remain in your draft; save again to include them.' : 'Saved to project. PNG, SVG, GIF and sprite-sheet exports are rebuilt.');
-    } catch (error) { status(error.message); }
-    finally { saving = false; $('#save-project').disabled = false; }
+    } catch (error) { status(error instanceof Error ? error.message : 'Could not complete the operation.'); }
+    finally { saving = false; $<HTMLButtonElement>('#save-project').disabled = false; }
   };
   window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
   // Click any static gallery pose to edit it.
-  document.querySelectorAll('canvas[data-frame]').forEach(item => { item.style.cursor = 'pointer'; item.onclick = () => { finish(); frameName = item.dataset.frame; select.value = frameName; render(); section.scrollIntoView({ behavior: 'smooth' }); }; });
+  document.querySelectorAll<HTMLCanvasElement>('canvas[data-frame]').forEach(item => { item.style.cursor = 'pointer'; item.onclick = () => { finish(); frameName = item.dataset.frame!; select.value = frameName; render(); section.scrollIntoView({ behavior: 'smooth' }); }; });
   selectColour(colour); render();
 }

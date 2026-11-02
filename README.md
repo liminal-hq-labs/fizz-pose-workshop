@@ -6,11 +6,11 @@ A pose set derived from the unmodified original native Classic Fizz study, vendo
 
 Install dependencies with `bun install`, then run `bun run dev`. The editor supports palette drawing, erasing, colour picking, continuous pointer strokes, undo/redo, per-frame reset and a native-size preview. Click a static gallery pose or use the frame selector to edit it. Gallery and animation previews update live.
 
-Drafts are stored in this browser for this local address. **Save to project** writes `edits.json` and regenerates PNG, SVG, GIF, sprite-sheet and standalone preview exports. The development server requires Python 3 and Pillow for regeneration. Saving is explicit; browser drafts alone do not change repository files. Original source art stays untouched. JSON export/import provides portable backups; PNG export downloads the selected frame at native resolution.
+Drafts are stored in this browser for this local address. **Save to project** writes `edits.json` and regenerates PNG, SVG, GIF, sprite-sheet and standalone preview exports. Generation and saving run entirely in Bun and TypeScript. Saving is explicit; browser drafts alone do not change repository files. Original source art stays untouched. JSON export/import provides portable backups; PNG export downloads the selected frame at native resolution.
 
 `bun run generate` rebuilds assets with saved edits applied. `bun run test` checks pixel history and frame validation. `bun run build` creates `dist/` with the editor and image exports; `bun run preview` serves that build. The built editor supports browser drafts and JSON/PNG export; saving to project requires `bun run dev`.
 
-The app entry is `index.html`; `preview.html` redirects to the app. `src/` contains the gallery, editor, styles and edit validation. `vite.config.js` handles the development save endpoint and packages the image exports for builds. Generated frame overrides in `edits.json` take precedence over generator artwork; per-frame reset restores the project version loaded by the page.
+The app entry is `index.html`; `preview.html` redirects to the app. `src/` contains the gallery, editor, styles and edit validation. `vite.config.ts` handles the development save endpoint and packages the image exports for builds. Frame overrides in `edits.json` take precedence over the authored grids in `source/poses.json`; per-frame reset restores the project version loaded by the page.
 
 ## Game palette
 
@@ -50,7 +50,9 @@ The overworld is a separate top-down design on a 24 × 24 canvas with eight head
 - `animations/`: five action loops and eight overworld walk loops, each as an animated SVG and transparent GIF.
 - `assets.json`: palette, every editable pixel grid, per-frame timing and sprite-sheet rectangles.
 - `sheets/ben-poses.png`: transparent sprite sheet in 24 × 44 cells; use the rectangles in `assets.json` for smaller overworld frames.
-- `build-assets.py`: standalone source generator. Requires Python 3 and Pillow; run `python3 build-assets.py` to regenerate exports.
+- `scripts/build-assets.ts`: Bun/TypeScript asset generator. Run `bun run generate` to regenerate exports.
+- `source/poses.json`: editable source pixel grids and animation timing, preserved independently of generated output.
+- `templates/`: README and standalone gallery templates.
 - `original-study.png`: a copy of the original native study at 6× for comparison.
 
 ## Animation and integration notes

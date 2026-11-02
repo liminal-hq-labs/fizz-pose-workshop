@@ -8,7 +8,7 @@ import { readFile, writeFile, copyFile, mkdir, cp } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { validateFrames } from './src/model.js';
+import { validateFrames } from './src/model.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const run = promisify(execFile);
@@ -31,18 +31,18 @@ export default defineConfig({
           for await (const chunk of req) { body += chunk; if (body.length > 500_000) throw new Error('The project file is too large.'); }
           const assets = JSON.parse(await readFile(root + 'assets.json', 'utf8'));
           const frames = validateFrames(JSON.parse(body), assets.frames, assets.palette);
-          try { oldEdits = await readFile(root + 'edits.json', 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+          try { oldEdits = await readFile(root + 'edits.json', 'utf8'); } catch (error) { if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error; }
           server.watcher.unwatch([root + 'assets.json', root + 'edits.json']);
           await writeFile(root + 'edits.json', JSON.stringify(frames, null, 2) + '\n');
-          try { await run('python3', ['build-assets.py'], { cwd: root }); }
+          try { await run(process.execPath, ['run', 'scripts/build-assets.ts'], { cwd: root }); }
           catch (error) {
             await writeFile(root + 'edits.json', oldEdits ?? '{}\n');
-            throw new Error('Could not regenerate exports. Check Python and Pillow, then save again.');
+            throw new Error('Could not regenerate exports. Check the Bun terminal output, then save again.');
           }
           const module = server.moduleGraph.getModuleById(root + 'assets.json');
           if (module) server.moduleGraph.invalidateModule(module);
           res.end(JSON.stringify({ saved: true }));
-        } catch (error) { res.statusCode = 400; res.end(JSON.stringify({ error: error.message })); }
+        } catch (error) { res.statusCode = 400; res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Could not save the project.' })); }
         finally { saving = false; server.watcher.add([root + 'assets.json', root + 'edits.json']); }
       });
     },
