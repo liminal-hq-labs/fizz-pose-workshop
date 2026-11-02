@@ -1,4 +1,8 @@
-# Original Classic Fizz pose workshop
+# Classic Fizz Pose Workshop
+
+<p align="center">
+  <img src="assets/hero.svg" alt="Classic Fizz Pose Workshop — Ben Blaze sprite studies, reusable rigs and character animation" width="100%">
+</p>
 
 A pose set derived from the unmodified original native Classic Fizz study, vendored in `source/classic-fizz-original.json`. The initial polished version is preserved in the first Git commit. The original files are preserved. Run `bun run dev` and open the printed local URL for the gallery and pixel editor. `standalone-preview.html` is the generated read-only gallery that also works directly from disk. The preview supports pause, scale, playback speed and side-view mirroring, and initially pauses when reduced motion is requested.
 
@@ -115,3 +119,9 @@ The turntable’s shoe patches now share a fixed five-row structure. Both side p
 The **Rigged 3D** section adds a fully volumetric Three.js character with a 24-bone skeleton, rounded helmet and head, detailed shoes, brown-blond hair and a right-hip Fizz Stunner. Orbit the model, choose a pose, show the skeleton, adjust joints or move Ben, and download a custom pose. Match the calibrated sprite references in orthographic view or enable their overlay to inspect proportions. The existing pixel sprites remain independent.
 
 `bun run model:build` exports `models/ben-3d/ben.glb` with nine named animation clips and the rig/skin files. With the server running, `bun run model:review` saves six reference comparisons, ten rig poses, timed firing/look cycles and measured proportion checks. See [the model guide](docs/BEN_3D.md) for controls, source files, export details, review limitations and Jar’s SVG surface-art ideas.
+
+## Contributing and repository identity
+
+[AGENTS.md](AGENTS.md) contains the contributor rules; [CLAUDE.md](CLAUDE.md) provides the Claude entry point. The workshop uses Canadian English, signed Conventional Commits and Bun/TypeScript tooling. Preserve original reference art and project saves when experimenting with poses.
+
+The [animated hero](assets/hero.svg) and [SVG avatar](assets/avatar.svg) are built from saved Ben sprites. Run `bun run branding:build` after deliberate updates to their references; [identity notes](assets/README.md) describe regeneration and the matching PNG used in Forgejo project settings.

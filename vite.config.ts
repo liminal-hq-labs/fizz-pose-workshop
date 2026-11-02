@@ -49,8 +49,8 @@ export default defineConfig({
     },
     async closeBundle() {
       await mkdir(root + 'dist', { recursive: true });
-      for (const name of ['frames', 'animations', 'sheets', 'rig', 'docs', 'source', 'models']) await cp(root + name, root + 'dist/' + name, { recursive: true });
-      for (const name of ['assets.json', 'original-study.png', 'README.md', 'preview.html', 'standalone-preview.html']) await copyFile(root + name, root + 'dist/' + name);
+      for (const name of ['frames', 'animations', 'sheets', 'rig', 'docs', 'source', 'models', 'assets']) await cp(root + name, root + 'dist/' + name, { recursive: true });
+      for (const name of ['assets.json', 'original-study.png', 'README.md', 'AGENTS.md', 'CLAUDE.md', 'preview.html', 'standalone-preview.html']) await copyFile(root + name, root + 'dist/' + name);
     },
   }],
 });
