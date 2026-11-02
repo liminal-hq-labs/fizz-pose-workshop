@@ -1,0 +1,313 @@
+{
+  "tolerancePixels": 2,
+  "projection": "32 × 44 orthographic; one world unit per sprite pixel",
+  "metrics": [
+    {
+      "angle": 0,
+      "frame": "ben_turn000",
+      "source": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 11,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 11,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "sourceShoes": {
+        "width": 11,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 9,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "differences": {
+        "height": 0,
+        "headWidth": 0,
+        "torsoWidth": 0,
+        "helmetWidth": 0,
+        "shoeWidth": -2,
+        "shoeHeight": 0
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 45,
+      "frame": "ben_turn045",
+      "source": {
+        "width": 14,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 14,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 13,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 12,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "sourceShoes": {
+        "width": 12,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 14,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "differences": {
+        "height": 0,
+        "headWidth": -1,
+        "torsoWidth": -2,
+        "helmetWidth": -1,
+        "shoeWidth": 2,
+        "shoeHeight": 0
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 90,
+      "frame": "ben_turn090",
+      "source": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 13,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 13,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "sourceShoes": {
+        "width": 12,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 10,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "differences": {
+        "height": 0,
+        "headWidth": -2,
+        "torsoWidth": -1,
+        "helmetWidth": 0,
+        "shoeWidth": -2,
+        "shoeHeight": 0
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 180,
+      "frame": "ben_turn180",
+      "source": {
+        "width": 14,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 11,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 11,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "sourceShoes": {
+        "width": 10,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 9,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "differences": {
+        "height": 0,
+        "headWidth": 0,
+        "torsoWidth": 0,
+        "helmetWidth": 0,
+        "shoeWidth": -1,
+        "shoeHeight": 0
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 270,
+      "frame": "ben_turn270",
+      "source": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 13,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 13,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "sourceShoes": {
+        "width": 12,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 11,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "differences": {
+        "height": 0,
+        "headWidth": -2,
+        "torsoWidth": -1,
+        "helmetWidth": 0,
+        "shoeWidth": -1,
+        "shoeHeight": 0
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 315,
+      "frame": "ben_turn315",
+      "source": {
+        "width": 14,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 14,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 13,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 13,
+        "height": 7,
+        "top": 2,
+        "bottom": 8
+      },
+      "sourceShoes": {
+        "width": 12,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 14,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "differences": {
+        "height": 0,
+        "headWidth": -1,
+        "torsoWidth": -2,
+        "helmetWidth": 0,
+        "shoeWidth": 2,
+        "shoeHeight": 0
+      },
+      "withinTolerance": true
+    }
+  ],
+  "poseOrder": [
+    "Standing",
+    "Run",
+    "Jump",
+    "Climb",
+    "Firing",
+    "Whistle",
+    "Phone",
+    "Look up",
+    "Belly clutch"
+  ],
+  "browserErrors": [],
+  "mobileOverflow": false
+}

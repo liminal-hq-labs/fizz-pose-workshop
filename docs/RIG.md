@@ -154,3 +154,7 @@ The Stunner is an asymmetric design landmark. Its attachment belongs to Ben’s 
 All turntable shoe templates have five rows, so changing direction does not change the shoe’s height. Their upper colours, ankle opening and sole remain distinct while the projected length foreshortens. The rear-head renderer reveals surface shading gradually, keeps one helmet-stripe cluster and registers both profiles and the rear around the same skull post. Brown-blond hair remains in the rear design; its eight-pixel patch is revealed by the visible rear surface instead of appearing as a complete texture swap. The [continuity review](TURNTABLE_REVIEW.md#shoe-and-rear-head-continuity) records the source of the earlier jumps and their corrections.
 
 `source/ben-side-skin.json` defines `shoe.badge`, including its local point and yellow palette code. `shoeBadgePoint` in `scripts/rig-skin.ts` applies the shoe pitch and compression; the pixel renderer binds the badge to the nearest visible red upper pixel on the near shoe. The six running exports include the restored badge. Other saved action artwork is preserved; explicitly redrawing those rigs uses the shared skin’s badge rule.
+
+## Volumetric model rig
+
+The separate [3D model rig](BEN_3D.md) uses a shared Three.js skeleton with 21 joints and a portable GLB export. It adds actual rounded body depth, editable joints, continuous running and named demonstration poses. It does not regenerate or replace the pixel rig’s existing sprites.

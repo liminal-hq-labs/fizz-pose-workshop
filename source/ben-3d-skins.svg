@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 16 16">
+  <path id="fizz-emblem" fill="#ffff55" d="M-.45 -1.5H.45V-.5H1.45V.45H.45V1.15H-.45V.45H-1.45V-.5H-.45Z"/>
+  <path id="fizz-emblem-core" fill="#aa5500" d="M-.36 .45H.36V1.15H-.36Z"/>
+  <path id="shoe-badge" fill="#ffff55" d="M-.4 -.4H.4V.4H-.4Z"/>
+  <path id="helmet-stripe" fill="#ffffff" d="M-.38 -6.1H.38V6.1H-.38Z"/>
+  <path id="stunner-panel" fill="#ff55ff" d="M-.42 -.6H.42V.6H-.42Z"/>
+  <path id="phone-mark" fill="#ffff55" d="M-.12 -.4H.16L.05 -.08H.3L-.16 .45L-.03 .05H-.25Z"/>
+</svg>

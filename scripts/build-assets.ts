@@ -5,6 +5,7 @@
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import {resolve,dirname}from'node:path';
 import { PNG } from 'pngjs';
 import authored from '../source/poses.json';
 import palette from '../source/game-palette.json';
@@ -60,7 +61,7 @@ Object.entries(frames).forEach(([name, frame], index) => {
 await writeFile(root + 'sheets/ben-poses.png', PNG.sync.write(sheet));
 await writeFile(root + 'assets.json', JSON.stringify({ palette, frames, animations, sheet: positions }, null, 2) + '\n');
 await writeFile(root + 'original-study.png', png(original, original.palette, 6));
-const bundle = await Bun.build({ entrypoints: [root + 'src/standalone.ts'], target: 'browser', format: 'iife', minify: true });
+const bundle = await Bun.build({ entrypoints: [root + 'src/standalone.ts'], target: 'browser', format: 'iife', minify: true, loader: {'.svg':'text'},plugins:[{name:'raw-svg',setup(build){build.onResolve({filter:/\.svg\?raw$/},args=>({path:resolve(dirname(args.importer),args.path.replace(/\?raw$/,'')),namespace:'raw-svg'}));build.onLoad({filter:/.*/,namespace:'raw-svg'},async args=>({contents:'export default '+JSON.stringify(await Bun.file(args.path).text()),loader:'js'}));}}] });
 if (!bundle.success) throw new AggregateError(bundle.logs, 'Could not bundle the standalone gallery.');
 const inline = `const DATA = ${JSON.stringify({ palette, frames, animations })};\n${await bundle.outputs[0].text()}`;
 const template = await readFile(root + 'templates/standalone.html', 'utf8');

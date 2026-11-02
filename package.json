@@ -18,16 +18,22 @@
     "draw:performances": "bun scripts/draw-performance-rigs.ts",
     "draw:look-loop": "bun scripts/draw-look-loop.ts",
     "draw:turntable": "bun scripts/draw-turntable.ts",
-    "draw:stunner": "bun scripts/draw-stunner-study.ts"
+    "draw:stunner": "bun scripts/draw-stunner-study.ts",
+    "model:build": "bun scripts/build-ben-3d.ts",
+    "model:review": "bun scripts/review-ben-3d.ts"
   },
   "devDependencies": {
-    "vite": "8.3.5",
-    "typescript": "7.0.2",
+    "@playwright/test": "1.56.1",
     "@types/bun": "1.4.4",
-    "@types/pngjs": "6.0.5"
+    "@types/pngjs": "6.0.5",
+    "@types/three": "0.187.0",
+    "@xmldom/xmldom": "0.9.12",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
   },
   "dependencies": {
     "gifenc": "1.0.3",
-    "pngjs": "7.0.0"
+    "pngjs": "7.0.0",
+    "three": "0.187.0"
   }
 }
