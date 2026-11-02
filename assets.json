@@ -1498,6 +1498,56 @@
         "........................",
         "........................"
       ]
+    },
+    "ben_standFront": {
+      "width": 24,
+      "height": 44,
+      "grid": [
+        "........................",
+        "........................",
+        "........kkkkkkkk........",
+        "......kkgggWWgggkk......",
+        ".....kgggggWWgggggk.....",
+        ".....kgGGggWWggGGgk.....",
+        ".....kGggggWWggggGk.....",
+        ".....kGGGGGGGGGGGGk.....",
+        ".....kLLLLLLLLLLLLk.....",
+        "......kWWBWWWWBWWk......",
+        "......kWWWWLLWWWWk......",
+        ".......kWWRRRRWWk.......",
+        "........kWWLLWWk........",
+        ".........kLLLLk.........",
+        "........kWWWWWWk........",
+        ".......krrrrrrrrk.......",
+        ".....krrkrryyrrkrrk.....",
+        ".....kRrkRyyyyRkrRk.....",
+        ".....kRrkRRyNRRkrRk.....",
+        ".....kkkkRRRRRRkkkk.....",
+        ".....kWLkRRRRRRkWLk.....",
+        ".....kWLkRRRRRRkWLk.....",
+        ".....kWLkRRRRRRkWLk.....",
+        "......kkkDDyWDDkkk......",
+        "......kDkBBBBBBk........",
+        ".....kMmkBckkcBk........",
+        "......kMkBckkcBk........",
+        ".......kkBckkcBk........",
+        "........kBckkcBk........",
+        "........kBckkcBk........",
+        "........kRRkkRRk........",
+        ".......kRRRkkRRRk.......",
+        "......kRRyRkkRyRRk......",
+        "......kWWWWkkWWWWk......",
+        ".......kkkkkkkkkk.......",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
     }
   },
   "animations": {
@@ -1855,6 +1905,12 @@
     },
     "ben_standRight": {
       "x": 72,
+      "y": 176,
+      "width": 24,
+      "height": 44
+    },
+    "ben_standFront": {
+      "x": 96,
       "y": 176,
       "width": 24,
       "height": 44

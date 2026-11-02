@@ -41,9 +41,9 @@ export function initialiseEditor(data: WorkshopData): void {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => section.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('#pixel-canvas'), native = $<HTMLCanvasElement>('#native-preview');
   const select = $<HTMLSelectElement>('#edit-frame');
-  const standing = ["ben_stand", "ben_standRight"].filter(name => Object.hasOwn(data.frames, name));
+  const standing = ["ben_stand", "ben_standRight", "ben_standFront"].filter(name => Object.hasOwn(data.frames, name));
   const frameNames = [...standing, ...Object.keys(data.frames).filter(name => !standing.includes(name))];
-  const labels: Record<string, string> = { ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner" };
+  const labels: Record<string, string> = { ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner", ben_standFront: "ben_standFront — Stand front · camera-facing" };
   select.replaceChildren(...frameNames.map(name => { const option = document.createElement("option"); option.value = name; option.textContent = labels[name] ?? name; return option; }));
   select.value = frameName;
   const status = (text: string): void => { $('#editor-status').textContent = text; };
