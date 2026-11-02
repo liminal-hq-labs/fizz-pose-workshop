@@ -28,3 +28,15 @@ The front-quarter anchors retain their source pixels. The front turntable copy r
 ## Fizz Stunner reference
 
 The existing held side profile is eight pixels wide by six pixels high: a black silhouette, dark-grey top/barrel, purple and bright-magenta body, a short grip below the rear housing and a squared muzzle. The holstered patch is four by five pixels, with a dark belt clip, purple body and a tapered lower end. These exact patches are the source views for a standalone study. Opposite side views are mirrored; front, rear and quarter views are labelled interpretations because those details are not fully specified by the tiny on-character sprites. A firing view reuses the existing cyan/white/yellow discharge colours.
+
+## Shoe and rear-head continuity
+
+The first shoe refinement still mixed four-row front/rear patches with five-row quarter/profile patches. Keeping the sole fixed therefore moved the top of the shoe up and down when the template changed. All five directional patches now use five rows: an ankle opening, three upper/toe/heel rows and one sole row. Horizontal foreshortening remains six to ten pixels, while the collar and sole heights stay consistent. The far shoe retains the same structure before perspective lift and occlusion.
+
+The rear transition previously selected one complete head texture before the halfway point and another afterwards. At 135°, ten brown pixels appeared at once. The brown-blond hair is part of the character and is retained as a separate eight-pixel rear patch. Its visible area follows the turning surface: the counts at 90°, 105°, 120°, 135°, 150°, 165° and 180° are 0, 1, 2, 4, 6, 7 and 8, reversing towards the other profile. Rear shading reveals from the trailing edge, while the helmet stripe follows one interpolated attachment rather than switching textures.
+
+Profile/rear head registration is also unified. The model post is centred on x=15; the asymmetrical side patch anchors at x=16 for the right profile and x=14 for the mirrored left profile. The rear patch anchors at x=15. Through the rear half, helmet dome rows 4–6 retain bounds x=10–20 while the brim, hair and shading turn. Contour changes are spread between the expanding rear side and receding facial side to keep the head rounded. The original front and quarter references remain intact.
+
+The running shoe skin omitted the yellow side detail. It is now a one-pixel badge bound to local shoe point (0, 0), behind the forefoot hinge. The binding follows the shoe’s pitch and compression and chooses the nearest red upper pixel so it does not paint the sole or outline. Each of the six saved running frames changes by exactly one yellow pixel; running pose, head, face, shoe outline and animation timing stay unchanged.
+
+`scripts/sprite-continuity.test.ts` verifies fixed shoe structure, registered head contours, the gradual hair reveal and the rig-bound badge. `rig/ben-turntable/continuity-review.json` records the generated crown/sole rows, rear hair counts and dome bounds.

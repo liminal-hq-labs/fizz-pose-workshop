@@ -17,7 +17,7 @@ export interface RigSkin {
   name: string; head: Patch; torso: Patch;
   standingLeft: Patch; standingRight: Patch; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
   face: { eye: string; mouth: string; ear: string };
-  shoe: { anchor: number[]; toe: number[]; ball: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
+  shoe: { badge?: {point:number[];colour:string}; anchor: number[]; toe: number[]; ball: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
   weapon: { anchor: number[]; pixels: string[] };
   stunner: { anchor: number[]; pixels: string[]; hipOffset: number[] };
   palette: { outline: string; shirt: string; shirtShadow: string; skin: string; skinShadow: string; denim: string; denimSeam: string; shoe: string; shoeHighlight: string; sole: string; farSole: string };
@@ -62,7 +62,7 @@ export function paintArm(out: Pixels, chain: Chain, skin: RigSkin, near: boolean
   out.segment([shoulder, cuff], 2, near ? colours.shirt : colours.shirtShadow);
   out.pixel(Math.round(hand[0]), Math.round(hand[1]), colours.skinShadow);
 }
-function paintFoot(out: Pixels, foot: RigFoot, skin: RigSkin, near: boolean): void {
+export function paintFoot(out: Pixels, foot: RigFoot, skin: RigSkin, near: boolean): void {
   const rows = new Map((near ? skin.shoe.rows : skin.shoe.farRows).map(row => [row.y, row]));
   const heightScale = 1 - foot.compression;
   const read = (x: number, y: number): string => { const row = rows.get(y); return row && x >= row.x && x < row.x + row.pixels.length ? row.pixels[x - row.x] : '.'; };
@@ -76,6 +76,16 @@ function paintFoot(out: Pixels, foot: RigFoot, skin: RigSkin, near: boolean): vo
     const ty = Math.round(skin.shoe.ball[1] + front[1] / heightScale);
     if (tx >= skin.shoe.flexX) out.pixel(x, y, read(tx, ty));
   }
+  if(near&&skin.shoe.badge){
+    const centre=shoeBadgePoint(foot,skin),candidates:{x:number;y:number;distance:number}[]=[];
+    for(let y=Math.round(centre[1])-1;y<=Math.round(centre[1])+1;y++)for(let x=Math.round(centre[0])-1;x<=Math.round(centre[0])+1;x++)if(/[Rr]/.test(out.rows[y]?.[x]??'.'))candidates.push({x,y,distance:(x-centre[0])**2+(y-centre[1])**2});
+    candidates.sort((a,b)=>a.distance-b.distance||a.y-b.y||a.x-b.x);
+    const target=candidates[0];if(target)out.pixel(target.x,target.y,skin.shoe.badge.colour);
+  }
+}
+export function shoeBadgePoint(foot:RigFoot,skin:RigSkin):Vec2{
+ const point=skin.shoe.badge?.point??[0,0],height=skin.shoe.ball[1]+(point[1]-skin.shoe.ball[1])*(1-foot.compression);
+ return add(foot.ankle,rotate([point[0],height],foot.pitch));
 }
 function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin): void {
   const [hip, knee] = pose.nearLeg;

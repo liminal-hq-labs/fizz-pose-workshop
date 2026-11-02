@@ -291,7 +291,15 @@
     "ball": [
       1,
       2
-    ]
+    ],
+    "badge": {
+      "point": [
+        0,
+        0
+      ],
+      "colour": "y",
+      "notes": "One yellow outer-side detail bound to the rear shoe segment, behind the forefoot hinge. Draw on the near shoe after flex/compression so subpixel rasterisation cannot erase it."
+    }
   },
   "face": {
     "eye": "B",

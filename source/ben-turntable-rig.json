@@ -2,7 +2,7 @@
   "name": "Ben · standing 360° turntable",
   "width": 32,
   "height": 44,
-  "centreX": 15.5,
+  "centreX": 15,
   "groundY": 34,
   "sampleCount": 24,
   "frameMs": 120,
@@ -196,6 +196,7 @@
     "rear": "ben_ladder1 and the saved climbing back skin supply rear helmet, rim, hair and shirt. Climbing limb positions are excluded.",
     "pose": "One neutral standing post: fixed pelvis, neck, shoulders, elbows, wrists, hips, knees and ankles. Positive yaw turns his face towards screen right.",
     "equipment": "Fizz Stunner stays on the same anatomical right hip throughout the turn.",
-    "shoes": "Directional pixel shoes retain a six-pixel front width and ten-pixel quarter/profile length. Heel, ankle and toe are tracked independently; length foreshortens towards front/rear rather than changing abruptly between templates."
+    "shoes": "Directional pixel shoes retain a six-pixel front width and ten-pixel quarter/profile length. Heel, ankle and toe are tracked independently; length foreshortens towards front/rear rather than changing abruptly between templates.",
+    "headRegistration": "Front, true profiles and rear share the same skull centre at screen x=15. The right side patch anchors at 16 and mirrored left at 14 to account for its forward brim; rear anchors at 15. Facial profile eyes project symmetrically to x=18 and x=12."
   }
 }

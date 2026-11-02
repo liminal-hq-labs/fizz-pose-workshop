@@ -44,6 +44,9 @@ if(import.meta.main){
   return [name,{body:box(points),head:box(head),helmet:box(helmet),rawFloorDifference:rig.groundY-Math.max(...points.map(p=>p[1])),turntableAdjustment:name==='ben_standFront'?'Insert one denim row at row 30; preserve head/torso rows.':'Horizontal padding only.'}];
  }));
  await writeFile(new URL('reference-audit.json',folder),JSON.stringify({measurements,notes:['The quarter keys preserve their source pixels. The front copy preserves its upper body and adds one lower-leg row instead of translating the head.','The side standing bodies and missing yaw stops are inferred; the running and climbing poses are not treated as neutral standing limb poses.','Contour interpolation is a pixel-art model-sheet aid, not a uniquely reconstructed textured 3D mesh.','The projected skeleton preserves bone lengths, body height and the anatomical hip used by the Stunner.']},null,2)+'\n');
+ const shoeDesign=(await import('../source/ben-turntable-shoes.json')).default;
+ const continuity={shoePatchHeights:Object.fromEntries(['front','quarter','side','rearQuarter','rear'].map(key=>[key,(shoeDesign as unknown as Record<string,string[]>)[key].length])),frames:Object.entries(frames).map(([name,frame])=>({name,crownY:frame.grid.findIndex(row=>/[^.]/.test(row)),soleY:frame.grid.findLastIndex(row=>/[^.]/.test(row)),rearHairPixels:[...frame.grid.slice(9,14).join('')].filter(code=>code==='N').length,domeRows:[4,5,6].map(y=>({y,left:frame.grid[y].search(/[^.]/),right:frame.grid[y].length-1-[...frame.grid[y]].reverse().join('').search(/[^.]/)}))}))};
+ await writeFile(new URL('continuity-review.json',folder),JSON.stringify(continuity,null,2)+'\n');
  await writeFile(new URL('sprites.gif',folder),gif(Object.values(frames),Object.keys(frames).map(()=>rig.frameMs),skin.palette));
  for(const [i,frame]of Object.values(frames).entries()){
   const degrees=String(i*360/rig.sampleCount).padStart(3,'0');

@@ -242,7 +242,7 @@
         "........kkBBBkBcck......",
         ".........kkkkkBckkk.....",
         ".............kkkrRk.....",
-        ".............kRrRWW.....",
+        ".............kRyRWW.....",
         ".............kWWW.......",
         "........................",
         "........................",
@@ -291,7 +291,7 @@
         "........kkBBBcck........",
         "........kBBccckk........",
         "........kkkkkkk.........",
-        "........kRrrRk..........",
+        "........kRyrRk..........",
         ".......kWRRWWk..........",
         ".........WWWWk..........",
         "........................",
@@ -340,7 +340,7 @@
         "....kkkBBcckk..kkkkkRk..",
         "...kkkBBcckk...kRRRRLk..",
         "...kkRkkkkk....kRRRLLk..",
-        "...kRRrrRk.....kLLLLL...",
+        "...kRyrrRk.....kLLLLL...",
         "...kWRRWWk..............",
         ".....WWWWk..............",
         "........................",
@@ -386,7 +386,7 @@
         ".........kDDkDDRk.......",
         ".....kkkkkMmkkBkkk......",
         ".....kkkkkMMkkBBBk......",
-        ".....kRRrrkMkkBBBk......",
+        ".....kRyrrkMkkBBBk......",
         ".....kRRRWWkckBBBk......",
         ".....kWWWWWkckBBkk......",
         "........kkBcckBBk.......",
@@ -435,7 +435,7 @@
         ".........kDDMMkRkkk.....",
         ".........kkDkkDkkk......",
         ".........kkkkkkkRk......",
-        "..........kkRRrrWk......",
+        "..........kkRyrrWk......",
         "..........kkRRRWWk......",
         ".........kkkWWWWW.......",
         "........kkBkBBkk........",
@@ -488,7 +488,7 @@
         "........kBBBk..kBck.....",
         "......kkkBBkk..kBck.k...",
         "....kkkBBBBk...kkkkkRk..",
-        "...kkkBBBBkk...kRRrrWk..",
+        "...kkkBBBBkk...kRyrrWk..",
         "...kkRkkkkk....kRRRWWk..",
         "...kRRRRRk.....kWWWWW...",
         "...kLRRLLk..............",
@@ -705,5 +705,9 @@
         "pixels": "kWWWWWk"
       }
     ]
+  },
+  "rearHeadTreatment": {
+    "colourMap": {},
+    "notes": "Preserve the climbing-derived brown-blond hair. Bind its eight-pixel rear patch as a separate surface feature, revealing it progressively around the rear quarters instead of switching a complete texture."
   }
 }

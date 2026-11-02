@@ -107,3 +107,5 @@ The [source and in-between review](docs/TURNTABLE_REVIEW.md) describes the refer
 The **Fizz Stunner · on its own** section shows eleven editable views at enlarged and native scale, plus turnaround and discharge/recoil loops. The four-by-five holstered patch and eight-by-six held side profile are exact source artwork; opposite side views are mirrored. Front, rear and quarter views are labelled interpretations of the tiny sidearm. Every frame exports as PNG/SVG, and both loops export as GIF/SVG.
 
 `source/fizz-stunner-study.json` records the views and provenance. Run `bun run draw:stunner` then `bun run generate` to rebuild the set; this explicitly replaces the matching editor overrides. The isolated frames use 16 × 16 transparent canvases without scaling up the source patches.
+
+The turntable’s shoe patches now share a fixed five-row structure. Both side profiles and the rear share one skull registration, and the brown-blond hair reveals gradually through the rear quarters. The running shoes include a rig-bound yellow side detail. See the [continuity review](docs/TURNTABLE_REVIEW.md#shoe-and-rear-head-continuity) for the measured causes and corrections.

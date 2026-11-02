@@ -2,9 +2,10 @@
   "name": "Reference-sized directional high-tops",
   "frontWidth": 6,
   "profileWidth": 10,
-  "notes": "Keep the six-pixel front width and ten-pixel quarter/side length from the standing references. B marks the ankle opening. The near sole is white; the raised far sole is grey. Yellow detail belongs to quarter views, not front/rear shoes.",
+  "notes": "Every view uses a five-row ankle/collar, upper, toe/heel and sole structure. The six-pixel front width and ten-pixel quarter/profile length foreshorten without changing height. Yellow detail is visible on side-facing near shoes and hidden on front/rear or far shoes.",
   "front": [
     ".kBk..",
+    ".kRRk.",
     "kRRRRk",
     "kRRRRk",
     "kWWWWk"
@@ -19,20 +20,23 @@
   "side": [
     "..kBk.....",
     ".kRRRRkk..",
-    "kRRRrrRRRk",
+    "kRRyrrRRRk",
     "kRRRRRWWWk",
     "kWWWWWWWWk"
   ],
   "rearQuarter": [
     "..kBk...",
+    "..kRRk..",
     ".kRRRkk.",
-    "kRRLRRRk",
+    "kRRyRRRk",
     "kWWWWWWk"
   ],
   "rear": [
     ".kBk..",
+    ".kRRk.",
     "kRRRRk",
     "kRLLRk",
     "kWWWWk"
-  ]
+  ],
+  "height": 5
 }
