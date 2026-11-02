@@ -9,6 +9,7 @@ import { sampleRunRig, type SideRig } from '../src/rig/run.ts';
 import { rigSvg } from '../src/rig/svg.ts';
 import { sampleRigSprites, type RigSkin } from './rig-skin.ts';
 import { gif, png, rects } from './images.ts';
+import { faceSequence } from './face-sequence.ts';
 import { validateFrames } from '../src/model.ts';
 import palette from '../source/game-palette.json';
 
@@ -20,6 +21,9 @@ export async function exportRig(rig: SideRig, skin: RigSkin, output: string): Pr
   await writeFile(output + '/rig.json', JSON.stringify(rig, null, 2) + '\n');
   await writeFile(output + '/skin.json', JSON.stringify(skin, null, 2) + '\n');
   await writeFile(output + '/samples.json', JSON.stringify({ durationMs: rig.durationMs, frameDurationMs: rig.durationMs / rig.sampleCount, samples }, null, 2) + '\n');
+  const face = faceSequence(frames, samples, palette, skin.face);
+  await writeFile(output + '/face-sequence.json', face.json);
+  await writeFile(output + '/face-sequence.svg', face.svg);
   await writeFile(output + '/rig.svg', rigSvg(rig));
   await writeFile(output + '/sprites.gif', gif(frames, frames.map(() => rig.durationMs / rig.sampleCount), palette));
   for (const [i, frame] of frames.entries()) {

@@ -3,11 +3,13 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
 export interface SideRig {
   name: string; width: number; height: number; groundY: number; durationMs: number; sampleCount: number;
   root: number[];
+  face: FaceSettings;
   torso: { leanDegrees: number; pitchSwayDegrees: number; bobAmplitude: number; bobLag: number; shoulderY: number; shoulderSpread: number; shoulderTwist: number; neckHeight: number };
   feet: { toe: number[]; heel: number[]; ball: number[]; landingToeDegrees: number; landingCompression: number };
   arms: { upperLength: number; forearmLength: number; swingDegrees: number; elbowDegrees: number; elbowFlexDegrees: number; phaseLead: number; biasDegrees: number };
@@ -16,6 +18,7 @@ export interface SideRig {
 }
 export interface RigFoot { ankle: Vec2; ball: Vec2; toe: Vec2; heel: Vec2; pitch: number; toePitch: number; compression: number; stance: boolean; progress: number; }
 export interface RigPose {
+  face: FacePose;
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
   contact: 'near' | 'far' | 'flight';
@@ -56,8 +59,8 @@ function footTarget(rig: SideRig, cycle: number): RigFoot {
   return { ankle, ball, toe, heel: add(ankle, rotate([rig.feet.heel[0], rig.feet.heel[1]], pitch)), pitch, toePitch, compression, stance, progress };
 }
 export function validateRig(rig: SideRig): void {
-  const numeric = [...rig.root, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];
-  if (numeric.some(value => !Number.isFinite(value)) || rig.root.length !== 2 || rig.feet.toe.length !== 2 || rig.feet.heel.length !== 2 || rig.feet.ball.length !== 2 || rig.feet.landingCompression < 0 || rig.feet.landingCompression >= .6) throw new Error('Rig coordinates and motion settings must be finite.');
+  const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];
+  if (numeric.some(value => !Number.isFinite(value)) || rig.root.length !== 2 || rig.face.eye.length !== 3 || rig.face.mouth.length !== 3 || rig.feet.toe.length !== 2 || rig.feet.heel.length !== 2 || rig.feet.ball.length !== 2 || rig.feet.landingCompression < 0 || rig.feet.landingCompression >= .6) throw new Error('Rig coordinates and motion settings must be finite.');
   const positive = [rig.width, rig.height, rig.durationMs, rig.sampleCount, rig.arms.upperLength, rig.arms.forearmLength, rig.legs.thighLength, rig.legs.shinLength, rig.torso.neckHeight];
   if (positive.some(value => !Number.isFinite(value) || value <= 0) || !Number.isInteger(rig.sampleCount) || rig.sampleCount < 2 || rig.durationMs / rig.sampleCount % 10 !== 0) throw new Error("Rig dimensions, bones and GIF frame timing must be valid positive values.");
   if (!Number.isInteger(rig.width) || !Number.isInteger(rig.height) || rig.groundY >= rig.height || rig.groundY < 0) throw new Error("Rig ground must fit the pixel canvas.");
@@ -75,13 +78,15 @@ export function sampleRunRig(rig: SideRig, time: number): RigPose {
   const nearAngle = radians(rig.arms.biasDegrees - rig.arms.swingDegrees * Math.cos(armTheta)), farAngle = radians(rig.arms.biasDegrees + rig.arms.swingDegrees * Math.cos(armTheta));
   const nearFlex = radians(rig.arms.elbowDegrees + rig.arms.elbowFlexDegrees * Math.sin(armTheta));
   const farFlex = radians(rig.arms.elbowDegrees - rig.arms.elbowFlexDegrees * Math.sin(armTheta));
+  const neck = torsoPoint(base, [0, -rig.torso.neckHeight]);
+  const face = sampleFace(neck, headTurn, rig.face);
   const nearFoot = footTarget(rig, t), farFoot = footTarget(rig, t + .5);
   const nearHip = add(root, [rig.legs.hipSpread, 0]), farHip = add(root, [-rig.legs.hipSpread, 0]);
   const nearLeg = solveTwoBone(nearHip, nearFoot.ankle, rig.legs.thighLength, rig.legs.shinLength);
   const farLeg = solveTwoBone(farHip, farFoot.ankle, rig.legs.thighLength, rig.legs.shinLength);
   if (Math.hypot(nearLeg[2][0] - nearFoot.ankle[0], nearLeg[2][1] - nearFoot.ankle[1]) > 1e-5 || Math.hypot(farLeg[2][0] - farFoot.ankle[0], farLeg[2][1] - farFoot.ankle[1]) > 1e-5) throw new Error('Foot path exceeds leg reach; adjust root, stride or bone lengths.');
   return {
-    time: t, root, torsoAngle, torsoTurn, headTurn, neck: torsoPoint(base, [0, -rig.torso.neckHeight]),
+    time: t, root, torsoAngle, torsoTurn, headTurn, neck, face,
     nearArm: forwardChain(nearShoulder, rig.arms.upperLength, rig.arms.forearmLength, nearAngle, nearFlex),
     farArm: forwardChain(farShoulder, rig.arms.upperLength, rig.arms.forearmLength, farAngle, farFlex),
     nearLeg, farLeg, nearFoot, farFoot, contact: nearFoot.stance ? 'near' : farFoot.stance ? 'far' : 'flight',

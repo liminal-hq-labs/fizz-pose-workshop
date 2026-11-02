@@ -56,5 +56,18 @@
     ],
     "landingToeDegrees": -28,
     "landingCompression": 0.25
+  },
+  "face": {
+    "yawDegrees": 3,
+    "eye": [
+      2,
+      -5,
+      1.5
+    ],
+    "mouth": [
+      2,
+      -3,
+      1.5
+    ]
   }
 }

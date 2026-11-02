@@ -11,6 +11,7 @@ interface PixelRow { x: number; y: number; pixels: string; }
 interface Patch { anchor: number[]; rows: PixelRow[]; towards?: PixelRow[]; away?: PixelRow[]; }
 export interface RigSkin {
   name: string; head: Patch; torso: Patch;
+  face: { eye: string; mouth: string };
   shoe: { anchor: number[]; toe: number[]; ball: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
   stunner: { anchor: number[]; pixels: string[]; hipOffset: number[] };
   palette: { outline: string; shirt: string; shirtShadow: string; skin: string; skinShadow: string; denim: string; denimSeam: string; shoe: string; shoeHighlight: string; sole: string; farSole: string };
@@ -86,7 +87,9 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
   paintFoot(out, pose.nearFoot, skin, true);
   out.patch(skin.torso, pose.root, pose.torsoAngle, pose.torsoTurn);
   paintStunner(out, pose, skin); paintArm(out, pose.nearArm, skin, true);
-  out.patch(skin.head, pose.neck, 0, pose.headTurn);
+  out.patch(skin.head, pose.face.pixelAnchor, 0, pose.headTurn);
+  out.pixel(pose.face.eye.pixel[0], pose.face.eye.pixel[1], skin.face.eye);
+  out.pixel(pose.face.mouth.pixel[0], pose.face.mouth.pixel[1], skin.face.mouth);
   return out.frame();
 }
 export function sampleRigSprites(rig: SideRig, skin: RigSkin, prefix = 'ben_walkRight'): Frames {

@@ -44,7 +44,7 @@
       {
         "y": 9,
         "x": 9,
-        "pixels": "kWWLWWBWk"
+        "pixels": "kWWLWWWWk"
       },
       {
         "y": 10,
@@ -54,7 +54,7 @@
       {
         "y": 11,
         "x": 10,
-        "pixels": "kLWWWRWk"
+        "pixels": "kLWWWWWk"
       },
       {
         "y": 12,
@@ -76,7 +76,7 @@
       {
         "y": 9,
         "x": 9,
-        "pixels": "kWWLWBWWk"
+        "pixels": "kWWLWWWWk"
       },
       {
         "y": 10,
@@ -86,14 +86,14 @@
       {
         "y": 11,
         "x": 10,
-        "pixels": "kLWWRWWk"
+        "pixels": "kLWWWWWk"
       }
     ],
     "away": [
       {
         "y": 9,
         "x": 9,
-        "pixels": "kWWLWWWBk"
+        "pixels": "kWWLWWWWk"
       },
       {
         "y": 10,
@@ -103,7 +103,7 @@
       {
         "y": 11,
         "x": 10,
-        "pixels": "kLWWWWRk"
+        "pixels": "kLWWWWWk"
       }
     ]
   },
@@ -292,5 +292,9 @@
       1,
       2
     ]
+  },
+  "face": {
+    "eye": "B",
+    "mouth": "R"
   }
 }

@@ -3,6 +3,8 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+import skin from '../../source/ben-side-skin.json';
+import { mountFaceInspector } from './face-inspector.ts';
 import rig from '../../source/ben-side-rig.json';
 import { sampleRunRig, type RigPose } from './run.ts';
 import type { Chain, Vec2 } from './kinematics.ts';
@@ -16,6 +18,7 @@ export function mountRigPreview(data: WorkshopData): void {
     <label class="rig-scrubber">Cycle position <input id="rig-time" type="range" min="0" max="999" value="0"><output id="rig-position"></output></label>
     <div class="rig-comparison"><article><h3>Continuous rig</h3><div class="rig-stage"><canvas id="rig-bones" role="img" aria-label="Animated right-side skeleton with fixed-length arms and legs"></canvas></div></article><article><h3>Six sprite samples</h3><div class="rig-stage"><canvas id="rig-avatar" role="img" aria-label="The sprite sample corresponding to the rig phase"></canvas></div></article></div>
     <p class="small"><a href="rig/ben-running/rig.svg" target="_blank">Animated rig SVG</a> · <a href="rig/ben-running/samples.json">Joint samples</a> · <a href="rig/ben-running/rig.json">Rig settings</a> · <a href="rig/ben-running/skin.json">Sprite skin</a> · <a href="rig/ben-running/sprites.gif" target="_blank">Six-frame GIF</a></p>`;
+  const updateFace = mountFaceInspector(section, rig, data, skin.face);
   const $ = <T extends HTMLElement>(query: string): T => section.querySelector<T>(query)!;
   const bones = $<HTMLCanvasElement>('#rig-bones'), avatar = $<HTMLCanvasElement>('#rig-avatar');
   const slider = $<HTMLInputElement>('#rig-time'), play = $<HTMLButtonElement>('#rig-play'), overlay = $<HTMLInputElement>('#rig-overlay');
@@ -45,6 +48,15 @@ export function mountRigPreview(data: WorkshopData): void {
       context.strokeStyle = '#a8e47d'; context.lineWidth = .2; context.beginPath(); context.ellipse(pose.neck[0], pose.neck[1] - 6, 4.5, 5.5, 0, 0, Math.PI * 2); context.stroke();
       line([[pose.neck[0], pose.neck[1] - 6], [pose.neck[0] + 3, pose.neck[1] - 6 + pose.headTurn * .4]], '#a8e47d', .15);
     }
+    if (!translucent) {
+      for (const [landmark, colour] of [[pose.face.eye, '#77c7ff'], [pose.face.mouth, '#ff9f87']] as const) {
+        context.fillStyle = colour; context.beginPath(); context.arc(landmark.world[0], landmark.world[1], .18, 0, Math.PI * 2); context.fill();
+      }
+    } else {
+      for (const [landmark, colour] of [[pose.face.eye, '#77c7ff'], [pose.face.mouth, '#ff9f87']] as const) {
+        context.strokeStyle = colour; context.lineWidth = .12; context.strokeRect(landmark.pixel[0], landmark.pixel[1], 1, 1);
+      }
+    }
     context.restore();
   }
   function tick(now: number): void {
@@ -61,6 +73,7 @@ export function mountRigPreview(data: WorkshopData): void {
     slider.value = String(Math.floor(time * 1000));
     $<HTMLOutputElement>('#rig-position').textContent = `${index + 1}/6 · ${labels[index]}`;
     section.dataset.pose = String(index + 1);
+    updateFace(index, mode.value === 'samples' ? sampleRunRig(rig, sample) : pose);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
