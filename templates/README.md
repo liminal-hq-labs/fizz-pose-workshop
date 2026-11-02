@@ -46,8 +46,8 @@ The overworld is a separate top-down design on a 24 × 24 canvas with eight head
 
 ## Files
 
-- `frames/`: all 102 individual transparent PNGs and editable pixel-rectangle SVGs.
-- `animations/`: twelve action sequences and eight overworld walk loops, each as an animated SVG and transparent GIF.
+- `frames/`: all 126 individual transparent PNGs and editable pixel-rectangle SVGs.
+- `animations/`: thirteen action sequences and eight overworld walk loops, each as an animated SVG and transparent GIF.
 - `assets.json`: palette, every editable pixel grid, per-frame timing and sprite-sheet rectangles.
 - `sheets/ben-poses.png`: transparent sprite sheet in automatically sized 40 × 72 cells; use the per-frame rectangles in `assets.json` for native dimensions.
 - `scripts/build-assets.ts`: Bun/TypeScript asset generator. Run `bun run generate` to regenerate exports.
@@ -91,3 +91,11 @@ Jumping, dying, ledge pulling and sitting down with the phone hold their final p
 Whistling has separate left- and right-facing sets derived directly from the saved standing sprites. Their bodies and equipment stay still while the mouth puckers and musical notes animate. The jump spreads its legs and angles its feet in flight, returning to flat soles at landing. Both ledge directions have separate editable frames and saved rigs.
 
 The **Look up & down** loop uses the saved front-facing look and bend poses: 800 ms looking up, 400 ms per downward pose and 200 ms per neutral transition. It reuses the existing artwork.
+
+## Standing 360° turntable
+
+The **Standing 360°** section has independent playback, speed, stepping, an angle slider, 24 clickable angle stops and an optional body-rig overlay. **Edit this angle** opens the selected pose in the pixel editor. The 24 frames cover 0°–345° in 15° increments at 120 ms each, with PNG/SVG frames and a looping GIF/SVG. It also works in the standalone gallery.
+
+The front (0°), right front quarter (45°) and left front quarter (315°) preserve the saved standing sprite pixels, with horizontal padding and foot-line alignment only. True side heads use the running design without its lean; the rear head uses the climbing skin. Missing angles use palette-indexed contour interpolation over a fixed standing rig. They are inferred views rather than additional original artwork. The Stunner follows Ben’s same anatomical right hip.
+
+Run `bun run draw:turntable` then `bun run generate` to rebuild the study. `source/ben-turntable-rig.json` stores the standing joints and volumes; `source/ben-turntable-skin.json` stores stable reference snapshots and the side/rear head patches. Saved exports and the reference audit live in `rig/ben-turntable/`. See [the rig guide](docs/RIG.md) for the model-sheet findings and reconstruction limits.

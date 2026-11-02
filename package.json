@@ -16,7 +16,8 @@
     "rig:export": "bun scripts/export-rig.ts",
     "draw:actions": "bun scripts/draw-action-rigs.ts",
     "draw:performances": "bun scripts/draw-performance-rigs.ts",
-    "draw:look-loop": "bun scripts/draw-look-loop.ts"
+    "draw:look-loop": "bun scripts/draw-look-loop.ts",
+    "draw:turntable": "bun scripts/draw-turntable.ts"
   },
   "devDependencies": {
     "vite": "8.3.5",

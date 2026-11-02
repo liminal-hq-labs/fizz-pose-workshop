@@ -1,0 +1,91 @@
+{
+  "measurements": {
+    "ben_stand": {
+      "body": {
+        "left": 3,
+        "right": 16,
+        "top": 2,
+        "bottom": 34,
+        "width": 14,
+        "height": 33
+      },
+      "head": {
+        "left": 4,
+        "right": 16,
+        "top": 2,
+        "bottom": 14,
+        "width": 13,
+        "height": 13
+      },
+      "helmet": {
+        "left": 4,
+        "right": 16,
+        "top": 2,
+        "bottom": 8,
+        "width": 13,
+        "height": 7
+      },
+      "floorShift": 0
+    },
+    "ben_standRight": {
+      "body": {
+        "left": 7,
+        "right": 20,
+        "top": 2,
+        "bottom": 34,
+        "width": 14,
+        "height": 33
+      },
+      "head": {
+        "left": 7,
+        "right": 19,
+        "top": 2,
+        "bottom": 14,
+        "width": 13,
+        "height": 13
+      },
+      "helmet": {
+        "left": 7,
+        "right": 19,
+        "top": 2,
+        "bottom": 8,
+        "width": 13,
+        "height": 7
+      },
+      "floorShift": 0
+    },
+    "ben_standFront": {
+      "body": {
+        "left": 5,
+        "right": 17,
+        "top": 2,
+        "bottom": 33,
+        "width": 13,
+        "height": 32
+      },
+      "head": {
+        "left": 6,
+        "right": 16,
+        "top": 2,
+        "bottom": 14,
+        "width": 11,
+        "height": 13
+      },
+      "helmet": {
+        "left": 6,
+        "right": 16,
+        "top": 2,
+        "bottom": 8,
+        "width": 11,
+        "height": 7
+      },
+      "floorShift": 1
+    }
+  },
+  "notes": [
+    "The three standing keys preserve their original pixels; only padding and ground alignment change.",
+    "The side standing bodies and missing yaw stops are inferred; the running and climbing poses are not treated as neutral standing limb poses.",
+    "Contour interpolation is a pixel-art model-sheet aid, not a uniquely reconstructed textured 3D mesh.",
+    "The projected skeleton preserves bone lengths, body height and the anatomical hip used by the Stunner."
+  ]
+}

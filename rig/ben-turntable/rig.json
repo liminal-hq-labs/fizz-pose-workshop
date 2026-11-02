@@ -1,0 +1,188 @@
+{
+  "name": "Ben · standing 360° turntable",
+  "width": 32,
+  "height": 44,
+  "centreX": 15.5,
+  "groundY": 34,
+  "sampleCount": 24,
+  "frameMs": 120,
+  "joints": {
+    "pelvis": [
+      0,
+      24,
+      0
+    ],
+    "neck": [
+      0,
+      14,
+      0
+    ],
+    "head": [
+      0,
+      10.5,
+      0
+    ],
+    "crown": [
+      0,
+      2,
+      0
+    ],
+    "rightShoulder": [
+      -4,
+      16,
+      0
+    ],
+    "rightElbow": [
+      -4.7,
+      20,
+      0.7
+    ],
+    "rightHand": [
+      -3.2,
+      22.4,
+      2.8
+    ],
+    "leftShoulder": [
+      4,
+      16,
+      0
+    ],
+    "leftElbow": [
+      4.7,
+      20,
+      0
+    ],
+    "leftHand": [
+      4,
+      23,
+      1
+    ],
+    "rightHip": [
+      -2,
+      24,
+      0.7
+    ],
+    "rightKnee": [
+      -2,
+      28.5,
+      0.8
+    ],
+    "rightAnkle": [
+      -2,
+      32,
+      1
+    ],
+    "leftHip": [
+      2,
+      24,
+      -0.7
+    ],
+    "leftKnee": [
+      2,
+      28.5,
+      -0.8
+    ],
+    "leftAnkle": [
+      2,
+      32,
+      -1
+    ],
+    "rightToe": [
+      -2,
+      34,
+      4
+    ],
+    "leftToe": [
+      2,
+      34,
+      2
+    ],
+    "stunner": [
+      -4.5,
+      25,
+      0.4
+    ],
+    "leftEye": [
+      2,
+      9,
+      3
+    ],
+    "rightEye": [
+      -2,
+      9,
+      3
+    ],
+    "nose": [
+      0,
+      10,
+      5
+    ],
+    "mouth": [
+      0,
+      11.5,
+      3.6
+    ]
+  },
+  "connections": [
+    [
+      "pelvis",
+      "neck",
+      "head",
+      "crown"
+    ],
+    [
+      "rightShoulder",
+      "neck",
+      "leftShoulder"
+    ],
+    [
+      "rightShoulder",
+      "rightElbow",
+      "rightHand"
+    ],
+    [
+      "leftShoulder",
+      "leftElbow",
+      "leftHand"
+    ],
+    [
+      "pelvis",
+      "rightHip",
+      "rightKnee",
+      "rightAnkle",
+      "rightToe"
+    ],
+    [
+      "pelvis",
+      "leftHip",
+      "leftKnee",
+      "leftAnkle",
+      "leftToe"
+    ]
+  ],
+  "volumes": {
+    "helmet": [
+      5.5,
+      6,
+      5
+    ],
+    "head": [
+      4.4,
+      3.2,
+      3.8
+    ],
+    "torso": [
+      3.8,
+      4.5,
+      2.5
+    ]
+  },
+  "referenceNotes": {
+    "front": "ben_standFront supplies face, helmet width, emblem and front shoes.",
+    "frontQuarters": "ben_stand and ben_standRight supply the left and right three-quarter stands, short sleeves, belt and hip equipment.",
+    "profiles": "ben_walkRight1–6 supply true side head, nose, brim, torso depth and shoe proportions; mirrored for the left profile. Running lean, bob and stride are excluded.",
+    "rear": "ben_ladder1 and the saved climbing back skin supply rear helmet, rim, hair and shirt. Climbing limb positions are excluded.",
+    "pose": "One neutral standing post: fixed pelvis, neck, shoulders, elbows, wrists, hips, knees and ankles. Positive yaw turns his face towards screen right.",
+    "equipment": "Fizz Stunner stays on the same anatomical right hip throughout the turn."
+  }
+}
