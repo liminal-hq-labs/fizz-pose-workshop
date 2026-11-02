@@ -3,18 +3,19 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+import { sampleRig } from './sample.ts';
 import { facePixels } from './face.ts';
-import { sampleRunRig, type RigPose, type SideRig } from './run.ts';
+import { type RigPose, type SideRig } from './run.ts';
 import type { Vec2 } from './kinematics.ts';
 import type { WorkshopData } from '../types.ts';
 
-export function mountFaceInspector(parent: HTMLElement, rig: SideRig, data: WorkshopData, colours: { eye: string; mouth: string; ear: string }): (index: number, pose: RigPose) => void {
+export function mountFaceInspector(parent: HTMLElement, rig: SideRig, data: WorkshopData, colours: { eye: string; mouth: string; ear: string }, prefix = 'ben_walkRight', folder = 'ben-running'): (index: number, pose: RigPose) => void {
   const block = document.createElement('section'); block.className = 'face-inspector'; block.id = 'face-sequence';
-  block.innerHTML = `<h3>Face landmarks · in sequence</h3><p>These crops follow the head, so the eye, mouth and ear move gently right and back left together within each crop. The table shows their canvas pixels and offsets from the shared head anchor. A browser draft that differs from the rig is marked below.</p><label><input id="rig-face-markers" type="checkbox" checked>Highlight eye, mouth and ear pixels</label><p id="rig-face-current" class="small"></p><div class="face-heads"></div><div class="face-table-wrap"><table><thead><tr><th>Frame</th><th>Head anchor</th><th>Eye pixel</th><th>Mouth pixel</th><th>Ear pixel</th><th>Offsets from head</th><th>Status</th></tr></thead><tbody></tbody></table></div><p class="small"><a href="rig/ben-running/face-sequence.svg" target="_blank">Saved head sequence</a> · <a href="rig/ben-running/face-sequence.json">Saved landmark measurements</a></p>`;
+  block.innerHTML = `<h3>Face landmarks · in sequence</h3><p>These crops follow the head, so the eye, mouth and ear follow the shared rig settings within each crop. The table shows their canvas pixels and offsets from the shared head anchor. A browser draft that differs from the rig is marked below.</p><label><input id="rig-face-markers" type="checkbox" checked>Highlight eye, mouth and ear pixels</label><p id="rig-face-current" class="small"></p><div class="face-heads"></div><div class="face-table-wrap"><table><thead><tr><th>Frame</th><th>Head anchor</th><th>Eye pixel</th><th>Mouth pixel</th><th>Ear pixel</th><th>Offsets from head</th><th>Status</th></tr></thead><tbody></tbody></table></div><p class="small"><a href="rig/${folder}/face-sequence.svg" target="_blank">Saved head sequence</a> · <a href="rig/${folder}/face-sequence.json">Saved landmark measurements</a></p>`;
   parent.append(block);
   const container = block.querySelector<HTMLElement>('.face-heads')!, tbody = block.querySelector<HTMLTableSectionElement>('tbody')!;
   const markers = block.querySelector<HTMLInputElement>('#rig-face-markers')!;
-  const samples = Array.from({ length: rig.sampleCount }, (_, i) => sampleRunRig(rig, i / rig.sampleCount));
+  const samples = Array.from({ length: rig.sampleCount }, (_, i) => sampleRig(rig, i / rig.sampleCount));
   const canvases: HTMLCanvasElement[] = [], rows: HTMLTableRowElement[] = [];
   for (let i = 0; i < rig.sampleCount; i++) {
     const card = document.createElement('article'), title = document.createElement('h4'), canvas = document.createElement('canvas');
@@ -30,7 +31,7 @@ export function mountFaceInspector(parent: HTMLElement, rig: SideRig, data: Work
   return (index, pose) => {
     block.querySelector<HTMLElement>('#rig-face-current')!.textContent = `Current rig: eye ${pose.face.eye.world.map(v => v.toFixed(2)).join(', ')} → pixel ${coordinate(pose.face.eye.pixel)}; mouth ${pose.face.mouth.world.map(v => v.toFixed(2)).join(', ')} → pixel ${coordinate(pose.face.mouth.pixel)}; ear ${coordinate(pose.face.ear.pixel)}.`;
     for (let i = 0; i < samples.length; i++) {
-      const sample = samples[i], anchor = sample.face.pixelAnchor, frame = data.frames['ben_walkRight' + (i + 1)];
+      const sample = samples[i], anchor = sample.face.pixelAnchor, frame = data.frames[prefix + (i + 1)];
       const signature = `${markers.checked}:${frame.grid.slice(Math.max(0, anchor[1] - 13), anchor[1] + 1).join('')}`;
       if (signature !== cache[i]) {
         cache[i] = signature;

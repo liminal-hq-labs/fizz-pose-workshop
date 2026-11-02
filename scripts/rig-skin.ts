@@ -3,8 +3,10 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+import { sampleRig } from '../src/rig/sample.ts';
+
 import { add, rotate, type Chain, type Vec2 } from '../src/rig/kinematics.ts';
-import { sampleRunRig, validateRig, type RigFoot, type RigPose, type SideRig } from '../src/rig/run.ts';
+import { validateRig, type RigFoot, type RigPose, type SideRig } from '../src/rig/run.ts';
 import type { Frame, Frames } from '../src/types.ts';
 
 interface PixelRow { x: number; y: number; pixels: string; }
@@ -13,6 +15,7 @@ export interface RigSkin {
   name: string; head: Patch; torso: Patch;
   face: { eye: string; mouth: string; ear: string };
   shoe: { anchor: number[]; toe: number[]; ball: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
+  weapon: { anchor: number[]; pixels: string[] };
   stunner: { anchor: number[]; pixels: string[]; hipOffset: number[] };
   palette: { outline: string; shirt: string; shirtShadow: string; skin: string; skinShadow: string; denim: string; denimSeam: string; shoe: string; shoeHighlight: string; sole: string; farSole: string };
 }
@@ -80,13 +83,31 @@ function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin): void {
 }
 export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
   const out = new Pixels(rig.width, rig.height), colours = skin.palette;
+  if (pose.pogo) {
+    const p = pose.pogo;
+    out.segment([p.shaftTop, p.springTop], 1, 'L', 'k');
+    out.segment(p.pegs, 1, 'L', 'k');
+    out.segment([[p.shaftTop[0] - 3, p.shaftTop[1]], [p.shaftTop[0] + 3, p.shaftTop[1]]], 1, 'D', 'k');
+    const spring: Vec2[] = [p.springTop];
+    for (let i = 1; i < 6; i++) spring.push([p.tip[0] + (i % 2 ? -1 : 1), p.springTop[1] + p.springLength * i / 6]);
+    spring.push(p.tip); out.segment(spring, 1, 'L');
+    out.pixel(Math.round(p.tip[0]), Math.round(p.tip[1]), 'k');
+  }
   out.segment(pose.farLeg, 2, colours.denim, colours.outline); paintFoot(out, pose.farFoot, skin, false);
   paintArm(out, pose.farArm, skin, false);
   out.segment(pose.nearLeg, 2, colours.denim, colours.outline);
   out.segment(pose.nearLeg, 1, colours.denimSeam);
   paintFoot(out, pose.nearFoot, skin, true);
   out.patch(skin.torso, pose.root, pose.torsoAngle, pose.torsoTurn);
-  paintStunner(out, pose, skin); paintArm(out, pose.nearArm, skin, true);
+  if (!pose.weapon) paintStunner(out, pose, skin);
+  paintArm(out, pose.nearArm, skin, true);
+  if (pose.weapon) {
+    out.patch({ anchor: skin.weapon.anchor, rows: skin.weapon.pixels.map((pixels, y) => ({x: 0, y, pixels})) }, pose.weapon.grip, pose.weapon.angle);
+    if (pose.weapon.flash) {
+      const [x, y] = pose.weapon.muzzle.map(Math.round);
+      out.pixel(x + 1, y, 'y'); out.pixel(x + 2, y, 'W'); out.pixel(x + 2, y - 1, 'C'); out.pixel(x + 2, y + 1, 'C'); out.pixel(x + 3, y, 'C');
+    }
+  }
   out.patch(skin.head, pose.face.pixelAnchor, 0, pose.headTurn);
   out.pixel(pose.face.ear.pixel[0], pose.face.ear.pixel[1], skin.face.ear);
   out.pixel(pose.face.eye.pixel[0], pose.face.eye.pixel[1], skin.face.eye);
@@ -95,5 +116,5 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
 }
 export function sampleRigSprites(rig: SideRig, skin: RigSkin, prefix = 'ben_walkRight'): Frames {
   validateRig(rig);
-  return Object.fromEntries(Array.from({ length: rig.sampleCount }, (_, i) => [prefix + (i + 1), skinRig(rig, skin, sampleRunRig(rig, i / rig.sampleCount))]));
+  return Object.fromEntries(Array.from({ length: rig.sampleCount }, (_, i) => [prefix + (i + 1), skinRig(rig, skin, sampleRig(rig, i / rig.sampleCount))]));
 }

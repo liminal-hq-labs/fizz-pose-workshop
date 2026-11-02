@@ -3,9 +3,11 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+import { sampleRig } from '../src/rig/sample.ts';
+
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { sampleRunRig, type SideRig } from '../src/rig/run.ts';
+import { type SideRig } from '../src/rig/run.ts';
 import { rigSvg } from '../src/rig/svg.ts';
 import { sampleRigSprites, type RigSkin } from './rig-skin.ts';
 import { gif, png, rects } from './images.ts';
@@ -17,7 +19,7 @@ export async function exportRig(rig: SideRig, skin: RigSkin, output: string): Pr
   await mkdir(output, { recursive: true });
   const generated = sampleRigSprites(rig, skin, 'frame');
   const frames = Object.values(validateFrames(generated, generated, palette));
-  const samples = frames.map((_, i) => sampleRunRig(rig, i / rig.sampleCount));
+  const samples = frames.map((_, i) => sampleRig(rig, i / rig.sampleCount));
   await writeFile(output + '/rig.json', JSON.stringify(rig, null, 2) + '\n');
   await writeFile(output + '/skin.json', JSON.stringify(skin, null, 2) + '\n');
   await writeFile(output + '/samples.json', JSON.stringify({ durationMs: rig.durationMs, frameDurationMs: rig.durationMs / rig.sampleCount, samples }, null, 2) + '\n');

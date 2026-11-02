@@ -24,15 +24,15 @@ export function forwardChain(root: Vec2, upper: number, lower: number, upperAngl
   const forearmAngle = upperAngle + Math.PI - elbowAngle;
   return [root, elbow, add(elbow, [lower * Math.sin(forearmAngle), lower * Math.cos(forearmAngle)])];
 }
-export function solveTwoBone(root: Vec2, target: Vec2, upper: number, lower: number): Chain {
+export function solveTwoBone(root: Vec2, target: Vec2, upper: number, lower: number, bendDirection = 1): Chain {
   const dx = target[0] - root[0], dy = target[1] - root[1], raw = Math.hypot(dx, dy);
   if (raw < 1e-8 || upper <= 0 || lower <= 0) throw new Error('Invalid two-bone chain.');
   const reach = Math.min(upper + lower - 1e-6, Math.max(Math.abs(upper - lower) + 1e-6, raw));
   const ux = dx / raw, uy = dy / raw;
   const along = (upper * upper - lower * lower + reach * reach) / (2 * reach);
   const height = Math.sqrt(Math.max(0, upper * upper - along * along));
-  // The forward pole keeps the knee on the anatomical side; it never flips backwards.
-  const knee: Vec2 = [root[0] + along * ux + height * uy, root[1] + along * uy - height * ux];
+  // The pole selects a stable bend side: forward knees or elbows beneath an aimed hand.
+  const knee: Vec2 = [root[0] + along * ux + height * uy * bendDirection, root[1] + along * uy - height * ux * bendDirection];
   return [root, knee, [root[0] + reach * ux, root[1] + reach * uy]];
 }
 export function bezier(points: readonly Vec2[], t: number): Vec2 {

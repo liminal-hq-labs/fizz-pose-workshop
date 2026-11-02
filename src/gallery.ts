@@ -7,7 +7,7 @@ import type { WorkshopData } from './types.ts';
 
 export function mountGallery(data: WorkshopData): void {
   const $ = <T extends HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
-  const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · extend / compress', climb: 'Ladder climb', mantle: 'Ledge pull-up · grip / haul / push', 'fizz-blaster': 'Fizz Blaster · recoil' };
+  const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · six spring phases', climb: 'Ladder climb', mantle: 'Ledge pull-up · grip / haul / push', 'fizz-blaster': 'Fizz Stunner · six firing phases' };
   function card(title: string, key: string, animated: boolean, extra = ''): string {
     return `<article><div class="stage"><canvas role="img" aria-label="${title}" data-${animated ? 'animation' : 'frame'}="${key}" ${extra}></canvas></div><h3>${title}</h3><p>${animated ? `<a href="animations/${key}.svg">Animated SVG</a> · <a href="animations/${key}.gif">GIF</a>` : `<a href="frames/${key}.png">PNG</a> · <a href="frames/${key}.svg">SVG</a>`}</p></article>`;
   }

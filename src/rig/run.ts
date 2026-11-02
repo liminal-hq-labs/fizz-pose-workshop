@@ -7,6 +7,9 @@ import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
 export interface SideRig {
+  motion?: 'run' | 'pogo' | 'fire';
+  pogo?: { compressedLength: number; extendedLength: number; shaftLength: number; lift: number; pegOffset: number };
+  fire?: { recoil: number; kickDegrees: number };
   name: string; width: number; height: number; groundY: number; durationMs: number; sampleCount: number;
   root: number[];
   face: FaceSettings;
@@ -21,7 +24,9 @@ export interface RigPose {
   face: FacePose;
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
-  contact: 'near' | 'far' | 'flight';
+  contact: 'near' | 'far' | 'flight' | 'pogo' | 'both';
+  pogo?: { tip: Vec2; springTop: Vec2; shaftTop: Vec2; grips: readonly [Vec2, Vec2]; pegs: readonly [Vec2, Vec2]; springLength: number; grounded: boolean };
+  weapon?: { grip: Vec2; muzzle: Vec2; angle: number; flash: boolean };
 }
 export function torsoPoint(pose: Pick<RigPose, 'root' | 'torsoAngle'>, local: Vec2): Vec2 { return add(pose.root, rotate(local, pose.torsoAngle)); }
 export function stanceTravel(rig: SideRig): number {
@@ -59,6 +64,9 @@ function footTarget(rig: SideRig, cycle: number): RigFoot {
   return { ankle, ball, toe, heel: add(ankle, rotate([rig.feet.heel[0], rig.feet.heel[1]], pitch)), pitch, toePitch, compression, stance, progress };
 }
 export function validateRig(rig: SideRig): void {
+  if (rig.motion && !["run", "pogo", "fire"].includes(rig.motion)) throw new Error("Unknown rig motion.");
+  if (rig.motion === "pogo" && (!rig.pogo || Object.values(rig.pogo).some(value => !Number.isFinite(value) || value <= 0) || rig.pogo.compressedLength > rig.pogo.extendedLength)) throw new Error("Pogo spring settings must be positive and ordered.");
+  if (rig.motion === "fire" && (!rig.fire || Object.values(rig.fire).some(value => !Number.isFinite(value) || value < 0))) throw new Error("Firing settings must be finite and non-negative.");
   const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.face.ear, rig.face.shiftAmplitude, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];
   if (numeric.some(value => !Number.isFinite(value)) || rig.root.length !== 2 || rig.face.eye.length !== 3 || rig.face.mouth.length !== 3 || rig.face.ear.length !== 3 || rig.feet.toe.length !== 2 || rig.feet.heel.length !== 2 || rig.feet.ball.length !== 2 || rig.feet.landingCompression < 0 || rig.feet.landingCompression >= .6) throw new Error('Rig coordinates and motion settings must be finite.');
   const positive = [rig.width, rig.height, rig.durationMs, rig.sampleCount, rig.arms.upperLength, rig.arms.forearmLength, rig.legs.thighLength, rig.legs.shinLength, rig.torso.neckHeight];

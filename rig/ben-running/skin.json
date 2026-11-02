@@ -297,5 +297,19 @@
     "eye": "B",
     "mouth": "R",
     "ear": "L"
+  },
+  "weapon": {
+    "anchor": [
+      2,
+      4
+    ],
+    "pixels": [
+      ".kkkkkkk",
+      "kDDDDDDk",
+      "kMmmmmMk",
+      ".kMMkkkk",
+      "..kMk...",
+      "..kkk..."
+    ]
   }
 }

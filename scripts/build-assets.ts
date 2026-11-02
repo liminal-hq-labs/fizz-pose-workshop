@@ -46,10 +46,12 @@ for (const [name, animation] of Object.entries(animations)) {
   await writeFile(root + `animations/${name}.svg`, svg);
   await writeFile(root + `animations/${name}.gif`, gif(sequence, animation.durationsMs, palette));
 }
-const sheet = new PNG({ width: 24 * 8, height: 44 * Math.ceil(Object.keys(frames).length / 8) });
+const cellWidth = Math.max(...Object.values(frames).map(frame => frame.width));
+const cellHeight = Math.max(...Object.values(frames).map(frame => frame.height));
+const sheet = new PNG({ width: cellWidth * 8, height: cellHeight * Math.ceil(Object.keys(frames).length / 8) });
 const positions: Record<string, SheetRect> = {};
 Object.entries(frames).forEach(([name, frame], index) => {
-  const x = index % 8 * 24, y = Math.floor(index / 8) * 44;
+  const x = index % 8 * cellWidth, y = Math.floor(index / 8) * cellHeight;
   const image = raster(frame, palette);
   PNG.bitblt(image, sheet, 0, 0, frame.width, frame.height, x, y);
   positions[name] = { x, y, width: frame.width, height: frame.height };

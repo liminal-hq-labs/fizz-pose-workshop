@@ -5,28 +5,43 @@
 
 import skin from '../../source/ben-side-skin.json';
 import { mountFaceInspector } from './face-inspector.ts';
-import rig from '../../source/ben-side-rig.json';
-import { sampleRunRig, type RigPose } from './run.ts';
+import running from '../../source/ben-side-rig.json';
+import pogo from '../../source/ben-pogo-rig.json';
+import firing from '../../source/ben-fire-rig.json';
+import { sampleRig } from './sample.ts';
+import { type SideRig, type RigPose } from './run.ts';
 import type { Chain, Vec2 } from './kinematics.ts';
 import type { WorkshopData } from '../types.ts';
 
 export function mountRigPreview(data: WorkshopData): void {
   const mount = document.querySelector<HTMLElement>('#rig-preview'); if (!mount) return;
   const section: HTMLElement = mount;
-  section.innerHTML = `<h2>Rig first, six sprites second.</h2><p>The cyan limbs face the camera; purple limbs are behind. The yellow foot is supporting him. Watch the continuous rig, switch to six sampled poses, or pause and step through each pose. Both views use the same rig time.</p>
-    <div class="controls"><button id="rig-play">Pause rig</button><label>Rig speed <select id="rig-speed"><option value="0.25">Quarter speed</option><option value="0.5" selected>Half speed</option><option value="1">Normal speed</option></select></label><label>Rig display <select id="rig-mode"><option value="smooth">Continuous</option><option value="samples">Six samples</option></select></label><label><input id="rig-overlay" type="checkbox">Overlay sampled rig on sprite</label><button id="rig-prev">Previous pose</button><button id="rig-next">Next pose</button></div>
+  const actions = [
+    { rig: running as SideRig, prefix: 'ben_walkRight', folder: 'ben-running', title: 'Run', labels: ['Near contact', 'Near push-off', 'Flight · far leg leads', 'Far contact', 'Far push-off', 'Flight · near leg leads'] },
+    { rig: pogo as SideRig, prefix: 'ben_pogoRight', folder: 'ben-pogo', title: 'Pogo', labels: ['Compress', 'Launch', 'Rise', 'Apex', 'Fall', 'Land'] },
+    { rig: firing as SideRig, prefix: 'ben_fireRight', folder: 'ben-firing', title: 'Fizz Stunner', labels: ['Aim', 'Discharge', 'Recoil', 'Recover', 'Settle', 'Ready'] },
+  ];
+  let action = actions[0], rig = action.rig;
+  section.innerHTML = `<h2>Rig first, six sprites second.</h2><p>The cyan limbs face the camera; purple limbs are behind. Yellow feet are supported by the ground or pogo pegs. Watch the continuous rig, switch to six sampled poses, or pause and step through each pose. Both views use the same rig time.</p>
+    <div class="controls"><label>Action <select id="rig-action"><option value="0">Run</option><option value="1">Pogo</option><option value="2">Fizz Stunner</option></select></label><button id="rig-play">Pause rig</button><label>Rig speed <select id="rig-speed"><option value="0.25">Quarter speed</option><option value="0.5" selected>Half speed</option><option value="1">Normal speed</option></select></label><label>Rig display <select id="rig-mode"><option value="smooth">Continuous</option><option value="samples">Six samples</option></select></label><label><input id="rig-overlay" type="checkbox">Overlay sampled rig on sprite</label><button id="rig-prev">Previous pose</button><button id="rig-next">Next pose</button></div>
     <label class="rig-scrubber">Cycle position <input id="rig-time" type="range" min="0" max="999" value="0"><output id="rig-position"></output></label>
     <div class="rig-comparison"><article><h3>Continuous rig</h3><div class="rig-stage"><canvas id="rig-bones" role="img" aria-label="Animated right-side skeleton with fixed-length arms and legs"></canvas></div></article><article><h3>Six sprite samples</h3><div class="rig-stage"><canvas id="rig-avatar" role="img" aria-label="The sprite sample corresponding to the rig phase"></canvas></div></article></div>
     <p class="small"><a href="rig/ben-running/rig.svg" target="_blank">Animated rig SVG</a> · <a href="rig/ben-running/samples.json">Joint samples</a> · <a href="rig/ben-running/rig.json">Rig settings</a> · <a href="rig/ben-running/skin.json">Sprite skin</a> · <a href="rig/ben-running/sprites.gif" target="_blank">Six-frame GIF</a></p>`;
-  const updateFace = mountFaceInspector(section, rig, data, skin.face);
+  let updateFace = mountFaceInspector(section, rig, data, skin.face, action.prefix, action.folder);
   const $ = <T extends HTMLElement>(query: string): T => section.querySelector<T>(query)!;
   const bones = $<HTMLCanvasElement>('#rig-bones'), avatar = $<HTMLCanvasElement>('#rig-avatar');
   const slider = $<HTMLInputElement>('#rig-time'), play = $<HTMLButtonElement>('#rig-play'), overlay = $<HTMLInputElement>('#rig-overlay');
   const speedSelect = $<HTMLSelectElement>('#rig-speed'), mode = $<HTMLSelectElement>('#rig-mode');
-  const labels = ['Near contact', 'Near push-off', 'Flight · far leg leads', 'Far contact', 'Far push-off', 'Flight · near leg leads'];
   let time = 0, last = performance.now(), speed = .5, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scale = 10;
-  for (const c of [bones, avatar]) { c.width = rig.width * scale; c.height = rig.height * scale; }
+  function resize(): void { for (const c of [bones, avatar]) { c.width = rig.width * scale; c.height = rig.height * scale; } }
+  resize();
+  $<HTMLSelectElement>('#rig-action').onchange = event => {
+    action = actions[Number((event.target as HTMLSelectElement).value)]; rig = action.rig; time = 0; resize();
+    section.querySelector('#face-sequence')?.remove();
+    updateFace = mountFaceInspector(section, rig, data, skin.face, action.prefix, action.folder);
+    section.querySelectorAll<HTMLAnchorElement>('a[href^="rig/"]').forEach(link => { link.setAttribute('href', link.getAttribute('href')!.replace(/rig\/ben-[^/]+\//, 'rig/' + action.folder + '/'));  });
+  };
   function updateButton(): void { play.textContent = playing ? 'Pause rig' : 'Play rig'; play.setAttribute('aria-pressed', String(playing)); }
   updateButton(); play.onclick = () => { playing = !playing; updateButton(); };
   speedSelect.onchange = () => { speed = Number(speedSelect.value); };
@@ -40,6 +55,14 @@ export function mountRigPreview(data: WorkshopData): void {
       points.forEach(([x, y], index) => index ? context.lineTo(x, y) : context.moveTo(x, y)); context.stroke();
     };
     const limb = (chain: Chain, colour: string): void => { line(chain, colour, .28); for (const [x, y] of chain) { context.fillStyle = colour; context.beginPath(); context.arc(x, y, .24, 0, Math.PI * 2); context.fill(); } };
+    if (pose.pogo) {
+      const p = pose.pogo; line([p.springTop, p.shaftTop], '#ddd', .4); line(p.pegs, '#ddd', .4);
+      line([[p.shaftTop[0] - 3, p.shaftTop[1]], [p.shaftTop[0] + 3, p.shaftTop[1]]], '#ddd', .4);
+      const coils: Vec2[] = [p.springTop];
+      for (let i = 1; i < 6; i++) coils.push([p.tip[0] + (i % 2 ? -1 : 1), p.springTop[1] + p.springLength * i / 6]);
+      coils.push(p.tip); line(coils, p.grounded ? '#fff66b' : '#ddd', .25);
+    }
+    if (pose.weapon) { line([pose.weapon.grip, pose.weapon.muzzle], pose.weapon.flash ? '#ffff55' : '#ff55ff', .7); }
     line([[0, rig.groundY], [rig.width, rig.groundY]], '#58745f', .1);
     limb(pose.farLeg, '#a080d0'); limb(pose.farArm, '#a080d0'); line([pose.root, pose.neck], '#ffec91', .4);
     line([pose.nearArm[0], pose.farArm[0]], '#ffa05f', .45); limb(pose.nearLeg, '#75edfa'); limb(pose.nearArm, '#75edfa');
@@ -53,7 +76,7 @@ export function mountRigPreview(data: WorkshopData): void {
         context.fillStyle = colour; context.beginPath(); context.arc(landmark.world[0], landmark.world[1], .18, 0, Math.PI * 2); context.fill();
       }
     } else {
-      for (const [landmark, colour] of [[pose.face.eye, '#77c7ff'], [pose.face.mouth, '#ff9f87']] as const) {
+      for (const [landmark, colour] of [[pose.face.eye, '#77c7ff'], [pose.face.mouth, '#ff9f87'], [pose.face.ear, '#d7b775']] as const) {
         context.strokeStyle = colour; context.lineWidth = .12; context.strokeRect(landmark.pixel[0], landmark.pixel[1], 1, 1);
       }
     }
@@ -63,17 +86,17 @@ export function mountRigPreview(data: WorkshopData): void {
     if (playing) time = (time + Math.max(0, Math.min(now - last, 100)) * speed / rig.durationMs) % 1;
     last = now;
     const index = Math.max(0, Math.min(rig.sampleCount - 1, Math.floor(time * rig.sampleCount + 1e-8)));
-    const sample = index / rig.sampleCount, pose = sampleRunRig(rig, mode.value === 'samples' ? sample : time);
+    const sample = index / rig.sampleCount, pose = sampleRig(rig, mode.value === 'samples' ? sample : time);
     const context = bones.getContext('2d')!, pixel = avatar.getContext('2d')!;
     context.clearRect(0, 0, bones.width, bones.height); pixel.clearRect(0, 0, avatar.width, avatar.height);
     skeleton(context, pose);
-    const frame = data.frames['ben_walkRight' + (index + 1)];
+    const frame = data.frames[action.prefix + (index + 1)];
     frame.grid.forEach((row, y) => [...row].forEach((code, x) => { const colour = data.palette[code]; if (colour) { pixel.fillStyle = colour; pixel.fillRect(x * scale, y * scale, scale, scale); } }));
-    if (overlay.checked) skeleton(pixel, sampleRunRig(rig, sample), true);
+    if (overlay.checked) skeleton(pixel, sampleRig(rig, sample), true);
     slider.value = String(Math.floor(time * 1000));
-    $<HTMLOutputElement>('#rig-position').textContent = `${index + 1}/6 · ${labels[index]}`;
+    $<HTMLOutputElement>('#rig-position').textContent = `${index + 1}/6 · ${action.labels[index]}`;
     section.dataset.pose = String(index + 1);
-    updateFace(index, mode.value === 'samples' ? sampleRunRig(rig, sample) : pose);
+    updateFace(index, mode.value === 'samples' ? sampleRig(rig, sample) : pose);
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
