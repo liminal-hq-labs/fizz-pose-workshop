@@ -1,0 +1,17 @@
+{
+  "name": "classic-fizz-pose-workshop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "bun@1.3.14",
+  "scripts": {
+    "dev": "bun --bun vite",
+    "build": "bun --bun vite build",
+    "preview": "bun --bun vite preview",
+    "generate": "python3 build-assets.py",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "vite": "8.3.5"
+  }
+}

@@ -183,6 +183,20 @@ for f in range(2): climb(f)
 for direction in ['N','NE','E','SE','S','SW','W','NW']:
     for f in range(2): overworld(direction,f)
 
+# Saved editor frames override generated poses while retaining the original source art.
+edits_path = ROOT / 'edits.json'
+if edits_path.exists():
+    edits = json.loads(edits_path.read_text())
+    for name, frame in edits.items():
+        reference = FRAMES.get(name)
+        if (reference is None or frame.get('width') != reference['width']
+                or frame.get('height') != reference['height']
+                or len(frame.get('grid', [])) != reference['height']
+                or any(len(row) != reference['width'] or any(c not in PALETTE for c in row)
+                       for row in frame['grid'])):
+            raise ValueError(f'Invalid edited frame: {name}')
+        FRAMES[name] = frame
+
 ANIMATIONS={
 'walk-run':(['ben_run1','ben_run2','ben_run3','ben_run4'],[140]*4),
 'pogo':(['ben_pogo','ben_pogo2'],[180,140]),
@@ -247,10 +261,20 @@ document.querySelector('#scale').onchange=e=>{scale=Number(e.target.value);};doc
 const canvases=[...document.querySelectorAll('canvas')];
 function tick(now){if(playing)elapsed+=(now-last)*speed;last=now;for(const c of canvases){let key=c.dataset.frame;if(c.dataset.animation){const a=DATA.animations[c.dataset.animation];let t=elapsed%a.durationsMs.reduce((s,v)=>s+v,0),i=0;while(i<a.frames.length-1&&t>=a.durationsMs[i]){t-=a.durationsMs[i];i++;}key=a.frames[i];}const f=DATA.frames[key];if(c.width!==f.width||c.height!==f.height){c.width=f.width;c.height=f.height;}const top=c.dataset.topdown;const actualScale=top&&innerWidth<600?3:scale;c.style.width=f.width*actualScale+'px';c.style.height=f.height*actualScale+'px';if(top)c.style.transform='none';const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);for(let y=0;y<f.height;y++)for(let x=0;x<f.width;x++){const colour=DATA.palette[f.grid[y][x]];if(colour){ctx.fillStyle=colour;ctx.fillRect(x,y,1,1);}}}requestAnimationFrame(tick);}requestAnimationFrame(tick);
 </script></body></html>'''
-(ROOT/'preview.html').write_text(html)
+(ROOT/'standalone-preview.html').write_text(html)
 (ROOT/'README.md').write_text('''# Original Classic Fizz pose workshop
 
-A pose set derived from the unmodified original native Classic Fizz study, vendored in `source/classic-fizz-original.json`. The initial polished version is preserved in the first Git commit. The original files are preserved. Open `preview.html` directly in a browser; no server or dependencies are needed for viewing. The preview supports pause, scale, playback speed and side-view mirroring, and initially pauses when reduced motion is requested.
+A pose set derived from the unmodified original native Classic Fizz study, vendored in `source/classic-fizz-original.json`. The initial polished version is preserved in the first Git commit. The original files are preserved. Run `bun run dev` and open the printed local URL for the gallery and pixel editor. `standalone-preview.html` is the generated read-only gallery that also works directly from disk. The preview supports pause, scale, playback speed and side-view mirroring, and initially pauses when reduced motion is requested.
+
+## Pixel editor
+
+Install dependencies with `bun install`, then run `bun run dev`. The editor supports palette drawing, erasing, colour picking, continuous pointer strokes, undo/redo, per-frame reset and a native-size preview. Click a static gallery pose or use the frame selector to edit it. Gallery and animation previews update live.
+
+Drafts are stored in this browser for this local address. **Save to project** writes `edits.json` and regenerates PNG, SVG, GIF, sprite-sheet and standalone preview exports. The development server requires Python 3 and Pillow for regeneration. Saving is explicit; browser drafts alone do not change repository files. Original source art stays untouched. JSON export/import provides portable backups; PNG export downloads the selected frame at native resolution.
+
+`bun run generate` rebuilds assets with saved edits applied. `bun run test` checks pixel history and frame validation. `bun run build` creates `dist/` with the editor and image exports; `bun run preview` serves that build. The built editor supports browser drafts and JSON/PNG export; saving to project requires `bun run dev`.
+
+The app entry is `index.html`; `preview.html` redirects to the app. `src/` contains the gallery, editor, styles and edit validation. `vite.config.js` handles the development save endpoint and packages the image exports for builds. Generated frame overrides in `edits.json` take precedence over generator artwork; per-frame reset restores the project version loaded by the page.
 
 ## Artwork
 
