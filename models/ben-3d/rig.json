@@ -4,10 +4,12 @@
   "floorY": -0.5,
   "crownY": 31,
   "helmet": {
-    "width": 9.7,
-    "depth": 9.2,
-    "rimY": 25.3,
-    "brimTipZ": 7.4
+    "width": 9.4,
+    "depth": 10.8,
+    "rimY": 25.1,
+    "frontZ": 5.5,
+    "rearZ": -5.3,
+    "thickness": 0.28
   },
   "head": {
     "centre": [
@@ -28,17 +30,17 @@
       0
     ],
     "size": [
-      7.8,
+      6.9,
       8.5,
-      6
+      5.1
     ]
   },
   "shoes": {
-    "width": 5.2,
-    "length": 10.8,
-    "height": 4.8,
-    "toeZ": 7,
-    "heelZ": -3.8
+    "width": 4.4,
+    "length": 9.6,
+    "height": 3.75,
+    "toeZ": 6.2,
+    "heelZ": -3.4
   },
   "bones": [
     "pelvis",
@@ -98,7 +100,7 @@
   "reviewTolerancePixels": 2,
   "jarReference": "https://github.com/liminal-hq/jar/tree/527c5c34f62a8467e133249615a19fe7ca45040e/apps/jar/src/render/models",
   "notes": "Full volumetric geometry with a reusable skinned skeleton. SVG layers are projected only onto surfaces; body depth is not an SVG extrusion. The asymmetrical holster stays on Ben's right hip. Helmet dimensions describe the coloured shell inside the sprite outline.",
-  "meshCount": 96,
+  "meshCount": 82,
   "animations": [
     {
       "name": "Run",

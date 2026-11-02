@@ -17,6 +17,7 @@ import {
   serialisePose,
   sampleRunFoot,
 } from "./poses.ts";
+import { cycleProfile } from "./equipment.ts";
 import config from "../../source/ben-3d.json";
 
 installThreeToolRuntime();
@@ -30,12 +31,7 @@ afterAll(() => model.dispose());
 describe("Ben volumetric character", () => {
   test("head, torso, shoes and helmet have real depth and calibrated standing height", () => {
     applyBenPose(model, "Standing");
-    for (const name of [
-      "Head",
-      "Shirt_torso",
-      "right_white_sole",
-      "Helmet_dome",
-    ]) {
+    for (const name of ["Head", "Shirt_torso", "right_shoe", "Helmet_dome"]) {
       const mesh = model.meshes.find((mesh) => mesh.name === name)!;
       mesh.geometry.computeBoundingBox();
       const size = mesh.geometry.boundingBox!.getSize(new THREE.Vector3());
@@ -68,7 +64,7 @@ describe("Ben volumetric character", () => {
   });
   test("toe bending deforms the sole without moving its heel", () => {
     applyBenPose(model, "Standing");
-    const sole = model.meshes.find((mesh) => mesh.name === "right_white_sole")!,
+    const sole = model.meshes.find((mesh) => mesh.name === "right_shoe")!,
       vertices = sole.geometry.getAttribute("position");
     let front = 0,
       back = 0;
@@ -130,6 +126,8 @@ describe("Ben volumetric character", () => {
       "Jeans_continuous",
       "right_arm_continuous",
       "left_arm_continuous",
+      "right_shoe",
+      "left_shoe",
     ]) {
       const geometry = model.meshes.find(
           (mesh) => mesh.name === name,
@@ -153,6 +151,46 @@ describe("Ben volumetric character", () => {
       }
       expect(new Set(Array.from(parent, (_, i) => root(i))).size).toBe(1);
     }
+  });
+  test("running-shoe colour regions share their seam vertices and the body stays lean", () => {
+    const shoe = model.meshes.find(
+        (mesh) => mesh.name === "right_shoe",
+      )!.geometry,
+      index = shoe.index!,
+      groups = shoe.groups;
+    expect(groups).toHaveLength(2);
+    const vertices = groups.map((group) => {
+      const set = new Set<number>();
+      for (let i = group.start; i < group.start + group.count; i++)
+        set.add(index.getX(i));
+      return set;
+    });
+    expect(
+      [...vertices[0]].filter((i) => vertices[1].has(i)).length,
+    ).toBeGreaterThan(100);
+    const shirt = model.meshes.find(
+      (mesh) => mesh.name === "Shirt_torso",
+    )!.geometry;
+    shirt.computeBoundingBox();
+    expect(shirt.boundingBox!.getSize(new THREE.Vector3()).x).toBeLessThan(11);
+  });
+  test("cycling vents are actual openings and the central roof rib is solid", () => {
+    applyBenPose(model, "Standing");
+    const helmet = model.meshes.find((mesh) => mesh.name === "Helmet_dome")!,
+      z = -2.0,
+      x = cycleProfile(z).width * Math.sin(0.32);
+    expect(
+      new THREE.Raycaster(
+        new THREE.Vector3(x, 40, z),
+        new THREE.Vector3(0, -1, 0),
+      ).intersectObject(helmet),
+    ).toHaveLength(0);
+    expect(
+      new THREE.Raycaster(
+        new THREE.Vector3(0, 40, z),
+        new THREE.Vector3(0, -1, 0),
+      ).intersectObject(helmet).length,
+    ).toBeGreaterThan(0);
   });
   test("hair conforms to the skull and the sewn collar has an open neckline", () => {
     applyBenPose(model, "Standing");
@@ -188,7 +226,9 @@ describe("Ben volumetric character", () => {
       applyBenPose(model, "Run", phase);
       const ankle = model.bones.rightFoot.getWorldPosition(new THREE.Vector3());
       expect(
-        ankle.distanceTo(new THREE.Vector3(-2.3, foot.y, foot.z)),
+        ankle.distanceTo(
+          new THREE.Vector3(model.rest.rightFoot.x, foot.y, foot.z),
+        ),
       ).toBeLessThan(0.02);
       const hip = model.bones.rightThigh.getWorldPosition(new THREE.Vector3()),
         knee = model.bones.rightShin.getWorldPosition(new THREE.Vector3()),

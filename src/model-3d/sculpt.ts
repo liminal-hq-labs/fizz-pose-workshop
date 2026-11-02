@@ -117,68 +117,6 @@ export function frontSurface(field: Field, x: number, y: number): number {
   }
   return (low + high) / 2;
 }
-export interface Section {
-  at: number;
-  width: number;
-  bottom: number;
-  top: number;
-}
-export function shoeProfile(
-  sections: readonly Section[],
-  centreX: number,
-  centreZ: number,
-): THREE.BufferGeometry {
-  const curve = new THREE.CatmullRomCurve3(
-      sections.map((s) => new THREE.Vector3(s.width, s.bottom, s.top)),
-      false,
-      "centripetal",
-    ),
-    path = new THREE.CatmullRomCurve3(
-      sections.map((s) => new THREE.Vector3(s.at, 0, 0)),
-      false,
-      "centripetal",
-    );
-  const positions: number[] = [],
-    indices: number[] = [],
-    rows = 64,
-    segments = 40;
-  for (let i = 0; i <= rows; i++) {
-    const t = i / rows,
-      profile = curve.getPoint(t),
-      z = path.getPoint(t).x,
-      ry = (profile.z - profile.y) / 2,
-      cy = (profile.y + profile.z) / 2;
-    for (let j = 0; j <= segments; j++) {
-      const a = (j / segments) * Math.PI * 2;
-      positions.push(
-        centreX +
-          Math.max(0.001, profile.x) *
-            Math.sign(Math.cos(a)) *
-            Math.abs(Math.cos(a)) ** 0.65,
-        Math.max(
-          -0.5,
-          Math.min(
-            4.2,
-            cy + ry * Math.sign(Math.sin(a)) * Math.abs(Math.sin(a)) ** 0.4,
-          ),
-        ),
-        centreZ + z,
-      );
-    }
-  }
-  for (let i = 0; i < rows; i++)
-    for (let j = 0; j < segments; j++) {
-      const a = i * (segments + 1) + j,
-        b = a + segments + 1;
-      indices.push(a, a + 1, b, b, a + 1, b + 1);
-    }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  g.setIndex(indices);
-  g.computeVertexNormals();
-  return g;
-}
-
 export function capsuleDistance(
   x: number,
   y: number,

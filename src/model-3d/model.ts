@@ -13,9 +13,15 @@ import {
   smoothUnion,
   weightSurface,
   frontSurface,
-  shoeProfile,
   type Influences,
 } from "./sculpt.ts";
+import {
+  cycleHelmet,
+  helmetHeight,
+  runningShoe,
+  runnerTop,
+  runnerProfile,
+} from "./equipment.ts";
 import palette from "../../source/game-palette.json";
 import { createBenRig, bindGeometry, type BenRig } from "./rig.ts";
 import { parseSkinLayers, projectSkinLayer } from "./svg-skin.ts";
@@ -167,152 +173,44 @@ export function createBenModel(svg: string): BenModel {
       ),
     );
   };
-  // The shell fits over the skull and hair; the sprite's black border is not shell volume.
-  const rings = [
-      [25.35, 4.8, 4.55],
-      [26.5, 4.85, 4.6],
-      [28.0, 4.5, 4.3],
-      [29.25, 3.8, 3.7],
-      [30.25, 3.05, 3.0],
-      [30.85, 2.45, 2.5],
-      [31.0, 2.2, 2.3],
-    ],
-    positions: number[] = [],
-    indices: number[] = [],
-    segments = 48;
-  for (const [y, rx, rz] of rings)
-    for (let j = 0; j <= segments; j++) {
-      const a = (j / segments) * Math.PI * 2;
-      positions.push(rx * Math.cos(a), y, rz * Math.sin(a));
-    }
-  for (let i = 0; i < rings.length - 1; i++)
-    for (let j = 0; j < segments; j++) {
-      const a = i * (segments + 1) + j,
-        b = a + segments + 1;
-      indices.push(a, b, a + 1, b, b + 1, a + 1);
-    }
-  const dome = new THREE.BufferGeometry();
-  dome.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  dome.setIndex(indices);
-  dome.computeVertexNormals();
-  add("Helmet_dome", dome, "head", mat("g", 0.42));
-  const crown = new THREE.CircleGeometry(1, 48);
-  crown.scale(2.2, 2.3, 1);
-  crown.rotateX(-Math.PI / 2);
-  add(
-    "Helmet_crown",
-    crown,
-    "head",
-    mat("g", 0.42),
-    new THREE.Vector3(0, 31.0, 0),
-  );
-  const ring = (
-    name: string,
-    y: number,
-    rx: number,
-    rz: number,
-    r: number,
-    colour: keyof typeof palette,
-  ): void => {
-    const points = Array.from({ length: 65 }, (_, i) => {
-      const a = (i / 64) * Math.PI * 2;
-      return new THREE.Vector3(Math.cos(a) * rx, y, Math.sin(a) * rz);
-    });
-    tube(name, points, r, "head", colour);
-  };
-  ring("Helmet_black_edge", 25.3, 4.76, 4.5, 0.14, "k");
-  ring("Helmet_grey_rim", 25.25, 4.7, 4.44, 0.18, "L");
-  const brimShape = new THREE.Shape();
-  brimShape.moveTo(-4.6, 3.0);
-  brimShape.quadraticCurveTo(-4.9, 5.0, -4.25, 5.8);
-  brimShape.quadraticCurveTo(-2.7, 7.4, 0, 7.4);
-  brimShape.quadraticCurveTo(2.7, 7.4, 4.25, 5.8);
-  brimShape.quadraticCurveTo(4.9, 5.0, 4.6, 3.0);
-  brimShape.closePath();
-  const brim = new THREE.ExtrudeGeometry(brimShape, {
-    depth: 0.3,
-    bevelEnabled: true,
-    bevelSize: 0.12,
-    bevelThickness: 0.1,
-    bevelSegments: 2,
-    steps: 1,
-    curveSegments: 16,
-  });
-  brim.rotateX(Math.PI / 2);
-  add(
-    "Helmet_forward_brim",
-    brim,
-    "head",
-    [mat("G"), mat("k")],
-    new THREE.Vector3(0, 25.5, 0),
-  );
-  const capHeight = (x: number, z: number): number => {
-    const distances = rings.map(
-      (row) => row[2] * Math.sqrt(Math.max(0, 1 - (x * x) / (row[1] * row[1]))),
-    );
-    if (Math.abs(z) <= distances.at(-1)!) return rings.at(-1)![0];
-    for (let i = rings.length - 2; i >= 0; i--)
-      if (Math.abs(z) <= distances[i]) {
-        const t =
-          (Math.abs(z) - distances[i + 1]) / (distances[i] - distances[i + 1]);
-        return THREE.MathUtils.lerp(rings[i + 1][0], rings[i][0], t);
-      }
-    return rings[0][0];
-  };
+  // A compact cycling shell has real vent tunnels and a continuous brow, without a projecting bill.
+  add("Helmet_dome", cycleHelmet(), "head", [
+    mat("g", 0.45),
+    mat("D"),
+    mat("G"),
+  ]);
   decal(
     "helmet-stripe",
     "head",
     (u, v) => {
-      const z = (v * 4.45) / 6.1;
-      return new THREE.Vector3(u, capHeight(u, z) + 0.13, z);
+      const z = (v * 5.0) / 6.1;
+      return new THREE.Vector3(u, helmetHeight(u, z) + 0.13, z);
     },
     "W",
     new THREE.Vector3(0, 1, 0),
   );
-  for (const side of [-1, 1])
-    for (const z of [-1.8, 1.5]) {
-      decal(
-        "helmet-vent",
-        "head",
-        (u, v) => {
-          const x = side * 2.9 + u,
-            depth = z + v;
-          return new THREE.Vector3(x, capHeight(x, depth) + 0.065, depth);
-        },
-        "G",
-        new THREE.Vector3(0, 1, 0),
-      );
-      decal(
-        "helmet-vent",
-        "head",
-        (u, v) => {
-          const x = side * 2.9 + u * 0.52,
-            depth = z + v * 0.82;
-          return new THREE.Vector3(x, capHeight(x, depth) + 0.085, depth);
-        },
-        "D",
-        new THREE.Vector3(0, 1, 0),
-      );
-    }
-  for (const side of [-1, 1]) {
+  for (const sign of [-1, 1]) {
+    const junction = new THREE.Vector3(sign * 3.85, 22.2, 0.15);
     tube(
-      "Helmet_moulded_ridge",
-      [0.8, 1.8, 2.8, 3.8].map((z) => {
-        const x = side * 1.6;
-        return new THREE.Vector3(x, capHeight(x, z) + 0.06, z);
-      }),
-      0.06,
+      "Helmet_front_strap",
+      [
+        new THREE.Vector3(sign * 3.75, 25.25, 2.4),
+        junction,
+        new THREE.Vector3(sign * 1.8, 20.05, 1.5),
+        new THREE.Vector3(0, 19.85, 1.55),
+      ],
+      0.075,
       "head",
-      "G",
+      "D",
     );
     tube(
-      "Helmet_temple_strap",
+      "Helmet_rear_strap",
       [
-        new THREE.Vector3(side * 3.8, 25.2, 0.65),
-        new THREE.Vector3(side * 4.05, 24.2, 0.25),
-        new THREE.Vector3(side * 3.9, 23.35, -0.1),
+        new THREE.Vector3(sign * 3.75, 25.0, -2.5),
+        new THREE.Vector3(sign * 4.03, 23.4, -0.65),
+        junction,
       ],
-      0.1,
+      0.075,
       "head",
       "D",
     );
@@ -419,19 +317,19 @@ export function createBenModel(svg: string): BenModel {
   );
   const shirtField = (x: number, y: number, z: number): number => {
     let d = Math.max(
-      ellipsoid(x, y, z, [0, 14.4, 0], [4.0, 6.0, 3.05]),
+      ellipsoid(x, y, z, [0, 14.4, 0], [3.45, 6.0, 2.55]),
       10.95 - y,
       y - 19.15,
     );
     for (const sign of [-1, 1]) {
       d = smoothUnion(
         d,
-        ellipsoid(x, y, z, [sign * 3.55, 17.65, 0.05], [2.0, 1.6, 2.15]),
+        ellipsoid(x, y, z, [sign * 3.1, 17.65, 0.05], [1.8, 1.5, 1.8]),
         0.6,
       );
       d = smoothUnion(
         d,
-        ellipsoid(x, y, z, [sign * 4.65, 16.85, 0.2], [1.35, 1.18, 1.5]),
+        ellipsoid(x, y, z, [sign * 4.15, 16.85, 0.2], [1.15, 1.18, 1.2]),
         0.4,
       );
     }
@@ -440,7 +338,7 @@ export function createBenModel(svg: string): BenModel {
   const shirtWeights: Influences = (p) => {
     const side = p.x < 0 ? "right" : "left",
       arm =
-        THREE.MathUtils.smoothstep(Math.abs(p.x), 3.2, 5.3) *
+        THREE.MathUtils.smoothstep(Math.abs(p.x), 2.8, 4.8) *
         THREE.MathUtils.smoothstep(p.y, 14.8, 16.0),
       chest = THREE.MathUtils.smoothstep(p.y, 13, 18);
     return {
@@ -460,7 +358,7 @@ export function createBenModel(svg: string): BenModel {
     lightRed = new THREE.Color(palette.r);
   for (let i = 0; i < gp.count; i++) {
     const blend =
-      THREE.MathUtils.smoothstep(Math.abs(gp.getX(i)), 3.4, 5.2) * 0.75 +
+      THREE.MathUtils.smoothstep(Math.abs(gp.getX(i)), 3.0, 4.6) * 0.75 +
       THREE.MathUtils.smoothstep(gp.getY(i), 17, 19) * 0.2;
     const c = darkRed.clone().lerp(lightRed, blend);
     colours.push(c.r, c.g, c.b);
@@ -517,13 +415,13 @@ export function createBenModel(svg: string): BenModel {
   }
   // One continuous pair of jeans joins the pelvis, thighs, knees and tapered cuffs.
   const pantsField = (x: number, y: number, z: number): number => {
-    let d = ellipsoid(x, y, z, [0, 9.55, 0], [3.7, 1.55, 2.4]);
+    let d = ellipsoid(x, y, z, [0, 9.55, 0], [3.2, 1.55, 2.0]);
     for (const sign of [-1, 1]) {
       const cy = THREE.MathUtils.clamp(y, 3.3, 9.2),
         t = THREE.MathUtils.smoothstep(cy, 3.3, 9.2),
-        rx = THREE.MathUtils.lerp(1.1, 1.62, t),
-        rz = THREE.MathUtils.lerp(1.25, 1.85, t),
-        cx = sign * (2.3 - 0.12 * t);
+        rx = THREE.MathUtils.lerp(0.92, 1.35, t),
+        rz = THREE.MathUtils.lerp(1.05, 1.55, t),
+        cx = sign * (2.05 - 0.1 * t);
       const leg =
         (Math.hypot((x - cx) / rx, (y - cy) / rx, (z - 0.05) / rz) - 1) * rx;
       d = smoothUnion(d, leg, 0.35);
@@ -552,13 +450,13 @@ export function createBenModel(svg: string): BenModel {
   // The curved belt follows the same waist instead of making a rectangular shelf.
   const belt = new THREE.TorusGeometry(1, 0.09, 8, 64);
   belt.rotateX(Math.PI / 2);
-  belt.scale(3.55, 4.2, 2.65);
+  belt.scale(2.8, 4.2, 2.22);
   belt.translate(0, 10.8, 0);
   add("Belt", belt, "pelvis", mat("D"));
-  box("Belt_buckle", [0, 10.82, 2.85], [1.2, 0.8, 0.23], "pelvis", "y", 0.1);
+  box("Belt_buckle", [0, 10.82, 2.42], [1.2, 0.8, 0.23], "pelvis", "y", 0.1);
   box(
     "Belt_buckle_inset",
-    [0, 10.82, 3],
+    [0, 10.82, 2.57],
     [0.62, 0.4, 0.08],
     "pelvis",
     "N",
@@ -577,7 +475,7 @@ export function createBenModel(svg: string): BenModel {
         cx = THREE.MathUtils.lerp(shoulder.x, hand.x, t),
         cz = THREE.MathUtils.lerp(shoulder.z, hand.z, t),
         cy = THREE.MathUtils.clamp(y, 11.6, 17.0),
-        radius = THREE.MathUtils.lerp(1.02, 0.8, t);
+        radius = THREE.MathUtils.lerp(0.88, 0.69, t);
       let d = Math.hypot(x - cx, y - cy, z - cz) - radius;
       d = smoothUnion(
         d,
@@ -619,8 +517,8 @@ export function createBenModel(svg: string): BenModel {
     };
     const arm = sculptSurface(
       armField,
-      [sign < 0 ? -6.4 : 3.2, 9.1, -1.5],
-      [sign < 0 ? -3.2 : 6.4, 18.7, 2.4],
+      [sign < 0 ? -6.4 : 2.7, 9.1, -1.5],
+      [sign < 0 ? -2.7 : 6.4, 18.7, 2.4],
       72,
     );
     add(side + "_arm_continuous", arm, side + "UpperArm", mat("W"));
@@ -635,7 +533,7 @@ export function createBenModel(svg: string): BenModel {
     });
     const seamPoints = Array.from({ length: 25 }, (_, i) => {
       const y = 9.5 - (i / 24) * 5.7,
-        x = sign * (3.12 - (0.07 * i) / 24);
+        x = sign * (2.74 - (0.1 * i) / 24);
       return new THREE.Vector3(x, y, frontSurface(pantsField, x, y) + 0.025);
     });
     tube(side + "_denim_seam", seamPoints, 0.06, side + "Thigh", "c");
@@ -646,90 +544,67 @@ export function createBenModel(svg: string): BenModel {
       blend = {
         bone: toe,
         weight: (p: THREE.Vector3) =>
-          THREE.MathUtils.smoothstep(p.z, z + 2.2, z + 3.9),
+          THREE.MathUtils.smoothstep(p.z, z + 1.7, z + 3.0),
       };
-    // Low rubber sole, rounded red toe and a continuous ankle-to-vamp upper match the sprite sneakers.
-    const soleSections = [
-      { at: -3.8, width: 0.01, bottom: -0.05, top: 0.05 },
-      { at: -3.4, width: 1.8, bottom: -0.5, top: 0.35 },
-      { at: -1.5, width: 2.45, bottom: -0.5, top: 0.4 },
-      { at: 2, width: 2.6, bottom: -0.5, top: 0.45 },
-      { at: 5.8, width: 2.3, bottom: -0.4, top: 0.45 },
-      { at: 7, width: 0.01, bottom: 0.04, top: 0.06 },
-    ];
+    // Upper and sole are material regions on the same connected shoe surface.
     add(
-      side + "_white_sole",
-      shoeProfile(soleSections, ankle.x, z),
+      side + "_shoe",
+      runningShoe(ankle.x, z),
       foot,
-      mat("W"),
+      [mat("R"), mat("W")],
       undefined,
       undefined,
       undefined,
       blend,
     );
-    const upperSections = [
-      { at: -3.5, width: 0.01, bottom: 0.2, top: 0.4 },
-      { at: -3.05, width: 1.55, bottom: 0.1, top: 3.3 },
-      { at: -1.6, width: 2.0, bottom: 0.1, top: 4.2 },
-      { at: 0, width: 2.18, bottom: 0.1, top: 3.75 },
-      { at: 1.6, width: 2.35, bottom: 0.1, top: 2.65 },
-      { at: 4.6, width: 2.24, bottom: 0.1, top: 1.9 },
-      { at: 6.35, width: 1.5, bottom: 0.1, top: 1.55 },
-      { at: 6.9, width: 0.01, bottom: 0.3, top: 0.6 },
-    ];
-    add(
-      side + "_shoe_upper",
-      shoeProfile(upperSections, ankle.x, z),
-      foot,
-      mat("R"),
-      undefined,
-      undefined,
-      undefined,
-      blend,
-    );
-    const cuffPoints = Array.from({ length: 41 }, (_, i) => {
-      const a = (i / 40) * Math.PI * 2;
+    const cuff = Array.from({ length: 49 }, (_, i) => {
+      const a = (i / 48) * Math.PI * 2,
+        x = 0.92 * Math.cos(a),
+        depth = -0.55 + 0.78 * Math.sin(a);
       return new THREE.Vector3(
-        ankle.x + 1.37 * Math.cos(a),
-        3.82 - 0.14 * Math.sin(a),
-        z - 0.55 + 1.15 * Math.sin(a),
+        ankle.x + x,
+        runnerTop(x, depth) + 0.025,
+        z + depth,
       );
     });
-    tube(side + "_shoe_collar", cuffPoints, 0.1, foot, "r");
-    tube(
-      side + "_heel_seam",
-      [
-        new THREE.Vector3(ankle.x, 1, z - 3.1),
-        new THREE.Vector3(ankle.x, 2.3, z - 2.9),
-        new THREE.Vector3(ankle.x, 3.45, z - 2.1),
-      ],
-      0.05,
-      foot,
-      "r",
-    );
+    tube(side + "_ankle_binding", cuff, 0.06, foot, "r");
     for (let j = 0; j < 5; j++) {
-      const depth = 0.1 + j * 0.49,
-        y = 3.65 - j * 0.27;
-      tube(
-        side + "_lace",
-        [
-          new THREE.Vector3(ankle.x - 0.67, y, z + depth),
-          new THREE.Vector3(ankle.x, y + 0.06, z + depth + 0.13),
-          new THREE.Vector3(ankle.x + 0.67, y, z + depth),
-        ],
-        0.075,
-        foot,
-        "W",
+      const depth = 0.05 + j * 0.4;
+      const points = [-0.52, 0, 0.52].map(
+        (x) =>
+          new THREE.Vector3(ankle.x + x, runnerTop(x, depth) + 0.05, z + depth),
       );
+      tube(side + "_lace", points, 0.055, foot, "W");
     }
+    const sideSeam = Array.from({ length: 16 }, (_, i) => {
+      const depth = -2.45 + (i / 15) * 3.9,
+        p = runnerProfile(depth),
+        y = p.seam + 0.35;
+      const a = Math.asin(
+        Math.min(1, ((y - p.seam) / (p.top - p.seam)) ** (1 / 0.75)),
+      );
+      return new THREE.Vector3(
+        ankle.x + sign * (p.width * Math.cos(a) + 0.015),
+        y,
+        z + depth,
+      );
+    });
+    tube(side + "_quarter_stitch", sideSeam, 0.025, foot, "r");
     decal(
       "shoe-badge",
       foot,
       (u, v) => {
-        const y = 2.3 - v,
-          depth = -1.5 + u;
-        const cx = 2.02 * Math.sqrt(Math.max(0, 1 - ((y - 2.26) / 1.94) ** 2));
-        return new THREE.Vector3(ankle.x + sign * (cx + 0.035), y, z + depth);
+        const depth = -1.35 + u * 0.7,
+          p = runnerProfile(depth),
+          y = 1.75 - v * 0.75,
+          a = Math.asin(
+            Math.min(1, ((y - p.seam) / (p.top - p.seam)) ** (1 / 0.75)),
+          );
+        return new THREE.Vector3(
+          ankle.x + sign * (p.width * Math.cos(a) + 0.025),
+          y,
+          z + depth,
+        );
       },
       "y",
       new THREE.Vector3(sign, 0, 0),
@@ -800,7 +675,7 @@ export function createBenModel(svg: string): BenModel {
   );
   orb(
     "Stunner_belt_clip",
-    [-4.4, 10.65, 0.35],
+    [-3.8, 10.65, 0.35],
     [0.7, 0.35, 0.65],
     "pelvis",
     "D",

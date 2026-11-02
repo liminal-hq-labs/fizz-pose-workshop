@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import * as THREE from "three";
+import config from "../../source/ben-3d.json";
+import { runnerProfile } from "./equipment.ts";
 import { resetRig } from "./rig.ts";
 import type { BenModel } from "./model.ts";
 export const poseNames = [
@@ -83,6 +85,15 @@ function aimArm(
     pole,
   );
 }
+const ankleRestY = config.bones.find((b) => b.name === "rightFoot")!
+    .position[1],
+  toeRestY =
+    config.bones.find((b) => b.name === "rightToe")!.position[1] - ankleRestY,
+  toeRestZ = config.bones.find((b) => b.name === "rightToe")!.position[2];
+const soleContacts = Array.from({ length: 81 }, (_, i) => {
+  const z = THREE.MathUtils.lerp(config.shoes.heelZ, config.shoes.toeZ, i / 80);
+  return { z, y: runnerProfile(z).bottom - ankleRestY };
+});
 export function sampleRunFoot(time: number): {
   phase: number;
   z: number;
@@ -108,12 +119,12 @@ export function sampleRunFoot(time: number): {
   const a = rad(pitch),
     b = rad(toe);
   let lowest = Infinity;
-  for (const depth of [-3.4, -1.5, 0, 2, 2.9, 3.9, 5.8, 6.8]) {
-    const w = THREE.MathUtils.smoothstep(depth, 2.2, 3.9),
-      y = -4,
-      z = depth;
-    const bentY = -2.2 + (y + 2.2) * Math.cos(b) - (z - 2.9) * Math.sin(b),
-      bentZ = 2.9 + (y + 2.2) * Math.sin(b) + (z - 2.9) * Math.cos(b);
+  for (const { z, y } of soleContacts) {
+    const w = THREE.MathUtils.smoothstep(z, 1.7, 3.0);
+    const bentY =
+        toeRestY + (y - toeRestY) * Math.cos(b) - (z - toeRestZ) * Math.sin(b),
+      bentZ =
+        toeRestZ + (y - toeRestY) * Math.sin(b) + (z - toeRestZ) * Math.cos(b);
     lowest = Math.min(
       lowest,
       THREE.MathUtils.lerp(y, bentY, w) * Math.cos(a) -
