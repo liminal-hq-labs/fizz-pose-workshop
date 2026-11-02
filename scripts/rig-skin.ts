@@ -108,7 +108,14 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
       out.pixel(x + 1, y, 'y'); out.pixel(x + 2, y, 'W'); out.pixel(x + 2, y - 1, 'C'); out.pixel(x + 2, y + 1, 'C'); out.pixel(x + 3, y, 'C');
     }
   }
-  out.patch(skin.head, pose.face.pixelAnchor, 0, pose.headTurn);
+  const faceRows = (row: PixelRow): boolean => row.y >= 9 && row.y <= 13;
+  const layer = (face: boolean): Patch => ({ ...skin.head,
+    rows: skin.head.rows.filter(row => faceRows(row) === face),
+    towards: skin.head.towards?.filter(row => faceRows(row) === face),
+    away: skin.head.away?.filter(row => faceRows(row) === face),
+  });
+  out.patch(layer(false), pose.face.pixelAnchor, 0, pose.headTurn);
+  out.patch(layer(true), add(pose.face.pixelAnchor, [pose.face.pixelShift, 0]), 0, pose.headTurn);
   out.pixel(pose.face.ear.pixel[0], pose.face.ear.pixel[1], skin.face.ear);
   out.pixel(pose.face.eye.pixel[0], pose.face.eye.pixel[1], skin.face.eye);
   out.pixel(pose.face.mouth.pixel[0], pose.face.mouth.pixel[1], skin.face.mouth);

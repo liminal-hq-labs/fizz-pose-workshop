@@ -49,3 +49,16 @@ test('all six actual sprite grids contain exactly the rig eye and mouth, includi
 test('six head-local samples travel right then back left together', () => {
   expect(Array.from({length: 6}, (_, i) => sampleRunRig(rig, i / 6).face.pixelShift)).toEqual([0, 1, 1, 0, -1, -1]);
 });
+
+test('nose outline, cheek shading and jaw travel with the facial dots beneath the helmet', () => {
+  const frames = Object.values(drawRunCycle());
+  const shifts = [0, 1, 1, 0, -1, -1];
+  for (const [i,frame] of frames.entries()) {
+    const face = sampleRunRig(rig, i / 6).face;
+    for (const [key, local] of [['nose',5],['cheek',-2],['chin',0]] as const) expect(face[key].pixel[0] - face.pixelAnchor[0]).toBe(local + shifts[i]);
+    expect(frame.grid[face.nose.pixel[1]][face.nose.pixel[0]]).toBe('k');
+    expect(frame.grid[face.chin.pixel[1]][face.chin.pixel[0]]).toBe('L');
+    const row = frame.grid[face.nose.pixel[1]], start = face.pixelAnchor[0] - 4 + shifts[i];
+    expect(row[start]).toBe('k'); expect(row[start - 1]).toBe('.');
+  }
+});

@@ -11,7 +11,7 @@ import type { WorkshopData } from '../types.ts';
 
 export function mountFaceInspector(parent: HTMLElement, rig: SideRig, data: WorkshopData, colours: { eye: string; mouth: string; ear: string }, prefix = 'ben_walkRight', folder = 'ben-running'): (index: number, pose: RigPose) => void {
   const block = document.createElement('section'); block.className = 'face-inspector'; block.id = 'face-sequence';
-  block.innerHTML = `<h3>Face landmarks · in sequence</h3><p>These crops follow the head, so the eye, mouth and ear follow the shared rig settings within each crop. The table shows their canvas pixels and offsets from the shared head anchor. A browser draft that differs from the rig is marked below.</p><label><input id="rig-face-markers" type="checkbox" checked>Highlight eye, mouth and ear pixels</label><p id="rig-face-current" class="small"></p><div class="face-heads"></div><div class="face-table-wrap"><table><thead><tr><th>Frame</th><th>Head anchor</th><th>Eye pixel</th><th>Mouth pixel</th><th>Ear pixel</th><th>Offsets from head</th><th>Status</th></tr></thead><tbody></tbody></table></div><p class="small"><a href="rig/${folder}/face-sequence.svg" target="_blank">Saved head sequence</a> · <a href="rig/${folder}/face-sequence.json">Saved landmark measurements</a></p>`;
+  block.innerHTML = `<h3>Face landmarks · in sequence</h3><p>These crops follow the head, so the eye, mouth and ear follow the shared rig settings within each crop. The table shows their canvas pixels and offsets from the shared head anchor. A browser draft that differs from the rig is marked below.</p><label><input id="rig-face-markers" type="checkbox" checked>Highlight eye, mouth and ear pixels</label><p id="rig-face-current" class="small"></p><div class="face-heads"></div><div class="face-table-wrap"><table><thead><tr><th>Frame</th><th>Head anchor</th><th>Eye pixel</th><th>Mouth pixel</th><th>Ear pixel</th><th>Offsets from head</th><th>Nose / cheek / chin</th><th>Status</th></tr></thead><tbody></tbody></table></div><p class="small"><a href="rig/${folder}/face-sequence.svg" target="_blank">Saved head sequence</a> · <a href="rig/${folder}/face-sequence.json">Saved landmark measurements</a></p>`;
   parent.append(block);
   const container = block.querySelector<HTMLElement>('.face-heads')!, tbody = block.querySelector<HTMLTableSectionElement>('tbody')!;
   const markers = block.querySelector<HTMLInputElement>('#rig-face-markers')!;
@@ -21,7 +21,7 @@ export function mountFaceInspector(parent: HTMLElement, rig: SideRig, data: Work
     const card = document.createElement('article'), title = document.createElement('h4'), canvas = document.createElement('canvas');
     title.textContent = `Frame ${i + 1}`; canvas.width = 90; canvas.height = 84; canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', `Head-aligned face sample ${i + 1}`);
     card.append(title, canvas); container.append(card); canvases.push(canvas);
-    const row = tbody.insertRow(); for (let c = 0; c < 7; c++) row.insertCell(); rows.push(row);
+    const row = tbody.insertRow(); for (let c = 0; c < 8; c++) row.insertCell(); rows.push(row);
   }
   const cache: string[] = [];
   const coordinate = (point: Vec2): string => `${point[0]}, ${point[1]}`;
@@ -29,7 +29,7 @@ export function mountFaceInspector(parent: HTMLElement, rig: SideRig, data: Work
   const offset = (points: Vec2[], anchor: Vec2): string => points.length === 1 ? coordinate([points[0][0] - anchor[0], points[0][1] - anchor[1]]) : '—';
   let active = -1;
   return (index, pose) => {
-    block.querySelector<HTMLElement>('#rig-face-current')!.textContent = `Current rig: eye ${pose.face.eye.world.map(v => v.toFixed(2)).join(', ')} → pixel ${coordinate(pose.face.eye.pixel)}; mouth ${pose.face.mouth.world.map(v => v.toFixed(2)).join(', ')} → pixel ${coordinate(pose.face.mouth.pixel)}; ear ${coordinate(pose.face.ear.pixel)}.`;
+    block.querySelector<HTMLElement>('#rig-face-current')!.textContent = `Current rig: eye ${pose.face.eye.world.map(v => v.toFixed(2)).join(', ')} → pixel ${coordinate(pose.face.eye.pixel)}; mouth ${pose.face.mouth.world.map(v => v.toFixed(2)).join(', ')} → pixel ${coordinate(pose.face.mouth.pixel)}; ear ${coordinate(pose.face.ear.pixel)}; nose ${coordinate(pose.face.nose.pixel)}; chin ${coordinate(pose.face.chin.pixel)}.`;
     for (let i = 0; i < samples.length; i++) {
       const sample = samples[i], anchor = sample.face.pixelAnchor, frame = data.frames[prefix + (i + 1)];
       const signature = `${markers.checked}:${frame.grid.slice(Math.max(0, anchor[1] - 13), anchor[1] + 1).join('')}`;
@@ -38,7 +38,7 @@ export function mountFaceInspector(parent: HTMLElement, rig: SideRig, data: Work
         const eye = facePixels(frame, colours.eye, anchor), mouth = facePixels(frame, colours.mouth, anchor);
         const ear = sample.face.ear.pixel, earMatches = frame.grid[ear[1]]?.[ear[0]] === colours.ear;
         const matches = earMatches && eye.length === 1 && mouth.length === 1 && coordinate(eye[0]) === coordinate(sample.face.eye.pixel) && coordinate(mouth[0]) === coordinate(sample.face.mouth.pixel);
-        const values = [String(i + 1), coordinate(anchor), actual(eye), actual(mouth), coordinate(ear), `Eye ${offset(eye, anchor)} / mouth ${offset(mouth, anchor)} / ear ${coordinate([ear[0] - anchor[0], ear[1] - anchor[1]])}`, matches ? 'Anchored' : 'Draft differs'];
+        const values = [String(i + 1), coordinate(anchor), actual(eye), actual(mouth), coordinate(ear), `Eye ${offset(eye, anchor)} / mouth ${offset(mouth, anchor)} / ear ${coordinate([ear[0] - anchor[0], ear[1] - anchor[1]])}`, [sample.face.nose.pixel, sample.face.cheek.pixel, sample.face.chin.pixel].map(coordinate).join(' / '), matches ? 'Anchored' : 'Draft differs'];
         values.forEach((value, c) => { rows[i].cells[c].textContent = value; }); rows[i].dataset.matches = String(matches);
         const context = canvases[i].getContext('2d')!; context.clearRect(0, 0, 90, 84);
         const origin: Vec2 = [anchor[0] - 7, anchor[1] - 13];
