@@ -8,17 +8,11 @@ from PIL import Image, ImageDraw
 import json, math, shutil
 
 ROOT = Path(__file__).resolve().parent
-ORIGINAL = json.loads((ROOT.parent / 'classic-fizz-original.json').read_text())
+ORIGINAL = json.loads((ROOT / 'source' / 'classic-fizz-original.json').read_text())
 PALETTE = {**ORIGINAL['palette'], 'b': '#5555ff', 'A': '#334488', 'N': '#aa5500'}
-BASE = [
-'....KKKKKK......','...KggWgggK.....','..KgggWggggK....','..KgGgWgGggK....',
-'..KGGGGGGGGGK...','..KhhhhhhhKGK...','..KhhKhhKhK.....','...KhhhhVhK.....',
-'....KhhhhK......','.....KhhK.......','....KWWWWK......','...KrrrrrrK.....',
-'...KrryrrrrK....','...KRyyyRRrK....','...KRRyRRRrK....','...KRRRRRKhhK...',
-'...KRRRRRKVhK...','...KRRRRRKhhK...','..KWKRRRRKWWK...','..KWWDDyDDWK....',
-'...KBBBKBBK.....','...KBbBKBBcK....','...KBbBKBBcK....','...KBbBKBBcK....',
-'...KBbBKBBcK....','...KBBBKBBBK....','...KBBK.KBBK....','..KRRRK.KRRRK...',
-'.KRRRRK.KWRRRK..','.KRRWWK.KRRWWK..','.KWWWWK.KWWWWK..','..KKKK...KKKK...']
+# The standing frame is the unmodified native study; action frames inherit its head and torso.
+BASE = ORIGINAL['grid']
+
 FRAMES = {}
 
 class Art:
@@ -42,9 +36,9 @@ class Art:
                 for x in range(self.w):
                     if im.getpixel((x,y)): self.g[y][x]=colour
     def shoe(self,x,y):
-        self.rect(x-1,y-1,6,4,'K');self.rect(x,y,4,2,'R');self.rect(x+2,y,2,1,'r');self.rect(x,y+2,5,1,'W')
+        self.rect(x-1,y-1,6,5,'K');self.rect(x,y,4,2,'R');self.rect(x+3,y+1,2,1,'W');self.rect(x,y+2,5,1,'W');self.rect(x,y+3,5,1,'D')
     def glove(self,x,y):
-        self.rect(x-1,y-1,4,4,'K');self.rect(x,y,2,2,'W');self.rect(x,y+1,1,1,'L')
+        self.rect(x-1,y-1,4,4,'K');self.rect(x,y,2,2,'W');self.rect(x,y+1,2,1,'L')
     def save(self,name):
         FRAMES[name]={'width':self.w,'height':self.h,'grid':[''.join(r) for r in self.g]}
 
@@ -74,7 +68,7 @@ def side(pose):
           'pogo2': [([(9,26),(7,29),(9,31)],3), ([(14,26),(17,29),(15,31)],2)]
         }
         for points,width in legs.get(pose,[([(9,25),(9,29),(8,34)],3), ([(14,25),(14,29),(15,34)],2)]):
-            a.limb(points,width,'B');a.rect(points[0][0],points[0][1],1,3,'b');a.shoe(points[-1][0]-1,points[-1][1])
+            a.limb(points,width,'B');a.rect(points[0][0],points[0][1],1,3,'s');a.rect(points[0][0]+1,points[0][1]+1,1,3,'c');a.shoe(points[-1][0]-1,points[-1][1])
         if pose in ['pogo','pogo2']:
             # The spring compresses while the tip remains at a fixed contact point.
             a.rect(11,21,2,19,'L');a.rect(9,22,7,1,'D');a.rect(8,33,9,1,'D')
@@ -106,14 +100,14 @@ def side(pose):
 
 def climb(f):
     a=Art();a.stamp(BASE[:5],4,4)
-    a.rect(7,9,9,4,'K');a.rect(8,9,7,3,'N');a.rect(10,10,2,3,'Q')
+    a.rect(7,9,9,4,'K');a.rect(8,9,7,3,'N');a.rect(10,10,2,3,'Q');a.rect(7,9,9,1,'L')
     a.rect(7,14,10,10,'K');a.rect(8,14,8,9,'r');a.rect(11,15,2,7,'R');a.rect(8,23,8,2,'D')
     for xx,raised in [(7,f==0),(17,f==1)]:
         pts=[(xx,16),(xx-1 if xx==7 else xx+1,12 if raised else 19),(xx,8 if raised else 21)]
         a.limb(pts,2,'r');a.glove(*pts[-1])
     for xx,raised in [(9,f==1),(14,f==0)]:
         pts=[(xx,25),(xx+(-1 if raised else 0),29),(xx,31 if raised else 34)]
-        a.limb(pts,3,'B');a.rect(xx,25,1,3,'b');a.shoe(xx-1,pts[-1][1])
+        a.limb(pts,3,'B');a.rect(xx,25,1,3,'s');a.rect(xx+1,26,1,2,'c');a.shoe(xx-1,pts[-1][1])
     a.save('ben_climb'+str(f+1))
 
 
@@ -137,11 +131,11 @@ def overworld(direction,f):
         for x in range(5,19):
             radius=((x-11.5)/6.5)**2+((y-8)/5.5)**2
             if radius<=1:
-                c='K' if radius>.77 else ('G' if y>9 else 'g')
+                c='K' if radius>.77 else ('L' if y>10 else 'G' if y>8 else 'g')
                 # Stripe rotates with the facing direction; vents flank it.
                 across=(x-11.5)*(-math.sin(heading))+(y-8)*math.cos(heading)
                 along=(x-11.5)*math.cos(heading)+(y-8)*math.sin(heading)
-                if radius<.65 and abs(across)<.8:c='W'
+                if radius<.65 and abs(across)<.8:c='W' if across<0 else 'Q'
                 elif radius<.65 and 2<abs(across)<3.2 and abs(along)<2:c='Q'
                 a.rect(x,y,1,1,c)
     # Distinct directional brim makes north/east/diagonal headings easy to tell apart.
@@ -199,11 +193,12 @@ for i,(name,frame) in enumerate(FRAMES.items()):
     x,y=(i%8)*24,(i//8)*44;sheet.paste(raster(frame),(x,y));positions[name]={'x':x,'y':y,'width':frame['width'],'height':frame['height']}
 sheet.save(ROOT/'sheets'/'ben-poses.png')
 (ROOT/'assets.json').write_text(json.dumps({'palette':PALETTE,'frames':FRAMES,'animations':{n:{'frames':fs,'durationsMs':ts} for n,(fs,ts) in ANIMATIONS.items()},'sheet':positions},indent=2)+'\n')
-shutil.copy2(ROOT.parent/'classic-fizz-original-6x.png',ROOT/'original-study.png')
+# Render the comparison directly from the vendored native grid.
+raster({'width':16,'height':32,'grid':BASE}).resize((96,192),Image.Resampling.NEAREST).save(ROOT/'original-study.png')
 
 html='''<!doctype html><html lang="en-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Classic Fizz · Ben Pose Workshop</title><style>
 :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101719;color:#e8f1e5}*{box-sizing:border-box}body{max-width:1400px;margin:auto;padding:32px}h1{font-size:clamp(2rem,5vw,3.6rem);margin:.3em 0}h2{margin-top:48px}p{max-width:840px;line-height:1.6;color:#b4c7bc}.eyebrow{color:#a9ee73;letter-spacing:.16em;font-size:.8rem}nav,.controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0;align-items:center}a{color:#b8ef92}button,select,input{font:inherit}button,select{background:#23372d;color:#e8f1e5;border:1px solid #607c62;border-radius:6px;padding:8px 12px}label{display:flex;gap:8px;align-items:center}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}article{border:1px solid #344a3f;border-radius:12px;overflow:hidden;background:#17231e}article h3,article p{margin:16px}article p{font-size:.85rem}.stage{height:300px;display:flex;align-items:center;justify-content:center;background-color:#20302c;background-image:linear-gradient(45deg,#ffffff05 25%,transparent 25%,transparent 75%,#ffffff05 75%),linear-gradient(45deg,#ffffff05 25%,transparent 25%,transparent 75%,#ffffff05 75%);background-size:16px 16px;background-position:0 0,8px 8px}.stage img,.stage canvas{image-rendering:pixelated;max-width:100%;object-fit:contain}.stage canvas{transform:scaleX(var(--facing,1))}.compass{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.compass article .stage{height:190px}.compass h3{font-size:1rem}.original{display:flex;gap:32px;flex-wrap:wrap}.original article{min-width:240px}.small{font-size:.85rem}footer{margin-top:40px;color:#9bb3a4}@media(max-width:600px){body{padding:16px}.compass{gap:6px}.compass article h3{margin:8px}.compass article .stage{height:128px}.compass article p{display:none}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-</style></head><body><div class="eyebrow">LIEUTENANT FIZZ / ART WORKSHOP</div><h1>Classic Fizz, in motion.</h1><p>The original three-quarter Ben, polished into a complete pose study: a rounded green helmet, clean racing stripe, warm face, gold Fizz emblem, blue denim and red high-tops. Side-view actions share a padded 24 × 44 canvas. The overworld uses a separate top-down 24 × 24 design.</p><nav><a href="#comparison">Original & polish</a><a href="#motion">Action loops</a><a href="#overworld">Eight-direction overworld</a><a href="#poses">All frames</a><a href="assets.json">Editable grids & timing</a></nav><div class="controls"><button id="play">Pause animations</button><label>Preview scale <select id="scale"><option value="4">4×</option><option value="6" selected>6×</option></select></label><label><input id="flip" type="checkbox">Face left (side-view)</label><label>Speed <select id="speed"><option value="0.5">Half speed</option><option value="1" selected>Normal</option><option value="2">Double speed</option></select></label></div><p class="small">Animations show pose sequences for art review. Timing is a workshop choice; the game simulation controls actual action timing. Download individual transparent PNG/SVG frames, animated SVG/GIF loops or the sprite sheet from this folder.</p><h2 id="comparison">Original & polished stance</h2><div class="original"><article><div class="stage"><img src="original-study.png" alt="Original native Classic Fizz study" width="96" height="192"></div><h3>Original · 16 × 32</h3></article><article><div class="stage"><canvas data-frame="ben_stand" aria-label="Polished Classic Fizz standing pose" role="img"></canvas></div><h3>Polished · padded 24 × 44</h3></article></div><h2 id="motion">Action loops</h2><div class="grid" id="motions"></div><h2 id="overworld">Top-down overworld · eight directions</h2><p>A helmet crown seen from above, a directional brim, foreshortened body and alternating footsteps. Each direction has two walk frames. North faces away; south reveals the face below the brim.</p><div class="compass" id="compass"></div><h2 id="poses">Every game pose, reinterpreted</h2><p>Includes all sixteen side-view pose names from the game, two additional run phases and a recoil frame. The current two overworld frames are replaced here by sixteen directional frames.</p><div class="grid" id="frames"></div><footer>Standalone art study. The original files and game assets are preserved. <a href="README.md">Asset notes</a> · <a href="sheets/ben-poses.png">PNG sprite sheet</a></footer><script>
+</style></head><body><div class="eyebrow">LIEUTENANT FIZZ / ART WORKSHOP</div><h1>Classic Fizz, in motion.</h1><p>The original native three-quarter Ben expanded into a complete pose study: the original flat-topped green helmet, broken white-and-green stripe, grey helmet rim, warm face, gold Fizz emblem, cyan denim seams and red high-tops. Side-view actions share a padded 24 × 44 canvas. The overworld uses a separate top-down 24 × 24 design.</p><nav><a href="#comparison">Original & derived stance</a><a href="#motion">Action loops</a><a href="#overworld">Eight-direction overworld</a><a href="#poses">All frames</a><a href="assets.json">Editable grids & timing</a></nav><div class="controls"><button id="play">Pause animations</button><label>Preview scale <select id="scale"><option value="4">4×</option><option value="6" selected>6×</option></select></label><label><input id="flip" type="checkbox">Face left (side-view)</label><label>Speed <select id="speed"><option value="0.5">Half speed</option><option value="1" selected>Normal</option><option value="2">Double speed</option></select></label></div><p class="small">Animations show pose sequences for art review. Timing is a workshop choice; the game simulation controls actual action timing. Download individual transparent PNG/SVG frames, animated SVG/GIF loops or the sprite sheet from this folder.</p><h2 id="comparison">Original & derived stanceed stance</h2><div class="original"><article><div class="stage"><img src="original-study.png" alt="Original native Classic Fizz study" width="96" height="192"></div><h3>Original · 16 × 32</h3></article><article><div class="stage"><canvas data-frame="ben_stand" aria-label="Original Classic Fizz on the shared pose canvas" role="img"></canvas></div><h3>Original base · padded 24 × 44</h3></article></div><h2 id="motion">Action loops</h2><div class="grid" id="motions"></div><h2 id="overworld">Top-down overworld · eight directions</h2><p>A helmet crown seen from above, a directional brim, foreshortened body and alternating footsteps. Each direction has two walk frames. North faces away; south reveals the face below the brim.</p><div class="compass" id="compass"></div><h2 id="poses">Every game pose, reinterpreted</h2><p>Includes all sixteen side-view pose names from the game, two additional run phases and a recoil frame. The current two overworld frames are replaced here by sixteen directional frames.</p><div class="grid" id="frames"></div><footer>Standalone art study. The original files and game assets are preserved. <a href="README.md">Asset notes</a> · <a href="sheets/ben-poses.png">PNG sprite sheet</a></footer><script>
 '''
 html+='const DATA = '+json.dumps({'palette':PALETTE,'frames':FRAMES,'animations':{n:{'frames':fs,'durationsMs':ts} for n,(fs,ts) in ANIMATIONS.items()}})+';\n'
 html+='''const motionNames={'walk-run':'Walk / run','pogo':'Pogo · extend / compress','climb':'Ladder climb','mantle':'Ledge pull-up · grip / haul / push','fizz-blaster':'Fizz Blaster · recoil'};
@@ -219,15 +214,15 @@ const canvases=[...document.querySelectorAll('canvas')];
 function tick(now){if(playing)elapsed+=(now-last)*speed;last=now;for(const c of canvases){let key=c.dataset.frame;if(c.dataset.animation){const a=DATA.animations[c.dataset.animation];let t=elapsed%a.durationsMs.reduce((s,v)=>s+v,0),i=0;while(i<a.frames.length-1&&t>=a.durationsMs[i]){t-=a.durationsMs[i];i++;}key=a.frames[i];}const f=DATA.frames[key];if(c.width!==f.width||c.height!==f.height){c.width=f.width;c.height=f.height;}const top=c.dataset.topdown;const actualScale=top&&innerWidth<600?3:scale;c.style.width=f.width*actualScale+'px';c.style.height=f.height*actualScale+'px';if(top)c.style.transform='none';const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);for(let y=0;y<f.height;y++)for(let x=0;x<f.width;x++){const colour=DATA.palette[f.grid[y][x]];if(colour){ctx.fillStyle=colour;ctx.fillRect(x,y,1,1);}}}requestAnimationFrame(tick);}requestAnimationFrame(tick);
 </script></body></html>'''
 (ROOT/'preview.html').write_text(html)
-(ROOT/'README.md').write_text('''# Polished Ben pose workshop
+(ROOT/'README.md').write_text('''# Original Classic Fizz pose workshop
 
-A new Classic Fizz pose study based on the adjacent original native study. The original files are preserved. Open `preview.html` directly in a browser; no server or dependencies are needed for viewing. The preview supports pause, scale, playback speed and side-view mirroring, and initially pauses when reduced motion is requested.
+A pose set derived from the unmodified original native Classic Fizz study, vendored in `source/classic-fizz-original.json`. The initial polished version is preserved in the first Git commit. The original files are preserved. Open `preview.html` directly in a browser; no server or dependencies are needed for viewing. The preview supports pause, scale, playback speed and side-view mirroring, and initially pauses when reduced motion is requested.
 
 ## Artwork
 
-The three-quarter side-view keeps the 16 × 32 standing silhouette on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. Helmet clusters, the white racing stripe, face shading, denim and shoe soles have been simplified. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
+The three-quarter side-view keeps the exact original 16 × 32 standing grid on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid is pixel-identical to the original, translated by (4, 4) into the shared canvas. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
 
-The overworld is a separate top-down design on a 24 × 24 canvas with eight headings (N, NE, E, SE, S, SW, W, NW). Each heading has two walking frames. The helmet stripe, brim and partial face indicate the heading; feet and hands alternate. This replaces the current head-and-shoulders interpretation for this study.
+The overworld is a separate top-down design on a 24 × 24 canvas with eight headings (N, NE, E, SE, S, SW, W, NW). Each heading has two walking frames. The helmet stripe, grey rim, brim and partial face indicate the heading; feet and hands alternate. This replaces the current head-and-shoulders interpretation for this study.
 
 ## Files
 

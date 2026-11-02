@@ -1,12 +1,12 @@
-# Polished Ben pose workshop
+# Original Classic Fizz pose workshop
 
-A new Classic Fizz pose study based on the adjacent original native study. The original files are preserved. Open `preview.html` directly in a browser; no server or dependencies are needed for viewing. The preview supports pause, scale, playback speed and side-view mirroring, and initially pauses when reduced motion is requested.
+A pose set derived from the unmodified original native Classic Fizz study, vendored in `source/classic-fizz-original.json`. The initial polished version is preserved in the first Git commit. The original files are preserved. Open `preview.html` directly in a browser; no server or dependencies are needed for viewing. The preview supports pause, scale, playback speed and side-view mirroring, and initially pauses when reduced motion is requested.
 
 ## Artwork
 
-The three-quarter side-view keeps the 16 × 32 standing silhouette on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. Helmet clusters, the white racing stripe, face shading, denim and shoe soles have been simplified. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
+The three-quarter side-view keeps the exact original 16 × 32 standing grid on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid is pixel-identical to the original, translated by (4, 4) into the shared canvas. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
 
-The overworld is a separate top-down design on a 24 × 24 canvas with eight headings (N, NE, E, SE, S, SW, W, NW). Each heading has two walking frames. The helmet stripe, brim and partial face indicate the heading; feet and hands alternate. This replaces the current head-and-shoulders interpretation for this study.
+The overworld is a separate top-down design on a 24 × 24 canvas with eight headings (N, NE, E, SE, S, SW, W, NW). Each heading has two walking frames. The helmet stripe, grey rim, brim and partial face indicate the heading; feet and hands alternate. This replaces the current head-and-shoulders interpretation for this study.
 
 ## Files
 
