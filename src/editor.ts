@@ -41,9 +41,9 @@ export function initialiseEditor(data: WorkshopData): void {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => section.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('#pixel-canvas'), native = $<HTMLCanvasElement>('#native-preview');
   const select = $<HTMLSelectElement>('#edit-frame');
-  const standing = ["ben_stand", "ben_standRight", "ben_standFront", "ben_frontLookUp", "ben_frontBendHalf", "ben_frontBendFull"].filter(name => Object.hasOwn(data.frames, name));
+  const standing = ["ben_stand","ben_standRight","ben_standFront","ben_walkRight1","ben_walkRight2","ben_walkRight3","ben_walkRight4","ben_frontLookUp","ben_frontBendHalf","ben_frontBendFull"].filter(name => Object.hasOwn(data.frames, name));
   const frameNames = [...standing, ...Object.keys(data.frames).filter(name => !standing.includes(name))];
-  const labels: Record<string, string> = { ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner", ben_standFront: "ben_standFront — Stand front · camera-facing", ben_frontLookUp: "ben_frontLookUp — Look up · camera-facing", ben_frontBendHalf: "ben_frontBendHalf — Bend forward · halfway", ben_frontBendFull: "ben_frontBendFull — Bend forward · helmet crown" };
+  const labels: Record<string, string> = { ben_walkRight1: "ben_walkRight1 — Walk right · near contact", ben_walkRight2: "ben_walkRight2 — Walk right · passing low", ben_walkRight3: "ben_walkRight3 — Walk right · far contact", ben_walkRight4: "ben_walkRight4 — Walk right · passing high", ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner", ben_standFront: "ben_standFront — Stand front · camera-facing", ben_frontLookUp: "ben_frontLookUp — Look up · camera-facing", ben_frontBendHalf: "ben_frontBendHalf — Bend forward · halfway", ben_frontBendFull: "ben_frontBendFull — Bend forward · helmet crown" };
   select.replaceChildren(...frameNames.map(name => { const option = document.createElement("option"); option.value = name; option.textContent = labels[name] ?? name; return option; }));
   select.value = frameName;
   const status = (text: string): void => { $('#editor-status').textContent = text; };
@@ -60,7 +60,12 @@ export function initialiseEditor(data: WorkshopData): void {
   try {
     const stored = localStorage.getItem(draftKey);
     if (stored) {
-      const frames = validateFrames(normaliseFrames(JSON.parse(stored)), baseline, data.palette);
+      const restored = normaliseFrames(JSON.parse(stored));
+      // Older browser drafts may still contain the retired walk study.
+      if (restored && typeof restored === "object" && !Array.isArray(restored)) {
+        for (const name of ["ben_run1", "ben_run2", "ben_run3", "ben_run4"]) delete (restored as Record<string, unknown>)[name];
+      }
+      const frames = validateFrames(restored, baseline, data.palette);
       Object.assign(data.frames, frames);
       dirty = JSON.stringify(data.frames) !== JSON.stringify(baseline);
       status(dirty ? 'Restored your browser draft. Save to project when ready.' : 'Project loaded.');
