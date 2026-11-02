@@ -24,7 +24,7 @@ test('facial landmarks share one right-and-left shift while following the rig an
     expect([face.mouth.pixel[0] - face.pixelAnchor[0], face.mouth.pixel[1] - face.pixelAnchor[1]]).toEqual([2 + face.pixelShift, -3]);
     expect(face.eye.pixel[0]).toBe(face.mouth.pixel[0]); expect(face.mouth.pixel[1] - face.eye.pixel[1]).toBe(2);
     expect(Math.abs(face.eye.local[0] - rig.face.eye[0] - face.shift)).toBeLessThan(.1);
-    expect(face.eye.pixel[0] - face.ear.pixel[0]).toBe(3);
+    expect(face.eye.pixel[0] - face.ear.pixel[0]).toBe(3 + face.pixelShift);
     expect(face.ear.pixel[1] - face.eye.pixel[1]).toBe(1);
   }
 });
@@ -33,32 +33,42 @@ test('all six actual sprite grids contain exactly the rig eye and mouth, includi
   for (const [i, frame] of frames.entries()) {
     const face = sampleRunRig(rig, i / rig.sampleCount).face;
     expect(facePixels(frame, skin.face.eye, face.pixelAnchor)).toEqual([face.eye.pixel]);
-    expect(facePixels(frame, skin.face.mouth, face.pixelAnchor)).toEqual([face.mouth.pixel]);
+    expect(facePixels(frame, skin.face.mouth, face.pixelAnchor)).toEqual(face.mouthPixels);
     expect(frame.grid[face.eye.pixel[1]][face.eye.pixel[0]]).toBe(skin.face.eye);
     expect(frame.grid[face.mouth.pixel[1]][face.mouth.pixel[0]]).toBe(skin.face.mouth);
     positions.push(face.eye.pixel);
   }
-  expect(positions).toEqual([[17, 10], [18, 10], [18, 9], [17, 10], [15, 9], [15, 9]]);
+  expect(positions).toEqual([[17, 10], [18, 10], [18, 9], [17, 10], [16, 9], [16, 9]]);
   for (let i = 0; i < positions.length; i++) {
     const next = positions[(i + 1) % positions.length];
-    expect(Math.abs(positions[i][0] - next[0])).toBeLessThanOrEqual(2);
+    expect(Math.abs(positions[i][0] - next[0])).toBeLessThanOrEqual(3);
     expect(Math.abs(positions[i][1] - next[1])).toBeLessThanOrEqual(1);
   }
 });
 
 test('six head-local samples travel right then back left together', () => {
-  expect(Array.from({length: 6}, (_, i) => sampleRunRig(rig, i / 6).face.pixelShift)).toEqual([0, 1, 1, 0, -1, -1]);
+  expect(Array.from({length: 6}, (_, i) => sampleRunRig(rig, i / 6).face.pixelShift)).toEqual([0, 1, 1, 0, 0, 0]);
 });
 
-test('nose outline, cheek shading and jaw travel with the facial dots beneath the helmet', () => {
-  const frames = Object.values(drawRunCycle());
-  const shifts = [0, 1, 1, 0, -1, -1];
-  for (const [i,frame] of frames.entries()) {
-    const face = sampleRunRig(rig, i / 6).face;
-    for (const [key, local] of [['nose',5],['cheek',-2],['chin',0]] as const) expect(face[key].pixel[0] - face.pixelAnchor[0]).toBe(local + shifts[i]);
-    expect(frame.grid[face.nose.pixel[1]][face.nose.pixel[0]]).toBe('k');
-    expect(frame.grid[face.chin.pixel[1]][face.chin.pixel[0]]).toBe('L');
-    const row = frame.grid[face.nose.pixel[1]], start = face.pixelAnchor[0] - 4 + shifts[i];
-    expect(row[start]).toBe('k'); expect(row[start - 1]).toBe('.');
-  }
+test('nose silhouette tucks into the head at either turn while the ear and jaw stay still', () => {
+ const frames=Object.values(drawRunCycle());
+ for(const [i,frame]of frames.entries()){
+  const face=sampleRunRig(rig,i/6).face;
+  expect(face.ear.pixel[0]-face.pixelAnchor[0]).toBe(-1);expect(face.chin.pixel[0]-face.pixelAnchor[0]).toBe(0);
+  expect(Math.abs(face.pixelShift)).toBeLessThanOrEqual(2);
+  expect(frame.grid[face.nose.pixel[1]][face.nose.pixel[0]]).toBe('k');
+  expect(frame.grid[face.noseTip.pixel[1]][face.noseTip.pixel[0]]).toBe(face.noseVisible?'k':'.');
+  expect(face.noseVisible).toBe(i===0||i===3);
+ }
+});
+test('the camera-facing turn reveals a wider mouth while the profile stays narrow', () => {
+ expect(Array.from({length:6},(_,i)=>sampleRunRig(rig,i/6).face.mouthPixels.length)).toEqual([1,1,1,1,2,2]);
+});
+
+test('eye anchor travels at most two canvas pixels including the body bob, with the mouth following',()=>{
+ const faces=Array.from({length:241},(_,i)=>sampleRunRig(rig,i/240).face);
+ const xs=faces.map(f=>f.eye.pixel[0]),ys=faces.map(f=>f.eye.pixel[1]);
+ expect(Math.max(...xs)-Math.min(...xs)).toBeLessThanOrEqual(2);
+ expect(Math.max(...ys)-Math.min(...ys)).toBeLessThanOrEqual(1);
+ for(const f of faces){expect(f.mouth.pixel[0]).toBe(f.eye.pixel[0]);expect(f.mouth.pixel[1]-f.eye.pixel[1]).toBe(2);}
 });

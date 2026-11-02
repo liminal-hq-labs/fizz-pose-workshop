@@ -3,6 +3,7 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+import { rigCatalogue } from './rig/catalogue.ts';
 import { createHistory, setPixel, validateFrames } from './model.ts';
 import { normaliseFrames } from './palette.ts';
 
@@ -42,13 +43,11 @@ export function initialiseEditor(data: WorkshopData): void {
   const canvas = $<HTMLCanvasElement>('#pixel-canvas'), native = $<HTMLCanvasElement>('#native-preview');
   const select = $<HTMLSelectElement>('#edit-frame');
   const standing = ["ben_stand","ben_standRight","ben_standFront","ben_walkRight1","ben_walkRight2","ben_walkRight3","ben_walkRight4","ben_walkRight5","ben_walkRight6","ben_frontLookUp","ben_frontBendHalf","ben_frontBendFull"].filter(name => Object.hasOwn(data.frames, name));
-  const actionFrames = ['ben_pogoRight', 'ben_fireRight'].flatMap(prefix => Array.from({length: 6}, (_, i) => prefix + (i + 1)));
+  const actionFrames = rigCatalogue.flatMap(entry => Array.from({length:entry.rig.sampleCount}, (_, i) => entry.prefix + (i+1)));
   standing.push(...actionFrames.filter(name => Object.hasOwn(data.frames, name)));
   const frameNames = [...standing, ...Object.keys(data.frames).filter(name => !standing.includes(name))];
   const labels: Record<string, string> = { ben_walkRight1: "ben_walkRight1 — 1. Near contact", ben_walkRight2: "ben_walkRight2 — 2. Near push-off", ben_walkRight3: "ben_walkRight3 — 3. Flight · far leg leads", ben_walkRight4: "ben_walkRight4 — 4. Far contact", ben_walkRight5: "ben_walkRight5 — 5. Far push-off", ben_walkRight6: "ben_walkRight6 — 6. Flight · near leg leads",  ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner", ben_standFront: "ben_standFront — Stand front · camera-facing", ben_frontLookUp: "ben_frontLookUp — Look up · camera-facing", ben_frontBendHalf: "ben_frontBendHalf — Bend forward · halfway", ben_frontBendFull: "ben_frontBendFull — Bend forward · helmet crown" };
-  for (const [prefix, title, phases] of [['ben_pogoRight', 'Pogo', ['Compress', 'Launch', 'Rise', 'Apex', 'Fall', 'Land']], ['ben_fireRight', 'Fizz Stunner', ['Aim', 'Discharge', 'Recoil', 'Recover', 'Settle', 'Ready']]] as const) {
-    phases.forEach((phase, i) => { labels[prefix + (i + 1)] = prefix + (i + 1) + " — " + title + " · " + phase; });
-  }
+  for (const entry of rigCatalogue) entry.labels.forEach((phase,i) => {labels[entry.prefix + (i+1)] = entry.prefix + (i+1) + ' — ' + entry.title + ' · ' + phase;});
   select.replaceChildren(...frameNames.map(name => { const option = document.createElement("option"); option.value = name; option.textContent = labels[name] ?? name; return option; }));
   select.value = frameName;
   const status = (text: string): void => { $('#editor-status').textContent = text; };

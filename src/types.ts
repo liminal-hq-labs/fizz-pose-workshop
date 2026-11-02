@@ -11,6 +11,7 @@ export interface Frame {
 export type Frames = Record<string, Frame>;
 export type Palette = Record<string, string | null>;
 export interface Animation {
+  loop?: boolean;
   frames: string[];
   durationsMs: number[];
 }

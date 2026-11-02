@@ -36,15 +36,16 @@ for (const [name, frame] of Object.entries(frames)) {
 for (const [name, animation] of Object.entries(animations)) {
   const sequence = animation.frames.map(key => frames[key]);
   const { width, height } = sequence[0], total = animation.durationsMs.reduce((sum, time) => sum + time, 0);
+  const loop = (animation as {loop?: boolean}).loop !== false;
   let start = 0;
   const css = sequence.map((_, index) => {
     const end = start + animation.durationsMs[index];
-    const rule = `.f${index}{animation:a${index} ${total}ms steps(1,end) infinite}@keyframes a${index}{0%{visibility:${index === 0 ? 'visible' : 'hidden'}}${(start / total * 100).toFixed(4)}%{visibility:visible}${(end / total * 100).toFixed(4)}%{visibility:hidden}100%{visibility:hidden}}`;
+    const rule = `.f${index}{animation:a${index} ${total}ms steps(1,end) ${loop ? 'infinite' : '1 forwards'}}@keyframes a${index}{0%{visibility:${index === 0 ? 'visible' : 'hidden'}}${(start / total * 100).toFixed(4)}%{visibility:visible}${(end / total * 100).toFixed(4)}%{visibility:hidden}100%{visibility:${!loop && index === sequence.length - 1 ? 'visible' : 'hidden'}}}`;
     start = end; return rule;
   }).join('') + '@media(prefers-reduced-motion:reduce){g{animation:none!important;visibility:hidden}g:first-of-type{visibility:visible}}';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" shape-rendering="crispEdges"><style>${css}</style>` + sequence.map((frame, index) => `<g class="f${index}" visibility="hidden">${rects(frame, palette)}</g>`).join('') + '</svg>';
   await writeFile(root + `animations/${name}.svg`, svg);
-  await writeFile(root + `animations/${name}.gif`, gif(sequence, animation.durationsMs, palette));
+  await writeFile(root + `animations/${name}.gif`, gif(sequence, animation.durationsMs, palette, loop));
 }
 const cellWidth = Math.max(...Object.values(frames).map(frame => frame.width));
 const cellHeight = Math.max(...Object.values(frames).map(frame => frame.height));
@@ -65,4 +66,4 @@ const inline = `const DATA = ${JSON.stringify({ palette, frames, animations })};
 const template = await readFile(root + 'templates/standalone.html', 'utf8');
 await writeFile(root + 'standalone-preview.html', template.replace('__PREVIEW_SCRIPT__', () => inline.replaceAll('</script', '<\\/script')));
 await writeFile(root + 'README.md', await readFile(root + 'templates/README.md', 'utf8'));
-console.log(`Built ${Object.keys(frames).length} frames and ${Object.keys(animations).length} animation loops.`);
+console.log(`Built ${Object.keys(frames).length} frames and ${Object.keys(animations).length} animation sequences.`);

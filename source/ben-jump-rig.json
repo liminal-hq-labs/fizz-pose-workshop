@@ -1,0 +1,277 @@
+{
+  "name": "Ben · jump rig",
+  "width": 32,
+  "height": 52,
+  "groundY": 46,
+  "durationMs": 720,
+  "sampleCount": 6,
+  "root": [
+    13,
+    38
+  ],
+  "torso": {
+    "leanDegrees": 0,
+    "pitchSwayDegrees": 1.2,
+    "bobAmplitude": 0.75,
+    "bobLag": 0.04,
+    "shoulderY": -7.5,
+    "shoulderSpread": 0.4,
+    "shoulderTwist": 0.4,
+    "neckHeight": 10
+  },
+  "arms": {
+    "upperLength": 3.5,
+    "forearmLength": 3.2,
+    "swingDegrees": 55,
+    "elbowDegrees": 90,
+    "elbowFlexDegrees": 4,
+    "phaseLead": 0.08333333333333333,
+    "biasDegrees": -8
+  },
+  "legs": {
+    "thighLength": 5.1,
+    "shinLength": 5.2,
+    "hipSpread": 0.3
+  },
+  "stride": {
+    "stanceFraction": 0.24,
+    "frontX": 3.5,
+    "backX": -4,
+    "lift": 6.5,
+    "toeOffDegrees": 25,
+    "recoveryToeDegrees": -12
+  },
+  "feet": {
+    "toe": [
+      3,
+      2
+    ],
+    "heel": [
+      -1,
+      2
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "landingToeDegrees": -28,
+    "landingCompression": 0.25
+  },
+  "face": {
+    "yawDegrees": 3,
+    "eye": [
+      2,
+      -5,
+      1.5
+    ],
+    "mouth": [
+      2,
+      -3,
+      1.5
+    ],
+    "shiftAmplitude": 0,
+    "ear": [
+      -1,
+      -4,
+      1.5
+    ],
+    "profile": {
+      "nose": [
+        5,
+        -4,
+        1.5
+      ],
+      "cheek": [
+        -2,
+        -3,
+        1.5
+      ],
+      "chin": [
+        0,
+        -1,
+        1.5
+      ]
+    }
+  },
+  "motion": "jump",
+  "performance": {
+    "view": "side",
+    "loop": false,
+    "keys": [
+      {
+        "phase": 0,
+        "root": [
+          13,
+          38
+        ],
+        "lean": 8,
+        "headRoll": 0,
+        "nearHand": [
+          16,
+          34
+        ],
+        "farHand": [
+          15,
+          33
+        ],
+        "nearAnkle": [
+          10,
+          44
+        ],
+        "farAnkle": [
+          16,
+          44
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 0.2,
+        "root": [
+          13,
+          32
+        ],
+        "lean": 8,
+        "headRoll": -3,
+        "nearHand": [
+          19,
+          25
+        ],
+        "farHand": [
+          17,
+          25
+        ],
+        "nearAnkle": [
+          7,
+          39
+        ],
+        "farAnkle": [
+          20,
+          38
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": false,
+        "nearFootDegrees": -15,
+        "farFootDegrees": 20
+      },
+      {
+        "phase": 0.4,
+        "root": [
+          13,
+          27
+        ],
+        "lean": 15,
+        "headRoll": -4,
+        "nearHand": [
+          16,
+          24
+        ],
+        "farHand": [
+          17,
+          23
+        ],
+        "nearAnkle": [
+          6,
+          32
+        ],
+        "farAnkle": [
+          22,
+          31
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": false,
+        "nearFootDegrees": -28,
+        "farFootDegrees": 28
+      },
+      {
+        "phase": 0.6,
+        "root": [
+          13,
+          30
+        ],
+        "lean": 10,
+        "headRoll": 2,
+        "nearHand": [
+          18,
+          26
+        ],
+        "farHand": [
+          16,
+          27
+        ],
+        "nearAnkle": [
+          7,
+          36
+        ],
+        "farAnkle": [
+          21,
+          36
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": false,
+        "nearFootDegrees": -18,
+        "farFootDegrees": 20
+      },
+      {
+        "phase": 0.8,
+        "root": [
+          13,
+          38
+        ],
+        "lean": 8,
+        "headRoll": 3,
+        "nearHand": [
+          18,
+          34
+        ],
+        "farHand": [
+          16,
+          33
+        ],
+        "nearAnkle": [
+          10,
+          44
+        ],
+        "farAnkle": [
+          16,
+          44
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 1,
+        "root": [
+          13,
+          36
+        ],
+        "lean": 3,
+        "headRoll": 0,
+        "nearHand": [
+          16,
+          33
+        ],
+        "farHand": [
+          15,
+          32
+        ],
+        "nearAnkle": [
+          10,
+          44
+        ],
+        "farAnkle": [
+          16,
+          44
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      }
+    ]
+  }
+}

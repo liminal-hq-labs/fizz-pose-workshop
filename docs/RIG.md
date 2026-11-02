@@ -53,7 +53,7 @@ During stance the ball of the foot remains on the ground and moves backwards at 
 
 ## Skin binding
 
-Head patches attach to a shared snapped neck anchor. Eye and mouth positions come from `face.eye` and `face.mouth` in the rig, rather than alternate bitmap rows. Their three coordinates are head-local x, y and depth; `face.yawDegrees` controls the small camera-facing rotation. Projection is continuous, but local coordinates are rounded before adding the common pixel anchor so the dots cannot drift independently of the helmet. Cheek variants keep the slight turn readable without shifting the facial dots. Shirt patches attach to the pelvis and rotate with the torso; their towards/away variants suggest chest rotation. Sleeves cover the upper half of the arm’s first bone, and the exposed arm continues through the elbow to the hand. Shoes have separate heel and forefoot segments. Landing raises the toe and briefly compresses the upper, then the front settles flat. At push-off the heel rises around the grounded ball while the toe stays planted; the hinge relaxes in recovery and lifts again before contact. The Stunner attaches beside the near hip and rotates with the upper thigh.
+Head patches attach to a shared snapped neck anchor. Eye and mouth positions come from `face.eye` and `face.mouth` in the rig, rather than alternate bitmap rows. Their three coordinates are head-local x, y and depth; `face.yawDegrees` controls the small camera-facing rotation. Projection is continuous, but local coordinates are rounded before adding the common pixel anchor so the dots cannot drift independently of the helmet. The helmet, ear, cheeks and jaw stay anchored; the eye, mouth and nose shift within that silhouette. The mouth widens to two pixels on the camera-facing turn. Shirt patches attach to the pelvis and rotate with the torso; their towards/away variants suggest chest rotation. Sleeves cover the upper half of the arm’s first bone, and the exposed arm continues through the elbow to the hand. Shoes have separate heel and forefoot segments. Landing raises the toe and briefly compresses the upper, then the front settles flat. At push-off the heel rises around the grounded ball while the toe stays planted; the hinge relaxes in recovery and lifts again before contact. The Stunner attaches beside the near hip and rotates with the upper thigh.
 
 Each patch contains rows with `x`, `y` and `pixels`, plus an `anchor`. The head and torso accept optional `towards` and `away` rows. The shoe has near/far rows, a ball pivot and `flexX` hinge. All colour codes come from `source/game-palette.json`, preserving the game’s sixteen opaque colours and transparent `.`.
 
@@ -63,11 +63,11 @@ The tests sample 241 times across a cycle, measuring bone lengths, elbow bend or
 
 ## Facial landmark inspection
 
-The rig viewer includes six head-aligned crops and a coordinate table. Each row lists the snapped head anchor, actual eye and mouth pixels, the expected ear pixel and whether its colour matches, and their offsets within the head. The base offsets are eye (+2, −5), mouth (+2, −3) and ear (−1, −4); a shared horizontal shift moves all three together. Continuous projected coordinates are shown above the table, and the landmark overlay is available on the rig and sprite. A row marked **Draft differs** identifies manual browser edits that no longer match the generated rig.
+The rig viewer includes six head-aligned crops and a coordinate table. Each row lists the snapped head anchor, actual eye and mouth pixels, the expected ear pixel and whether its colour matches, and their offsets within the head. The base offsets are eye (+2, −5), mouth (+2, −3) and ear (−1, −4); the eye and mouth move within the head while the ear stays anchored. Continuous projected coordinates are shown above the table, and the landmark overlay is available on the rig and sprite. A row marked **Draft differs** identifies manual browser edits that no longer match the generated rig.
 
 `rig/ben-running/face-sequence.json` saves both rig-derived and measured pixel coordinates; `face-sequence.svg` saves the head-aligned sequence. The exporter also includes full facial landmarks in `samples.json`. Tests cover a subpixel rounding-boundary case, 241 continuous poses, all six rendered eye/mouth pixels and the loop seam.
 
-The eye, mouth and ear share a sinusoidal horizontal shift in head space. At the six running samples the shift is `0, +1, +1, 0, -1, -1` pixels: right, then back left. Their spacing stays constant; the rounded head anchor supplies body movement separately. `face.shiftAmplitude` controls the motion, and `face.ear` supplies the ear's local position. The face inspector and saved measurements include all three landmarks.
+The running eye is the motion anchor. `face.eyeTravelPixels: 2` limits its entire canvas path to two horizontal pixels, including movement inherited from the torso; vertical travel stays within one pixel. The mouth follows that anchor and widens to two pixels on the camera-facing turn. The nose is part of the silhouette: it projects in the neutral side profile and retracts by one pixel at either turn, blending into the head. The helmet, ear, cheeks and jaw retain their original attachment. `face.profile` supplies the nose, cheek and chin landmarks.
 
 ## Pogo and Fizz Stunner rigs
 
@@ -79,6 +79,39 @@ The eye, mouth and ear share a sinusoidal horizontal shift in head space. At the
 
 Run `bun run draw:actions` then `bun run generate` to update the twelve editable action frames and their active gallery loops. This overwrites the corresponding editor overrides. `rig/ben-pogo/` and `rig/ben-firing/` contain the configuration, shared skin, joint samples, continuous SVG, six static skeleton SVGs, six PNG/SVG sprites, GIF and facial sequence measurements. The generic exporter accepts either action rig, for example `bun run rig:export source/ben-pogo-rig.json source/ben-side-skin.json rig/ben-pogo`.
 
-The viewer's **Action** selector switches between all three rigs. Continuous motion, six samples, speed, scrubbing, stepping, overlays, facial inspection and download links follow the selected action. The sprite sheet uses the maximum frame dimensions for its cells and records each frame's native rectangle in `assets.json`.
+The viewer's **Action** selector switches between the saved rigs. Continuous motion, six samples, speed, scrubbing, stepping, overlays, facial inspection and download links follow the selected action. The sprite sheet uses the maximum frame dimensions for its cells and records each frame's native rectangle in `assets.json`.
 
-The side-view face is a separate skin layer: rows 9–13 contain the cheek, nose silhouette, jaw and chin. That layer shares `face.pixelShift` with the eye, mouth and ear, while the helmet and neck remain attached to the head anchor. `face.profile` defines nose, cheek and chin landmarks for the inspector and exported measurements. Shifting the complete layer replaces the previous location rather than leaving duplicate outline or shading pixels behind.
+The side-view skin preserves the original helmet and facial outline. The nose projection is retracted at either turn; the ear, cheeks and jaw stay attached to the head.
+
+## Climbing, jumping and expressive performances
+
+`src/rig/catalogue.ts` registers all eleven rigs and their frame names, labels, animation names and export folders. `source/ben-ladder-rig.json`, `ben-jump-rig.json`, `ben-death-rig.json`, `ben-ledge-rig.json`, `ben-whistle-left-rig.json`, `ben-whistle-right-rig.json`, `ben-ledge-left-rig.json` and `ben-phone-rig.json` define six poses each. `performance.keys` stores pelvis position, torso lean, head roll, hand and ankle targets, expression and support flags. The continuous solver in `src/rig/performance.ts` smoothly interpolates these goals and solves fixed-length arms and legs. Unreachable goals and invalid phase ordering stop the export.
+
+Run `bun run draw:performances` then `bun run generate` to rebuild the 48 performance frames and eight saved export folders. This explicitly replaces the matching editor overrides. Ordinary generation preserves manual adjustments. The two existing action rigs still use `bun run draw:actions`; running uses `bun run draw:run`.
+
+| Rig | View and pose sequence | Playback |
+|---|---|---|
+| Ladder climb | Back view; opposite hands and feet alternate, with bent elbows and knees | Loop |
+| Jump | Crouch, launch, apex, fall, land, recover | Hold final pose |
+| Dramatic death | Shock, belly clutch, tongue out, dizzy eyes, wince, final comic collapse; both oversized soles face the camera | Hold final pose |
+| Ledge pull · left and right | Hang, pull, chest over edge, knee up, push to crouch, stand; grips stay pinned through the pull | Hold final pose |
+| Whistling idle · left and right | Saved standing artwork with a puckered mouth and musical notes; body and equipment stay fixed | Loop |
+| Seated phone idle | Face camera, fold legs, take out phone, raise screen, read, settle; crossed shins and both hands around the phone | Hold seated pose |
+
+Back-view climbing uses a rear helmet and shirt skin with no visible face. Front-facing death and phone poses use the saved front-facing Ben artwork for their helmet and face proportions, with rig-painted expressions. Death presents large sole patches towards the viewer and keeps both hands at the belly; head roll and changing expressions provide the exaggerated performance. The phone back has a small camera detail and yellow Fizz mark, with no baked screen glow. The phone rig uses wider folded-leg bones to make the crossed-leg silhouette readable.
+
+Ladder and ledge geometry appears only as a guide in the skeleton preview and skeleton SVGs. Sprite exports stay transparent and contain the character and personal equipment. These are in-place art studies; the game simulation will supply world movement.
+
+One-shot performances include both endpoint poses, using sample times `i / (sampleCount - 1)`. The rig viewer and saved skeleton SVG stop at the final pose. The **Action loops** gallery and its animated sprite SVG/GIF exports repeat these sequences for art review. Use **Play rig** to replay a completed rig or **Restart animations** to replay gallery actions. Loops use `i / sampleCount` and wrap continuously. Front/back facial inspection compares the head crop with the saved project artwork, so comic mouth shapes and hidden faces are reported correctly while edited drafts remain detectable.
+
+### Phone-screen lighting
+
+The phone idle faces the camera. Its screen faces Ben while the dark back case faces the player. The hidden screen should act as a small dynamic light in the game, brightening Ben’s face and hands once the phone is raised. Fade or modulate that light with screen visibility, and move it with the phone grip. Keep the lighting separate from the sixteen-colour sprite pixels. `lightingNote` in `source/ben-phone-rig.json` and its saved rig/sample exports preserves this integration note. The workshop displays the palette-only artwork; it does not implement engine lighting.
+
+Left and right whistling rigs use complete patches of the current saved `ben_stand` and `ben_standRight` artwork. Only the mouth changes; musical notes stay outside the figure. Their transparent canvas has four pixels of horizontal padding around the original 24 × 44 frame.
+
+`src/rig/reflect.ts` reflects the complete skeleton, facial anchors, feet, environment guides and skin for left-facing actions. `source/ben-ledge-left-rig.json` sets `mirrored: true` over the shared right-facing goals. Both ledge directions have separate editable frames, previews and export folders.
+
+The jump’s airborne keys spread the ankles sixteen pixels apart at the apex and set independent `nearFootDegrees` and `farFootDegrees`. Shoes return flat before landing.
+
+The front-facing **Look up & down** loop reuses the saved standing, look-up, half-bend and full-bend sprites. Its sequence is neutral → up → neutral → half-down → full-down → half-down. Looking up holds for 800 ms, each downward pose for 400 ms and each neutral transition for 200 ms. Run `bun run draw:look-loop` then `bun run generate` to restore this timing without redrawing any artwork.

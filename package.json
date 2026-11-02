@@ -14,7 +14,9 @@
     "validate": "bun run generate && bun run typecheck && bun run test && bun run build",
     "draw:run": "bun scripts/draw-run-cycle.ts",
     "rig:export": "bun scripts/export-rig.ts",
-    "draw:actions": "bun scripts/draw-action-rigs.ts"
+    "draw:actions": "bun scripts/draw-action-rigs.ts",
+    "draw:performances": "bun scripts/draw-performance-rigs.ts",
+    "draw:look-loop": "bun scripts/draw-look-loop.ts"
   },
   "devDependencies": {
     "vite": "8.3.5",

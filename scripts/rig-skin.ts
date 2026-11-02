@@ -3,23 +3,26 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-import { sampleRig } from '../src/rig/sample.ts';
+import { paintFacingBody, paintIdleProps, paintStandingIdle } from './performance-skin.ts';
+import { reflectPose } from '../src/rig/reflect.ts';
+import { sampleRig, sampleTime } from '../src/rig/sample.ts';
 
 import { add, rotate, type Chain, type Vec2 } from '../src/rig/kinematics.ts';
 import { validateRig, type RigFoot, type RigPose, type SideRig } from '../src/rig/run.ts';
 import type { Frame, Frames } from '../src/types.ts';
 
 interface PixelRow { x: number; y: number; pixels: string; }
-interface Patch { anchor: number[]; rows: PixelRow[]; towards?: PixelRow[]; away?: PixelRow[]; }
+export interface Patch { anchor: number[]; rows: PixelRow[]; towards?: PixelRow[]; away?: PixelRow[]; }
 export interface RigSkin {
   name: string; head: Patch; torso: Patch;
+  standingLeft: Patch; standingRight: Patch; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
   face: { eye: string; mouth: string; ear: string };
   shoe: { anchor: number[]; toe: number[]; ball: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
   weapon: { anchor: number[]; pixels: string[] };
   stunner: { anchor: number[]; pixels: string[]; hipOffset: number[] };
   palette: { outline: string; shirt: string; shirtShadow: string; skin: string; skinShadow: string; denim: string; denimSeam: string; shoe: string; shoeHighlight: string; sole: string; farSole: string };
 }
-class Pixels {
+export class Pixels {
   readonly rows: string[][];
   constructor(readonly width: number, readonly height: number) { this.rows = Array.from({ length: height }, () => Array<string>(width).fill('.')); }
   pixel(x: number, y: number, code: string): void {
@@ -27,6 +30,7 @@ class Pixels {
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) throw new Error(`Rig skin clips at ${x},${y}.`);
     this.rows[y][x] = code;
   }
+  erase(x: number, y: number): void { if (x >= 0 && y >= 0 && x < this.width && y < this.height) this.rows[y][x] = '.'; }
   segment(points: readonly Vec2[], width: number, code: string, outline?: string): void {
     for (const [thickness, fill] of (outline ? [[width + 2, outline], [width, code]] : [[width, code]]) as [number, string][]) {
       for (let i = 1; i < points.length; i++) {
@@ -51,7 +55,7 @@ class Pixels {
   }
   frame(): Frame { return { width: this.width, height: this.height, grid: this.rows.map(row => row.join('')) }; }
 }
-function paintArm(out: Pixels, chain: Chain, skin: RigSkin, near: boolean): void {
+export function paintArm(out: Pixels, chain: Chain, skin: RigSkin, near: boolean): void {
   const colours = skin.palette, [shoulder, elbow, hand] = chain;
   out.segment(chain, 2, near ? colours.skin : colours.skinShadow, colours.outline);
   const cuff: Vec2 = [(shoulder[0] + elbow[0]) / 2, (shoulder[1] + elbow[1]) / 2];
@@ -82,7 +86,15 @@ function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin): void {
   out.patch({ anchor: skin.stunner.anchor, rows }, anchor, -angle);
 }
 export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
+  if (rig.mirrored) {
+    const frame = skinRig({...rig,mirrored:false},skin,reflectPose(pose,rig.width));
+    return {...frame,grid:frame.grid.map(row=>[...row].reverse().join(''))};
+  }
   const out = new Pixels(rig.width, rig.height), colours = skin.palette;
+  if (pose.presentation?.standing) {paintStandingIdle(out, skin, pose); return out.frame();}
+  if (pose.presentation && pose.presentation.view !== 'side') {
+    paintFacingBody(out, rig, skin, pose); return out.frame();
+  }
   if (pose.pogo) {
     const p = pose.pogo;
     out.segment([p.shaftTop, p.springTop], 1, 'L', 'k');
@@ -108,20 +120,15 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
       out.pixel(x + 1, y, 'y'); out.pixel(x + 2, y, 'W'); out.pixel(x + 2, y - 1, 'C'); out.pixel(x + 2, y + 1, 'C'); out.pixel(x + 3, y, 'C');
     }
   }
-  const faceRows = (row: PixelRow): boolean => row.y >= 9 && row.y <= 13;
-  const layer = (face: boolean): Patch => ({ ...skin.head,
-    rows: skin.head.rows.filter(row => faceRows(row) === face),
-    towards: skin.head.towards?.filter(row => faceRows(row) === face),
-    away: skin.head.away?.filter(row => faceRows(row) === face),
-  });
-  out.patch(layer(false), pose.face.pixelAnchor, 0, pose.headTurn);
-  out.patch(layer(true), add(pose.face.pixelAnchor, [pose.face.pixelShift, 0]), 0, pose.headTurn);
+  out.patch(skin.head, pose.face.pixelAnchor, pose.headAngle ?? 0, pose.headTurn);
+  if (!pose.face.noseVisible) { out.erase(...pose.face.noseTip.pixel); out.pixel(...pose.face.nose.pixel, 'k'); }
   out.pixel(pose.face.ear.pixel[0], pose.face.ear.pixel[1], skin.face.ear);
   out.pixel(pose.face.eye.pixel[0], pose.face.eye.pixel[1], skin.face.eye);
-  out.pixel(pose.face.mouth.pixel[0], pose.face.mouth.pixel[1], skin.face.mouth);
+  for (const point of pose.face.mouthPixels) out.pixel(point[0], point[1], skin.face.mouth);
+  paintIdleProps(out, skin, pose);
   return out.frame();
 }
 export function sampleRigSprites(rig: SideRig, skin: RigSkin, prefix = 'ben_walkRight'): Frames {
   validateRig(rig);
-  return Object.fromEntries(Array.from({ length: rig.sampleCount }, (_, i) => [prefix + (i + 1), skinRig(rig, skin, sampleRig(rig, i / rig.sampleCount))]));
+  return Object.fromEntries(Array.from({ length: rig.sampleCount }, (_, i) => [prefix + (i + 1), skinRig(rig, skin, sampleRig(rig, sampleTime(rig, i)))]));
 }

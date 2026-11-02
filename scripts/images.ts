@@ -33,13 +33,13 @@ export function rects(frame: Frame, palette: Palette): string {
   }));
   return result.join('\n');
 }
-export function gif(frames: Frame[], durations: number[], palette: Palette): Uint8Array {
+export function gif(frames: Frame[], durations: number[], palette: Palette, loop = true): Uint8Array {
   const colours = Object.values(palette).filter((value): value is string => value !== null);
   const colourTable = [[0, 0, 0], ...colours.map(rgb)];
   const encoder = GIFEncoder();
   frames.forEach((frame, index) => {
     const indices = Uint8Array.from(frame.grid.join(''), code => palette[code] ? colours.indexOf(palette[code]!) + 1 : 0);
-    encoder.writeFrame(indices, frame.width, frame.height, { palette: colourTable, transparent: true, transparentIndex: 0, delay: durations[index], repeat: 0, dispose: 2 });
+    encoder.writeFrame(indices, frame.width, frame.height, { palette: colourTable, transparent: true, transparentIndex: 0, delay: durations[index], repeat: loop ? 0 : -1, dispose: 2 });
   });
   encoder.finish();
   return encoder.bytes();

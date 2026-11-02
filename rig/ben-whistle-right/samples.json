@@ -1,0 +1,1519 @@
+{
+  "durationMs": 1200,
+  "loop": true,
+  "frameDurationMs": 200,
+  "samples": [
+    {
+      "time": 0,
+      "root": [
+        17,
+        24
+      ],
+      "torsoAngle": 0,
+      "torsoTurn": 0,
+      "headTurn": 0,
+      "headAngle": 0,
+      "neck": [
+        17,
+        14
+      ],
+      "face": {
+        "anchor": [
+          17,
+          14
+        ],
+        "pixelAnchor": [
+          17,
+          14
+        ],
+        "yaw": 0,
+        "shift": 0,
+        "pixelShift": 0,
+        "eye": {
+          "local": [
+            2,
+            -5
+          ],
+          "world": [
+            19,
+            9
+          ],
+          "pixel": [
+            19,
+            9
+          ]
+        },
+        "mouth": {
+          "local": [
+            2,
+            -3
+          ],
+          "world": [
+            19,
+            11
+          ],
+          "pixel": [
+            19,
+            11
+          ]
+        },
+        "mouthPixels": [
+          [
+            19,
+            11
+          ]
+        ],
+        "ear": {
+          "local": [
+            -1,
+            -4
+          ],
+          "world": [
+            16,
+            10
+          ],
+          "pixel": [
+            16,
+            10
+          ]
+        },
+        "nose": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseTip": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseVisible": true,
+        "cheek": {
+          "local": [
+            -2,
+            -3
+          ],
+          "world": [
+            15,
+            11
+          ],
+          "pixel": [
+            15,
+            11
+          ]
+        },
+        "chin": {
+          "local": [
+            0,
+            -1
+          ],
+          "world": [
+            17,
+            13
+          ],
+          "pixel": [
+            17,
+            13
+          ]
+        }
+      },
+      "nearArm": [
+        [
+          16.6,
+          16.5
+        ],
+        [
+          14.918411582609783,
+          19.56957006671929
+        ],
+        [
+          17,
+          22
+        ]
+      ],
+      "farArm": [
+        [
+          17.4,
+          16.5
+        ],
+        [
+          13.927431570483222,
+          16.937342545750337
+        ],
+        [
+          13,
+          20
+        ]
+      ],
+      "nearLeg": [
+        [
+          16.7,
+          24
+        ],
+        [
+          16.305966683036257,
+          29.0847554262838
+        ],
+        [
+          12,
+          32
+        ]
+      ],
+      "farLeg": [
+        [
+          17.3,
+          24
+        ],
+        [
+          20.390252405737026,
+          28.05713446521514
+        ],
+        [
+          17,
+          32
+        ]
+      ],
+      "nearFoot": {
+        "ankle": [
+          12,
+          32
+        ],
+        "ball": [
+          13,
+          34
+        ],
+        "toe": [
+          15,
+          34
+        ],
+        "heel": [
+          11,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "farFoot": {
+        "ankle": [
+          17,
+          32
+        ],
+        "ball": [
+          18,
+          34
+        ],
+        "toe": [
+          20,
+          34
+        ],
+        "heel": [
+          16,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "contact": "both",
+      "presentation": {
+        "view": "side",
+        "standing": "right",
+        "expression": "whistle",
+        "cameraShoes": false,
+        "notes": [
+          [
+            25,
+            12
+          ],
+          [
+            28,
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "time": 0.16666666666666674,
+      "root": [
+        17,
+        24
+      ],
+      "torsoAngle": 0,
+      "torsoTurn": 0,
+      "headTurn": 0,
+      "headAngle": 0,
+      "neck": [
+        17,
+        14
+      ],
+      "face": {
+        "anchor": [
+          17,
+          14
+        ],
+        "pixelAnchor": [
+          17,
+          14
+        ],
+        "yaw": 0,
+        "shift": 0,
+        "pixelShift": 0,
+        "eye": {
+          "local": [
+            2,
+            -5
+          ],
+          "world": [
+            19,
+            9
+          ],
+          "pixel": [
+            19,
+            9
+          ]
+        },
+        "mouth": {
+          "local": [
+            2,
+            -3
+          ],
+          "world": [
+            19,
+            11
+          ],
+          "pixel": [
+            19,
+            11
+          ]
+        },
+        "mouthPixels": [
+          [
+            19,
+            11
+          ]
+        ],
+        "ear": {
+          "local": [
+            -1,
+            -4
+          ],
+          "world": [
+            16,
+            10
+          ],
+          "pixel": [
+            16,
+            10
+          ]
+        },
+        "nose": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseTip": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseVisible": true,
+        "cheek": {
+          "local": [
+            -2,
+            -3
+          ],
+          "world": [
+            15,
+            11
+          ],
+          "pixel": [
+            15,
+            11
+          ]
+        },
+        "chin": {
+          "local": [
+            0,
+            -1
+          ],
+          "world": [
+            17,
+            13
+          ],
+          "pixel": [
+            17,
+            13
+          ]
+        }
+      },
+      "nearArm": [
+        [
+          16.6,
+          16.5
+        ],
+        [
+          14.918411582609783,
+          19.56957006671929
+        ],
+        [
+          17,
+          22
+        ]
+      ],
+      "farArm": [
+        [
+          17.4,
+          16.5
+        ],
+        [
+          13.927431570483222,
+          16.937342545750337
+        ],
+        [
+          13,
+          20
+        ]
+      ],
+      "nearLeg": [
+        [
+          16.7,
+          24
+        ],
+        [
+          16.305966683036257,
+          29.0847554262838
+        ],
+        [
+          12,
+          32
+        ]
+      ],
+      "farLeg": [
+        [
+          17.3,
+          24
+        ],
+        [
+          20.390252405737026,
+          28.05713446521514
+        ],
+        [
+          17,
+          32
+        ]
+      ],
+      "nearFoot": {
+        "ankle": [
+          12,
+          32
+        ],
+        "ball": [
+          13,
+          34
+        ],
+        "toe": [
+          15,
+          34
+        ],
+        "heel": [
+          11,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "farFoot": {
+        "ankle": [
+          17,
+          32
+        ],
+        "ball": [
+          18,
+          34
+        ],
+        "toe": [
+          20,
+          34
+        ],
+        "heel": [
+          16,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "contact": "both",
+      "presentation": {
+        "view": "side",
+        "standing": "right",
+        "expression": "whistle",
+        "cameraShoes": false,
+        "notes": [
+          [
+            25,
+            9.401923788646684
+          ],
+          [
+            28,
+            6.000000000000001
+          ]
+        ]
+      }
+    },
+    {
+      "time": 0.33333333333333326,
+      "root": [
+        17,
+        24
+      ],
+      "torsoAngle": 0,
+      "torsoTurn": 0,
+      "headTurn": 0,
+      "headAngle": 0,
+      "neck": [
+        17,
+        14
+      ],
+      "face": {
+        "anchor": [
+          17,
+          14
+        ],
+        "pixelAnchor": [
+          17,
+          14
+        ],
+        "yaw": 0,
+        "shift": 0,
+        "pixelShift": 0,
+        "eye": {
+          "local": [
+            2,
+            -5
+          ],
+          "world": [
+            19,
+            9
+          ],
+          "pixel": [
+            19,
+            9
+          ]
+        },
+        "mouth": {
+          "local": [
+            2,
+            -3
+          ],
+          "world": [
+            19,
+            11
+          ],
+          "pixel": [
+            19,
+            11
+          ]
+        },
+        "mouthPixels": [
+          [
+            19,
+            11
+          ]
+        ],
+        "ear": {
+          "local": [
+            -1,
+            -4
+          ],
+          "world": [
+            16,
+            10
+          ],
+          "pixel": [
+            16,
+            10
+          ]
+        },
+        "nose": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseTip": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseVisible": true,
+        "cheek": {
+          "local": [
+            -2,
+            -3
+          ],
+          "world": [
+            15,
+            11
+          ],
+          "pixel": [
+            15,
+            11
+          ]
+        },
+        "chin": {
+          "local": [
+            0,
+            -1
+          ],
+          "world": [
+            17,
+            13
+          ],
+          "pixel": [
+            17,
+            13
+          ]
+        }
+      },
+      "nearArm": [
+        [
+          16.6,
+          16.5
+        ],
+        [
+          14.918411582609783,
+          19.56957006671929
+        ],
+        [
+          17,
+          22
+        ]
+      ],
+      "farArm": [
+        [
+          17.4,
+          16.5
+        ],
+        [
+          13.927431570483222,
+          16.937342545750337
+        ],
+        [
+          13,
+          20
+        ]
+      ],
+      "nearLeg": [
+        [
+          16.7,
+          24
+        ],
+        [
+          16.305966683036257,
+          29.0847554262838
+        ],
+        [
+          12,
+          32
+        ]
+      ],
+      "farLeg": [
+        [
+          17.3,
+          24
+        ],
+        [
+          20.390252405737026,
+          28.05713446521514
+        ],
+        [
+          17,
+          32
+        ]
+      ],
+      "nearFoot": {
+        "ankle": [
+          12,
+          32
+        ],
+        "ball": [
+          13,
+          34
+        ],
+        "toe": [
+          15,
+          34
+        ],
+        "heel": [
+          11,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "farFoot": {
+        "ankle": [
+          17,
+          32
+        ],
+        "ball": [
+          18,
+          34
+        ],
+        "toe": [
+          20,
+          34
+        ],
+        "heel": [
+          16,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "contact": "both",
+      "presentation": {
+        "view": "side",
+        "standing": "right",
+        "expression": "whistle",
+        "cameraShoes": false,
+        "notes": [
+          [
+            25,
+            9.401923788646684
+          ],
+          [
+            28,
+            7.999999999999999
+          ]
+        ]
+      }
+    },
+    {
+      "time": 0.5,
+      "root": [
+        17,
+        24
+      ],
+      "torsoAngle": 0,
+      "torsoTurn": 0,
+      "headTurn": 0,
+      "headAngle": 0,
+      "neck": [
+        17,
+        14
+      ],
+      "face": {
+        "anchor": [
+          17,
+          14
+        ],
+        "pixelAnchor": [
+          17,
+          14
+        ],
+        "yaw": 0,
+        "shift": 0,
+        "pixelShift": 0,
+        "eye": {
+          "local": [
+            2,
+            -5
+          ],
+          "world": [
+            19,
+            9
+          ],
+          "pixel": [
+            19,
+            9
+          ]
+        },
+        "mouth": {
+          "local": [
+            2,
+            -3
+          ],
+          "world": [
+            19,
+            11
+          ],
+          "pixel": [
+            19,
+            11
+          ]
+        },
+        "mouthPixels": [
+          [
+            19,
+            11
+          ]
+        ],
+        "ear": {
+          "local": [
+            -1,
+            -4
+          ],
+          "world": [
+            16,
+            10
+          ],
+          "pixel": [
+            16,
+            10
+          ]
+        },
+        "nose": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseTip": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseVisible": true,
+        "cheek": {
+          "local": [
+            -2,
+            -3
+          ],
+          "world": [
+            15,
+            11
+          ],
+          "pixel": [
+            15,
+            11
+          ]
+        },
+        "chin": {
+          "local": [
+            0,
+            -1
+          ],
+          "world": [
+            17,
+            13
+          ],
+          "pixel": [
+            17,
+            13
+          ]
+        }
+      },
+      "nearArm": [
+        [
+          16.6,
+          16.5
+        ],
+        [
+          14.918411582609783,
+          19.56957006671929
+        ],
+        [
+          17,
+          22
+        ]
+      ],
+      "farArm": [
+        [
+          17.4,
+          16.5
+        ],
+        [
+          13.927431570483222,
+          16.937342545750337
+        ],
+        [
+          13,
+          20
+        ]
+      ],
+      "nearLeg": [
+        [
+          16.7,
+          24
+        ],
+        [
+          16.305966683036257,
+          29.0847554262838
+        ],
+        [
+          12,
+          32
+        ]
+      ],
+      "farLeg": [
+        [
+          17.3,
+          24
+        ],
+        [
+          20.390252405737026,
+          28.05713446521514
+        ],
+        [
+          17,
+          32
+        ]
+      ],
+      "nearFoot": {
+        "ankle": [
+          12,
+          32
+        ],
+        "ball": [
+          13,
+          34
+        ],
+        "toe": [
+          15,
+          34
+        ],
+        "heel": [
+          11,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "farFoot": {
+        "ankle": [
+          17,
+          32
+        ],
+        "ball": [
+          18,
+          34
+        ],
+        "toe": [
+          20,
+          34
+        ],
+        "heel": [
+          16,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "contact": "both",
+      "presentation": {
+        "view": "side",
+        "standing": "right",
+        "expression": "whistle",
+        "cameraShoes": false,
+        "notes": [
+          [
+            25,
+            12
+          ],
+          [
+            28,
+            9
+          ]
+        ]
+      }
+    },
+    {
+      "time": 0.6666666666666665,
+      "root": [
+        17,
+        24
+      ],
+      "torsoAngle": 0,
+      "torsoTurn": 0,
+      "headTurn": 0,
+      "headAngle": 0,
+      "neck": [
+        17,
+        14
+      ],
+      "face": {
+        "anchor": [
+          17,
+          14
+        ],
+        "pixelAnchor": [
+          17,
+          14
+        ],
+        "yaw": 0,
+        "shift": 0,
+        "pixelShift": 0,
+        "eye": {
+          "local": [
+            2,
+            -5
+          ],
+          "world": [
+            19,
+            9
+          ],
+          "pixel": [
+            19,
+            9
+          ]
+        },
+        "mouth": {
+          "local": [
+            2,
+            -3
+          ],
+          "world": [
+            19,
+            11
+          ],
+          "pixel": [
+            19,
+            11
+          ]
+        },
+        "mouthPixels": [
+          [
+            19,
+            11
+          ]
+        ],
+        "ear": {
+          "local": [
+            -1,
+            -4
+          ],
+          "world": [
+            16,
+            10
+          ],
+          "pixel": [
+            16,
+            10
+          ]
+        },
+        "nose": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseTip": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseVisible": true,
+        "cheek": {
+          "local": [
+            -2,
+            -3
+          ],
+          "world": [
+            15,
+            11
+          ],
+          "pixel": [
+            15,
+            11
+          ]
+        },
+        "chin": {
+          "local": [
+            0,
+            -1
+          ],
+          "world": [
+            17,
+            13
+          ],
+          "pixel": [
+            17,
+            13
+          ]
+        }
+      },
+      "nearArm": [
+        [
+          16.6,
+          16.5
+        ],
+        [
+          14.918411582609783,
+          19.56957006671929
+        ],
+        [
+          17,
+          22
+        ]
+      ],
+      "farArm": [
+        [
+          17.4,
+          16.5
+        ],
+        [
+          13.927431570483222,
+          16.937342545750337
+        ],
+        [
+          13,
+          20
+        ]
+      ],
+      "nearLeg": [
+        [
+          16.7,
+          24
+        ],
+        [
+          16.305966683036257,
+          29.0847554262838
+        ],
+        [
+          12,
+          32
+        ]
+      ],
+      "farLeg": [
+        [
+          17.3,
+          24
+        ],
+        [
+          20.390252405737026,
+          28.05713446521514
+        ],
+        [
+          17,
+          32
+        ]
+      ],
+      "nearFoot": {
+        "ankle": [
+          12,
+          32
+        ],
+        "ball": [
+          13,
+          34
+        ],
+        "toe": [
+          15,
+          34
+        ],
+        "heel": [
+          11,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "farFoot": {
+        "ankle": [
+          17,
+          32
+        ],
+        "ball": [
+          18,
+          34
+        ],
+        "toe": [
+          20,
+          34
+        ],
+        "heel": [
+          16,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "contact": "both",
+      "presentation": {
+        "view": "side",
+        "standing": "right",
+        "expression": "whistle",
+        "cameraShoes": false,
+        "notes": [
+          [
+            25,
+            14.598076211353314
+          ],
+          [
+            28,
+            8.000000000000002
+          ]
+        ]
+      }
+    },
+    {
+      "time": 0.8333333333333335,
+      "root": [
+        17,
+        24
+      ],
+      "torsoAngle": 0,
+      "torsoTurn": 0,
+      "headTurn": 0,
+      "headAngle": 0,
+      "neck": [
+        17,
+        14
+      ],
+      "face": {
+        "anchor": [
+          17,
+          14
+        ],
+        "pixelAnchor": [
+          17,
+          14
+        ],
+        "yaw": 0,
+        "shift": 0,
+        "pixelShift": 0,
+        "eye": {
+          "local": [
+            2,
+            -5
+          ],
+          "world": [
+            19,
+            9
+          ],
+          "pixel": [
+            19,
+            9
+          ]
+        },
+        "mouth": {
+          "local": [
+            2,
+            -3
+          ],
+          "world": [
+            19,
+            11
+          ],
+          "pixel": [
+            19,
+            11
+          ]
+        },
+        "mouthPixels": [
+          [
+            19,
+            11
+          ]
+        ],
+        "ear": {
+          "local": [
+            -1,
+            -4
+          ],
+          "world": [
+            16,
+            10
+          ],
+          "pixel": [
+            16,
+            10
+          ]
+        },
+        "nose": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseTip": {
+          "local": [
+            4,
+            -4
+          ],
+          "world": [
+            21,
+            10
+          ],
+          "pixel": [
+            21,
+            10
+          ]
+        },
+        "noseVisible": true,
+        "cheek": {
+          "local": [
+            -2,
+            -3
+          ],
+          "world": [
+            15,
+            11
+          ],
+          "pixel": [
+            15,
+            11
+          ]
+        },
+        "chin": {
+          "local": [
+            0,
+            -1
+          ],
+          "world": [
+            17,
+            13
+          ],
+          "pixel": [
+            17,
+            13
+          ]
+        }
+      },
+      "nearArm": [
+        [
+          16.6,
+          16.5
+        ],
+        [
+          14.918411582609783,
+          19.56957006671929
+        ],
+        [
+          17,
+          22
+        ]
+      ],
+      "farArm": [
+        [
+          17.4,
+          16.5
+        ],
+        [
+          13.927431570483222,
+          16.937342545750337
+        ],
+        [
+          13,
+          20
+        ]
+      ],
+      "nearLeg": [
+        [
+          16.7,
+          24
+        ],
+        [
+          16.305966683036257,
+          29.0847554262838
+        ],
+        [
+          12,
+          32
+        ]
+      ],
+      "farLeg": [
+        [
+          17.3,
+          24
+        ],
+        [
+          20.390252405737026,
+          28.05713446521514
+        ],
+        [
+          17,
+          32
+        ]
+      ],
+      "nearFoot": {
+        "ankle": [
+          12,
+          32
+        ],
+        "ball": [
+          13,
+          34
+        ],
+        "toe": [
+          15,
+          34
+        ],
+        "heel": [
+          11,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "farFoot": {
+        "ankle": [
+          17,
+          32
+        ],
+        "ball": [
+          18,
+          34
+        ],
+        "toe": [
+          20,
+          34
+        ],
+        "heel": [
+          16,
+          34
+        ],
+        "pitch": 0,
+        "toePitch": 0,
+        "compression": 0,
+        "stance": true,
+        "progress": 0
+      },
+      "contact": "both",
+      "presentation": {
+        "view": "side",
+        "standing": "right",
+        "expression": "whistle",
+        "cameraShoes": false,
+        "notes": [
+          [
+            25,
+            14.598076211353314
+          ],
+          [
+            28,
+            5.999999999999998
+          ]
+        ]
+      }
+    }
+  ]
+}

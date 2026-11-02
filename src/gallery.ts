@@ -3,14 +3,17 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+import { rigCatalogue } from './rig/catalogue.ts';
 import type { WorkshopData } from './types.ts';
 
 export function mountGallery(data: WorkshopData): void {
   const $ = <T extends HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
-  const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · six spring phases', climb: 'Ladder climb', mantle: 'Ledge pull-up · grip / haul / push', 'fizz-blaster': 'Fizz Stunner · six firing phases' };
+  const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · six spring phases', climb: 'Ladder climb · six phases', mantle: 'Ledge pull right · six phases', 'mantle-left': 'Ledge pull left · six phases', 'fizz-blaster': 'Fizz Stunner · six firing phases', 'look-up-down': 'Look up & down · front-facing', jump: 'Jump · crouch to landing', death: 'Dramatic death', 'whistle-left': 'Whistle left · standing idle', 'whistle-right': 'Whistle right · standing idle', 'phone-idle': 'Seated phone idle · camera-facing' };
   function card(title: string, key: string, animated: boolean, extra = ''): string {
     return `<article><div class="stage"><canvas role="img" aria-label="${title}" data-${animated ? 'animation' : 'frame'}="${key}" ${extra}></canvas></div><h3>${title}</h3><p>${animated ? `<a href="animations/${key}.svg">Animated SVG</a> · <a href="animations/${key}.gif">GIF</a>` : `<a href="frames/${key}.png">PNG</a> · <a href="frames/${key}.svg">SVG</a>`}</p></article>`;
   }
+  const studies = document.querySelector<HTMLElement>('#performance-studies');
+  if (studies) studies.innerHTML = rigCatalogue.filter(entry=>entry.rig.performance).map(entry => '<h2>' + entry.title + '</h2>' + (entry.rig.lightingNote ? '<p>Lighting note: the phone screen should light his face and hands dynamically in the game. This pixel preview keeps the game palette.</p>' : '') + '<div class="run-strip">' + entry.labels.map((label,i)=>card((i+1)+'. '+label,entry.prefix+(i+1),false)).join('') + '</div>').join('');
   $('#motions').innerHTML = Object.entries(motionNames).map(([key, title]) => card(title, key, true)).join('');
   const directionNames: Record<string, string> = { NW: 'North-west', N: 'North', NE: 'North-east', W: 'West', E: 'East', SW: 'South-west', S: 'South', SE: 'South-east' };
   $('#compass').innerHTML = ['NW', 'N', 'NE', 'W', null, 'E', 'SW', 'S', 'SE'].map(direction => direction ? card(directionNames[direction], 'overworld-' + direction, true, 'data-topdown="true"') : '<div aria-hidden="true" style="display:grid;place-items:center;color:#a9ee73">N ↑</div>').join('');
@@ -18,6 +21,8 @@ export function mountGallery(data: WorkshopData): void {
   let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, elapsed = 0, last = performance.now(), scale = 6, speed = 1;
   const button = $<HTMLButtonElement>('#play');
   function updateButton(): void { button.textContent = playing ? 'Pause animations' : 'Play animations'; button.setAttribute('aria-pressed', String(playing)); }
+  const restart = document.createElement('button'); restart.textContent = 'Restart animations';
+  button.after(restart); restart.onclick = () => {elapsed = 0; playing = true; updateButton();};
   updateButton(); button.onclick = () => { playing = !playing; updateButton(); };
   const scaleSelect = $<HTMLSelectElement>('#scale'), speedSelect = $<HTMLSelectElement>('#speed'), flip = $<HTMLInputElement>('#flip');
   scaleSelect.onchange = () => { scale = Number(scaleSelect.value); };
@@ -31,7 +36,8 @@ export function mountGallery(data: WorkshopData): void {
       let key = canvas.dataset.frame;
       if (canvas.dataset.animation) {
         const animation = data.animations[canvas.dataset.animation];
-        let time = elapsed % animation.durationsMs.reduce((sum, value) => sum + value, 0), index = 0;
+        const duration = animation.durationsMs.reduce((sum,value)=>sum+value,0);
+        let time = animation.loop === false ? Math.min(elapsed, duration - 1) : elapsed % duration, index = 0;
         while (index < animation.frames.length - 1 && time >= animation.durationsMs[index]) { time -= animation.durationsMs[index]; index++; }
         key = animation.frames[index];
       }

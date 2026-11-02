@@ -1,0 +1,306 @@
+{
+  "name": "Ben · ladder rig",
+  "width": 32,
+  "height": 48,
+  "groundY": 43,
+  "durationMs": 1080,
+  "sampleCount": 6,
+  "root": [
+    16,
+    29
+  ],
+  "torso": {
+    "leanDegrees": 0,
+    "pitchSwayDegrees": 1.2,
+    "bobAmplitude": 0.75,
+    "bobLag": 0.04,
+    "shoulderY": -7.5,
+    "shoulderSpread": 3.2,
+    "shoulderTwist": 0.4,
+    "neckHeight": 10
+  },
+  "arms": {
+    "upperLength": 3.5,
+    "forearmLength": 3.2,
+    "swingDegrees": 55,
+    "elbowDegrees": 90,
+    "elbowFlexDegrees": 4,
+    "phaseLead": 0.08333333333333333,
+    "biasDegrees": -8
+  },
+  "legs": {
+    "thighLength": 5.1,
+    "shinLength": 5.2,
+    "hipSpread": 2.2
+  },
+  "stride": {
+    "stanceFraction": 0.24,
+    "frontX": 3.5,
+    "backX": -4,
+    "lift": 6.5,
+    "toeOffDegrees": 25,
+    "recoveryToeDegrees": -12
+  },
+  "feet": {
+    "toe": [
+      3,
+      2
+    ],
+    "heel": [
+      -1,
+      2
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "landingToeDegrees": -28,
+    "landingCompression": 0.25
+  },
+  "face": {
+    "yawDegrees": 3,
+    "eye": [
+      2,
+      -5,
+      1.5
+    ],
+    "mouth": [
+      2,
+      -3,
+      1.5
+    ],
+    "shiftAmplitude": 0,
+    "ear": [
+      -1,
+      -4,
+      1.5
+    ],
+    "profile": {
+      "nose": [
+        5,
+        -4,
+        1.5
+      ],
+      "cheek": [
+        -2,
+        -3,
+        1.5
+      ],
+      "chin": [
+        0,
+        -1,
+        1.5
+      ]
+    }
+  },
+  "motion": "ladder",
+  "performance": {
+    "view": "back",
+    "loop": true,
+    "keys": [
+      {
+        "phase": 0,
+        "root": [
+          16,
+          29
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          10,
+          17
+        ],
+        "farHand": [
+          22,
+          21
+        ],
+        "nearAnkle": [
+          12,
+          38
+        ],
+        "farAnkle": [
+          20,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 0.16666666666666666,
+        "root": [
+          16,
+          28.5
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          10,
+          17
+        ],
+        "farHand": [
+          22,
+          18
+        ],
+        "nearAnkle": [
+          12,
+          36
+        ],
+        "farAnkle": [
+          20,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": false
+      },
+      {
+        "phase": 0.3333333333333333,
+        "root": [
+          16,
+          28
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          10,
+          19
+        ],
+        "farHand": [
+          22,
+          17
+        ],
+        "nearAnkle": [
+          12,
+          34
+        ],
+        "farAnkle": [
+          20,
+          36
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": false
+      },
+      {
+        "phase": 0.5,
+        "root": [
+          16,
+          29
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          10,
+          21
+        ],
+        "farHand": [
+          22,
+          17
+        ],
+        "nearAnkle": [
+          12,
+          34
+        ],
+        "farAnkle": [
+          20,
+          38
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 0.6666666666666666,
+        "root": [
+          16,
+          28.5
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          10,
+          18
+        ],
+        "farHand": [
+          22,
+          17
+        ],
+        "nearAnkle": [
+          12,
+          34
+        ],
+        "farAnkle": [
+          20,
+          36
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": false
+      },
+      {
+        "phase": 0.8333333333333334,
+        "root": [
+          16,
+          28
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          10,
+          17
+        ],
+        "farHand": [
+          22,
+          19
+        ],
+        "nearAnkle": [
+          12,
+          36
+        ],
+        "farAnkle": [
+          20,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": false
+      },
+      {
+        "phase": 1,
+        "root": [
+          16,
+          29
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          10,
+          17
+        ],
+        "farHand": [
+          22,
+          21
+        ],
+        "nearAnkle": [
+          12,
+          38
+        ],
+        "farAnkle": [
+          20,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      }
+    ],
+    "environment": {
+      "kind": "ladder",
+      "x": 8,
+      "y": 12,
+      "width": 16,
+      "spacing": 4
+    }
+  }
+}

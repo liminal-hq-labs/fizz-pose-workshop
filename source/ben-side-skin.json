@@ -311,5 +311,832 @@
       "..kMk...",
       "..kkk..."
     ]
+  },
+  "headFront": {
+    "anchor": [
+      11,
+      14
+    ],
+    "rows": [
+      {
+        "x": 9,
+        "y": 2,
+        "pixels": "kkkkk"
+      },
+      {
+        "x": 7,
+        "y": 3,
+        "pixels": "kkggWggkk"
+      },
+      {
+        "x": 6,
+        "y": 4,
+        "pixels": "kggggWggggk"
+      },
+      {
+        "x": 6,
+        "y": 5,
+        "pixels": "kgGGgWgGGgk"
+      },
+      {
+        "x": 6,
+        "y": 6,
+        "pixels": "kGgggWgggGk"
+      },
+      {
+        "x": 6,
+        "y": 7,
+        "pixels": "kGGGGGGGGGk"
+      },
+      {
+        "x": 6,
+        "y": 8,
+        "pixels": "kLLLLLLLLLk"
+      },
+      {
+        "x": 7,
+        "y": 9,
+        "pixels": "kWWWWWWWk"
+      },
+      {
+        "x": 7,
+        "y": 10,
+        "pixels": "kWWWLWWWk"
+      },
+      {
+        "x": 8,
+        "y": 11,
+        "pixels": "kWWWWWk"
+      },
+      {
+        "x": 9,
+        "y": 12,
+        "pixels": "kWLWk"
+      },
+      {
+        "x": 9,
+        "y": 13,
+        "pixels": "kLLLk"
+      },
+      {
+        "x": 8,
+        "y": 14,
+        "pixels": "kWWWWWk"
+      }
+    ]
+  },
+  "headBack": {
+    "anchor": [
+      11,
+      14
+    ],
+    "rows": [
+      {
+        "x": 9,
+        "y": 2,
+        "pixels": "kkkkk"
+      },
+      {
+        "x": 7,
+        "y": 3,
+        "pixels": "kkggWggkk"
+      },
+      {
+        "x": 6,
+        "y": 4,
+        "pixels": "kggggWggggk"
+      },
+      {
+        "x": 6,
+        "y": 5,
+        "pixels": "kgGGgWgGGgk"
+      },
+      {
+        "x": 6,
+        "y": 6,
+        "pixels": "kGgggWgggGk"
+      },
+      {
+        "x": 6,
+        "y": 7,
+        "pixels": "kGGGGGGGGGk"
+      },
+      {
+        "x": 6,
+        "y": 8,
+        "pixels": "kLLLLLLLLLk"
+      },
+      {
+        "x": 7,
+        "y": 9,
+        "pixels": "kLLLLLLLk"
+      },
+      {
+        "x": 8,
+        "y": 10,
+        "pixels": "kNNNNNk"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "pixels": "kNNNk"
+      },
+      {
+        "x": 9,
+        "y": 12,
+        "pixels": "kLLLk"
+      },
+      {
+        "x": 9,
+        "y": 13,
+        "pixels": "kWWWk"
+      },
+      {
+        "x": 8,
+        "y": 14,
+        "pixels": "kWWWWWk"
+      }
+    ]
+  },
+  "torsoFront": {
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 8,
+        "y": 15,
+        "pixels": "krrrrrk"
+      },
+      {
+        "x": 7,
+        "y": 16,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "x": 7,
+        "y": 17,
+        "pixels": "kRRryrRRk"
+      },
+      {
+        "x": 7,
+        "y": 18,
+        "pixels": "kRRyyyRRk"
+      },
+      {
+        "x": 7,
+        "y": 19,
+        "pixels": "kRRRNRRRk"
+      },
+      {
+        "x": 7,
+        "y": 20,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 21,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 22,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 23,
+        "pixels": "kDDDyDDDk"
+      }
+    ]
+  },
+  "torsoBack": {
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 8,
+        "y": 15,
+        "pixels": "krrrrrk"
+      },
+      {
+        "x": 7,
+        "y": 16,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "x": 7,
+        "y": 17,
+        "pixels": "kRRrRrRRk"
+      },
+      {
+        "x": 7,
+        "y": 18,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 19,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 20,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 21,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 22,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 23,
+        "pixels": "kDDDRDDDk"
+      }
+    ]
+  },
+  "cameraShoe": {
+    "anchor": [
+      3,
+      1
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": ".kkkkk."
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "kRRRRRk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kWWWWWk"
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "kLDDDLk"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": "kDLLLDk"
+      },
+      {
+        "x": 0,
+        "y": 5,
+        "pixels": "kLDDDLk"
+      },
+      {
+        "x": 0,
+        "y": 6,
+        "pixels": ".kkkkk."
+      }
+    ]
+  },
+  "backShoe": {
+    "anchor": [
+      2,
+      2
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": ".kkk."
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "kRRRk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kRrRk"
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "kWWWk"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": ".kkk."
+      }
+    ]
+  },
+  "standingLeft": {
+    "anchor": [
+      13,
+      24
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "........kkkkkk.........."
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "......kkggWgggkk........"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": ".....kgggWggGGgk........"
+      },
+      {
+        "x": 0,
+        "y": 5,
+        "pixels": ".....kgGGWggGGGGk......."
+      },
+      {
+        "x": 0,
+        "y": 6,
+        "pixels": ".....kGgWgggGGGGk......."
+      },
+      {
+        "x": 0,
+        "y": 7,
+        "pixels": "....kGGGGGGGGGGGk......."
+      },
+      {
+        "x": 0,
+        "y": 8,
+        "pixels": "....kLLLLLLLLDDGk......."
+      },
+      {
+        "x": 0,
+        "y": 9,
+        "pixels": "......kWWBWWBWWk........"
+      },
+      {
+        "x": 0,
+        "y": 10,
+        "pixels": "......kWWWLWWWWk........"
+      },
+      {
+        "x": 0,
+        "y": 11,
+        "pixels": ".......kWRRRWLk........."
+      },
+      {
+        "x": 0,
+        "y": 12,
+        "pixels": "........kWWWLk.........."
+      },
+      {
+        "x": 0,
+        "y": 13,
+        "pixels": "........DkLLk..........."
+      },
+      {
+        "x": 0,
+        "y": 14,
+        "pixels": "........kWWWWk.........."
+      },
+      {
+        "x": 0,
+        "y": 15,
+        "pixels": ".......krrrrrrkk........"
+      },
+      {
+        "x": 0,
+        "y": 16,
+        "pixels": ".......krryyrrrrk......."
+      },
+      {
+        "x": 0,
+        "y": 17,
+        "pixels": ".......kRRyNkkrRk......."
+      },
+      {
+        "x": 0,
+        "y": 18,
+        "pixels": ".......kRRRRRkrRk......."
+      },
+      {
+        "x": 0,
+        "y": 19,
+        "pixels": ".......kRRRRRkWWk......."
+      },
+      {
+        "x": 0,
+        "y": 20,
+        "pixels": "......kkRRRRRRWLk......."
+      },
+      {
+        "x": 0,
+        "y": 21,
+        "pixels": ".....kWkRRRRRLWLk......."
+      },
+      {
+        "x": 0,
+        "y": 22,
+        "pixels": ".....kLkkRRRWWWLk......."
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "pixels": "......kDDyWDWWkk........"
+      },
+      {
+        "x": 0,
+        "y": 24,
+        "pixels": ".......kBBBkBBk........."
+      },
+      {
+        "x": 0,
+        "y": 25,
+        "pixels": ".......kBkBBBck........."
+      },
+      {
+        "x": 0,
+        "y": 26,
+        "pixels": ".......kBkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 27,
+        "pixels": ".......kBkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 28,
+        "pixels": ".......kBkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 29,
+        "pixels": ".......kRkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 30,
+        "pixels": "....kkkRRkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 31,
+        "pixels": "...kWWWRkkRRRRk........."
+      },
+      {
+        "x": 0,
+        "y": 32,
+        "pixels": "...kWWkkkRRRyRk........."
+      },
+      {
+        "x": 0,
+        "y": 33,
+        "pixels": ".....kWWWRRRRRk........."
+      },
+      {
+        "x": 0,
+        "y": 34,
+        "pixels": ".....kWWWWWWWWk........."
+      },
+      {
+        "x": 0,
+        "y": 35,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 36,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 37,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 38,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 39,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 40,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 41,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 42,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 43,
+        "pixels": "........................"
+      }
+    ]
+  },
+  "standingRight": {
+    "anchor": [
+      13,
+      24
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "..........kkkkkk........"
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "........kkgggWggkk......"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": "........kgGGggWgggk....."
+      },
+      {
+        "x": 0,
+        "y": 5,
+        "pixels": ".......kGGGGggWGGgk....."
+      },
+      {
+        "x": 0,
+        "y": 6,
+        "pixels": ".......kGGGGgggWgGk....."
+      },
+      {
+        "x": 0,
+        "y": 7,
+        "pixels": ".......kGGGGGGGGGGGk...."
+      },
+      {
+        "x": 0,
+        "y": 8,
+        "pixels": ".......kGDDLLLLLLLLk...."
+      },
+      {
+        "x": 0,
+        "y": 9,
+        "pixels": "........kWWBWWBWWk......"
+      },
+      {
+        "x": 0,
+        "y": 10,
+        "pixels": "........kWWWWLWWWk......"
+      },
+      {
+        "x": 0,
+        "y": 11,
+        "pixels": ".........kLWRRRWk......."
+      },
+      {
+        "x": 0,
+        "y": 12,
+        "pixels": "..........kLWWWk........"
+      },
+      {
+        "x": 0,
+        "y": 13,
+        "pixels": "...........kLLkD........"
+      },
+      {
+        "x": 0,
+        "y": 14,
+        "pixels": "..........kWWWWk........"
+      },
+      {
+        "x": 0,
+        "y": 15,
+        "pixels": "........kkrrrrrrk......."
+      },
+      {
+        "x": 0,
+        "y": 16,
+        "pixels": ".......krrrryyrrk......."
+      },
+      {
+        "x": 0,
+        "y": 17,
+        "pixels": ".......kRrkkNyRRk......."
+      },
+      {
+        "x": 0,
+        "y": 18,
+        "pixels": ".......kRrkRRRRRk......."
+      },
+      {
+        "x": 0,
+        "y": 19,
+        "pixels": ".......kWWkRRRRRk......."
+      },
+      {
+        "x": 0,
+        "y": 20,
+        "pixels": ".......kLWRRRRRRkk......"
+      },
+      {
+        "x": 0,
+        "y": 21,
+        "pixels": ".......kLWLRRRRRkWk....."
+      },
+      {
+        "x": 0,
+        "y": 22,
+        "pixels": ".......kLWWWRRRkkLk....."
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "pixels": "........kkWWDWyDDk......"
+      },
+      {
+        "x": 0,
+        "y": 24,
+        "pixels": "........kDDkkBBBk......."
+      },
+      {
+        "x": 0,
+        "y": 25,
+        "pixels": "........kMmMkBkBk......."
+      },
+      {
+        "x": 0,
+        "y": 26,
+        "pixels": "........kMMkbBkBk......."
+      },
+      {
+        "x": 0,
+        "y": 27,
+        "pixels": ".........kMkbBkBk......."
+      },
+      {
+        "x": 0,
+        "y": 28,
+        "pixels": "..........kcbBkBk......."
+      },
+      {
+        "x": 0,
+        "y": 29,
+        "pixels": "..........kcbBkRk......."
+      },
+      {
+        "x": 0,
+        "y": 30,
+        "pixels": "..........kcbBkRRkkk...."
+      },
+      {
+        "x": 0,
+        "y": 31,
+        "pixels": ".........kRRRRkkRWWWk..."
+      },
+      {
+        "x": 0,
+        "y": 32,
+        "pixels": ".........kRyRRRkkkWWk..."
+      },
+      {
+        "x": 0,
+        "y": 33,
+        "pixels": ".........kRRRRRWWWk....."
+      },
+      {
+        "x": 0,
+        "y": 34,
+        "pixels": ".........kWWWWWWWWk....."
+      },
+      {
+        "x": 0,
+        "y": 35,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 36,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 37,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 38,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 39,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 40,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 41,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 42,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 43,
+        "pixels": "........................"
+      }
+    ]
+  },
+  "phoneBack": {
+    "anchor": [
+      2,
+      3
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": ".kkk."
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "kLDDk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kDkDk"
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "kDyDk"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": "kDDDk"
+      },
+      {
+        "x": 0,
+        "y": 5,
+        "pixels": "kLLLk"
+      },
+      {
+        "x": 0,
+        "y": 6,
+        "pixels": ".kkk."
+      }
+    ]
   }
 }

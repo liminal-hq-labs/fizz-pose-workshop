@@ -1,0 +1,288 @@
+{
+  "name": "Ben · seated phone idle rig",
+  "width": 40,
+  "height": 56,
+  "groundY": 48,
+  "durationMs": 1200,
+  "sampleCount": 6,
+  "root": [
+    20,
+    34
+  ],
+  "torso": {
+    "leanDegrees": 0,
+    "pitchSwayDegrees": 1.2,
+    "bobAmplitude": 0.75,
+    "bobLag": 0.04,
+    "shoulderY": -7.5,
+    "shoulderSpread": 3.2,
+    "shoulderTwist": 0.4,
+    "neckHeight": 10
+  },
+  "arms": {
+    "upperLength": 3.5,
+    "forearmLength": 3.2,
+    "swingDegrees": 55,
+    "elbowDegrees": 90,
+    "elbowFlexDegrees": 4,
+    "phaseLead": 0.08333333333333333,
+    "biasDegrees": -8
+  },
+  "legs": {
+    "thighLength": 7,
+    "shinLength": 8,
+    "hipSpread": 1.5
+  },
+  "stride": {
+    "stanceFraction": 0.24,
+    "frontX": 3.5,
+    "backX": -4,
+    "lift": 6.5,
+    "toeOffDegrees": 25,
+    "recoveryToeDegrees": -12
+  },
+  "feet": {
+    "toe": [
+      3,
+      2
+    ],
+    "heel": [
+      -1,
+      2
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "landingToeDegrees": -28,
+    "landingCompression": 0.25
+  },
+  "face": {
+    "yawDegrees": 3,
+    "eye": [
+      -2,
+      -5,
+      0
+    ],
+    "mouth": [
+      0,
+      -3,
+      0
+    ],
+    "shiftAmplitude": 0,
+    "ear": [
+      -4,
+      -4,
+      0
+    ],
+    "profile": {
+      "nose": [
+        0,
+        -4,
+        0
+      ],
+      "cheek": [
+        -2,
+        -3,
+        0
+      ],
+      "chin": [
+        0,
+        -1,
+        0
+      ]
+    }
+  },
+  "motion": "phone",
+  "performance": {
+    "view": "front",
+    "loop": false,
+    "keys": [
+      {
+        "phase": 0,
+        "root": [
+          20,
+          34
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          16,
+          30
+        ],
+        "farHand": [
+          24,
+          30
+        ],
+        "nearAnkle": [
+          16,
+          46
+        ],
+        "farAnkle": [
+          24,
+          46
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 0.2,
+        "root": [
+          20,
+          38
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          17,
+          35
+        ],
+        "farHand": [
+          24,
+          34
+        ],
+        "nearAnkle": [
+          23,
+          46
+        ],
+        "farAnkle": [
+          17,
+          46
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 0.4,
+        "root": [
+          20,
+          40
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          15,
+          36
+        ],
+        "farHand": [
+          23,
+          36
+        ],
+        "nearAnkle": [
+          23,
+          46
+        ],
+        "farAnkle": [
+          17,
+          46
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "phone": [
+          15,
+          36
+        ]
+      },
+      {
+        "phase": 0.6,
+        "root": [
+          20,
+          40
+        ],
+        "lean": 0,
+        "headRoll": -2,
+        "nearHand": [
+          19,
+          35
+        ],
+        "farHand": [
+          23,
+          36
+        ],
+        "nearAnkle": [
+          23,
+          46
+        ],
+        "farAnkle": [
+          17,
+          46
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "phone": [
+          20,
+          35
+        ]
+      },
+      {
+        "phase": 0.8,
+        "root": [
+          20,
+          40
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          18,
+          35
+        ],
+        "farHand": [
+          22,
+          35
+        ],
+        "nearAnkle": [
+          23,
+          46
+        ],
+        "farAnkle": [
+          17,
+          46
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "phone": [
+          20,
+          35
+        ]
+      },
+      {
+        "phase": 1,
+        "root": [
+          20,
+          40
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          18,
+          35
+        ],
+        "farHand": [
+          22,
+          35
+        ],
+        "nearAnkle": [
+          23,
+          46
+        ],
+        "farAnkle": [
+          17,
+          46
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "phone": [
+          20,
+          35
+        ]
+      }
+    ]
+  },
+  "lightingNote": "The back case faces the player; the screen faces Ben. Use the hidden screen as a small dynamic light that brightens his face and hands once raised. Keep that glow separate from the sixteen-colour sprite pixels until engine lighting is added."
+}

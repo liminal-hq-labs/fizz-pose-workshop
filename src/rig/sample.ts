@@ -4,7 +4,13 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { sampleRunRig, type SideRig, type RigPose } from './run.ts';
+import { reflectPose } from './reflect.ts';
+import { samplePerformance } from './performance.ts';
 import { sampleActionRig } from './actions.ts';
 export function sampleRig(rig: SideRig, time: number): RigPose {
+  if (rig.mirrored) return reflectPose(sampleRig({...rig,mirrored:false},time),rig.width);
+  if (rig.performance) return samplePerformance(rig, time);
   return rig.motion === 'pogo' || rig.motion === 'fire' ? sampleActionRig(rig, time) : sampleRunRig(rig, time);
 }
+
+export function sampleTime(rig: SideRig, index: number): number { return index / (rig.performance && !rig.performance.loop ? rig.sampleCount - 1 : rig.sampleCount); }
