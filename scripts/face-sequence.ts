@@ -7,10 +7,11 @@ import { facePixels } from '../src/rig/face.ts';
 import type { RigPose } from '../src/rig/run.ts';
 import type { Frame, Palette } from '../src/types.ts';
 
-export function faceSequence(frames: Frame[], samples: RigPose[], palette: Palette, colours: { eye: string; mouth: string }): { json: string; svg: string } {
+export function faceSequence(frames: Frame[], samples: RigPose[], palette: Palette, colours: { eye: string; mouth: string; ear: string }): { json: string; svg: string } {
   const report = samples.map((pose, i) => ({
     frame: i + 1, phase: pose.time, headAnchor: pose.face.pixelAnchor,
-    eye: pose.face.eye, mouth: pose.face.mouth,
+    eye: pose.face.eye, mouth: pose.face.mouth, ear: pose.face.ear, shift: pose.face.pixelShift,
+    renderedEar: frames[i].grid[pose.face.ear.pixel[1]]?.[pose.face.ear.pixel[0]] === colours.ear ? [pose.face.ear.pixel] : [],
     renderedEye: facePixels(frames[i], colours.eye, pose.face.pixelAnchor), renderedMouth: facePixels(frames[i], colours.mouth, pose.face.pixelAnchor),
   }));
   const cells = samples.map((pose, i) => {

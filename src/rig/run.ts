@@ -59,8 +59,8 @@ function footTarget(rig: SideRig, cycle: number): RigFoot {
   return { ankle, ball, toe, heel: add(ankle, rotate([rig.feet.heel[0], rig.feet.heel[1]], pitch)), pitch, toePitch, compression, stance, progress };
 }
 export function validateRig(rig: SideRig): void {
-  const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];
-  if (numeric.some(value => !Number.isFinite(value)) || rig.root.length !== 2 || rig.face.eye.length !== 3 || rig.face.mouth.length !== 3 || rig.feet.toe.length !== 2 || rig.feet.heel.length !== 2 || rig.feet.ball.length !== 2 || rig.feet.landingCompression < 0 || rig.feet.landingCompression >= .6) throw new Error('Rig coordinates and motion settings must be finite.');
+  const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.face.ear, rig.face.shiftAmplitude, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];
+  if (numeric.some(value => !Number.isFinite(value)) || rig.root.length !== 2 || rig.face.eye.length !== 3 || rig.face.mouth.length !== 3 || rig.face.ear.length !== 3 || rig.feet.toe.length !== 2 || rig.feet.heel.length !== 2 || rig.feet.ball.length !== 2 || rig.feet.landingCompression < 0 || rig.feet.landingCompression >= .6) throw new Error('Rig coordinates and motion settings must be finite.');
   const positive = [rig.width, rig.height, rig.durationMs, rig.sampleCount, rig.arms.upperLength, rig.arms.forearmLength, rig.legs.thighLength, rig.legs.shinLength, rig.torso.neckHeight];
   if (positive.some(value => !Number.isFinite(value) || value <= 0) || !Number.isInteger(rig.sampleCount) || rig.sampleCount < 2 || rig.durationMs / rig.sampleCount % 10 !== 0) throw new Error("Rig dimensions, bones and GIF frame timing must be valid positive values.");
   if (!Number.isInteger(rig.width) || !Number.isInteger(rig.height) || rig.groundY >= rig.height || rig.groundY < 0) throw new Error("Rig ground must fit the pixel canvas.");
@@ -79,7 +79,7 @@ export function sampleRunRig(rig: SideRig, time: number): RigPose {
   const nearFlex = radians(rig.arms.elbowDegrees + rig.arms.elbowFlexDegrees * Math.sin(armTheta));
   const farFlex = radians(rig.arms.elbowDegrees - rig.arms.elbowFlexDegrees * Math.sin(armTheta));
   const neck = torsoPoint(base, [0, -rig.torso.neckHeight]);
-  const face = sampleFace(neck, headTurn, rig.face);
+  const face = sampleFace(neck, headTurn, rig.face, t);
   const nearFoot = footTarget(rig, t), farFoot = footTarget(rig, t + .5);
   const nearHip = add(root, [rig.legs.hipSpread, 0]), farHip = add(root, [-rig.legs.hipSpread, 0]);
   const nearLeg = solveTwoBone(nearHip, nearFoot.ankle, rig.legs.thighLength, rig.legs.shinLength);

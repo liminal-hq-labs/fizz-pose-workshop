@@ -295,6 +295,7 @@
   },
   "face": {
     "eye": "B",
-    "mouth": "R"
+    "mouth": "R",
+    "ear": "L"
   }
 }

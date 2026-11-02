@@ -20,7 +20,7 @@ export function rigDrawing(pose: RigPose, ground: number, width: number): string
     + joints(pose.nearLeg, '#74e5fa') + joints(pose.nearArm, '#74e5fa')
     + joints(pose.farLeg, '#9573bc') + joints(pose.farArm, '#9573bc')
     + `<ellipse cx="${number(pose.neck[0])}" cy="${number(pose.neck[1] - 6)}" rx="4.5" ry="5.5" fill="none" stroke="#9ee47a" stroke-width=".25"/>`
-    + `<circle cx="${number(pose.face.eye.world[0])}" cy="${number(pose.face.eye.world[1])}" r=".17" fill="#71b7ff"/><circle cx="${number(pose.face.mouth.world[0])}" cy="${number(pose.face.mouth.world[1])}" r=".17" fill="#ff7d7d"/>`
+    + `<circle cx="${number(pose.face.eye.world[0])}" cy="${number(pose.face.eye.world[1])}" r=".17" fill="#71b7ff"/><circle cx="${number(pose.face.mouth.world[0])}" cy="${number(pose.face.mouth.world[1])}" r=".17" fill="#ff7d7d"/><circle cx="${number(pose.face.ear.world[0])}" cy="${number(pose.face.ear.world[1])}" r=".17" fill="#d7b775"/>`
     + line([[pose.neck[0], pose.neck[1] - 6], [pose.neck[0] + 3, pose.neck[1] - 6 + pose.headTurn * .45]], '#9ee47a', .2);
 }
 export function rigSvg(rig: SideRig, time?: number): string {

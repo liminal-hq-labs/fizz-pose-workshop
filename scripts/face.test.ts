@@ -16,14 +16,16 @@ test('small camera turns cannot push eye and mouth across independent world roun
   expect(towards.eye.pixel).toEqual(away.eye.pixel); expect(towards.mouth.pixel).toEqual(away.mouth.pixel);
   expect(towards.eye.pixel).toEqual([12, 15]); expect(towards.mouth.pixel).toEqual([12, 17]);
 });
-test('continuous facial landmarks remain fixed in head space while following the rig anchor', () => {
+test('facial landmarks share one right-and-left shift while following the rig anchor', () => {
   for (let i = 0; i <= 240; i++) {
     const pose = sampleRunRig(rig, i / 240), face = pose.face;
     expect(face.anchor).toEqual(pose.neck);
-    expect([face.eye.pixel[0] - face.pixelAnchor[0], face.eye.pixel[1] - face.pixelAnchor[1]]).toEqual([2, -5]);
-    expect([face.mouth.pixel[0] - face.pixelAnchor[0], face.mouth.pixel[1] - face.pixelAnchor[1]]).toEqual([2, -3]);
+    expect([face.eye.pixel[0] - face.pixelAnchor[0], face.eye.pixel[1] - face.pixelAnchor[1]]).toEqual([2 + face.pixelShift, -5]);
+    expect([face.mouth.pixel[0] - face.pixelAnchor[0], face.mouth.pixel[1] - face.pixelAnchor[1]]).toEqual([2 + face.pixelShift, -3]);
     expect(face.eye.pixel[0]).toBe(face.mouth.pixel[0]); expect(face.mouth.pixel[1] - face.eye.pixel[1]).toBe(2);
-    expect(Math.abs(face.eye.local[0] - rig.face.eye[0])).toBeLessThan(.1);
+    expect(Math.abs(face.eye.local[0] - rig.face.eye[0] - face.shift)).toBeLessThan(.1);
+    expect(face.eye.pixel[0] - face.ear.pixel[0]).toBe(3);
+    expect(face.ear.pixel[1] - face.eye.pixel[1]).toBe(1);
   }
 });
 test('all six actual sprite grids contain exactly the rig eye and mouth, including the loop seam', () => {
@@ -36,10 +38,14 @@ test('all six actual sprite grids contain exactly the rig eye and mouth, includi
     expect(frame.grid[face.mouth.pixel[1]][face.mouth.pixel[0]]).toBe(skin.face.mouth);
     positions.push(face.eye.pixel);
   }
-  expect(positions).toEqual([[17, 10], [17, 10], [17, 9], [17, 10], [16, 9], [16, 9]]);
+  expect(positions).toEqual([[17, 10], [18, 10], [18, 9], [17, 10], [15, 9], [15, 9]]);
   for (let i = 0; i < positions.length; i++) {
     const next = positions[(i + 1) % positions.length];
-    expect(Math.abs(positions[i][0] - next[0])).toBeLessThanOrEqual(1);
+    expect(Math.abs(positions[i][0] - next[0])).toBeLessThanOrEqual(2);
     expect(Math.abs(positions[i][1] - next[1])).toBeLessThanOrEqual(1);
   }
+});
+
+test('six head-local samples travel right then back left together', () => {
+  expect(Array.from({length: 6}, (_, i) => sampleRunRig(rig, i / 6).face.pixelShift)).toEqual([0, 1, 1, 0, -1, -1]);
 });

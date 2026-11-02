@@ -49,7 +49,7 @@ export function mountRigPreview(data: WorkshopData): void {
       line([[pose.neck[0], pose.neck[1] - 6], [pose.neck[0] + 3, pose.neck[1] - 6 + pose.headTurn * .4]], '#a8e47d', .15);
     }
     if (!translucent) {
-      for (const [landmark, colour] of [[pose.face.eye, '#77c7ff'], [pose.face.mouth, '#ff9f87']] as const) {
+      for (const [landmark, colour] of [[pose.face.eye, '#77c7ff'], [pose.face.mouth, '#ff9f87'], [pose.face.ear, '#d7b775']] as const) {
         context.fillStyle = colour; context.beginPath(); context.arc(landmark.world[0], landmark.world[1], .18, 0, Math.PI * 2); context.fill();
       }
     } else {

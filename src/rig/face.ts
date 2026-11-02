@@ -6,18 +6,19 @@
 import { add, radians, type Vec2 } from './kinematics.ts';
 import type { Frame } from '../types.ts';
 
-export interface FaceSettings { yawDegrees: number; eye: number[]; mouth: number[]; }
+export interface FaceSettings { yawDegrees: number; eye: number[]; mouth: number[]; ear: number[]; shiftAmplitude: number; }
 export interface FaceLandmark { local: Vec2; world: Vec2; pixel: Vec2; }
-export interface FacePose { anchor: Vec2; pixelAnchor: Vec2; yaw: number; eye: FaceLandmark; mouth: FaceLandmark; }
-export function sampleFace(anchor: Vec2, turn: number, settings: FaceSettings): FacePose {
+export interface FacePose { anchor: Vec2; pixelAnchor: Vec2; yaw: number; shift: number; pixelShift: number; eye: FaceLandmark; mouth: FaceLandmark; ear: FaceLandmark; }
+export function sampleFace(anchor: Vec2, turn: number, settings: FaceSettings, time = 0): FacePose {
   const yaw = radians(settings.yawDegrees) * turn;
+  const shift = settings.shiftAmplitude * Math.sin(time * Math.PI * 2), pixelShift = Math.round(shift);
   const pixelAnchor: Vec2 = [Math.round(anchor[0]), Math.round(anchor[1])];
   const project = (point: number[]): FaceLandmark => {
-    const local: Vec2 = [point[0] * Math.cos(yaw) + point[2] * Math.sin(yaw), point[1]];
+    const local: Vec2 = [point[0] * Math.cos(yaw) + point[2] * Math.sin(yaw) + shift, point[1]];
     // Round in head space first; independent world rounding would reintroduce pixel drift.
-    return { local, world: add(anchor, local), pixel: add(pixelAnchor, [Math.round(local[0]), Math.round(local[1])]) };
+    return { local, world: add(anchor, local), pixel: add(pixelAnchor, [Math.round(local[0] - shift) + pixelShift, Math.round(local[1])]) };
   };
-  return { anchor, pixelAnchor, yaw, eye: project(settings.eye), mouth: project(settings.mouth) };
+  return { anchor, pixelAnchor, yaw, shift, pixelShift, eye: project(settings.eye), mouth: project(settings.mouth), ear: project(settings.ear) };
 }
 export function facePixels(frame: Frame, colour: string, anchor: Vec2): Vec2[] {
   const result: Vec2[] = [];
