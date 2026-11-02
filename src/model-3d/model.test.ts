@@ -16,6 +16,7 @@ import {
   poseNames,
   serialisePose,
   sampleRunFoot,
+  poseDuration,
 } from "./poses.ts";
 import { cycleProfile } from "./equipment.ts";
 import sideRig from "../../source/ben-side-rig.json";
@@ -49,8 +50,8 @@ describe("Ben volumetric character", () => {
     expect(bounds.min.y).toBeCloseTo(config.floorY, 3);
     expect(bounds.max.y).toBeCloseTo(config.crownY + 0.13, 1);
   });
-  test("every vertex has finite normalised weights referring to the shared 21-bone rig", () => {
-    expect(model.skeleton.bones).toHaveLength(21);
+  test("every vertex has finite normalised weights referring to the shared skeletal rig", () => {
+    expect(model.skeleton.bones).toHaveLength(config.bones.length);
     for (const mesh of model.meshes) {
       expect(mesh.skeleton).toBe(model.skeleton);
       const weights = mesh.geometry.getAttribute("skinWeight"),
@@ -59,8 +60,8 @@ describe("Ben volumetric character", () => {
         expect(
           weights.getX(i) + weights.getY(i) + weights.getZ(i) + weights.getW(i),
         ).toBeCloseTo(1, 5);
-        expect(indices.getX(i)).toBeLessThan(21);
-        expect(indices.getY(i)).toBeLessThan(21);
+        expect(indices.getX(i)).toBeLessThan(config.bones.length);
+        expect(indices.getY(i)).toBeLessThan(config.bones.length);
       }
     }
   });
@@ -259,7 +260,9 @@ describe("Ben volumetric character", () => {
       const time = i / 60,
         reference = sampleRunRig(sideRig, time);
       applyBenPose(model, "Run", time);
-      const bob = model.bones.pelvis.position.y - (model.rest.pelvis.y - 1.1);
+      const bob =
+        model.bones.pelvis.position.y -
+        (model.rest.pelvis.y + config.run.pelvisOffset);
       expect(bob).toBeCloseTo(sideRig.root[1] - reference.root[1], 6);
       expect(model.bones.spine.rotation.x).toBeCloseTo(reference.torsoAngle, 6);
       expect(sampleRunFoot(time).stance).toBe(reference.nearFoot.stance);
@@ -293,6 +296,100 @@ describe("Ben volumetric character", () => {
       }
     }
   });
+  test("run knees keep volume, bone lengths and a reachable fluid path", () => {
+    const pants = model.meshes.find(
+        (mesh) => mesh.name === "Jeans_continuous",
+      )!,
+      positions = pants.geometry.getAttribute("position"),
+      ring = Array.from({ length: positions.count }, (_, i) => i).filter(
+        (i) =>
+          Math.abs(positions.getY(i) - 6.7) < 0.12 && positions.getX(i) < -0.8,
+      );
+    expect(ring.length).toBeGreaterThan(10);
+    let previous: THREE.Quaternion | null = null;
+    for (let i = 0; i <= 180; i++) {
+      const phase = i / 180;
+      applyBenPose(model, "Run", phase);
+      const hip = model.bones.rightThigh.getWorldPosition(new THREE.Vector3()),
+        knee = model.bones.rightShin.getWorldPosition(new THREE.Vector3()),
+        ankle = model.bones.rightFoot.getWorldPosition(new THREE.Vector3()),
+        foot = sampleRunFoot(phase),
+        flex =
+          180 -
+          THREE.MathUtils.radToDeg(
+            hip.clone().sub(knee).angleTo(ankle.clone().sub(knee)),
+          );
+      expect(flex).toBeLessThan(130);
+      expect(
+        ankle.distanceTo(
+          new THREE.Vector3(model.rest.rightFoot.x, foot.y, foot.z),
+        ),
+      ).toBeLessThan(0.001);
+      expect(hip.distanceTo(knee)).toBeCloseTo(
+        model.bones.rightShin.position.length(),
+        5,
+      );
+      expect(knee.distanceTo(ankle)).toBeCloseTo(
+        model.bones.rightFoot.position.length(),
+        5,
+      );
+      if (previous)
+        expect(previous.angleTo(model.bones.rightShin.quaternion)).toBeLessThan(
+          0.14,
+        );
+      previous = model.bones.rightShin.quaternion.clone();
+      for (const vertex of ring) {
+        const rest = new THREE.Vector3()
+            .fromBufferAttribute(positions, vertex)
+            .distanceTo(model.rest.rightShin),
+          posed = pants
+            .getVertexPosition(vertex, new THREE.Vector3())
+            .distanceTo(knee);
+        expect(posed / rest).toBeGreaterThan(0.88);
+      }
+    }
+  });
+  test("ankle cuffs retain their width where they enter the shoes", () => {
+    const p = model.meshes
+        .find((mesh) => mesh.name === "Jeans_continuous")!
+        .geometry.getAttribute("position"),
+      xs = Array.from({ length: p.count }, (_, i) => i)
+        .filter((i) => p.getY(i) > 2.0 && p.getY(i) < 2.4 && p.getX(i) < 0)
+        .map((i) => p.getX(i));
+    expect(xs.length).toBeGreaterThan(10);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(1.8);
+  });
+  test("firing and both look actions move, loop and export real animation tracks", () => {
+    for (const pose of ["Firing", "Look up", "Look down"] as const) {
+      expect(poseDuration(pose)).toBeGreaterThan(0);
+      applyBenPose(model, pose, 0);
+      const start = serialisePose(model);
+      applyBenPose(model, pose, 0.44);
+      const middle = serialisePose(model);
+      expect(JSON.stringify(middle.bones)).not.toBe(
+        JSON.stringify(start.bones),
+      );
+      applyBenPose(model, pose, 1);
+      expect(serialisePose(model)).toEqual(start);
+    }
+    applyBenPose(model, "Firing", 0.44);
+    expect(model.bones.muzzleFlash.scale.x).toBeGreaterThan(0.9);
+    applyBenPose(model, "Standing");
+    expect(model.bones.muzzleFlash.scale.x).toBe(0);
+    const clips = createBenClips(model);
+    for (const name of ["Firing", "Look up", "Look down"]) {
+      const clip = clips.find((c) => c.name === name)!;
+      expect(clip.tracks[0].times.length).toBeGreaterThan(20);
+      expect(
+        clip.tracks.some((track) => {
+          const size = track.getValueSize();
+          return [...track.values].some(
+            (value, i) => Math.abs(value - track.values[i % size]) > 0.001,
+          );
+        }),
+      ).toBe(true);
+    }
+  });
   test("GLB round trip retains skinned geometry, bones, clips and phone visibility tracks", async () => {
     const clips = createBenClips(model);
     const binary = await new GLTFExporter().parseAsync(model.root, {
@@ -312,7 +409,7 @@ describe("Ben volumetric character", () => {
     imported.scene.traverse((node) => {
       if (node instanceof THREE.SkinnedMesh) {
         skinned++;
-        expect(node.skeleton.bones).toHaveLength(21);
+        expect(node.skeleton.bones).toHaveLength(config.bones.length);
         node.geometry.dispose();
       }
     });

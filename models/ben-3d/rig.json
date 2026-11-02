@@ -63,7 +63,10 @@
     "leftFoot",
     "leftToe",
     "stunner",
-    "phone"
+    "phone",
+    "rightKnee",
+    "leftKnee",
+    "muzzleFlash"
   ],
   "references": [
     {
@@ -100,7 +103,12 @@
   "reviewTolerancePixels": 2,
   "jarReference": "https://github.com/liminal-hq/jar/tree/527c5c34f62a8467e133249615a19fe7ca45040e/apps/jar/src/render/models",
   "notes": "Full volumetric geometry with a reusable skinned skeleton. SVG layers are projected only onto surfaces; body depth is not an SVG extrusion. The asymmetrical holster stays on Ben's right hip. Helmet dimensions describe the coloured shell inside the sprite outline.",
-  "meshCount": 82,
+  "run": {
+    "pelvisOffset": -0.55,
+    "strideHalfLength": 2.45,
+    "recoveryLift": 1.9
+  },
+  "meshCount": 83,
   "animations": [
     {
       "name": "Run",
@@ -116,7 +124,7 @@
     },
     {
       "name": "Firing",
-      "duration": 1
+      "duration": 1.6
     },
     {
       "name": "Whistle",
@@ -128,7 +136,11 @@
     },
     {
       "name": "Look up",
-      "duration": 1
+      "duration": 2.8
+    },
+    {
+      "name": "Look down",
+      "duration": 3.2
     },
     {
       "name": "Belly clutch",

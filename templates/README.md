@@ -112,6 +112,6 @@ The turntable’s shoe patches now share a fixed five-row structure. Both side p
 
 ## Rigged 3D Ben
 
-The **Rigged 3D** section adds a fully volumetric Three.js character with a 21-bone skeleton, rounded helmet and head, detailed shoes, brown-blond hair and a right-hip Fizz Stunner. Orbit the model, choose a pose, show the skeleton, adjust joints or move Ben, and download a custom pose. Match the calibrated sprite references in orthographic view or enable their overlay to inspect proportions. The existing pixel sprites remain independent.
+The **Rigged 3D** section adds a fully volumetric Three.js character with a 24-bone skeleton, rounded helmet and head, detailed shoes, brown-blond hair and a right-hip Fizz Stunner. Orbit the model, choose a pose, show the skeleton, adjust joints or move Ben, and download a custom pose. Match the calibrated sprite references in orthographic view or enable their overlay to inspect proportions. The existing pixel sprites remain independent.
 
-`bun run model:build` exports `models/ben-3d/ben.glb` with eight named animation clips and the rig/skin files. With the server running, `bun run model:review` saves six reference comparisons, nine rig poses and measured proportion checks. See [the model guide](docs/BEN_3D.md) for controls, source files, export details, review limitations and Jar’s SVG surface-art ideas.
+`bun run model:build` exports `models/ben-3d/ben.glb` with nine named animation clips and the rig/skin files. With the server running, `bun run model:review` saves six reference comparisons, ten rig poses, timed firing/look cycles and measured proportion checks. See [the model guide](docs/BEN_3D.md) for controls, source files, export details, review limitations and Jar’s SVG surface-art ideas.

@@ -419,13 +419,16 @@ export function createBenModel(svg: string): BenModel {
   const pantsField = (x: number, y: number, z: number): number => {
     let d = ellipsoid(x, y, z, [0, 9.55, 0], [3.2, 1.55, 2.0]);
     for (const sign of [-1, 1]) {
-      const cy = THREE.MathUtils.clamp(y, 3.3, 9.2),
+      const cy = THREE.MathUtils.clamp(y, 2.4, 9.2),
         t = THREE.MathUtils.smoothstep(cy, 3.3, 9.2),
-        rx = THREE.MathUtils.lerp(0.92, 1.35, t),
-        rz = THREE.MathUtils.lerp(1.05, 1.55, t),
+        rx = THREE.MathUtils.lerp(1.02, 1.35, t),
+        rz = THREE.MathUtils.lerp(1.15, 1.55, t),
         cx = sign * (2.05 - 0.1 * t);
-      const leg =
-        (Math.hypot((x - cx) / rx, (y - cy) / rx, (z - 0.05) / rz) - 1) * rx;
+      const leg = Math.max(
+        (Math.hypot((x - cx) / rx, (z - 0.05) / rz) - 1) * rx,
+        1.8 - y,
+        y - 9.6,
+      );
       d = smoothUnion(d, leg, 0.35);
     }
     return d;
@@ -433,20 +436,23 @@ export function createBenModel(svg: string): BenModel {
   const pantsWeights: Influences = (p) => {
     const pelvis = THREE.MathUtils.smoothstep(p.y, 8.1, 10),
       left = THREE.MathUtils.smoothstep(p.x, -0.8, 0.8),
-      knee = 1 - THREE.MathUtils.smoothstep(p.y, 5.8, 7.5),
+      upper = THREE.MathUtils.smoothstep(p.y, 6.7, 7.45),
+      lower = 1 - THREE.MathUtils.smoothstep(p.y, 5.95, 6.7),
+      joint = 1 - upper - lower,
       foot = 1 - THREE.MathUtils.smoothstep(p.y, 3.25, 4.1);
     const w: Record<string, number> = { pelvis };
     for (const [side, share] of [
       ["right", 1 - left],
       ["left", left],
     ] as const) {
-      w[side + "Thigh"] = (1 - pelvis) * share * (1 - knee);
-      w[side + "Shin"] = (1 - pelvis) * share * knee * (1 - foot);
-      w[side + "Foot"] = (1 - pelvis) * share * knee * foot;
+      w[side + "Knee"] = (1 - pelvis) * share * joint;
+      w[side + "Thigh"] = (1 - pelvis) * share * upper;
+      w[side + "Shin"] = (1 - pelvis) * share * lower * (1 - foot);
+      w[side + "Foot"] = (1 - pelvis) * share * lower * foot;
     }
     return w;
   };
-  const pants = sculptSurface(pantsField, [-5, 1.8, -3.3], [5, 12, 3.3], 56);
+  const pants = sculptSurface(pantsField, [-5, 1.1, -3.3], [5, 12, 3.3], 56);
   add("Jeans_continuous", pants, "pelvis", mat("B"));
   weightSurface(rig, pants, pantsWeights);
   // The curved belt follows the same waist instead of making a rectangular shelf.
@@ -682,6 +688,19 @@ export function createBenModel(svg: string): BenModel {
     "pelvis",
     "D",
   );
+  const glow = mat("c").clone();
+  glow.emissive.set("#55ffff");
+  glow.emissiveIntensity = 2;
+  materials.set("muzzleGlow", glow);
+  add(
+    "Stunner_muzzle_flash",
+    new THREE.SphereGeometry(1, 12, 8),
+    "muzzleFlash",
+    glow,
+    new THREE.Vector3(gunOrigin.x, gunOrigin.y - 2.8, gunOrigin.z + 0.15),
+    new THREE.Vector3(0.42, 0.8, 0.42),
+  );
+  rig.bones.muzzleFlash.scale.setScalar(0);
   const phoneCentre = rig.rest.phone;
   phoneMeshes.push(
     box(

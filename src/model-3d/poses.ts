@@ -19,10 +19,25 @@ export const poseNames = [
   "Whistle",
   "Phone",
   "Look up",
+  "Look down",
   "Belly clutch",
 ] as const;
 export type BenPose = (typeof poseNames)[number];
 const rad = THREE.MathUtils.degToRad;
+const durations: Readonly<Partial<Record<BenPose, number>>> = {
+  Run: 0.6,
+  Whistle: 2,
+  Firing: 1.6,
+  "Look up": 2.8,
+  "Look down": 3.2,
+};
+export function poseDuration(pose: BenPose): number | null {
+  return durations[pose] ?? null;
+}
+const smooth = THREE.MathUtils.smoothstep;
+const gesture = (phase: number): number =>
+  smooth(phase, 0.06, 0.3) * (1 - smooth(phase, 0.65, 0.94));
+
 function aimChain(
   model: BenModel,
   names: readonly [string, string, string],
@@ -139,9 +154,17 @@ export function sampleRunFoot(time: number): {
       : (phase - sideRig.stride.stanceFraction) /
         (1 - sideRig.stride.stanceFraction);
   const z = stance
-    ? THREE.MathUtils.lerp(3.2, -3.2, t)
-    : THREE.MathUtils.lerp(-3.2, 3.2, t * t * (3 - 2 * t)) -
-      ((6.4 * (1 - sideRig.stride.stanceFraction)) /
+    ? THREE.MathUtils.lerp(
+        config.run.strideHalfLength,
+        -config.run.strideHalfLength,
+        t,
+      )
+    : THREE.MathUtils.lerp(
+        -config.run.strideHalfLength,
+        config.run.strideHalfLength,
+        t * t * (3 - 2 * t),
+      ) -
+      ((2 * config.run.strideHalfLength * (1 - sideRig.stride.stanceFraction)) /
         sideRig.stride.stanceFraction) *
         (2 * t * t * t - 3 * t * t + t);
   const pitch = stance
@@ -169,7 +192,10 @@ export function sampleRunFoot(time: number): {
   return {
     phase,
     z,
-    y: -0.5 - lowest + (stance ? 0 : 4.0 * Math.sin(Math.PI * t)),
+    y:
+      -0.5 -
+      lowest +
+      (stance ? 0 : config.run.recoveryLift * Math.sin(Math.PI * t)),
     pitch,
     toe,
     stance,
@@ -178,6 +204,11 @@ export function sampleRunFoot(time: number): {
 export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
   resetRig(model);
   model.bones.phone.scale.setScalar(pose === "Phone" ? 1 : 0);
+  model.bones.muzzleFlash.scale.setScalar(0);
+  const phase = ((time % 1) + 1) % 1,
+    amount = gesture(phase),
+    aim = smooth(phase, 0.02, 0.26) * (1 - smooth(phase, 0.72, 0.98)),
+    recoil = smooth(phase, 0.4, 0.44) * (1 - smooth(phase, 0.44, 0.6));
   const b = model.bones,
     s = Math.sin(time * Math.PI * 2);
   const turn = (name: string, x = 0, y = 0, z = 0): void => {
@@ -185,7 +216,7 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
   };
   if (pose === "Run") {
     const body = sampleRunBody(time);
-    b.pelvis.position.y += -1.1 + body.bob;
+    b.pelvis.position.y += config.run.pelvisOffset + body.bob;
     b.spine.rotation.x = body.lean;
     b.chest.rotation.y = body.shoulderYaw;
     turn("neck", -THREE.MathUtils.radToDeg(body.lean) * 0.5, -s * 2, 0);
@@ -218,12 +249,8 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
     turn("leftShin", 85);
     turn("leftFoot", -10);
   } else if (pose === "Firing") {
-    turn("rightUpperArm", -85, 12, -12);
-    turn("rightForearm", -12);
-    turn("leftUpperArm", -70, -35, 22);
-    turn("leftForearm", -50);
-    turn("chest", -3, -8);
-    turn("head", 0, 8);
+    turn("chest", -3 * aim - 3 * recoil, -8 * aim);
+    turn("head", 0, 8 * aim);
   } else if (pose === "Whistle") {
     turn("head", -3, 3 + s * 2, 2);
     turn("rightForearm", -25);
@@ -235,9 +262,19 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
     turn("leftForearm", -100, 0, 7);
     turn("head", 16, 0, 0);
   } else if (pose === "Look up") {
-    turn("head", -24, 0, 0);
-    turn("rightForearm", -18);
-    turn("leftForearm", -18);
+    turn("head", -24 * amount);
+    turn("neck", -4 * amount);
+    turn("spine", -2 * amount);
+    turn("rightForearm", -18 * amount);
+    turn("leftForearm", -18 * amount);
+  } else if (pose === "Look down") {
+    turn("spine", 18 * amount);
+    turn("neck", 10 * amount);
+    turn("head", 25 * amount);
+    turn("rightUpperArm", -8 * amount, 0, -10 * amount);
+    turn("leftUpperArm", -8 * amount, 0, 10 * amount);
+    turn("rightForearm", -20 * amount);
+    turn("leftForearm", -20 * amount);
   } else if (pose === "Belly clutch") {
     turn("spine", 16, 0, 0);
     turn("head", -8, 0, 8);
@@ -308,51 +345,56 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
     );
   }
   if (pose === "Firing") {
-    aimArm(
-      model,
-      "right",
-      new THREE.Vector3(-0.8, 17, 4.7),
-      new THREE.Vector3(-5, 14, 3),
-    );
-    aimArm(
-      model,
-      "left",
-      new THREE.Vector3(0.6, 16.5, 4.0),
-      new THREE.Vector3(5, 14, 3),
-    );
-    const hand = b.rightHand,
-      position = hand
-        .getWorldPosition(new THREE.Vector3())
-        .add(
-          new THREE.Vector3(0, 1.1, 0.6).applyQuaternion(
-            model.root.getWorldQuaternion(new THREE.Quaternion()),
-          ),
-        ),
-      q = model.root.getWorldQuaternion(new THREE.Quaternion()),
-      parent = b.stunner.parent!;
-    parent.worldToLocal(position);
-    b.stunner.position.copy(position);
-    const parentQ = parent.getWorldQuaternion(new THREE.Quaternion()).invert();
-    b.stunner.quaternion.copy(
-      parentQ
-        .multiply(q)
+    const kick = 0.65 * recoil;
+    const rightGoal = model.rest.rightHand
+        .clone()
+        .lerp(new THREE.Vector3(-0.8, 17 + 0.2 * recoil, 4.7 - kick), aim),
+      leftGoal = model.rest.leftHand
+        .clone()
+        .lerp(new THREE.Vector3(0.6, 16.5 + 0.2 * recoil, 4 - kick), aim);
+    aimArm(model, "right", rightGoal, new THREE.Vector3(-5, 14, 3));
+    aimArm(model, "left", leftGoal, new THREE.Vector3(5, 14, 3));
+    const desired = model.root
+        .getWorldQuaternion(new THREE.Quaternion())
         .multiply(
           new THREE.Quaternion().setFromAxisAngle(
             new THREE.Vector3(1, 0, 0),
-            -Math.PI / 2,
+            rad(-90 * aim - 4 * recoil),
           ),
         ),
+      gripOffset = new THREE.Vector3(0, 0.6, -1.1).applyQuaternion(desired),
+      position = b.rightHand
+        .getWorldPosition(new THREE.Vector3())
+        .sub(gripOffset),
+      parent = b.stunner.parent!;
+    parent.worldToLocal(position);
+    b.stunner.position.copy(position);
+    b.stunner.quaternion.copy(
+      parent
+        .getWorldQuaternion(new THREE.Quaternion())
+        .invert()
+        .multiply(desired),
     );
+    const flash = smooth(phase, 0.415, 0.44) * (1 - smooth(phase, 0.44, 0.49));
+    b.muzzleFlash.scale.setScalar(flash);
   }
+  syncLegJoints(model);
   model.root.updateMatrixWorld(true);
   model.skeleton.update();
+}
+export function syncLegJoints(model: BenModel): void {
+  const b = model.bones;
+  for (const side of ["right", "left"])
+    b[side + "Knee"].quaternion
+      .identity()
+      .slerp(b[side + "Shin"].quaternion, 0.5);
 }
 export function createBenClips(model: BenModel): THREE.AnimationClip[] {
   const clips: THREE.AnimationClip[] = [];
   for (const pose of poseNames) {
     if (pose === "Standing") continue;
-    const count = pose === "Run" || pose === "Whistle" ? 24 : 1,
-      duration = pose === "Run" ? 0.6 : pose === "Whistle" ? 2 : 1,
+    const duration = poseDuration(pose) ?? 1,
+      count = poseDuration(pose) !== null ? 60 : 1,
       times = Array.from(
         { length: count + 1 },
         (_, i) => (i / count) * duration,

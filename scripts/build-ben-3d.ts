@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { mkdir, writeFile, readFile } from "node:fs/promises";
+import * as THREE from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { createBenModel } from "../src/model-3d/model.ts";
 import sideRig from "../source/ben-side-rig.json";
@@ -52,11 +53,24 @@ const samples = Array.from({ length: 61 }, (_, i) => {
   const phase = i / 60,
     reference = sampleRunRig(sideRig, phase);
   applyBenPose(model, "Run", phase);
+  const hip = model.bones.rightThigh.getWorldPosition(new THREE.Vector3()),
+    knee = model.bones.rightShin.getWorldPosition(new THREE.Vector3()),
+    ankle = model.bones.rightFoot.getWorldPosition(new THREE.Vector3()),
+    foot = sampleRunFoot(phase);
   return {
+    rightKneeFlexDegrees:
+      180 -
+      THREE.MathUtils.radToDeg(
+        hip.clone().sub(knee).angleTo(ankle.clone().sub(knee)),
+      ),
+    ankleTargetError: ankle.distanceTo(
+      new THREE.Vector3(model.rest.rightFoot.x, foot.y, foot.z),
+    ),
     phase,
     sourceWaistDelta: sideRig.root[1] - reference.root[1],
     modelWaistDelta:
-      model.bones.pelvis.position.y - (model.rest.pelvis.y - 1.1),
+      model.bones.pelvis.position.y -
+      (model.rest.pelvis.y + config.run.pelvisOffset),
     modelPelvisY: model.bones.pelvis.position.y,
     sourceTorsoDegrees: (reference.torsoAngle * 180) / Math.PI,
     modelTorsoDegrees: (model.bones.spine.rotation.x * 180) / Math.PI,
@@ -75,7 +89,13 @@ await writeFile(
       bobAmplitude: sideRig.torso.bobAmplitude,
       bobLag: sideRig.torso.bobLag,
       stanceFraction: sideRig.stride.stanceFraction,
-      runPelvisOffset: -1.1,
+      runPelvisOffset: config.run.pelvisOffset,
+      strideHalfLength: config.run.strideHalfLength,
+      recoveryLift: config.run.recoveryLift,
+      maxKneeFlexDegrees: Math.max(
+        ...samples.map((s) => s.rightKneeFlexDegrees),
+      ),
+      maxAnkleTargetError: Math.max(...samples.map((s) => s.ankleTargetError)),
       maxWaistError: Math.max(
         ...samples.map((s) => Math.abs(s.sourceWaistDelta - s.modelWaistDelta)),
       ),

@@ -239,7 +239,10 @@ try {
     },
     [...poseNames],
   );
-  const posePlate = new PNG({ width: 960, height: 1320 });
+  const posePlate = new PNG({
+    width: 960,
+    height: Math.ceil(poseNames.length / 3) * 440,
+  });
   poses.forEach((pose, i) =>
     paste(posePlate, decodeCapture(pose), i % 3, Math.floor(i / 3)),
   );
@@ -268,7 +271,76 @@ try {
     paste(runPlate, decodeCapture(capture), i, 0),
   );
   await writeFile(new URL("run-cycle.png", output), PNG.sync.write(runPlate));
-  console.log("Saved nine rig poses.");
+  const actions = [
+    {
+      pose: "Firing",
+      file: "firing-cycle.png",
+      phases: [0, 0.2, 0.34, 0.44, 0.56, 0.85],
+    },
+    {
+      pose: "Look up",
+      file: "look-up-cycle.png",
+      phases: [0, 0.18, 0.4, 0.6, 0.8, 0.98],
+    },
+    {
+      pose: "Look down",
+      file: "look-down-cycle.png",
+      phases: [0, 0.18, 0.4, 0.6, 0.8, 0.98],
+    },
+  ];
+  for (const action of actions) {
+    const images = await page.evaluate((action) => {
+      const api = (
+        document.querySelector("#ben-3d") as HTMLElement & {
+          modelReview: {
+            captureReview: (
+              angle: number,
+              width: number,
+              height: number,
+              part: string,
+              pose: string,
+              time: number,
+            ) => string;
+          };
+        }
+      ).modelReview;
+      return action.phases.map((phase) =>
+        api.captureReview(
+          action.pose === "Firing" ? 60 : 0,
+          320,
+          440,
+          "all",
+          action.pose,
+          phase,
+        ),
+      );
+    }, action);
+    const plate = new PNG({ width: 1920, height: 440 });
+    images.forEach((capture, i) => paste(plate, decodeCapture(capture), i, 0));
+    await writeFile(new URL(action.file, output), PNG.sync.write(plate));
+  }
+  console.log("Saved rig poses and timed action cycles.");
+  await page.locator("#model-animate").evaluate((element: HTMLInputElement) => {
+    element.checked = true;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  for (const action of actions) {
+    await page.selectOption("#model-pose", action.pose);
+    await page.waitForFunction(
+      (pose) =>
+        document.querySelector<HTMLElement>("#ben-3d")?.dataset.pose === pose,
+      action.pose,
+    );
+    const previous = await page.locator("#ben-3d").getAttribute("data-phase");
+    await page.waitForFunction(
+      ({ pose, previous }) => {
+        const node = document.querySelector<HTMLElement>("#ben-3d");
+        return node?.dataset.pose === pose && node.dataset.phase !== previous;
+      },
+      { pose: action.pose, previous },
+    );
+  }
+  console.log("Firing and look playback controls checked.");
   // Exercise the actual controls as well as the offscreen review renderer.
   await page.locator("#model-animate").evaluate((element: HTMLInputElement) => {
     element.checked = false;
@@ -309,6 +381,7 @@ try {
       head: "Head meshes only, excluding the fitted helmet",
       overall: "Complete sprite envelope",
     },
+    actionCycles: actions,
     runPhases: Array.from({ length: 6 }, (_, i) => i / 6),
     metrics,
     poseOrder: [...poseNames],

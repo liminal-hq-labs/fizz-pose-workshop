@@ -157,4 +157,4 @@ All turntable shoe templates have five rows, so changing direction does not chan
 
 ## Volumetric model rig
 
-The separate [3D model rig](BEN_3D.md) uses a shared Three.js skeleton with 21 joints and a portable GLB export. It adds actual rounded body depth, editable joints, continuous running and named demonstration poses. It does not regenerate or replace the pixel rig’s existing sprites.
+The separate [3D model rig](BEN_3D.md) uses a shared Three.js skeleton with 24 joints and a portable GLB export. It adds actual rounded body depth, editable joints, continuous running and named demonstration poses. It does not regenerate or replace the pixel rig’s existing sprites.

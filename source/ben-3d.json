@@ -131,6 +131,21 @@
       "name": "phone",
       "parent": "pelvis",
       "position": [0, 16, 4.8]
+    },
+    {
+      "name": "rightKnee",
+      "parent": "rightThigh",
+      "position": [-2.05, 6.7, 0.1]
+    },
+    {
+      "name": "leftKnee",
+      "parent": "leftThigh",
+      "position": [2.05, 6.7, 0.1]
+    },
+    {
+      "name": "muzzleFlash",
+      "parent": "stunner",
+      "position": [-3.8, 7.780000000000001, 0.5]
     }
   ],
   "references": [
@@ -167,5 +182,10 @@
   ],
   "reviewTolerancePixels": 2,
   "jarReference": "https://github.com/liminal-hq/jar/tree/527c5c34f62a8467e133249615a19fe7ca45040e/apps/jar/src/render/models",
-  "notes": "Full volumetric geometry with a reusable skinned skeleton. SVG layers are projected only onto surfaces; body depth is not an SVG extrusion. The asymmetrical holster stays on Ben's right hip. Helmet dimensions describe the coloured shell inside the sprite outline."
+  "notes": "Full volumetric geometry with a reusable skinned skeleton. SVG layers are projected only onto surfaces; body depth is not an SVG extrusion. The asymmetrical holster stays on Ben's right hip. Helmet dimensions describe the coloured shell inside the sprite outline.",
+  "run": {
+    "pelvisOffset": -0.55,
+    "strideHalfLength": 2.45,
+    "recoveryLift": 1.9
+  }
 }

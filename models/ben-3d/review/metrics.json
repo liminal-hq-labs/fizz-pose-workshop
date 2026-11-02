@@ -8,6 +8,44 @@
     "head": "Head meshes only, excluding the fitted helmet",
     "overall": "Complete sprite envelope"
   },
+  "actionCycles": [
+    {
+      "pose": "Firing",
+      "file": "firing-cycle.png",
+      "phases": [
+        0,
+        0.2,
+        0.34,
+        0.44,
+        0.56,
+        0.85
+      ]
+    },
+    {
+      "pose": "Look up",
+      "file": "look-up-cycle.png",
+      "phases": [
+        0,
+        0.18,
+        0.4,
+        0.6,
+        0.8,
+        0.98
+      ]
+    },
+    {
+      "pose": "Look down",
+      "file": "look-down-cycle.png",
+      "phases": [
+        0,
+        0.18,
+        0.4,
+        0.6,
+        0.8,
+        0.98
+      ]
+    }
+  ],
   "runPhases": [
     0,
     0.16666666666666666,
@@ -321,6 +359,7 @@
     "Whistle",
     "Phone",
     "Look up",
+    "Look down",
     "Belly clutch"
   ],
   "browserErrors": [],
