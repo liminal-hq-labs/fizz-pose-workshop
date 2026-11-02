@@ -22,10 +22,13 @@ for yy in range(27, 32):
 def stamp_shoe(rows, x, y):
     for yy, row in enumerate(rows, y):
         for xx, code in enumerate(row, x):
-            if code != '.':
+            if code != '.' and 0 <= xx < 16:
                 working[yy][xx] = code
 
-stamp_shoe(shoe, 0, 25)
+stamp_shoe(shoe[:1], 0, 25)
+# Extend the rear toe left, preserving its ankle and heel alignment.
+stamp_shoe([row[0] + colour + row[1:]
+            for row, colour in zip(shoe[1:], ('R', 'W', 'W', 'D'))], -1, 26)
 for yy in range(25, 27):
     working[yy][5:10] = ORIGINAL['grid'][yy][5:10]
 stamp_shoe(shoe[:2], 2, 27)
@@ -78,6 +81,8 @@ def side(pose):
     y+=bob
     if pose=='stand' or pose in ['lookUp','lookDown']:
         a.stamp(BASE,x,y)
+        # The rear toe outline extends one pixel beyond the native study's left edge.
+        a.rect(x-1, y+27, 1, 2, 'K')
     else:
         a.stamp(BASE[:20],x,y)
         # Remove the resting near arm before drawing the action.
@@ -249,7 +254,7 @@ A pose set derived from the unmodified original native Classic Fizz study, vendo
 
 ## Artwork
 
-The three-quarter side-view keeps the original 16 × 32 standing proportions on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid retains the original design, translated by (4, 4) into the shared canvas, with the original foreground shoe mirrored to face left and its toe extended one pixel left without moving the ankle. The foreground heel extends one pixel right through its red upper, white sole and grey underside, with its outer black outline moved to match. The matching rear shoe is raised two pixels for perspective. A stepped black outline separates the foreground toe from the raised rear shoe and continues upward towards the ankle. The original yellow belt dot is retained; the front trouser leg and shoe mask the overlapping rear shoe pixels. The untouched original remains in `source/classic-fizz-original.json` and the comparison image. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
+The three-quarter side-view keeps the original 16 × 32 standing proportions on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid retains the original design, translated by (4, 4) into the shared canvas, with the original foreground shoe mirrored to face left and its toe extended one pixel left without moving the ankle. The foreground heel extends one pixel right through its red upper, white sole and grey underside, with its outer black outline moved to match. The matching rear shoe is raised two pixels for perspective, with its toe extended one pixel left while its ankle stays in place. A stepped black outline separates the foreground toe from the raised rear shoe and continues upward towards the ankle. The original yellow belt dot is retained; the front trouser leg and shoe mask the overlapping rear shoe pixels. The untouched original remains in `source/classic-fizz-original.json` and the comparison image. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
 
 The overworld is a separate top-down design on a 24 × 24 canvas with eight headings (N, NE, E, SE, S, SW, W, NW). Each heading has two walking frames. The helmet stripe, grey rim, brim and partial face indicate the heading; feet and hands alternate. This replaces the current head-and-shoulders interpretation for this study.
 
