@@ -10,8 +10,23 @@ import json, math, shutil
 ROOT = Path(__file__).resolve().parent
 ORIGINAL = json.loads((ROOT / 'source' / 'classic-fizz-original.json').read_text())
 PALETTE = {**ORIGINAL['palette'], 'b': '#5555ff', 'A': '#334488', 'N': '#aa5500'}
-# The standing frame is the unmodified native study; action frames inherit its head and torso.
-BASE = ORIGINAL['grid']
+# Start from the untouched native study, including its yellow belt detail.
+BASE = list(ORIGINAL['grid'])
+# Mirror the original shoe and draw the matching rear shoe behind the foreground shoe.
+shoe = [row[5:13][::-1] for row in ORIGINAL['grid'][27:32]]
+working = [list(row) for row in BASE]
+for yy in range(27, 32):
+    working[yy] = ['.'] * 16
+
+def stamp_shoe(rows, x, y):
+    for yy, row in enumerate(rows, y):
+        for xx, code in enumerate(row, x):
+            if code != '.':
+                working[yy][xx] = code
+
+stamp_shoe(shoe, 0, 27)
+stamp_shoe(shoe, 2, 27)
+BASE = [''.join(row) for row in working]
 
 FRAMES = {}
 
@@ -194,7 +209,7 @@ for i,(name,frame) in enumerate(FRAMES.items()):
 sheet.save(ROOT/'sheets'/'ben-poses.png')
 (ROOT/'assets.json').write_text(json.dumps({'palette':PALETTE,'frames':FRAMES,'animations':{n:{'frames':fs,'durationsMs':ts} for n,(fs,ts) in ANIMATIONS.items()},'sheet':positions},indent=2)+'\n')
 # Render the comparison directly from the vendored native grid.
-raster({'width':16,'height':32,'grid':BASE}).resize((96,192),Image.Resampling.NEAREST).save(ROOT/'original-study.png')
+raster({'width':16,'height':32,'grid':ORIGINAL['grid']}).resize((96,192),Image.Resampling.NEAREST).save(ROOT/'original-study.png')
 
 html='''<!doctype html><html lang="en-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Classic Fizz · Ben Pose Workshop</title><style>
 :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101719;color:#e8f1e5}*{box-sizing:border-box}body{max-width:1400px;margin:auto;padding:32px}h1{font-size:clamp(2rem,5vw,3.6rem);margin:.3em 0}h2{margin-top:48px}p{max-width:840px;line-height:1.6;color:#b4c7bc}.eyebrow{color:#a9ee73;letter-spacing:.16em;font-size:.8rem}nav,.controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0;align-items:center}a{color:#b8ef92}button,select,input{font:inherit}button,select{background:#23372d;color:#e8f1e5;border:1px solid #607c62;border-radius:6px;padding:8px 12px}label{display:flex;gap:8px;align-items:center}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}article{border:1px solid #344a3f;border-radius:12px;overflow:hidden;background:#17231e}article h3,article p{margin:16px}article p{font-size:.85rem}.stage{height:300px;display:flex;align-items:center;justify-content:center;background-color:#20302c;background-image:linear-gradient(45deg,#ffffff05 25%,transparent 25%,transparent 75%,#ffffff05 75%),linear-gradient(45deg,#ffffff05 25%,transparent 25%,transparent 75%,#ffffff05 75%);background-size:16px 16px;background-position:0 0,8px 8px}.stage img,.stage canvas{image-rendering:pixelated;max-width:100%;object-fit:contain}.stage canvas{transform:scaleX(var(--facing,1))}.compass{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.compass article .stage{height:190px}.compass h3{font-size:1rem}.original{display:flex;gap:32px;flex-wrap:wrap}.original article{min-width:240px}.small{font-size:.85rem}footer{margin-top:40px;color:#9bb3a4}@media(max-width:600px){body{padding:16px}.compass{gap:6px}.compass article h3{margin:8px}.compass article .stage{height:128px}.compass article p{display:none}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
@@ -220,7 +235,7 @@ A pose set derived from the unmodified original native Classic Fizz study, vendo
 
 ## Artwork
 
-The three-quarter side-view keeps the exact original 16 × 32 standing grid on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid is pixel-identical to the original, translated by (4, 4) into the shared canvas. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
+The three-quarter side-view keeps the original 16 × 32 standing proportions on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid retains the original design, translated by (4, 4) into the shared canvas, with the original foreground shoe mirrored to face left and a matching rear shoe layered behind it. The original yellow belt dot is retained; the front shoe masks the overlapping rear shoe pixels. The untouched original remains in `source/classic-fizz-original.json` and the comparison image. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
 
 The overworld is a separate top-down design on a 24 × 24 canvas with eight headings (N, NE, E, SE, S, SW, W, NW). Each heading has two walking frames. The helmet stripe, grey rim, brim and partial face indicate the heading; feet and hands alternate. This replaces the current head-and-shoulders interpretation for this study.
 
