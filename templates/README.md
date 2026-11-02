@@ -4,7 +4,7 @@ A pose set derived from the unmodified original native Classic Fizz study, vendo
 
 ## Pixel editor
 
-Install dependencies with `bun install`, then run `bun run dev`. The editor supports palette drawing, erasing, colour picking, continuous pointer strokes, undo/redo, per-frame reset and a native-size preview. Click a static gallery pose or use the frame selector to edit it. Gallery and animation previews update live.
+Install dependencies with `bun install`, then run `bun run dev`. The development server listens on `0.0.0.0:5173`, so the lab is available at `http://localhost:5173/` on this machine and at `http://<this-machine-LAN-IP>:5173/` from another device on the same network. The editor supports palette drawing, erasing, colour picking, continuous pointer strokes, undo/redo, per-frame reset and a native-size preview. Click a static gallery pose or use the frame selector to edit it. Gallery and animation previews update live.
 
 Drafts are stored in this browser for this local address. **Save to project** writes `edits.json` and regenerates PNG, SVG, GIF, sprite-sheet and standalone preview exports. Generation and saving run entirely in Bun and TypeScript. Saving is explicit; browser drafts alone do not change repository files. Original source art stays untouched. JSON export/import provides portable backups; PNG export downloads the selected frame at native resolution.
 

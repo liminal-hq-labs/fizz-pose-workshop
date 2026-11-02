@@ -15,6 +15,7 @@ const run = promisify(execFile);
 let saving = false;
 export default defineConfig({
   base: './',
+  server: { host: '0.0.0.0', port: 5173, strictPort: true },
   plugins: [{
     name: 'sprite-project',
     configureServer(server) {
@@ -34,7 +35,7 @@ export default defineConfig({
           try { oldEdits = await readFile(root + 'edits.json', 'utf8'); } catch (error) { if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error; }
           server.watcher.unwatch([root + 'assets.json', root + 'edits.json']);
           await writeFile(root + 'edits.json', JSON.stringify(frames, null, 2) + '\n');
-          try { await run(process.execPath, ['run', 'scripts/build-assets.ts'], { cwd: root }); }
+          try { await run('bun', ['run', 'scripts/build-assets.ts'], { cwd: root }); }
           catch (error) {
             await writeFile(root + 'edits.json', oldEdits ?? '{}\n');
             throw new Error('Could not regenerate exports. Check the Bun terminal output, then save again.');
