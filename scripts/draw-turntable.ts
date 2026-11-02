@@ -32,6 +32,7 @@ if(import.meta.main){
  await writeFile(new URL('edits.json',root),JSON.stringify(edits,null,2)+'\n');
  const folder=new URL('rig/ben-turntable/',root);await mkdir(folder,{recursive:true});
  await writeFile(new URL('rig.json',folder),JSON.stringify(rig,null,2)+'\n');await writeFile(new URL('skin.json',folder),JSON.stringify(skin,null,2)+'\n');
+ await writeFile(new URL('shoes.json',folder),JSON.stringify((await import('../source/ben-turntable-shoes.json')).default,null,2)+'\n');
  await writeFile(new URL('samples.json',folder),JSON.stringify({frameMs:rig.frameMs,samples:Array.from({length:rig.sampleCount},(_,i)=>sampleTurntable(rig,i*360/rig.sampleCount))},null,2)+'\n');
  const measurements=Object.fromEntries(Object.entries(skin.references).filter(([name])=>['ben_stand','ben_standRight','ben_standFront'].includes(name)).map(([name,frame])=>{
   const points=frame.grid.flatMap((row,y)=>[...row].flatMap((code,x)=>code==='.'?[]:[[x,y]]));
@@ -40,9 +41,9 @@ if(import.meta.main){
    const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]),left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys);
    return {left,right,top,bottom,width:right-left+1,height:bottom-top+1};
   };
-  return [name,{body:box(points),head:box(head),helmet:box(helmet),floorShift:rig.groundY-Math.max(...points.map(p=>p[1]))}];
+  return [name,{body:box(points),head:box(head),helmet:box(helmet),rawFloorDifference:rig.groundY-Math.max(...points.map(p=>p[1])),turntableAdjustment:name==='ben_standFront'?'Insert one denim row at row 30; preserve head/torso rows.':'Horizontal padding only.'}];
  }));
- await writeFile(new URL('reference-audit.json',folder),JSON.stringify({measurements,notes:['The three standing keys preserve their original pixels; only padding and ground alignment change.','The side standing bodies and missing yaw stops are inferred; the running and climbing poses are not treated as neutral standing limb poses.','Contour interpolation is a pixel-art model-sheet aid, not a uniquely reconstructed textured 3D mesh.','The projected skeleton preserves bone lengths, body height and the anatomical hip used by the Stunner.']},null,2)+'\n');
+ await writeFile(new URL('reference-audit.json',folder),JSON.stringify({measurements,notes:['The quarter keys preserve their source pixels. The front copy preserves its upper body and adds one lower-leg row instead of translating the head.','The side standing bodies and missing yaw stops are inferred; the running and climbing poses are not treated as neutral standing limb poses.','Contour interpolation is a pixel-art model-sheet aid, not a uniquely reconstructed textured 3D mesh.','The projected skeleton preserves bone lengths, body height and the anatomical hip used by the Stunner.']},null,2)+'\n');
  await writeFile(new URL('sprites.gif',folder),gif(Object.values(frames),Object.keys(frames).map(()=>rig.frameMs),skin.palette));
  for(const [i,frame]of Object.values(frames).entries()){
   const degrees=String(i*360/rig.sampleCount).padStart(3,'0');

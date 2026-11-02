@@ -90,12 +90,12 @@
     "rightToe": [
       -2,
       34,
-      4
+      7
     ],
     "leftToe": [
       2,
       34,
-      2
+      5
     ],
     "stunner": [
       -4.5,
@@ -121,6 +121,16 @@
       0,
       11.5,
       3.6
+    ],
+    "rightHeel": [
+      -2,
+      34,
+      -2
+    ],
+    "leftHeel": [
+      2,
+      34,
+      -4
     ]
   },
   "connections": [
@@ -150,6 +160,7 @@
       "rightHip",
       "rightKnee",
       "rightAnkle",
+      "rightHeel",
       "rightToe"
     ],
     [
@@ -157,6 +168,7 @@
       "leftHip",
       "leftKnee",
       "leftAnkle",
+      "leftHeel",
       "leftToe"
     ]
   ],
@@ -183,6 +195,7 @@
     "profiles": "ben_walkRight1–6 supply true side head, nose, brim, torso depth and shoe proportions; mirrored for the left profile. Running lean, bob and stride are excluded.",
     "rear": "ben_ladder1 and the saved climbing back skin supply rear helmet, rim, hair and shirt. Climbing limb positions are excluded.",
     "pose": "One neutral standing post: fixed pelvis, neck, shoulders, elbows, wrists, hips, knees and ankles. Positive yaw turns his face towards screen right.",
-    "equipment": "Fizz Stunner stays on the same anatomical right hip throughout the turn."
+    "equipment": "Fizz Stunner stays on the same anatomical right hip throughout the turn.",
+    "shoes": "Directional pixel shoes retain a six-pixel front width and ten-pixel quarter/profile length. Heel, ankle and toe are tracked independently; length foreshortens towards front/rear rather than changing abruptly between templates."
   }
 }

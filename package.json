@@ -17,7 +17,8 @@
     "draw:actions": "bun scripts/draw-action-rigs.ts",
     "draw:performances": "bun scripts/draw-performance-rigs.ts",
     "draw:look-loop": "bun scripts/draw-look-loop.ts",
-    "draw:turntable": "bun scripts/draw-turntable.ts"
+    "draw:turntable": "bun scripts/draw-turntable.ts",
+    "draw:stunner": "bun scripts/draw-stunner-study.ts"
   },
   "devDependencies": {
     "vite": "8.3.5",

@@ -120,18 +120,18 @@ The front-facing **Look up & down** loop reuses the saved standing, look-up, hal
 
 `source/ben-turntable-rig.json` stores a fixed standing post in three dimensions: pelvis, neck, head, shoulders, elbows, wrists, hips, knees, ankles, toes, facial landmarks and the anatomical right-hip Stunner. Positive yaw turns Ben towards screen right. `src/rig/turntable.ts` rotates and projects these joints without changing their model-space positions or bone lengths. The turntable has its own preview section and playback controls; it is separate from the action rig selector.
 
-`source/ben-turntable-skin.json` snapshots the current front and three-quarter standing sprites, all six right-running frames, the ladder reference and the shared side/rear head patches. These stable snapshots make regeneration reproducible without replacing the source artwork. The three standing anchors are preserved pixel for pixel, with four pixels of horizontal padding and vertical translation to put the lowest sole on row 34. The front stand requires one pixel of vertical alignment; the front quarters require none.
+`source/ben-turntable-skin.json` snapshots the current front and three-quarter standing sprites, all six right-running frames, the ladder reference and the shared side/rear head patches. These stable snapshots make regeneration reproducible without replacing the source artwork. The front quarters are preserved pixel for pixel with four pixels of horizontal padding. The front copy retains its original head, torso and upper trousers; a duplicated denim row at row 30 moves only the shoes down one pixel. Every turn now keeps its crown on row 2 and lowest sole on row 34. The original source sprites are unchanged.
 
 | Yaw | Source and treatment |
 |---|---|
-| 0° | Saved front-facing stand |
+| 0° | Saved front-facing stand with one added lower-leg row |
 | 45° | Saved right-facing three-quarter stand |
 | 90° | True right profile from the running head, over a neutral standing body |
 | 180° | Climbing rear head over a neutral standing body |
 | 270° | Mirrored running side head, with hip equipment handled separately |
 | 315° | Saved left-facing three-quarter stand |
 
-The remaining 15° stops interpolate palette-indexed row contours between these keys. Eyes and lips are hidden behind the profile. The hip equipment is projected from its own body landmark so it does not swap sides around the back. Standing side and rear bodies are inferred using the rig volumes in `scripts/turntable-skin.ts`; `scripts/turntable-reference.ts` preserves the authored keys and constructs the transitions. This is a reference-guided pixel-art turntable, not a uniquely reconstructed textured 3D mesh. The guide skeleton provides a stable geometric post while the preserved sprites retain their view-specific poses.
+The remaining 15° stops interpolate the upper-body contours between these keys. Legs, shoes and equipment are separate detailed layers driven by the standing rig. Eyes and lips are hidden behind the profile. The hip equipment is projected from its own body landmark so it does not swap sides around the back. Standing side and rear bodies are inferred using the rig volumes in `scripts/turntable-skin.ts`; `scripts/turntable-reference.ts` preserves the authored keys and constructs the transitions. This is a reference-guided pixel-art turntable, not a uniquely reconstructed textured 3D mesh. The guide skeleton provides a stable geometric post while the preserved sprites retain their view-specific poses.
 
 Run `bun run draw:turntable` followed by `bun run generate`. This overwrites only `ben_turn000` through `ben_turn345` and their saved editor overrides. The existing standing, climbing and running sprites remain unchanged. `rig/ben-turntable/` contains the rig, reference skin, 24 projected joint samples, 24 skeleton SVGs, 24 PNG/SVG frames, a sprite GIF and `reference-audit.json`. The regular animation exports are `animations/standing-360.gif` and `animations/standing-360.svg`.
 
@@ -139,6 +139,12 @@ Run `bun run draw:turntable` followed by `bun run generate`. This overwrites onl
 
 The front helmet is 11 pixels wide, while the two front-quarter helmets are 13 pixels wide. The broader quarter view is a defining part of Ben’s rounded helmet and forward brim, rather than a feature that can be obtained by simply narrowing the front image. The white stripe, grey rim, blue eyes, red shirt emblem and red high-tops provide the main landmarks around the turn. The rear head introduces the brown hair/nape and omits the facial features.
 
-The original front stand is 32 occupied pixels tall, compared with 33 for both front quarters. Aligning their soles exposes a one-pixel difference at the crown. Arm/hand placement and the staggered side shoes also vary between the drawings. These sprites are strong individual poses but do not yet specify one perfectly rigid neutral model. A future model sheet can standardise crown height, shoulder/hand positions and shoe spacing while retaining the original drawings as references. The audit records the source bounds so these decisions can be made deliberately.
+The original front stand is 32 occupied pixels tall, compared with 33 for both front quarters. Aligning their soles exposes a one-pixel difference at the crown. Arm/hand placement and the staggered side shoes also vary between the drawings. The turntable copy compensates for the height difference at the lower leg. These source sprites are strong individual poses but do not yet specify one perfectly rigid neutral model. A future model sheet can standardise crown height, shoulder/hand positions and shoe spacing while retaining the original drawings as references. The audit records the source bounds so these decisions can be made deliberately.
 
 The Stunner is an asymmetric design landmark. Its attachment belongs to Ben’s anatomical right hip; visibility changes with yaw, but its body-side identity stays fixed. A whole-sprite mirror alone is therefore insufficient for future left/right poses with visible equipment.
+
+### Detail refinement
+
+[The source and in-between review](TURNTABLE_REVIEW.md) describes each reference and angle range before refinement. `scripts/turntable-details.ts` replaces the generated lower-body silhouette with independently layered legs, cyan seams, shoes and the hip Stunner. `source/ben-turntable-shoes.json` stores front, quarter, side, rear-quarter and rear patches. Shoe width changes gradually from six pixels at front/rear to ten at full quarter/profile. The ankle opening stays bound to the leg, with heel and toe landmarks tracked separately; the far foot is drawn first, raised slightly and shaded grey. The red upper no longer comes from a cuboid shoe volume. The source quarter anchors retain their detailed original feet.
+
+`rig/ben-turntable/shoes.json` saves the directional shoe design with the rig exports. Tests enforce fixed crown/sole rows, front upper-body preservation, full quarter/profile sole length, separate heel detail and palette limits.

@@ -46,8 +46,8 @@ The overworld is a separate top-down design on a 24 × 24 canvas with eight head
 
 ## Files
 
-- `frames/`: all 126 individual transparent PNGs and editable pixel-rectangle SVGs.
-- `animations/`: thirteen action sequences and eight overworld walk loops, each as an animated SVG and transparent GIF.
+- `frames/`: all 137 individual transparent PNGs and editable pixel-rectangle SVGs.
+- `animations/`: fifteen action sequences and eight overworld walk loops, each as an animated SVG and transparent GIF.
 - `assets.json`: palette, every editable pixel grid, per-frame timing and sprite-sheet rectangles.
 - `sheets/ben-poses.png`: transparent sprite sheet in automatically sized 40 × 72 cells; use the per-frame rectangles in `assets.json` for native dimensions.
 - `scripts/build-assets.ts`: Bun/TypeScript asset generator. Run `bun run generate` to regenerate exports.
@@ -96,6 +96,14 @@ The **Look up & down** loop uses the saved front-facing look and bend poses: 800
 
 The **Standing 360°** section has independent playback, speed, stepping, an angle slider, 24 clickable angle stops and an optional body-rig overlay. **Edit this angle** opens the selected pose in the pixel editor. The 24 frames cover 0°–345° in 15° increments at 120 ms each, with PNG/SVG frames and a looping GIF/SVG. It also works in the standalone gallery.
 
-The front (0°), right front quarter (45°) and left front quarter (315°) preserve the saved standing sprite pixels, with horizontal padding and foot-line alignment only. True side heads use the running design without its lean; the rear head uses the climbing skin. Missing angles use palette-indexed contour interpolation over a fixed standing rig. They are inferred views rather than additional original artwork. The Stunner follows Ben’s same anatomical right hip.
+The right front quarter (45°) and left front quarter (315°) preserve the saved standing pixels with horizontal padding only. The front (0°) preserves the source head and torso, with one denim row inserted before the shoes to align the soles without lowering the crown. True side heads use the running design without its lean; the rear head uses the climbing skin. Missing angles use palette-indexed contour interpolation over a fixed standing rig. They are inferred views rather than additional original artwork. The Stunner follows Ben’s same anatomical right hip.
 
 Run `bun run draw:turntable` then `bun run generate` to rebuild the study. `source/ben-turntable-rig.json` stores the standing joints and volumes; `source/ben-turntable-skin.json` stores stable reference snapshots and the side/rear head patches. Saved exports and the reference audit live in `rig/ben-turntable/`. See [the rig guide](docs/RIG.md) for the model-sheet findings and reconstruction limits.
+
+The [source and in-between review](docs/TURNTABLE_REVIEW.md) describes the reference details, the former block-shaped shoes and the refinement. `source/ben-turntable-shoes.json` defines separate directional high-top patches: a six-pixel front width, ten-pixel full quarter/side length, ankle openings, shaped toes, heel panels, white near soles and grey raised far soles. Crown and lowest sole stay on rows 2 and 34.
+
+## Fizz Stunner study
+
+The **Fizz Stunner · on its own** section shows eleven editable views at enlarged and native scale, plus turnaround and discharge/recoil loops. The four-by-five holstered patch and eight-by-six held side profile are exact source artwork; opposite side views are mirrored. Front, rear and quarter views are labelled interpretations of the tiny sidearm. Every frame exports as PNG/SVG, and both loops export as GIF/SVG.
+
+`source/fizz-stunner-study.json` records the views and provenance. Run `bun run draw:stunner` then `bun run generate` to rebuild the set; this explicitly replaces the matching editor overrides. The isolated frames use 16 × 16 transparent canvases without scaling up the source patches.

@@ -1,0 +1,159 @@
+{
+  "name": "Fizz Stunner · isolated sprite study",
+  "width": 16,
+  "height": 16,
+  "references": [
+    "source/ben-side-skin.json: stunner and weapon",
+    "ben_standRight: visible belt attachment",
+    "ben_fireRight1 and ben_fireRight2: held profile and discharge"
+  ],
+  "notes": "The exact source patches retain their native pixel count. Additional angles are interpretations of the compact purple sidearm, rather than established game artwork.",
+  "views": [
+    {
+      "name": "stunner_holstered",
+      "label": "Holstered · exact source patch",
+      "kind": "extracted",
+      "rows": [
+        "kDDk",
+        "kMmk",
+        "kMMk",
+        ".kMk",
+        "..k."
+      ]
+    },
+    {
+      "name": "stunner_sideRight",
+      "label": "Side right · exact firing patch",
+      "kind": "extracted",
+      "rows": [
+        ".kkkkkkk",
+        "kDDDDDDk",
+        "kMmmmmMk",
+        ".kMMkkkk",
+        "..kMk...",
+        "..kkk..."
+      ]
+    },
+    {
+      "name": "stunner_sideLeft",
+      "label": "Side left · mirrored firing patch",
+      "kind": "mirrored",
+      "rows": [
+        "kkkkkkk.",
+        "kDDDDDDk",
+        "kMmmmmMk",
+        "kkkkMMk.",
+        "...kMk..",
+        "...kkk.."
+      ]
+    },
+    {
+      "name": "stunner_quarterRight",
+      "label": "Front quarter right · inferred",
+      "kind": "inferred",
+      "rows": [
+        "..kkkkk.",
+        ".kDDDDkk",
+        "kMmmmmDk",
+        ".kMMkDkk",
+        "..kMk...",
+        "..kkk..."
+      ]
+    },
+    {
+      "name": "stunner_quarterLeft",
+      "label": "Front quarter left · inferred",
+      "kind": "inferred",
+      "rows": [
+        ".kkkkk..",
+        "kkDDDDk.",
+        "kDmmmmMk",
+        "kkDkMMk.",
+        "...kMk..",
+        "...kkk.."
+      ]
+    },
+    {
+      "name": "stunner_front",
+      "label": "Muzzle/front · inferred",
+      "kind": "inferred",
+      "rows": [
+        ".kkk.",
+        "kDDDk",
+        "kDkDk",
+        "kMmMk",
+        ".kMk.",
+        ".kMk.",
+        ".kkk."
+      ]
+    },
+    {
+      "name": "stunner_rear",
+      "label": "Rear housing · inferred",
+      "kind": "inferred",
+      "rows": [
+        ".kkk.",
+        "kDDDk",
+        "kMmMk",
+        "kMMMk",
+        ".kMk.",
+        ".kMk.",
+        ".kkk."
+      ]
+    },
+    {
+      "name": "stunner_rearQuarterRight",
+      "label": "Rear quarter right · inferred",
+      "kind": "inferred",
+      "rows": [
+        ".kkkk..",
+        "kDDDDk.",
+        "kMmmMkk",
+        "kMMMDkk",
+        ".kMk...",
+        ".kkk..."
+      ]
+    },
+    {
+      "name": "stunner_rearQuarterLeft",
+      "label": "Rear quarter left · inferred",
+      "kind": "inferred",
+      "rows": [
+        "..kkkk.",
+        ".kDDDDk",
+        "kkMmmMk",
+        "kkDMMMk",
+        "...kMk.",
+        "...kkk."
+      ]
+    },
+    {
+      "name": "stunner_fire",
+      "label": "Discharge · source profile and flash colours",
+      "kind": "derived",
+      "rows": [
+        ".kkkkkkk",
+        "kDDDDDDk",
+        "kMmmmmMk",
+        ".kMMkkkk",
+        "..kMk...",
+        "..kkk..."
+      ],
+      "flash": true
+    },
+    {
+      "name": "stunner_recoil",
+      "label": "Recoil · source profile tilted up",
+      "kind": "derived",
+      "rows": [
+        ".kkkkkkk",
+        "kDDDDDDk",
+        "kMmmmmMk",
+        ".kMMkkkk",
+        "..kMk...",
+        "..kkk..."
+      ],
+      "angle": -12
+    }
+  ]
+}

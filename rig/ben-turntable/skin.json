@@ -525,7 +525,7 @@
     "y": "#ffff55",
     "W": "#ffffff"
   },
-  "notes": "The front and front-quarter keys preserve the saved standing pixel grids with padding and floor alignment only. True profile heads use the running skin, with the lean removed. The rear head uses the climbing back skin. Missing angles interpolate palette-indexed contours between these keys; model-space joints track the standing post.",
+  "notes": "Reference snapshots remain untouched. Quarter turntable keys preserve source pixels; the front copy retains its upper body and inserts one denim row at the leg-to-shoe transition. Profiles use the running head, the rear uses the climbing head, and separate detailed shoe layers preserve projected length.",
   "sideHead": {
     "anchor": [
       13,

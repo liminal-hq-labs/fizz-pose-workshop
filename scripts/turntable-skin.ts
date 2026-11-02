@@ -41,12 +41,7 @@ export function turntableMaterial(rig:TurntableRig,p:Point3):string|null{
   const j=(name:string):Point3=>rig.joints[side+name] as unknown as Point3;
   if(capsule(p,j('Shoulder'),j('Elbow'),1.3)||capsule(p,j('Elbow'),j('Hand'),1.2))return y<18.2?(z>.3?'r':'R'):z>0?'W':'L';
   if(capsule(p,j('Hip'),j('Knee'),1.4)||capsule(p,j('Knee'),j('Ankle'),1.35))return Math.abs(x-j('Hip')[0])>1&&z>-.2&&z<1.5?'c':'B';
-  const a=j('Ankle');
-  if(y>=30&&y<=34.4&&Math.abs(x-a[0])<=1.8&&z>=a[2]-2&&z<=a[2]+3.1){
-   if(y>=33.3)return 'W';
-   if(z>a[2]+2.3&&y>32.2)return 'W';
-   return z>a[2]+1?'r':'R';
-  }
+
  }
  if(Math.abs(x+4.4)<1&&y>=23.2&&y<27.4&&Math.abs(z-.5)<1.1)return y<24?'D':x< -4.3?'M':'m';
  return null;

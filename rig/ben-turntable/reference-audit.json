@@ -25,7 +25,8 @@
         "width": 13,
         "height": 7
       },
-      "floorShift": 0
+      "rawFloorDifference": 0,
+      "turntableAdjustment": "Horizontal padding only."
     },
     "ben_standRight": {
       "body": {
@@ -52,7 +53,8 @@
         "width": 13,
         "height": 7
       },
-      "floorShift": 0
+      "rawFloorDifference": 0,
+      "turntableAdjustment": "Horizontal padding only."
     },
     "ben_standFront": {
       "body": {
@@ -79,11 +81,12 @@
         "width": 11,
         "height": 7
       },
-      "floorShift": 1
+      "rawFloorDifference": 1,
+      "turntableAdjustment": "Insert one denim row at row 30; preserve head/torso rows."
     }
   },
   "notes": [
-    "The three standing keys preserve their original pixels; only padding and ground alignment change.",
+    "The quarter keys preserve their source pixels. The front copy preserves its upper body and adds one lower-leg row instead of translating the head.",
     "The side standing bodies and missing yaw stops are inferred; the running and climbing poses are not treated as neutral standing limb poses.",
     "Contour interpolation is a pixel-art model-sheet aid, not a uniquely reconstructed textured 3D mesh.",
     "The projected skeleton preserves bone lengths, body height and the anatomical hip used by the Stunner."

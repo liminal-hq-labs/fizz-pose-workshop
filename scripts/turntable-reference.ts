@@ -5,11 +5,13 @@
 
 import type{Frame,Frames}from'../src/types.ts';
 import{sampleTurntable,type TurntableRig}from'../src/rig/turntable.ts';
+import{refineTurntableBody}from'./turntable-details.ts';
 import{drawTurntableFrame}from'./turntable-skin.ts';
 interface Row{x:number;y:number;pixels:string;}
 interface HeadPatch{anchor:number[];rows:Row[];}
 export interface TurntableSkin{references:Frames;sideHead:HeadPatch;backHead:HeadPatch;}
-export function padStanding(frame:Frame,rig:TurntableRig):Frame{
+export function padStanding(frame:Frame,rig:TurntableRig,extendFrontLeg=false):Frame{
+ if(extendFrontLeg)frame={...frame,grid:[...frame.grid.slice(0,30),frame.grid[29],...frame.grid.slice(30,-1)]};
  const bottom=frame.grid.findLastIndex(row=>/[^.]/.test(row)),dy=rig.groundY-bottom,dx=Math.floor((rig.width-frame.width)/2);
  const rows=Array.from({length:rig.height},()=>Array<string>(rig.width).fill('.'));
  frame.grid.forEach((row,y)=>[...row].forEach((code,x)=>{if(code!=='.')rows[y+dy][x+dx]=code;}));
@@ -29,13 +31,13 @@ export function turntableKeys(rig:TurntableRig,skin:TurntableSkin):{angle:number
  const l=left.grid.map(row=>[...row]);l[9][13]='B';l[11][13]='R';left.grid=l.map(row=>row.join(''));
  const back=stampHead(drawTurntableFrame(rig,180),skin.backHead,15.5);
  return [
-  {angle:0,frame:padStanding(skin.references.ben_standFront,rig),reference:'ben_standFront'},
+  {angle:0,frame:padStanding(skin.references.ben_standFront,rig,true),reference:'ben_standFront'},
   {angle:45,frame:padStanding(skin.references.ben_standRight,rig),reference:'ben_standRight'},
   {angle:90,frame:right,reference:'running side head · standing body'},
   {angle:180,frame:back,reference:'climbing rear head · standing body'},
   {angle:270,frame:left,reference:'mirrored running side head · standing body'},
   {angle:315,frame:padStanding(skin.references.ben_stand,rig),reference:'ben_stand'},
-  {angle:360,frame:padStanding(skin.references.ben_standFront,rig),reference:'ben_standFront'},
+  {angle:360,frame:padStanding(skin.references.ben_standFront,rig,true),reference:'ben_standFront'},
  ];
 }
 function span(row:string):[number,number]|undefined{
@@ -61,15 +63,5 @@ export function sampleTurntableSkin(rig:TurntableRig,keys:ReturnType<typeof turn
  const frame=interpolateTurntable(a.frame,b.frame,(yaw-a.angle)/(b.angle-a.angle));
  // Eyes and lips are hidden once the head turns behind the true profile.
  if(yaw>100&&yaw<260)for(let y=9;y<=13;y++)frame.grid[y]=frame.grid[y].replace(/[BR]/g,'L');
- if(![0,45,315].includes(yaw)){
-  const rows=frame.grid.map(row=>[...row]);
-  for(let y=15;y<=30;y++)for(let x=0;x<frame.width;x++)if(/[Mm]/.test(rows[y][x]))rows[y][x]=y>=24?'B':'R';
-  const holster=sampleTurntable(rig,yaw).joints.stunner;
-  if(holster.camera[2]>=-.5){
-   const x=holster.pixel[0];
-   for(const[dy,pixels]of['DD','Mm','MM','.k'].entries())for(const[dx,code]of[...pixels].entries())if(code!=='.')rows[24+dy][x+dx]=code;
-  }
-  frame.grid=rows.map(row=>row.join(''));
- }
- return frame;
+ return refineTurntableBody(frame,rig,yaw);
 }
