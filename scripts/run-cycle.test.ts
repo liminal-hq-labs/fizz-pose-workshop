@@ -25,13 +25,13 @@ test('arms and legs retain bone lengths and the elbows never flip during a full 
     expect(distance(pose.root, pose.neck)).toBeCloseTo(10, 8);
   }
 });
-test('supporting toes lock to virtual world ground and both feet clear it in flight', () => {
+test('supporting forefeet lock to virtual world ground and both feet clear it in flight', () => {
   const travel = stanceTravel(rig) / rig.stride.stanceFraction;
-  const start = sampleRunRig(rig, 0).nearFoot.toe[0];
+  const start = sampleRunRig(rig, 0).nearFoot.ball[0];
   for (let i = 0; i < 100; i++) {
     const time = i / 100 * rig.stride.stanceFraction, pose = sampleRunRig(rig, time);
-    expect(pose.nearFoot.toe[1]).toBeCloseTo(rig.groundY, 8);
-    expect(pose.nearFoot.toe[0] + travel * time).toBeCloseTo(start, 8);
+    expect(pose.nearFoot.ball[1]).toBeCloseTo(rig.groundY, 8);
+    expect(pose.nearFoot.ball[0] + travel * time).toBeCloseTo(start, 8);
     expect(pose.nearFoot.heel[1]).toBeLessThanOrEqual(rig.groundY + 1e-8);
   }
   for (const time of [2 / 6, 5 / 6]) {
@@ -55,4 +55,26 @@ test('six palette sprites have alternating supporting soles and empty ground in 
     if (i === 2 || i === 5) expect(/[WL]/.test(floor)).toBe(false);
     else expect(floor).toContain(i < 3 ? 'W' : 'L');
   }
+});
+
+test('shoe articulation cushions landing and bends at the forefoot during push-off', () => {
+  const landing = sampleRunRig(rig, 0).nearFoot;
+  expect(landing.heel[1]).toBeCloseTo(rig.groundY, 8);
+  expect(landing.ball[1]).toBeCloseTo(rig.groundY, 8);
+  expect(landing.toe[1]).toBeLessThan(rig.groundY - .7);
+  expect(landing.compression).toBe(rig.feet.landingCompression);
+  const settled = sampleRunRig(rig, rig.stride.stanceFraction * .32).nearFoot;
+  expect(settled.toePitch).toBeCloseTo(0, 8); expect(settled.compression).toBeCloseTo(0, 8);
+  const push = sampleRunRig(rig, rig.stride.stanceFraction * .85).nearFoot;
+  expect(push.heel[1]).toBeLessThan(rig.groundY - .7);
+  expect(push.ball[1]).toBeCloseTo(rig.groundY, 8); expect(push.toe[1]).toBeCloseTo(rig.groundY, 8);
+  expect(push.pitch - push.toePitch).toBeGreaterThan(.3);
+  for (let i = 0; i <= 240; i++) for (const foot of [sampleRunRig(rig, i / 240).nearFoot, sampleRunRig(rig, i / 240).farFoot]) {
+    expect(distance(foot.ball, foot.toe)).toBeCloseTo(2, 8);
+    expect(distance(foot.heel, foot.ball)).toBeCloseTo(2, 8);
+    expect(Math.max(foot.heel[1], foot.ball[1], foot.toe[1])).toBeLessThanOrEqual(rig.groundY + 1e-8);
+  }
+  const last = sampleRunRig(rig, 1 - 1e-6).nearFoot;
+  expect(distance(last.toe, landing.toe)).toBeLessThan(.001);
+  expect(Math.abs(last.compression - landing.compression)).toBeLessThan(.001);
 });

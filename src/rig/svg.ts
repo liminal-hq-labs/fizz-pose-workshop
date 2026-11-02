@@ -15,8 +15,8 @@ export function rigDrawing(pose: RigPose, ground: number, width: number): string
     + line(pose.farLeg, '#9573bc') + line(pose.farArm, '#9573bc')
     + line([pose.root, pose.neck], '#eeeeaa', .45) + line([pose.nearArm[0], pose.farArm[0]], '#ffaa55', .5)
     + line(pose.nearLeg, '#74e5fa', .4) + line(pose.nearArm, '#74e5fa', .4)
-    + line([pose.nearFoot.heel, pose.nearFoot.toe], pose.nearFoot.stance ? '#fff66b' : '#74e5fa', .3)
-    + line([pose.farFoot.heel, pose.farFoot.toe], pose.farFoot.stance ? '#fff66b' : '#9573bc', .3)
+    + line([pose.nearFoot.heel, pose.nearFoot.ball, pose.nearFoot.toe], pose.nearFoot.stance ? '#fff66b' : '#74e5fa', .3)
+    + line([pose.farFoot.heel, pose.farFoot.ball, pose.farFoot.toe], pose.farFoot.stance ? '#fff66b' : '#9573bc', .3)
     + joints(pose.nearLeg, '#74e5fa') + joints(pose.nearArm, '#74e5fa')
     + joints(pose.farLeg, '#9573bc') + joints(pose.farArm, '#9573bc')
     + `<ellipse cx="${number(pose.neck[0])}" cy="${number(pose.neck[1] - 6)}" rx="4.5" ry="5.5" fill="none" stroke="#9ee47a" stroke-width=".25"/>`

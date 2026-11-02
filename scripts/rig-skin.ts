@@ -11,7 +11,7 @@ interface PixelRow { x: number; y: number; pixels: string; }
 interface Patch { anchor: number[]; rows: PixelRow[]; towards?: PixelRow[]; away?: PixelRow[]; }
 export interface RigSkin {
   name: string; head: Patch; torso: Patch;
-  shoe: { anchor: number[]; toe: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
+  shoe: { anchor: number[]; toe: number[]; ball: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
   stunner: { anchor: number[]; pixels: string[]; hipOffset: number[] };
   palette: { outline: string; shirt: string; shirtShadow: string; skin: string; skinShadow: string; denim: string; denimSeam: string; shoe: string; shoeHighlight: string; sole: string; farSole: string };
 }
@@ -56,16 +56,17 @@ function paintArm(out: Pixels, chain: Chain, skin: RigSkin, near: boolean): void
 }
 function paintFoot(out: Pixels, foot: RigFoot, skin: RigSkin, near: boolean): void {
   const rows = new Map((near ? skin.shoe.rows : skin.shoe.farRows).map(row => [row.y, row]));
-  const flex = foot.stance && foot.pitch > .01;
+  const heightScale = 1 - foot.compression;
   const read = (x: number, y: number): string => { const row = rows.get(y); return row && x >= row.x && x < row.x + row.pixels.length ? row.pixels[x - row.x] : '.'; };
   for (let y = 0; y < out.height; y++) for (let x = 0; x < out.width; x++) {
     const local = rotate([x - foot.ankle[0], y - foot.ankle[1]], -foot.pitch);
-    const sx = Math.round(local[0] + skin.shoe.anchor[0]), sy = Math.round(local[1] + skin.shoe.anchor[1]);
-    if (!flex || sx < skin.shoe.flexX) out.pixel(x, y, read(sx, sy));
-    if (flex) {
-      const tx = Math.round(x - foot.toe[0] + skin.shoe.toe[0]), ty = Math.round(y - foot.toe[1] + skin.shoe.toe[1]);
-      if (tx >= skin.shoe.flexX) out.pixel(x, y, read(tx, ty));
-    }
+    const sx = Math.round(local[0] + skin.shoe.anchor[0]);
+    const sy = Math.round(skin.shoe.ball[1] + (local[1] + skin.shoe.anchor[1] - skin.shoe.ball[1]) / heightScale);
+    if (sx < skin.shoe.flexX) out.pixel(x, y, read(sx, sy));
+    const front = rotate([x - foot.ball[0], y - foot.ball[1]], -foot.toePitch);
+    const tx = Math.round(front[0] + skin.shoe.ball[0]);
+    const ty = Math.round(skin.shoe.ball[1] + front[1] / heightScale);
+    if (tx >= skin.shoe.flexX) out.pixel(x, y, read(tx, ty));
   }
 }
 function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin): void {

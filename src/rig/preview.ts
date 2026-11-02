@@ -40,7 +40,7 @@ export function mountRigPreview(data: WorkshopData): void {
     line([[0, rig.groundY], [rig.width, rig.groundY]], '#58745f', .1);
     limb(pose.farLeg, '#a080d0'); limb(pose.farArm, '#a080d0'); line([pose.root, pose.neck], '#ffec91', .4);
     line([pose.nearArm[0], pose.farArm[0]], '#ffa05f', .45); limb(pose.nearLeg, '#75edfa'); limb(pose.nearArm, '#75edfa');
-    for (const foot of [pose.farFoot, pose.nearFoot]) line([foot.heel, foot.toe], foot.stance ? '#ffef5f' : '#8cd1df', .3);
+    for (const foot of [pose.farFoot, pose.nearFoot]) line([foot.heel, foot.ball, foot.toe], foot.stance ? '#ffef5f' : '#8cd1df', .3);
     if (!translucent) {
       context.strokeStyle = '#a8e47d'; context.lineWidth = .2; context.beginPath(); context.ellipse(pose.neck[0], pose.neck[1] - 6, 4.5, 5.5, 0, 0, Math.PI * 2); context.stroke();
       line([[pose.neck[0], pose.neck[1] - 6], [pose.neck[0] + 3, pose.neck[1] - 6 + pose.headTurn * .4]], '#a8e47d', .15);

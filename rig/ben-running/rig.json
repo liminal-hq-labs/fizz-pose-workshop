@@ -49,6 +49,12 @@
     "heel": [
       -1,
       2
-    ]
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "landingToeDegrees": -28,
+    "landingCompression": 0.25
   }
 }
