@@ -12,8 +12,8 @@ ORIGINAL = json.loads((ROOT / 'source' / 'classic-fizz-original.json').read_text
 PALETTE = {**ORIGINAL['palette'], 'b': '#5555ff', 'A': '#334488', 'N': '#aa5500'}
 # Start from the untouched native study, including its yellow belt detail.
 BASE = list(ORIGINAL['grid'])
-# Mirror both shoes, keeping the rear shoe behind the foreground shoe.
-# Extend the foreground toe one pixel left without moving its ankle.
+# Mirror the original shoe. Raise the rear copy for perspective, then restore the front
+# trouser leg over it. Extend the foreground toe one pixel left without moving its ankle.
 shoe = [row[5:13][::-1] for row in ORIGINAL['grid'][27:32]]
 working = [list(row) for row in BASE]
 for yy in range(27, 32):
@@ -25,7 +25,9 @@ def stamp_shoe(rows, x, y):
             if code != '.':
                 working[yy][xx] = code
 
-stamp_shoe(shoe, 0, 27)
+stamp_shoe(shoe, 0, 25)
+for yy in range(25, 27):
+    working[yy][5:10] = ORIGINAL['grid'][yy][5:10]
 stamp_shoe(shoe[:2], 2, 27)
 stamp_shoe([shoe[2][0] + 'W' + shoe[2][1:],
             shoe[3][0] + 'W' + shoe[3][1:],
@@ -239,7 +241,7 @@ A pose set derived from the unmodified original native Classic Fizz study, vendo
 
 ## Artwork
 
-The three-quarter side-view keeps the original 16 × 32 standing proportions on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid retains the original design, translated by (4, 4) into the shared canvas, with the original foreground shoe mirrored to face left and its toe extended one pixel left without moving the ankle. The original yellow belt dot is retained; the front shoe masks the overlapping rear shoe pixels. The untouched original remains in `source/classic-fizz-original.json` and the comparison image. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
+The three-quarter side-view keeps the original 16 × 32 standing proportions on a transparent 24 × 44 canvas with room for raised arms, a blaster and a pogo spring. The standing grid retains the original design, translated by (4, 4) into the shared canvas, with the original foreground shoe mirrored to face left and its toe extended one pixel left without moving the ankle. The matching rear shoe is raised two pixels for perspective. The original yellow belt dot is retained; the front trouser leg and shoe mask the overlapping rear shoe pixels. The untouched original remains in `source/classic-fizz-original.json` and the comparison image. Action frames use its original head and torso, including the flat helmet, fragmented racing stripe and grey rim. Newly drawn action limbs use cyan denim seams, white gloves and red shoes with white toe caps, white soles and grey undersides. All sixteen game pose names from `episodes/episode-1/src/sprites/characters.ts` are represented, with two additional run phases and one recoil frame. Climbing shows the back of the helmet and shirt.
 
 The overworld is a separate top-down design on a 24 × 24 canvas with eight headings (N, NE, E, SE, S, SW, W, NW). Each heading has two walking frames. The helmet stripe, grey rim, brim and partial face indicate the heading; feet and hands alternate. This replaces the current head-and-shoulders interpretation for this study.
 
