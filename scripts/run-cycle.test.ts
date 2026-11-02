@@ -1,64 +1,58 @@
-// Verifies run kinematics, rendered foot contacts and continuity across the loop boundary.
+// Verifies continuous rig anatomy, ground contacts, loop continuity and pixel sampling.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { test, expect } from 'bun:test';
+import rig from '../source/ben-side-rig.json';
+import { sampleRunRig, stanceTravel } from '../src/rig/run.ts';
+import { distance, type Chain } from '../src/rig/kinematics.ts';
 import { drawRunCycle } from './draw-run-cycle.ts';
-import { runPhases, groundY, frameDurationMs, type Limb } from '../source/run-cycle.ts';
 import palette from '../source/game-palette.json';
 
-const frames = Object.values(drawRunCycle());
-function bend(limb: Limb): number {
-  const [root, joint, end] = limb;
-  const a = [root[0] - joint[0], root[1] - joint[1]], b = [end[0] - joint[0], end[1] - joint[1]];
-  return Math.acos((a[0] * b[0] + a[1] * b[1]) / (Math.hypot(...a) * Math.hypot(...b))) * 180 / Math.PI;
-}
-test('six phases alternate contact, push-off and flight with opposite arm and leg leads', () => {
-  expect(runPhases.map(phase => phase.contact)).toEqual(['near', 'near', 'flight', 'far', 'far', 'flight']);
-  expect(frameDurationMs * runPhases.length).toBe(600);
-  for (const phase of runPhases) {
-    for (const [leg, arm] of [[phase.nearLeg, phase.nearArm], [phase.farLeg, phase.farArm]]) {
-      expect((leg[2][0] - leg[0][0]) * (arm[2][0] - arm[0][0])).toBeLessThan(0);
-      expect(bend(arm)).toBeGreaterThan(30); expect(bend(arm)).toBeLessThan(150);
-      expect(bend(leg)).toBeGreaterThan(30); expect(bend(leg)).toBeLessThan(165);
+test('arms and legs retain bone lengths and the elbows never flip during a full continuous cycle', () => {
+  for (let i = 0; i <= 240; i++) {
+    const pose = sampleRunRig(rig, i / 240);
+    for (const [chain, upper, lower] of [[pose.nearArm, rig.arms.upperLength, rig.arms.forearmLength], [pose.farArm, rig.arms.upperLength, rig.arms.forearmLength], [pose.nearLeg, rig.legs.thighLength, rig.legs.shinLength], [pose.farLeg, rig.legs.thighLength, rig.legs.shinLength]] as [Chain, number, number][]) {
+      expect(distance(chain[0], chain[1])).toBeCloseTo(upper, 8); expect(distance(chain[1], chain[2])).toBeCloseTo(lower, 8);
     }
+    for (const [shoulder, elbow, hand] of [pose.nearArm, pose.farArm]) {
+      const cross = (elbow[0] - shoulder[0]) * (hand[1] - elbow[1]) - (elbow[1] - shoulder[1]) * (hand[0] - elbow[0]);
+      expect(cross).toBeLessThan(0);
+    }
+    expect(distance(pose.nearLeg[2], pose.nearFoot.ankle)).toBeLessThan(1e-8);
+    expect(distance(pose.farLeg[2], pose.farFoot.ankle)).toBeLessThan(1e-8);
+    expect(distance(pose.root, pose.neck)).toBeCloseTo(10, 8);
   }
 });
-test('rendered soles alternate support, flex at toe-off and clear the ground in flight', () => {
-  for (const [index, phase] of runPhases.entries()) {
-    const frame = frames[index], floor = frame.grid[groundY];
-    const white = [...floor].filter(code => code === 'W').length, grey = [...floor].filter(code => code === 'L').length;
-    if (phase.contact === 'flight') { expect(white + grey).toBe(0); }
-    else {
-      const visible = phase.contact === 'near' ? white : grey;
-      const other = phase.contact === 'near' ? grey : white;
-      expect(visible).toBe(index === 1 || index === 4 ? 2 : 5); expect(other).toBe(0);
-    }
-    expect(frame.grid.slice(groundY + 1).every(row => row === '.'.repeat(frame.width))).toBe(true);
+test('supporting toes lock to virtual world ground and both feet clear it in flight', () => {
+  const travel = stanceTravel(rig) / rig.stride.stanceFraction;
+  const start = sampleRunRig(rig, 0).nearFoot.toe[0];
+  for (let i = 0; i < 100; i++) {
+    const time = i / 100 * rig.stride.stanceFraction, pose = sampleRunRig(rig, time);
+    expect(pose.nearFoot.toe[1]).toBeCloseTo(rig.groundY, 8);
+    expect(pose.nearFoot.toe[0] + travel * time).toBeCloseTo(start, 8);
+    expect(pose.nearFoot.heel[1]).toBeLessThanOrEqual(rig.groundY + 1e-8);
+  }
+  for (const time of [2 / 6, 5 / 6]) {
+    const pose = sampleRunRig(rig, time); expect(pose.contact).toBe('flight');
+    expect(pose.nearFoot.toe[1]).toBeLessThan(rig.groundY - .5); expect(pose.farFoot.toe[1]).toBeLessThan(rig.groundY - .5);
+  }
+});
+test('continuous rig closes without a joint reset and samples the expected six contact phases', () => {
+  expect(sampleRunRig(rig, 0)).toEqual(sampleRunRig(rig, 1));
+  const last = sampleRunRig(rig, 1 - 1e-6), first = sampleRunRig(rig, 0);
+  for (const key of ['nearArm', 'farArm', 'nearLeg', 'farLeg'] as const) for (let i = 0; i < 3; i++) expect(distance(last[key][i], first[key][i])).toBeLessThan(.001);
+  expect(Array.from({ length: 6 }, (_, i) => sampleRunRig(rig, i / 6).contact)).toEqual(['near', 'near', 'flight', 'far', 'far', 'flight']);
+});
+test('six palette sprites have alternating supporting soles and empty ground in flight', () => {
+  const frames = Object.values(drawRunCycle()); expect(frames.length).toBe(6);
+  for (const [i, frame] of frames.entries()) {
+    const floor = frame.grid[rig.groundY];
+    expect(frame.grid.every(row => row.length === rig.width && [...row].every(c => Object.hasOwn(palette, c)))).toBe(true);
+    expect(frame.grid.slice(rig.groundY + 1).every(row => row === '.'.repeat(rig.width))).toBe(true);
     expect(frame.grid.join('')).toContain('M');
-    expect(frame.grid.every(row => [...row].every(code => Object.hasOwn(palette, code)))).toBe(true);
+    if (i === 2 || i === 5) expect(/[WL]/.test(floor)).toBe(false);
+    else expect(floor).toContain(i < 3 ? 'W' : 'L');
   }
 });
-test('both flight-to-contact transitions drop the leading foot gently without resetting the arms', () => {
-  for (const [flightIndex, landingIndex, leading] of [[2, 3, 'farLeg'], [5, 0, 'nearLeg']] as const) {
-    const flight = runPhases[flightIndex], landing = runPhases[landingIndex];
-    expect(landing[leading][2][0] - flight[leading][2][0]).toBe(-2);
-    expect(landing[leading][2][1] - flight[leading][2][1]).toBe(2);
-    expect(landing.headTurn).toBe(flight.headTurn);
-    for (const arm of ['nearArm', 'farArm'] as const) expect(Math.abs(landing[arm][2][0] - flight[arm][2][0])).toBeLessThanOrEqual(1);
-  }
-});
-
- test('camera turns come from facial and shoulder changes while the head centre stays fixed', () => {
-  expect(runPhases.map(phase => phase.headTurn)).toEqual([-1, 0, 1, 1, 0, -1]);
-  for (const [index, phase] of runPhases.entries()) {
-    expect(phase.nearArm[0][0]).toBe(13 + phase.torsoTurn);
-    expect(phase.farArm[0][0]).toBe(15 - phase.torsoTurn);
-    // Every crown uses the same horizontal anchor; turning changes only tiny eye, mouth and cheek details.
-    expect(frames[index].grid[2 + phase.bob].indexOf('k')).toBe(13);
-    const eyes = frames[index].grid.slice(0, 14 + phase.bob).join('').split('B').length - 1;
-    expect(eyes).toBe(1);
-    expect(frames[index].grid[9 + phase.bob].indexOf('B')).toBe(18 + phase.headTurn);
-  }
- });

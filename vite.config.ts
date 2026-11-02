@@ -49,7 +49,7 @@ export default defineConfig({
     },
     async closeBundle() {
       await mkdir(root + 'dist', { recursive: true });
-      for (const name of ['frames', 'animations', 'sheets']) await cp(root + name, root + 'dist/' + name, { recursive: true });
+      for (const name of ['frames', 'animations', 'sheets', 'rig', 'docs']) await cp(root + name, root + 'dist/' + name, { recursive: true });
       for (const name of ['assets.json', 'original-study.png', 'README.md', 'preview.html', 'standalone-preview.html']) await copyFile(root + name, root + 'dist/' + name);
     },
   }],

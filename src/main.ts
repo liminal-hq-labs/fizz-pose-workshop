@@ -7,6 +7,10 @@ import original from '../assets.json';
 import { mountGallery } from './gallery.ts';
 import { initialiseEditor } from './editor.ts';
 
+import { mountRigPreview } from './rig/preview.ts';
+
 const data = structuredClone(original);
 mountGallery(data);
 initialiseEditor(data);
+
+mountRigPreview(data);

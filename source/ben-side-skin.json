@@ -1,0 +1,292 @@
+{
+  "name": "Classic Fizz side-view skin",
+  "head": {
+    "anchor": [
+      13,
+      14
+    ],
+    "rows": [
+      {
+        "y": 2,
+        "x": 10,
+        "pixels": "kkkkkk"
+      },
+      {
+        "y": 3,
+        "x": 8,
+        "pixels": "kkgggWggkk"
+      },
+      {
+        "y": 4,
+        "x": 7,
+        "pixels": "kgggggWgggk"
+      },
+      {
+        "y": 5,
+        "x": 7,
+        "pixels": "kGGgggWGGgk"
+      },
+      {
+        "y": 6,
+        "x": 7,
+        "pixels": "kGGggggWGGk"
+      },
+      {
+        "y": 7,
+        "x": 7,
+        "pixels": "kGGGGGGGGGGGk"
+      },
+      {
+        "y": 8,
+        "x": 7,
+        "pixels": "kGDDLLLLLLLLk"
+      },
+      {
+        "y": 9,
+        "x": 9,
+        "pixels": "kWWLWWBWk"
+      },
+      {
+        "y": 10,
+        "x": 9,
+        "pixels": "kLWWLWWWWk"
+      },
+      {
+        "y": 11,
+        "x": 10,
+        "pixels": "kLWWWRWk"
+      },
+      {
+        "y": 12,
+        "x": 11,
+        "pixels": "kLWWWk"
+      },
+      {
+        "y": 13,
+        "x": 11,
+        "pixels": "kLLLk"
+      },
+      {
+        "y": 14,
+        "x": 10,
+        "pixels": "kWWWWk"
+      }
+    ],
+    "towards": [
+      {
+        "y": 9,
+        "x": 9,
+        "pixels": "kWWLWBWWk"
+      },
+      {
+        "y": 10,
+        "x": 9,
+        "pixels": "kLWWWLWWWk"
+      },
+      {
+        "y": 11,
+        "x": 10,
+        "pixels": "kLWWRWWk"
+      }
+    ],
+    "away": [
+      {
+        "y": 9,
+        "x": 9,
+        "pixels": "kWWLWWWBk"
+      },
+      {
+        "y": 10,
+        "x": 9,
+        "pixels": "kLLWLWWWWk"
+      },
+      {
+        "y": 11,
+        "x": 10,
+        "pixels": "kLWWWWRk"
+      }
+    ]
+  },
+  "torso": {
+    "anchor": [
+      13,
+      24
+    ],
+    "rows": [
+      {
+        "y": 15,
+        "x": 10,
+        "pixels": "krrrrrk"
+      },
+      {
+        "y": 16,
+        "x": 9,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "y": 17,
+        "x": 10,
+        "pixels": "kRRRRyrk"
+      },
+      {
+        "y": 18,
+        "x": 10,
+        "pixels": "kRRRRyRk"
+      },
+      {
+        "y": 19,
+        "x": 10,
+        "pixels": "kRRRRRRk"
+      },
+      {
+        "y": 20,
+        "x": 10,
+        "pixels": "kRRRRRRk"
+      },
+      {
+        "y": 21,
+        "x": 10,
+        "pixels": "kRRRRRRk"
+      },
+      {
+        "y": 22,
+        "x": 10,
+        "pixels": "kRRRRRRk"
+      },
+      {
+        "y": 23,
+        "x": 10,
+        "pixels": "kDDyDDk"
+      }
+    ],
+    "towards": [
+      {
+        "y": 15,
+        "x": 9,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "y": 16,
+        "x": 9,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "y": 17,
+        "x": 9,
+        "pixels": "kRRRRyyRk"
+      },
+      {
+        "y": 18,
+        "x": 9,
+        "pixels": "kRRRRyRRk"
+      }
+    ],
+    "away": [
+      {
+        "y": 15,
+        "x": 11,
+        "pixels": "krrrrrk"
+      },
+      {
+        "y": 16,
+        "x": 10,
+        "pixels": "krrrrrrk"
+      },
+      {
+        "y": 17,
+        "x": 11,
+        "pixels": "kRRRRRk"
+      },
+      {
+        "y": 18,
+        "x": 11,
+        "pixels": "kRRRRRk"
+      }
+    ]
+  },
+  "stunner": {
+    "anchor": [
+      1.5,
+      -0.5
+    ],
+    "pixels": [
+      "kDDk",
+      "kMmk",
+      "kMMk",
+      ".kMk",
+      "..k."
+    ],
+    "hipOffset": [
+      -1.2,
+      -0.8
+    ]
+  },
+  "palette": {
+    "outline": "k",
+    "shirt": "r",
+    "shirtShadow": "R",
+    "skin": "W",
+    "skinShadow": "L",
+    "denim": "B",
+    "denimSeam": "c",
+    "shoe": "R",
+    "shoeHighlight": "r",
+    "sole": "W",
+    "farSole": "L"
+  },
+  "shoe": {
+    "anchor": [
+      0,
+      0
+    ],
+    "toe": [
+      3,
+      2
+    ],
+    "flexX": 2,
+    "rows": [
+      {
+        "x": -2,
+        "y": -1,
+        "pixels": "kkkkkkk"
+      },
+      {
+        "x": -2,
+        "y": 0,
+        "pixels": "kRRrrRk"
+      },
+      {
+        "x": -2,
+        "y": 1,
+        "pixels": "kRRRWWk"
+      },
+      {
+        "x": -2,
+        "y": 2,
+        "pixels": "kWWWWWk"
+      }
+    ],
+    "farRows": [
+      {
+        "x": -2,
+        "y": -1,
+        "pixels": "kkkkkkk"
+      },
+      {
+        "x": -2,
+        "y": 0,
+        "pixels": "kRRRRRk"
+      },
+      {
+        "x": -2,
+        "y": 1,
+        "pixels": "kRRRLLk"
+      },
+      {
+        "x": -2,
+        "y": 2,
+        "pixels": "kLLLLLk"
+      }
+    ]
+  }
+}
