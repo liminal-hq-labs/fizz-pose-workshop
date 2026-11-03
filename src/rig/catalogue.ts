@@ -17,6 +17,9 @@ import phone from '../../source/ben-phone-rig.json';
 import phoneTyping from '../../source/ben-phone-typing-rig.json';
 import type { SideRig } from './run.ts';
 
+// The left-facing run turns the pinned right-facing run round with the same continuous solver and keys, so its twelve sprites keep the
+// right run's timing, stride and hand-edited faces while the Stunner stays on Ben's right hip, which now faces away.
+const runLeft: SideRig = { ...(run as SideRig), name: 'Ben · left-facing running rig', facing: 'left' };
 // The left-facing jump, fall and ledge pull turn the right-facing rig round, keeping the Stunner on Ben's right (far) hip, so each pair shares one set of keys.
 const jumpLeft: SideRig = { ...(jump as SideRig), name: 'Ben · left-facing jump rig', facing: 'left' };
 const fallLeft: SideRig = { ...(fall as SideRig), name: 'Ben · left-facing brace-for-impact fall rig', facing: 'left' };
@@ -34,6 +37,7 @@ export interface RigStills { prefix: string; times: readonly number[]; width: nu
 export interface RigEntry { rig: SideRig; prefix: string; animation: string; folder: string; title: string; labels: readonly string[]; stills?: RigStills; then?: string; sequence?: { name: string; leadIn: string; repeats: number }; }
 export const rigCatalogue: readonly RigEntry[] = [
  {rig:run as SideRig,prefix:'ben_walkRight',animation:'walk-run',folder:'ben-running',title:'Run',labels:['Near contact','Near roll-through','Near push-off','Near toe-off','Flight · far leg leads','Far leg reaches','Far contact','Far roll-through','Far push-off','Far toe-off','Flight · near leg leads','Near leg reaches']},
+ {rig:runLeft,prefix:'ben_walkLeft',animation:'walk-run-left',folder:'ben-running-left',title:'Run left',labels:['Near contact','Near roll-through','Near push-off','Near toe-off','Flight · far leg leads','Far leg reaches','Far contact','Far roll-through','Far push-off','Far toe-off','Flight · near leg leads','Near leg reaches']},
  {rig:pogo as SideRig,prefix:'ben_pogoRight',animation:'pogo',folder:'ben-pogo',title:'Pogo',labels:['Compress','Launch','Rise','Apex','Fall','Land']},
  {rig:fire as SideRig,prefix:'ben_fireRight',animation:'fizz-blaster',folder:'ben-firing',title:'Fizz Stunner',labels:['Aim','Discharge','Recoil','Recover','Settle','Ready']},
  {rig:ladder as SideRig,prefix:'ben_ladder',animation:'climb',folder:'ben-ladder',title:'Ladder climb',labels:['Left hand grips high','Pull up on the left hand','Right hand lets go','Right hand reaches','Right hand grips high','Pull up on the right hand','Left hand lets go','Left hand reaches'],stills:{prefix:'ben_climb',times:[0,.5],width:24,height:44,offset:[4,6]}},
