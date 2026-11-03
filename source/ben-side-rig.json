@@ -39,6 +39,7 @@
     "backX": -4,
     "lift": 6.5,
     "reachLift": 2,
+    "nearPassForward": 2,
     "toeOffDegrees": 25,
     "recoveryToeDegrees": -12
   },

@@ -92,3 +92,16 @@ test('the recovering foot clears the ground low, with a heel kick behind the bod
   expect(rig.groundY - kick.heel[1]).toBeGreaterThanOrEqual(3);
   expect(kick.heel[0]).toBeLessThan(sampleRunRig(rig, 0).root[0]);
 });
+
+// The near foot swings slightly wider at mid-swing so its shoe clears the planted far shin instead of cutting it short.
+test('the near foot passes clear in front of the planted far shin, and only around mid-swing', () => {
+  const pose = sampleRunRig(rig, 4 / 6), [, knee, ankle] = pose.farLeg, heel = pose.nearFoot.heel;
+  const shinX = knee[0] + (ankle[0] - knee[0]) * (heel[1] - knee[1]) / (ankle[1] - knee[1]);
+  expect(heel[0] - shinX).toBeGreaterThanOrEqual(3);
+  expect(rig.groundY - heel[1]).toBeLessThanOrEqual(4);
+  // Outside the pass window, the near foot follows the far foot's path half a cycle later.
+  for (let i = 0; i <= 240; i++) {
+    const t = i / 240, near = sampleRunRig(rig, t).nearFoot;
+    if (near.stance || near.progress <= .4 || near.progress >= .72) expect(distance(near.ankle, sampleRunRig(rig, t + .5).farFoot.ankle)).toBeLessThan(1e-9);
+  }
+});

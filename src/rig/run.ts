@@ -21,7 +21,7 @@ export interface SideRig {
   feet: { toe: number[]; heel: number[]; ball: number[]; landingToeDegrees: number; landingCompression: number };
   arms: { upperLength: number; forearmLength: number; swingDegrees: number; elbowDegrees: number; elbowFlexDegrees: number; phaseLead: number; biasDegrees: number };
   legs: { thighLength: number; shinLength: number; hipSpread: number };
-  stride: { stanceFraction: number; frontX: number; backX: number; lift: number; reachLift?: number; toeOffDegrees: number; recoveryToeDegrees: number };
+  stride: { stanceFraction: number; frontX: number; backX: number; lift: number; reachLift?: number; nearPassForward?: number; toeOffDegrees: number; recoveryToeDegrees: number };
 }
 export interface RigFoot { ankle: Vec2; ball: Vec2; toe: Vec2; heel: Vec2; pitch: number; toePitch: number; compression: number; stance: boolean; progress: number; }
 export interface RigPose {
@@ -39,7 +39,7 @@ export function stanceTravel(rig: SideRig): number {
   const toe = rotate([rig.feet.ball[0], rig.feet.ball[1]], radians(rig.stride.toeOffDegrees));
   return rig.stride.frontX + rig.feet.ball[0] - (rig.stride.backX + toe[0]);
 }
-function footTarget(rig: SideRig, cycle: number): RigFoot {
+function footTarget(rig: SideRig, cycle: number, near = false): RigFoot {
   const phase = wrap(cycle), stride = rig.stride, stance = phase < stride.stanceFraction;
   const toeOff = radians(stride.toeOffDegrees), initialPitch = rotate([rig.feet.ball[0], rig.feet.ball[1]], toeOff);
   const start: Vec2 = [stride.backX, rig.groundY - initialPitch[1]], end: Vec2 = [stride.frontX, rig.groundY - rig.feet.ball[1]];
@@ -59,7 +59,11 @@ function footTarget(rig: SideRig, cycle: number): RigFoot {
     // Quintic controls preserve the stance velocity at lift-off and landing while lifting the heel.
     // `lift` shapes the heel kick behind the body; the optional `reachLift` keeps the forward swing lower to the ground.
     const relative = bezier([start, [start[0] + tangent, start[1]], [stride.backX - 3, rig.groundY - stride.lift * 1.8], [stride.frontX + 3, rig.groundY - (stride.reachLift ?? stride.lift) * 1.8], [end[0] - tangent, end[1]], end], progress);
-    ankle = [rig.root[0] + relative[0], relative[1]];
+    // The near (camera-side) foot passes in front of the planted far shin at mid-swing. `nearPassForward` swings it that
+    // many pixels wider forward there, easing in and out, so its shoe does not sit on the far shin and break it into a stub.
+    // The far foot passes behind the near leg, where the overlap is hidden, so it keeps the plain path.
+    const pass = near && stride.nearPassForward ? stride.nearPassForward * Math.sin(Math.PI * Math.min(1, Math.max(0, (progress - .4) / .32))) ** 2 : 0;
+    ankle = [rig.root[0] + relative[0] + pass, relative[1]];
     const recovery = radians(stride.recoveryToeDegrees);
     pitch = progress < .6 ? lerp(toeOff, recovery, smoothstep(progress / .6)) : lerp(recovery, 0, smoothstep((progress - .6) / .4));
     // Release the toe hinge in early recovery, then lift it slightly before the next landing.
@@ -116,7 +120,7 @@ export function sampleRunRig(rig: SideRig, time: number): RigPose {
   const neck = torsoPoint(base, [0, -rig.torso.neckHeight]);
   const restNeck = torsoPoint({root:[rig.root[0],rig.root[1]],torsoAngle:radians(rig.torso.leanDegrees)},[0,-rig.torso.neckHeight]);
   const face = sampleFace(neck, headTurn, rig.face, t, 0, restNeck, seatedHead(rig, root, torsoAngle, neck, restNeck));
-  const nearFoot = footTarget(rig, t), farFoot = footTarget(rig, t + .5);
+  const nearFoot = footTarget(rig, t, true), farFoot = footTarget(rig, t + .5);
   const nearHip = add(root, [rig.legs.hipSpread, 0]), farHip = add(root, [-rig.legs.hipSpread, 0]);
   const nearLeg = solveTwoBone(nearHip, nearFoot.ankle, rig.legs.thighLength, rig.legs.shinLength);
   const farLeg = solveTwoBone(farHip, farFoot.ankle, rig.legs.thighLength, rig.legs.shinLength);
