@@ -22,18 +22,9 @@ for (const {rig, prefix} of actionRigs) {
       }
       expect(distance(pose.nearLeg[2], pose.nearFoot.ankle)).toBeLessThan(1e-8);
       expect(distance(pose.farLeg[2], pose.farFoot.ankle)).toBeLessThan(1e-8);
-      if (pose.pogo) {
-        expect(distance(pose.nearArm[2], pose.pogo.grips[0])).toBeLessThan(1e-8);
-        expect(distance(pose.farArm[2], pose.pogo.grips[1])).toBeLessThan(1e-8);
-        expect(pose.nearFoot.ball[1]).toBeCloseTo(pose.pogo.pegs[0][1], 8);
-        expect(pose.farFoot.ball[1]).toBeCloseTo(pose.pogo.pegs[0][1], 8);
-        expect(pose.pogo.tip[1]).toBeLessThanOrEqual(rig.groundY);
-        if (pose.pogo.grounded) expect(pose.pogo.tip[1]).toBe(rig.groundY);
-      } else {
-        expect(distance(pose.nearArm[2], pose.weapon!.grip)).toBeLessThan(1e-8);
-        expect(pose.nearFoot.ball).toEqual(sampleRig(rig, 0).nearFoot.ball);
-        expect(pose.farFoot.ball).toEqual(sampleRig(rig, 0).farFoot.ball);
-      }
+      expect(distance(pose.nearArm[2], pose.weapon!.grip)).toBeLessThan(1e-8);
+      expect(pose.nearFoot.ball).toEqual(sampleRig(rig, 0).nearFoot.ball);
+      expect(pose.farFoot.ball).toEqual(sampleRig(rig, 0).farFoot.ball);
       const frame = skinRig(rig, skin, pose);
       expect(frame.grid.every(row => row.length === rig.width && [...row].every(code => Object.hasOwn(palette, code)))).toBe(true);
       expect(frame.grid.slice(rig.groundY + 1).every(row => row === '.'.repeat(rig.width))).toBe(true);
@@ -46,24 +37,15 @@ for (const {rig, prefix} of actionRigs) {
     expect(Object.keys(sampleRigSprites(rig, skin, prefix))).toHaveLength(6);
   });
 }
-test('pogo compresses on the ground, launches and raises the entire device at the apex', () => {
-  const rig = actionRigs[0].rig, compressed = sampleRig(rig, 0), launch = sampleRig(rig, .18), apex = sampleRig(rig, .5);
-  expect(compressed.pogo!.springLength).toBe(3); expect(launch.pogo!.springLength).toBe(6);
-  expect(apex.pogo!.tip[1]).toBe(rig.groundY - 6);
-  expect(apex.contact).toBe('flight'); expect(compressed.contact).toBe('pogo');
-  expect(apex.root[1]).toBeLessThan(compressed.root[1] - 8);
-});
 test('Stunner flash leads the recoil peak and the kick eases back to the ready position', () => {
-  const rig = actionRigs[1].rig, aim = sampleRig(rig, 0), fire = sampleRig(rig, 1 / 6), recoil = sampleRig(rig, 2 / 6), ready = sampleRig(rig, 5 / 6);
+  const rig = actionRigs[0].rig, aim = sampleRig(rig, 0), fire = sampleRig(rig, 1 / 6), recoil = sampleRig(rig, 2 / 6), ready = sampleRig(rig, 5 / 6);
   expect(aim.weapon!.flash).toBe(false); expect(fire.weapon!.flash).toBe(true); expect(recoil.weapon!.flash).toBe(false);
   expect(fire.weapon!.grip[0]).toBeLessThan(aim.weapon!.grip[0]); expect(fire.weapon!.angle).toBeLessThan(aim.weapon!.angle);
   expect(recoil.weapon!.grip[0]).toBeLessThan(fire.weapon!.grip[0]); expect(recoil.weapon!.angle).toBeLessThan(fire.weapon!.angle);
   expect(ready.weapon!.flash).toBe(false); expect(aim.weapon!.grip[0] - ready.weapon!.grip[0]).toBeLessThan(.25);
   expect(sampleRig(rig, 1).weapon).toEqual(aim.weapon);
 });
-test('invalid spring and recoil settings cannot produce exports', () => {
-  const pogo = structuredClone(actionRigs[0].rig); pogo.pogo!.compressedLength = -1;
-  expect(() => validateRig(pogo)).toThrow();
-  const fire = structuredClone(actionRigs[1].rig); fire.fire!.recoil = Number.NaN;
+test('invalid recoil settings cannot produce exports', () => {
+  const fire = structuredClone(actionRigs[0].rig); fire.fire!.recoil = Number.NaN;
   expect(() => validateRig(fire)).toThrow();
 });

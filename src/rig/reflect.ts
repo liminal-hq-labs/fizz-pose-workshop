@@ -29,7 +29,7 @@ export function reflectPose(pose: RigPose, width: number): RigPose {
   nearArm:chain(pose.nearArm),farArm:chain(pose.farArm),nearLeg:chain(pose.nearLeg),farLeg:chain(pose.farLeg),nearFoot:foot(pose.nearFoot),farFoot:foot(pose.farFoot),
   face:{...face,anchor:point(face.anchor),pixelAnchor:point(face.pixelAnchor),yaw:-face.yaw,shift:-face.shift,pixelShift:-face.pixelShift,eye:landmark(face.eye),eyePixels:pixels(face.eyePixels),mouth:landmark(face.mouth),mouthPixels:pixels(face.mouthPixels),ear:landmark(face.ear),nose:landmark(face.nose),noseTip:landmark(face.noseTip),cheek:landmark(face.cheek),chin:landmark(face.chin)},
   presentation:pose.presentation?{...pose.presentation,phone:pose.presentation.phone?point(pose.presentation.phone):undefined,notes:pose.presentation.notes?.map(point),environment:environment?{...environment,x:environment.kind==='ledge'?width-1-environment.x:width-1-environment.x-environment.width,width:environment.kind==='ledge'?-environment.width:environment.width}:undefined}:undefined,
-  pogo:pose.pogo?{...pose.pogo,tip:point(pose.pogo.tip),springTop:point(pose.pogo.springTop),shaftTop:point(pose.pogo.shaftTop),grips:[point(pose.pogo.grips[0]),point(pose.pogo.grips[1])],pegs:[point(pose.pogo.pegs[0]),point(pose.pogo.pegs[1])]}:undefined,
+  pogo:pose.pogo?{...pose.pogo,lean:-pose.pogo.lean,tip:point(pose.pogo.tip),springTop:point(pose.pogo.springTop),shaftTop:point(pose.pogo.shaftTop),collar:point(pose.pogo.collar),ride:point(pose.pogo.ride),grips:[point(pose.pogo.grips[0]),point(pose.pogo.grips[1])],pegs:[point(pose.pogo.pegs[0]),point(pose.pogo.pegs[1])]}:undefined,
   weapon:pose.weapon?{...pose.weapon,grip:point(pose.weapon.grip),muzzle:point(pose.weapon.muzzle),angle:Math.PI-pose.weapon.angle}:undefined,
  };
 }

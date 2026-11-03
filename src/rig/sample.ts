@@ -11,7 +11,7 @@ import { frameDurations, frameStartMs, playbackFrame, replaysContinuously } from
 export function sampleRig(rig: SideRig, time: number): RigPose {
   if (rig.mirrored || rig.facing === 'left') return reflectPose(sampleRig({...rig,mirrored:false,facing:'right'},time),rig.width);
   if (rig.performance) return samplePerformance(rig, time);
-  return rig.motion === 'pogo' || rig.motion === 'fire' ? sampleActionRig(rig, time) : sampleRunRig(rig, time);
+  return rig.motion === 'fire' ? sampleActionRig(rig, time) : sampleRunRig(rig, time);
 }
 
 /**

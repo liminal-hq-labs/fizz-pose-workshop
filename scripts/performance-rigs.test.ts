@@ -192,7 +192,7 @@ test('ladder grips and footholds stay pinned on their rungs while gripped as the
  for(const [limb,chain] of [['nearHand','nearArm'],['farHand','farArm'],['nearAnkle','nearLeg'],['farAnkle','farLeg']] as const){
   let gripped=0;
   for(let i=0;i<keys.length-1;i++){
-   const [a,b]=[keys[i][limb],keys[i+1][limb]];if(a[0]!==b[0]||a[1]!==b[1])continue;
+   const [a,b]=[keys[i][limb]!,keys[i+1][limb]!];if(a[0]!==b[0]||a[1]!==b[1])continue;
    gripped+=keys[i+1].phase-keys[i].phase;
    if(limb.endsWith('Hand'))expect((a[1]-clip.environment!.y)%spacing).toBe(0);
    for(let s=0;s<=20;s++){
@@ -201,7 +201,7 @@ test('ladder grips and footholds stay pinned on their rungs while gripped as the
    }
   }
   // Every limb holds on for over half the cycle and moves once, two rungs up.
-  expect(gripped).toBeGreaterThan(.5);expect(keys.at(-1)![limb][1]-keys[0][limb][1]).toBe(-2*spacing);
+  expect(gripped).toBeGreaterThan(.5);expect(keys.at(-1)![limb]![1]-keys[0][limb]![1]).toBe(-2*spacing);
  }
  // The body really climbs: it surges up while pulling and pauses while the other hand reaches, so in place it bobs.
  const bob=Array.from({length:61},(_,i)=>sampleRig(rig,i/60).root[1]);

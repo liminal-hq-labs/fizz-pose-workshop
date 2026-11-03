@@ -1,0 +1,358 @@
+{
+  "name": "Ben · left-facing pogo ride rig",
+  "width": 24,
+  "height": 44,
+  "groundY": 43,
+  "durationMs": 840,
+  "sampleCount": 12,
+  "frameDurationsMs": [
+    40,
+    50,
+    50,
+    60,
+    60,
+    60,
+    80,
+    90,
+    90,
+    90,
+    80,
+    90
+  ],
+  "root": [
+    10.74,
+    24.95
+  ],
+  "torso": {
+    "leanDegrees": 0,
+    "pitchSwayDegrees": 1,
+    "bobAmplitude": 0.75,
+    "bobLag": 0.04,
+    "shoulderY": -7.5,
+    "shoulderSpread": 0.45,
+    "shoulderTwist": 0.4,
+    "neckHeight": 10
+  },
+  "arms": {
+    "upperLength": 3.8,
+    "forearmLength": 3.4,
+    "swingDegrees": 55,
+    "elbowDegrees": 90,
+    "elbowFlexDegrees": 4,
+    "phaseLead": 0.08333333333333333,
+    "biasDegrees": -8
+  },
+  "legs": {
+    "thighLength": 5.1,
+    "shinLength": 5.2,
+    "hipSpread": 0.3
+  },
+  "stride": {
+    "stanceFraction": 0.24,
+    "frontX": 3.5,
+    "backX": -4,
+    "lift": 6.5,
+    "toeOffDegrees": 25,
+    "recoveryToeDegrees": -12
+  },
+  "feet": {
+    "toe": [
+      3,
+      2
+    ],
+    "heel": [
+      -1,
+      2
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "landingToeDegrees": -28,
+    "landingCompression": 0.25
+  },
+  "face": {
+    "yawDegrees": 3,
+    "eye": [
+      2,
+      -5,
+      1.5
+    ],
+    "mouth": [
+      2,
+      -3,
+      1.5
+    ],
+    "shiftAmplitude": 0,
+    "ear": [
+      -1,
+      -4,
+      1.5
+    ],
+    "profile": {
+      "nose": [
+        5,
+        -4,
+        1.5
+      ],
+      "cheek": [
+        -2,
+        -3,
+        1.5
+      ],
+      "chin": [
+        0,
+        -1,
+        1.5
+      ]
+    }
+  },
+  "motion": "pogo",
+  "pogo": {
+    "footHeight": 2,
+    "springExtended": 5,
+    "springCompressed": 2,
+    "shaftLength": 14,
+    "pegs": [
+      [
+        1,
+        -1
+      ],
+      [
+        -1,
+        -2
+      ]
+    ],
+    "grips": [
+      [
+        -1.6,
+        0
+      ],
+      [
+        1.6,
+        0
+      ]
+    ]
+  },
+  "performance": {
+    "view": "side",
+    "loop": true,
+    "sampleTimes": [
+      0,
+      0.05,
+      0.11,
+      0.17,
+      0.24,
+      0.31,
+      0.38,
+      0.47,
+      0.58,
+      0.69,
+      0.8,
+      0.9
+    ],
+    "keys": [
+      {
+        "phase": 0,
+        "root": [
+          10.74,
+          24.95
+        ],
+        "lean": 9,
+        "headRoll": -1,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 5,
+        "farFootDegrees": 4,
+        "stick": {
+          "x": 13,
+          "lift": 0,
+          "compression": 0,
+          "lean": 6
+        }
+      },
+      {
+        "phase": 0.07,
+        "root": [
+          10.21,
+          28.22
+        ],
+        "lean": 14,
+        "headRoll": -2,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": -1,
+        "farFootDegrees": -1,
+        "stick": {
+          "x": 13,
+          "lift": 0,
+          "compression": 0.62,
+          "lean": 7
+        }
+      },
+      {
+        "phase": 0.15,
+        "root": [
+          9.76,
+          30.25
+        ],
+        "lean": 18,
+        "headRoll": -3,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": -6,
+        "farFootDegrees": -5,
+        "stick": {
+          "x": 13,
+          "lift": 0,
+          "compression": 1,
+          "lean": 8
+        }
+      },
+      {
+        "phase": 0.26,
+        "root": [
+          10.54,
+          26.38
+        ],
+        "lean": 11,
+        "headRoll": -1,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 6,
+        "farFootDegrees": 5,
+        "stick": {
+          "x": 13,
+          "lift": 0,
+          "compression": 0.5,
+          "lean": 7
+        }
+      },
+      {
+        "phase": 0.36,
+        "root": [
+          10.94,
+          24.75
+        ],
+        "lean": 5,
+        "headRoll": 1,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 16,
+        "farFootDegrees": 14,
+        "stick": {
+          "x": 13,
+          "lift": 0,
+          "compression": 0,
+          "lean": 6
+        }
+      },
+      {
+        "phase": 0.5,
+        "root": [
+          10.71,
+          23.15
+        ],
+        "lean": 6,
+        "headRoll": 2,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 10,
+        "farFootDegrees": 9,
+        "stick": {
+          "x": 13,
+          "lift": 1.5,
+          "compression": 0,
+          "lean": 5
+        }
+      },
+      {
+        "phase": 0.66,
+        "root": [
+          10.09,
+          24.39
+        ],
+        "lean": 11,
+        "headRoll": 2,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 3,
+        "farFootDegrees": 2,
+        "stick": {
+          "x": 13,
+          "lift": 2.6,
+          "compression": 0,
+          "lean": 4
+        }
+      },
+      {
+        "phase": 0.82,
+        "root": [
+          10.61,
+          23.37
+        ],
+        "lean": 8,
+        "headRoll": 0,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 3,
+        "farFootDegrees": 2,
+        "stick": {
+          "x": 13,
+          "lift": 1.7,
+          "compression": 0,
+          "lean": 5
+        }
+      },
+      {
+        "phase": 0.93,
+        "root": [
+          10.74,
+          24.05
+        ],
+        "lean": 8,
+        "headRoll": -1,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 4,
+        "farFootDegrees": 3,
+        "stick": {
+          "x": 13,
+          "lift": 0.6,
+          "compression": 0,
+          "lean": 6
+        }
+      },
+      {
+        "phase": 1,
+        "root": [
+          10.74,
+          24.95
+        ],
+        "lean": 9,
+        "headRoll": -1,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 5,
+        "farFootDegrees": 4,
+        "stick": {
+          "x": 13,
+          "lift": 0,
+          "compression": 0,
+          "lean": 6
+        }
+      }
+    ]
+  },
+  "facing": "left"
+}

@@ -24,6 +24,9 @@ const runLeft: SideRig = { ...(run as SideRig), name: 'Ben · left-facing runnin
 const jumpLeft: SideRig = { ...(jump as SideRig), name: 'Ben · left-facing jump rig', facing: 'left' };
 const fallLeft: SideRig = { ...(fall as SideRig), name: 'Ben · left-facing brace-for-impact fall rig', facing: 'left' };
 const ledgeLeft: SideRig = { ...(ledge as SideRig), name: 'Ben · left-facing ledge pull rig', facing: 'left' };
+// The left-facing pogo ride turns the right-facing ride round, stick and all, with the Stunner on Ben's right (far) hip.
+const pogoLeft: SideRig = { ...(pogo as SideRig), name: 'Ben · left-facing pogo ride rig', facing: 'left' };
+const pogoLabels = ['Touchdown', 'Load the spring', 'Deepest squash', 'Drive up', 'Spring snaps out', 'Lift-off', 'Rise · pull the stick up', 'Apex tuck', 'Float', 'Drop', 'Reach for the ground', 'Brace'] as const;
 
 /**
  * Extra single sprites drawn from the same rig on another canvas, such as the legacy two-frame climb: each `times` phase is
@@ -38,7 +41,8 @@ export interface RigEntry { rig: SideRig; prefix: string; animation: string; fol
 export const rigCatalogue: readonly RigEntry[] = [
  {rig:run as SideRig,prefix:'ben_walkRight',animation:'walk-run',folder:'ben-running',title:'Run',labels:['Near contact','Near roll-through','Near push-off','Near toe-off','Flight · far leg leads','Far leg reaches','Far contact','Far roll-through','Far push-off','Far toe-off','Flight · near leg leads','Near leg reaches']},
  {rig:runLeft,prefix:'ben_walkLeft',animation:'walk-run-left',folder:'ben-running-left',title:'Run left',labels:['Near contact','Near roll-through','Near push-off','Near toe-off','Flight · far leg leads','Far leg reaches','Far contact','Far roll-through','Far push-off','Far toe-off','Flight · near leg leads','Near leg reaches']},
- {rig:pogo as SideRig,prefix:'ben_pogoRight',animation:'pogo',folder:'ben-pogo',title:'Pogo',labels:['Compress','Launch','Rise','Apex','Fall','Land']},
+ {rig:pogo as SideRig,prefix:'ben_pogoRight',animation:'pogo',folder:'ben-pogo',title:'Pogo',labels:pogoLabels},
+ {rig:pogoLeft,prefix:'ben_pogoLeft',animation:'pogo-left',folder:'ben-pogo-left',title:'Pogo left',labels:pogoLabels},
  {rig:fire as SideRig,prefix:'ben_fireRight',animation:'fizz-blaster',folder:'ben-firing',title:'Fizz Stunner',labels:['Aim','Discharge','Recoil','Recover','Settle','Ready']},
  {rig:ladder as SideRig,prefix:'ben_ladder',animation:'climb',folder:'ben-ladder',title:'Ladder climb',labels:['Left hand grips high','Pull up on the left hand','Right hand lets go','Right hand reaches','Right hand grips high','Pull up on the right hand','Left hand lets go','Left hand reaches'],stills:{prefix:'ben_climb',times:[0,.5],width:24,height:44,offset:[4,6]}},
  {rig:jump as SideRig,prefix:'ben_jumpRig',animation:'jump',folder:'ben-jump',title:'Jump',labels:['Crouch','Launch','Apex','Fall','Land','Recover']},

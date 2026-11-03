@@ -1,11 +1,10 @@
-// Samples reusable pogo and Fizz Stunner rigs into editable action sprites and exports.
+// Samples the reusable Fizz Stunner rig into editable action sprites and exports. The pogo ride is a performance rig.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { fileURLToPath } from "node:url";
 import { readFile, writeFile } from 'node:fs/promises';
-import pogo from '../source/ben-pogo-rig.json';
 import fire from '../source/ben-fire-rig.json';
 import skin from '../source/ben-side-skin.json';
 import { sampleRigSprites } from './rig-skin.ts';
@@ -15,7 +14,6 @@ import { frameDurations } from '../src/rig/timing.ts';
 import type { Frames, WorkshopData } from '../src/types.ts';
 
 export const actionRigs = [
-  { rig: pogo as SideRig, prefix: 'ben_pogoRight', animation: 'pogo', folder: 'ben-pogo' },
   { rig: fire as SideRig, prefix: 'ben_fireRight', animation: 'fizz-blaster', folder: 'ben-firing' },
 ] as const;
 if (import.meta.main) {
@@ -32,5 +30,5 @@ if (import.meta.main) {
   }
   await writeFile(new URL('source/poses.json', root), JSON.stringify(authored, null, 2) + '\n');
   await writeFile(new URL('edits.json', root), JSON.stringify(edits, null, 2) + '\n');
-  console.log('Saved six pogo poses and six Fizz Stunner poses with their reusable rigs.');
+  console.log('Saved six Fizz Stunner poses with their reusable rig.');
 }

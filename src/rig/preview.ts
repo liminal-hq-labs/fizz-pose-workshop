@@ -100,7 +100,7 @@ export function mountRigPreview(data: WorkshopData): void {
     if (pose.presentation?.phone) line([pose.presentation.phone, [pose.presentation.phone[0],pose.presentation.phone[1]-3]], '#55ffff', .9);
     if (pose.pogo) {
       const p = pose.pogo; line([p.springTop, p.shaftTop], '#ddd', .4); line(p.pegs, '#ddd', .4);
-      line([[p.shaftTop[0] - 3, p.shaftTop[1]], [p.shaftTop[0] + 3, p.shaftTop[1]]], '#ddd', .4);
+      line(p.grips, '#ddd', .4);
       const coils: Vec2[] = [p.springTop];
       for (let i = 1; i < 6; i++) coils.push([p.tip[0] + (i % 2 ? -1 : 1), p.springTop[1] + p.springLength * i / 6]);
       coils.push(p.tip); line(coils, p.grounded ? '#fff66b' : '#ddd', .25);
