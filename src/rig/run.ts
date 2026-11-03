@@ -21,7 +21,7 @@ export interface SideRig {
   feet: { toe: number[]; heel: number[]; ball: number[]; landingToeDegrees: number; landingCompression: number };
   arms: { upperLength: number; forearmLength: number; swingDegrees: number; elbowDegrees: number; elbowFlexDegrees: number; phaseLead: number; biasDegrees: number };
   legs: { thighLength: number; shinLength: number; hipSpread: number };
-  stride: { stanceFraction: number; frontX: number; backX: number; lift: number; toeOffDegrees: number; recoveryToeDegrees: number };
+  stride: { stanceFraction: number; frontX: number; backX: number; lift: number; reachLift?: number; nearPassForward?: number; toeOffDegrees: number; recoveryToeDegrees: number };
 }
 export interface RigFoot { ankle: Vec2; ball: Vec2; toe: Vec2; heel: Vec2; pitch: number; toePitch: number; compression: number; stance: boolean; progress: number; }
 export interface RigPose {
@@ -39,7 +39,7 @@ export function stanceTravel(rig: SideRig): number {
   const toe = rotate([rig.feet.ball[0], rig.feet.ball[1]], radians(rig.stride.toeOffDegrees));
   return rig.stride.frontX + rig.feet.ball[0] - (rig.stride.backX + toe[0]);
 }
-function footTarget(rig: SideRig, cycle: number): RigFoot {
+function footTarget(rig: SideRig, cycle: number, near = false): RigFoot {
   const phase = wrap(cycle), stride = rig.stride, stance = phase < stride.stanceFraction;
   const toeOff = radians(stride.toeOffDegrees), initialPitch = rotate([rig.feet.ball[0], rig.feet.ball[1]], toeOff);
   const start: Vec2 = [stride.backX, rig.groundY - initialPitch[1]], end: Vec2 = [stride.frontX, rig.groundY - rig.feet.ball[1]];
@@ -57,8 +57,13 @@ function footTarget(rig: SideRig, cycle: number): RigFoot {
     progress = (phase - stride.stanceFraction) / (1 - stride.stanceFraction);
     const tangent = -stanceTravel(rig) / stride.stanceFraction * (1 - stride.stanceFraction) / 5;
     // Quintic controls preserve the stance velocity at lift-off and landing while lifting the heel.
-    const relative = bezier([start, [start[0] + tangent, start[1]], [stride.backX - 3, rig.groundY - stride.lift * 1.8], [stride.frontX + 3, rig.groundY - stride.lift * 1.8], [end[0] - tangent, end[1]], end], progress);
-    ankle = [rig.root[0] + relative[0], relative[1]];
+    // `lift` shapes the heel kick behind the body; the optional `reachLift` keeps the forward swing lower to the ground.
+    const relative = bezier([start, [start[0] + tangent, start[1]], [stride.backX - 3, rig.groundY - stride.lift * 1.8], [stride.frontX + 3, rig.groundY - (stride.reachLift ?? stride.lift) * 1.8], [end[0] - tangent, end[1]], end], progress);
+    // The near (camera-side) foot passes in front of the planted far shin at mid-swing. `nearPassForward` swings it that
+    // many pixels wider forward there, easing in and out, so its shoe does not sit on the far shin and break it into a stub.
+    // The far foot passes behind the near leg, where the overlap is hidden, so it keeps the plain path.
+    const pass = near && stride.nearPassForward ? stride.nearPassForward * Math.sin(Math.PI * Math.min(1, Math.max(0, (progress - .4) / .32))) ** 2 : 0;
+    ankle = [rig.root[0] + relative[0] + pass, relative[1]];
     const recovery = radians(stride.recoveryToeDegrees);
     pitch = progress < .6 ? lerp(toeOff, recovery, smoothstep(progress / .6)) : lerp(recovery, 0, smoothstep((progress - .6) / .4));
     // Release the toe hinge in early recovery, then lift it slightly before the next landing.
@@ -88,13 +93,24 @@ export function validateRig(rig: SideRig): void {
   if (positive.some(value => !Number.isFinite(value) || value <= 0) || !Number.isInteger(rig.sampleCount) || rig.sampleCount < 2 || rig.durationMs / rig.sampleCount % 10 !== 0) throw new Error("Rig dimensions, bones and GIF frame timing must be valid positive values.");
   if (!Number.isInteger(rig.width) || !Number.isInteger(rig.height) || rig.groundY >= rig.height || rig.groundY < 0) throw new Error("Rig ground must fit the pixel canvas.");
 }
+// Snaps the running head to the pixel grid the torso patch is drawn on. The column follows the rest neck plus the
+// rounded sway, so the sub-pixel pitch sway cannot hop the helmet sideways in only half of the cycle. The row is the
+// lowest canvas row that the torso patch still maps to the neck at that column, so the collar always rests directly
+// on the shirt: rounding the continuous neck instead leaves a one-pixel ink gap whenever the neck sits near a pixel edge.
+export function seatedHead(rig: SideRig, root: Vec2, torsoAngle: number, neck: Vec2, restNeck: Vec2): Vec2 {
+  const x = Math.round(restNeck[0]) + Math.round(neck[0] - restNeck[0]);
+  // The torso patch shows local row round(-dx sin a + dy cos a); keep the largest canvas row whose local row is at or above the neck.
+  const bound = root[1] + (-rig.torso.neckHeight + .5 + (x - root[0]) * Math.sin(torsoAngle)) / Math.cos(torsoAngle);
+  return [x, Math.ceil(bound) - 1];
+}
 export function sampleRunRig(rig: SideRig, time: number): RigPose {
   if (!(rig.stride.stanceFraction > 0 && rig.stride.stanceFraction < .5)) throw new Error('Running requires alternating stance and flight.');
   const t = wrap(time), theta = t * tau;
   const root: Vec2 = [rig.root[0], rig.root[1] + rig.torso.bobAmplitude * Math.cos(2 * tau * (t - rig.torso.bobLag))];
   const torsoAngle = radians(rig.torso.leanDegrees + rig.torso.pitchSwayDegrees * Math.sin(theta));
   const armTheta = theta + rig.arms.phaseLead * tau;
-  const torsoTurn = -Math.cos(armTheta), headTurn = Math.sin(theta);
+  // `face.turnLead` (in cycles) lets the head turn run slightly ahead of the stride, so the camera-facing peak lands on one frame.
+  const torsoTurn = -Math.cos(armTheta), headTurn = Math.sin(theta + (rig.face.turnLead ?? 0) * tau);
   const base = { root, torsoAngle };
   const nearShoulder = torsoPoint(base, [-rig.torso.shoulderSpread + torsoTurn * rig.torso.shoulderTwist, rig.torso.shoulderY]);
   const farShoulder = torsoPoint(base, [rig.torso.shoulderSpread - torsoTurn * rig.torso.shoulderTwist, rig.torso.shoulderY]);
@@ -103,8 +119,8 @@ export function sampleRunRig(rig: SideRig, time: number): RigPose {
   const farFlex = radians(rig.arms.elbowDegrees - rig.arms.elbowFlexDegrees * Math.sin(armTheta));
   const neck = torsoPoint(base, [0, -rig.torso.neckHeight]);
   const restNeck = torsoPoint({root:[rig.root[0],rig.root[1]],torsoAngle:radians(rig.torso.leanDegrees)},[0,-rig.torso.neckHeight]);
-  const face = sampleFace(neck, headTurn, rig.face, t, 0, restNeck);
-  const nearFoot = footTarget(rig, t), farFoot = footTarget(rig, t + .5);
+  const face = sampleFace(neck, headTurn, rig.face, t, 0, restNeck, seatedHead(rig, root, torsoAngle, neck, restNeck));
+  const nearFoot = footTarget(rig, t, true), farFoot = footTarget(rig, t + .5);
   const nearHip = add(root, [rig.legs.hipSpread, 0]), farHip = add(root, [-rig.legs.hipSpread, 0]);
   const nearLeg = solveTwoBone(nearHip, nearFoot.ankle, rig.legs.thighLength, rig.legs.shinLength);
   const farLeg = solveTwoBone(farHip, farFoot.ankle, rig.legs.thighLength, rig.legs.shinLength);

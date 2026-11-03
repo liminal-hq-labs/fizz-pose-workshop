@@ -133,7 +133,7 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
   out.patch(skin.head, pose.face.pixelAnchor, pose.headAngle ?? 0, pose.headTurn);
   if (!pose.face.noseVisible) { out.erase(...pose.face.noseTip.pixel); out.pixel(...pose.face.nose.pixel, 'k'); }
   out.pixel(pose.face.ear.pixel[0], pose.face.ear.pixel[1], skin.face.ear);
-  out.pixel(pose.face.eye.pixel[0], pose.face.eye.pixel[1], skin.face.eye);
+  for (const point of pose.face.eyePixels) out.pixel(point[0], point[1], skin.face.eye);
   for (const point of pose.face.mouthPixels) out.pixel(point[0], point[1], skin.face.mouth);
   paintIdleProps(out, skin, pose);
   return out.frame();

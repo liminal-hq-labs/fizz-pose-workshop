@@ -38,6 +38,8 @@
     "frontX": 3.5,
     "backX": -4,
     "lift": 6.5,
+    "reachLift": 2,
+    "nearPassForward": 2,
     "toeOffDegrees": 25,
     "recoveryToeDegrees": -12
   },
@@ -92,6 +94,18 @@
         1.5
       ]
     },
-    "eyeTravelPixels": 2
+    "eyeTravelPixels": 2,
+    "turnLead": 0.05555555555555555,
+    "featureTurn": [
+      0.45,
+      0.8
+    ],
+    "mouthWidths": [
+      1,
+      2,
+      3
+    ],
+    "mouthFront": 3,
+    "farEye": 2
   }
 }
