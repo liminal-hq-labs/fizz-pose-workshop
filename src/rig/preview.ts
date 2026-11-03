@@ -48,13 +48,18 @@ export function mountRigPreview(data: WorkshopData): void {
   lightGain.oninput = () => { $<HTMLOutputElement>('#rig-light-value').textContent = lightGain.value + '%'; };
   function resize(): void { for (const c of [bones, avatar, lit]) { c.width = rig.width * scale; c.height = rig.height * scale; } }
   resize(); loadLighting();
-  $<HTMLSelectElement>('#rig-action').onchange = event => {
-    action = actions[Number((event.target as HTMLSelectElement).value)]; rig = action.rig; time = 0; resize();
+  const actionSelect = $<HTMLSelectElement>('#rig-action');
+  function selectAction(index: number): void {
+    const keepLight = lightToggle.checked;
+    action = actions[index]; rig = action.rig; time = 0; resize(); actionSelect.value = String(index);
     section.querySelector('#face-sequence')?.remove();
     updateFace = mountFaceInspector(section, rig, data, skin.face, action.prefix, action.folder);
     section.querySelectorAll<HTMLAnchorElement>('a[href^="rig/"]').forEach(link => { link.setAttribute('href', link.getAttribute('href')!.replace(/rig\/ben-[^/]+\//, 'rig/' + action.folder + '/'));  });
     loadLighting();
-  };
+    // A handover between lit actions (sit-down into typing) keeps the screen light preview on.
+    if (keepLight && rig.lighting) { lightToggle.checked = true; showLight(); }
+  }
+  actionSelect.onchange = () => selectAction(Number(actionSelect.value));
   /** Draws the saved sprite lit by its exported frame light: the EGA lookup a DOS renderer uses, or a colour tint. */
   function paintLit(context: CanvasRenderingContext2D, grid: readonly string[], index: number): void {
     const frame = lighting?.frames[index]; if (!lighting || !frame) return;
@@ -121,7 +126,10 @@ export function mountRigPreview(data: WorkshopData): void {
     if (playing) {
       const next = time + Math.max(0, Math.min(now - last, 100)) * speed / rig.durationMs;
       time = rig.performance && !rig.performance.loop ? Math.min(1, next) : next % 1;
-      if (time === 1) {playing = false; updateButton();}
+      // A one-shot with a follow-up (the phone sit-down) hands over to its loop and keeps playing; others stop on the end pose.
+      const follow = time === 1 && action.then ? actions.findIndex(entry => entry.animation === action.then) : -1;
+      if (follow >= 0) selectAction(follow);
+      else if (time === 1) {playing = false; updateButton();}
     }
     last = now;
     const index = currentIndex();

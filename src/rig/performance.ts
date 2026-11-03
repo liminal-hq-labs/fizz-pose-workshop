@@ -34,8 +34,12 @@ export interface PerformanceKey {
   shinOver?: 'near' | 'far';
   /** Screen light: 0 dark or hidden, 1 fully lit. Interpolated; it only counts while a phone is held (see `lighting`). */
   screen?: number;
-  /** Thumb on the screen: 0 resting above the phone, 1 pressed down to scroll. */
-  scroll?: number;
+  /** Thumbs on the screen, `[near, far]`: 0 resting with the tip above the phone, 1 pressed down to tap or scroll. */
+  taps?: number[];
+  /** Eyes: 0 looking ahead, 1 glancing down (at a held phone). The front skin lowers the eye pixels by one from 0.5. */
+  gaze?: number;
+  /** Breathing: 0 out, 1 in. The neck and shoulders rise by this many pixels and the front shirt deepens its chest by one row. */
+  breath?: number;
 }
 /**
  * Musical notes for a whistling idle. Each note lives for two cycles along one cubic Bézier `path` (canvas points), leaving
@@ -120,11 +124,12 @@ function clearPitch(rig: SideRig, ankle: Vec2, pitch: number): number {
   return pitch * low;
 }
 interface Body { neck: Vec2; nearShoulder: Vec2; farShoulder: Vec2; nearHip: Vec2; farHip: Vec2; }
-function body(rig: SideRig, root: Vec2, torsoAngle: number): Body {
+function body(rig: SideRig, root: Vec2, torsoAngle: number, breath = 0): Body {
   const base = {root, torsoAngle};
+  // An inhale lifts the neck and shoulders without moving the hips, so a seat stays on the ground.
   return {
-    neck: torsoPoint(base, [0, -rig.torso.neckHeight]),
-    nearShoulder: torsoPoint(base, [-rig.torso.shoulderSpread, rig.torso.shoulderY]), farShoulder: torsoPoint(base, [rig.torso.shoulderSpread, rig.torso.shoulderY]),
+    neck: torsoPoint(base, [0, -rig.torso.neckHeight - breath]),
+    nearShoulder: torsoPoint(base, [-rig.torso.shoulderSpread, rig.torso.shoulderY - breath]), farShoulder: torsoPoint(base, [rig.torso.shoulderSpread, rig.torso.shoulderY - breath]),
     nearHip: add(root, [-rig.legs.hipSpread, 0]), farHip: add(root, [rig.legs.hipSpread, 0]),
   };
 }
@@ -132,7 +137,7 @@ const origins: Record<Limb, keyof Body> = { nearHand: 'nearShoulder', farHand: '
 
 /** Curves for one clip, built once per settings object so sampling stays allocation-light. */
 interface ClipCurves {
-  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink' | 'screen' | 'scroll', Curve>;
+  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink' | 'screen' | 'nearTap' | 'farTap' | 'gaze' | 'breath', Curve>;
   limbs: Partial<Record<Limb, { x: Curve; y: Curve; angle: Curve; reach: Curve; grounded: readonly boolean[] }>>;
   phone?: { from: number; x: Curve; y: Curve };
 }
@@ -141,7 +146,7 @@ function clipCurves(rig: SideRig, clip: PerformanceSettings): ClipCurves {
   const known = cache.get(clip); if (known && known.torso === rig.torso && known.legs === rig.legs) return known.curves;
   const { keys, loop } = clip, phases = keys.map(key => key.phase), rests = keys.map(key => Boolean(key.hold || key.beat));
   const curve = (values: number[]): Curve => monotoneCurve(phases, values, loop, rests);
-  const bodies = keys.map(key => body(rig, [key.root[0], key.root[1]], radians(key.lean)));
+  const bodies = keys.map(key => body(rig, [key.root[0], key.root[1]], radians(key.lean), key.breath ?? 0));
   const limb = (name: Limb): NonNullable<ClipCurves['limbs'][Limb]> => {
     // Each limb target is also keyed as an angle and reach about its shoulder or hip, so free limbs swing on arcs. Angles
     // unwrap along the keys so a swing never takes the long way round.
@@ -173,7 +178,8 @@ function clipCurves(rig: SideRig, clip: PerformanceSettings): ClipCurves {
       rootX: curve(keys.map(key => key.root[0])), rootY: curve(keys.map(key => key.root[1])), lean: curve(keys.map(key => key.lean)), headRoll: curve(keys.map(key => key.headRoll)),
       nearFoot: curve(keys.map(key => key.nearFootDegrees ?? 0)), farFoot: curve(keys.map(key => key.farFootDegrees ?? 0)),
       pucker: curve(keys.map(key => key.pucker ?? 0)), blink: curve(keys.map(key => key.blink ?? 0)),
-      screen: curve(keys.map(key => key.screen ?? 0)), scroll: curve(keys.map(key => key.scroll ?? 0)),
+      screen: curve(keys.map(key => key.screen ?? 0)), nearTap: curve(keys.map(key => key.taps?.[0] ?? 0)), farTap: curve(keys.map(key => key.taps?.[1] ?? 0)),
+      gaze: curve(keys.map(key => key.gaze ?? 0)), breath: curve(keys.map(key => key.breath ?? 0)),
     },
     limbs: { nearHand: limb('nearHand'), farHand: limb('farHand'), nearAnkle: limb('nearAnkle'), farAnkle: limb('farAnkle'), ...(keys[0].nearKnee ? { nearKnee: limb('nearKnee'), farKnee: limb('farKnee') } : {}) },
     phone,
@@ -208,7 +214,7 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   // Discrete choices (expression, support) switch on the key that starts the segment; the final key owns phase 1.
   const a = t >= keys[keys.length - 1].phase ? keys[keys.length - 1] : keys[index];
   const root: Vec2 = [at(curves.scalar.rootX), at(curves.scalar.rootY)], torsoAngle = radians(at(curves.scalar.lean)), headAngle = radians(at(curves.scalar.headRoll));
-  const joints = body(rig, root, torsoAngle);
+  const breath = at(curves.scalar.breath), joints = body(rig, root, torsoAngle, breath);
   const target = (name: Limb): Vec2 => {
     const limb = curves.limbs[name]!;
     if (limb.grounded[index]) return [at(limb.x), at(limb.y)];
@@ -239,6 +245,7 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
     cloth: rig.clothing ? clothAt(rig.clothing, clip, curves, t) : undefined,
     presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: clip.environment, cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink),
       ...(a.seated ? { seated: true } : {}), ...(a.shinOver ? { shinOver: a.shinOver } : {}), ...(clip.frontHolster ? { frontHolster: true } : {}),
-      ...(phone ? { screen: Math.max(0, Math.min(1, at(curves.scalar.screen))), scroll: at(curves.scalar.scroll) } : {})},
+      gaze: at(curves.scalar.gaze), breath,
+      ...(phone ? { screen: Math.max(0, Math.min(1, at(curves.scalar.screen))), taps: [at(curves.scalar.nearTap), at(curves.scalar.farTap)] } : {})},
   };
 }

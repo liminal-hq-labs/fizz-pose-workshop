@@ -262,7 +262,9 @@
         "cameraShoes": false,
         "pucker": 0,
         "blink": 0,
-        "frontHolster": true
+        "frontHolster": true,
+        "gaze": 0,
+        "breath": 0
       }
     },
     {
@@ -512,7 +514,9 @@
         "cameraShoes": false,
         "pucker": 0,
         "blink": 0,
-        "frontHolster": true
+        "frontHolster": true,
+        "gaze": 0,
+        "breath": 0
       }
     },
     {
@@ -762,7 +766,9 @@
         "cameraShoes": false,
         "pucker": 0,
         "blink": 0,
-        "frontHolster": true
+        "frontHolster": true,
+        "gaze": 0,
+        "breath": 0
       }
     },
     {
@@ -1014,7 +1020,9 @@
         "blink": 0,
         "seated": true,
         "shinOver": "near",
-        "frontHolster": true
+        "frontHolster": true,
+        "gaze": 0,
+        "breath": 0
       }
     },
     {
@@ -1266,7 +1274,9 @@
         "blink": 0,
         "seated": true,
         "shinOver": "near",
-        "frontHolster": true
+        "frontHolster": true,
+        "gaze": 0,
+        "breath": 0
       }
     },
     {
@@ -1523,8 +1533,13 @@
         "seated": true,
         "shinOver": "near",
         "frontHolster": true,
+        "gaze": 0,
+        "breath": 0,
         "screen": 0,
-        "scroll": 0
+        "taps": [
+          0,
+          0
+        ]
       }
     },
     {
@@ -1781,8 +1796,13 @@
         "seated": true,
         "shinOver": "near",
         "frontHolster": true,
+        "gaze": 1,
+        "breath": 0,
         "screen": 0.7,
-        "scroll": 0
+        "taps": [
+          0,
+          0
+        ]
       }
     },
     {
@@ -2039,8 +2059,13 @@
         "seated": true,
         "shinOver": "near",
         "frontHolster": true,
+        "gaze": 1,
+        "breath": 0,
         "screen": 1,
-        "scroll": 0
+        "taps": [
+          0,
+          0
+        ]
       }
     },
     {
@@ -2297,8 +2322,13 @@
         "seated": true,
         "shinOver": "near",
         "frontHolster": true,
+        "gaze": 1,
+        "breath": 0,
         "screen": 0.85,
-        "scroll": 1
+        "taps": [
+          1,
+          0
+        ]
       }
     }
   ]

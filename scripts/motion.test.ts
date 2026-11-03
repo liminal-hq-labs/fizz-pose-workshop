@@ -43,7 +43,10 @@ const knownFailures: readonly KnownFailure[] = [
 
 const frames = loadSavedFrames();
 // One-shots (saved with `loop: false`) hold their final pose and replay after a rest, so they have no wrapping step.
-const cycles = Object.entries(savedAnimations).map(([name, animation]) => ({ name, loop: animation.loop !== false, sequence: animation.frames.map(key => frames[key]) }));
+// A whole-performance sequence (a lead-in once, then a loop several times) restarts from its first pose by design, so it is
+// checked as its two parts, each a cycle above, plus the handover between them (`scripts/phone-rig.test.ts`).
+const sequences = new Set(rigCatalogue.flatMap(entry => entry.sequence ? [entry.sequence.name] : []));
+const cycles = Object.entries(savedAnimations).filter(([name]) => !sequences.has(name)).map(([name, animation]) => ({ name, loop: animation.loop !== false, sequence: animation.frames.map(key => frames[key]) }));
 const key = (failure: Pick<KnownFailure, 'check' | 'subject' | 'at'>): string => `${failure.check} ${failure.subject} @ ${failure.at}`;
 
 function findings(check: Check): string[] {

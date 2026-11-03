@@ -41,7 +41,7 @@ export interface RigPose {
   cloth?: ClothPose;
   presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; pucker?: number; blink?: number; environment?: PerformanceSettings['environment'];
     /** Seated, crossed-leg and phone-screen state for front-facing idles; see `PerformanceKey`. */
-    seated?: boolean; shinOver?: 'near' | 'far'; frontHolster?: boolean; screen?: number; scroll?: number };
+    seated?: boolean; shinOver?: 'near' | 'far'; frontHolster?: boolean; screen?: number; taps?: number[]; gaze?: number; breath?: number };
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
   contact: 'near' | 'far' | 'flight' | 'pogo' | 'both';

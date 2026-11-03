@@ -5,7 +5,7 @@
 
 import { add, tiltOffset, tiltPixel, type Chain, type Vec2 } from '../src/rig/kinematics.ts';
 import type { RigPose, SideRig } from '../src/rig/run.ts';
-import { paintArm, type Patch, type Pixels, type RigSkin } from './rig-skin.ts';
+import { paintArm, type Patch, type PixelRow, type Pixels, type RigSkin } from './rig-skin.ts';
 
 function headPixel(pose: RigPose, local: Vec2): Vec2 {
   return tiltPixel(pose.face.pixelAnchor, local, pose.headAngle ?? 0);
@@ -24,17 +24,18 @@ export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: 
     const shoe = presentation.cameraShoes ? skin.cameraShoe : skin.backShoe;
     for (const foot of [pose.farFoot, pose.nearFoot]) out.patch(shoe, foot.ankle, 0);
   }
-  out.part = 'arm'; paintArm(out, pose.farArm, skin, false);
+  // Cloth follow-through slides each cuff along its upper arm, as in the side views.
+  out.part = 'arm'; paintArm(out, pose.farArm, skin, false, pose.cloth?.farSleeve);
   out.part = 'shirt';
-  const torso = back ? skin.torsoBack : skin.torsoFront;
-  out.patch(seated ? seatedTorso(torso, skin) : torso, pose.root, pose.torsoAngle);
+  const torso = back ? skin.torsoBack : skin.torsoFront, shirt = seated ? seatedTorso(torso, skin) : torso;
+  out.patch(Math.round(presentation.breath ?? 0) >= 1 ? inhaled(shirt) : shirt, pose.root, pose.torsoAngle);
   if (seated) paintSeatedLegs(out, skin, pose);
   if (presentation.frontHolster && !back) {
     // Ben's right hip faces the camera's left; seated, the holster rests on top of that thigh beside the bunched hem.
     const holster = skin.holsterFront, offset = seated ? holster.seatedOffset : holster.standingOffset;
     out.part = 'prop'; out.patch(holster, add(pose.root, [offset[0], offset[1]]), 0);
   }
-  out.part = 'arm'; paintArm(out, pose.nearArm, skin, true);
+  out.part = 'arm'; paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
   out.part = 'hand';
   // Hands remain in front of the belly or phone instead of being hidden by the shirt.
   if (!back && !phone) for (const hand of [pose.farArm[2], pose.nearArm[2]]) out.segment([hand, add(hand, [.6,0])], 1, 'W', 'k');
@@ -46,7 +47,10 @@ export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: 
     // The skin and neck between the helmet rim and the collar belong to the face, so data such as a light mask can find them.
     for (let y = -5; y <= -1; y++) for (let x = -4; x <= 4; x++) { const p = headPixel(pose, [x, y]), code = out.rows[p[1]]?.[p[0]] ?? '.'; if (/[WL]/.test(code)) out.pixel(p[0], p[1], code); }
     const expression = presentation.expression;
-    for (const x of [-2,2]) {
+    // A blink closes both eyes to light-grey lids; a downward glance (at the phone) drops the eyes one row.
+    const blink = (presentation.blink ?? 0) >= .5, down = (presentation.gaze ?? 0) >= .5 ? 1 : 0;
+    if (expression === 'normal' && (blink || down)) for (const x of [-2,2]) pixel(x, -5 + down, blink ? skin.palette.skinShadow : 'B');
+    else for (const x of [-2,2]) {
       if (expression === 'out' || expression === 'dizzy') {
         pixel(x-1,-6,'B');pixel(x+1,-6,'B');pixel(x,-5,'B');pixel(x-1,-4,'B');pixel(x+1,-4,'B');
       } else if (expression === 'wince') {pixel(x,-6,'k');pixel(x-1,-5,'k');pixel(x+1,-5,'k');}
@@ -64,6 +68,14 @@ export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: 
   out.part = '';
   // Folded arms and crossed legs leave one-pixel pinholes between their outlines and the shirt; ink them.
   if (seated) out.closeNotches(pose.face.pixelAnchor[1], rig.groundY);
+}
+
+/** The chest row repeated by an inhale. */
+const breathRow = 20;
+/** An inhale deepens the chest by one row: the rows above `breathRow` rise with the neck while the belt stays on the seat. */
+function inhaled(torso: Patch): Patch {
+  const lift = (rows: readonly PixelRow[]): PixelRow[] => [...rows.map(row => row.y <= breathRow ? { ...row, y: row.y - 1 } : row), ...rows.filter(row => row.y === breathRow)];
+  return { ...torso, rows: lift(torso.rows) };
 }
 
 /** The front shirt patch with its seated rows: the hem bunches over the belt as the seat presses into the ground. */
@@ -101,16 +113,16 @@ function paintSeatedLegs(out: Pixels, skin: RigSkin, pose: RigPose): void {
 
 /**
  * The phone's screen faces Ben and its back case faces the camera. Each thumb rests on the screen, so it shows only where
- * it pokes up over the top edge; a thumb pressed down to scroll drops behind the case. The hands hold the phone's sides,
+ * it pokes up over the top edge; a thumb pressed down to tap or scroll (`taps`, near then far) drops behind the case. The hands hold the phone's sides,
  * with a finger wrapped round each side over the case.
  */
 function paintPhoneGrip(out: Pixels, skin: RigSkin, pose: RigPose, phone: Vec2): void {
   const px = Math.round(phone[0]), py = Math.round(phone[1]), top = py - skin.phoneBack.anchor[1];
-  const pressed = (pose.presentation!.scroll ?? 0) >= .5;
+  const taps = pose.presentation!.taps ?? [0, 0];
   out.part = 'hand';
   for (const hand of [pose.farArm[2], pose.nearArm[2]]) out.segment([hand, add(hand, [.6,0])], 1, 'W', 'k');
   // Each thumb tip is one skin pixel capped with ink, poking over the phone's top edge.
-  for (const [dx, down] of [[-1, pressed], [1, false]] as const) if (!down) {
+  for (const [dx, tap] of [[-1, taps[0]], [1, taps[1]]] as const) if (tap < .5) {
     for (const [x, y] of [[dx, -2], [dx - 1, -1], [dx + 1, -1]]) out.pixel(px + x, top + y, 'k');
     out.pixel(px + dx, top - 1, 'W');
   }

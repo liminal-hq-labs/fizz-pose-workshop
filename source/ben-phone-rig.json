@@ -378,7 +378,8 @@
         "farAnkle": [
           16.6,
           46
-        ]
+        ],
+        "gaze": 1
       },
       {
         "expression": "normal",
@@ -421,7 +422,8 @@
         "farAnkle": [
           16.6,
           46
-        ]
+        ],
+        "gaze": 1
       },
       {
         "expression": "normal",
@@ -450,7 +452,6 @@
           40
         ],
         "screen": 0.85,
-        "scroll": 1,
         "nearKnee": [
           11.6,
           41.5
@@ -466,7 +467,12 @@
         "farAnkle": [
           16.6,
           46
-        ]
+        ],
+        "taps": [
+          1,
+          0
+        ],
+        "gaze": 1
       }
     ],
     "sampleTimes": [

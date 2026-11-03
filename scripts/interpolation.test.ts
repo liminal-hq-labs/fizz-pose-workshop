@@ -165,7 +165,7 @@ test('the left-facing jump turns Ben round with his Stunner on the far (right) h
 });
 
 test('shirt cloth moves only on the rigs that opt in, and only in its hem and sleeves', () => {
-  const clothed = ['fall', 'fall-left'];
+  const clothed = ['fall', 'fall-left', 'phone-typing'];
   for (const { animation, rig: clip } of rigCatalogue) {
     if (clothed.includes(animation)) { expect(clip.clothing).toBeDefined(); continue; }
     // The run, look loop, standing and every other rig keep their authored shirt.
