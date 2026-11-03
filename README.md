@@ -106,6 +106,8 @@ Run `bun run draw:turntable` then `bun run generate` to rebuild the study. `sour
 
 The [source and in-between review](docs/TURNTABLE_REVIEW.md) describes the reference details, the former block-shaped shoes and the refinement. `source/ben-turntable-shoes.json` defines separate directional high-top patches: a six-pixel front width, ten-pixel full quarter/side length, ankle openings, shaped toes, heel panels, white near soles and grey raised far soles. Crown and lowest sole stay on rows 2 and 34.
 
+`bun run turntable:render` renders the 3D Ben at every turntable angle and converts each view into a reference grid on the same canvas, in the 16 EGA colours with a black outline. In the pixel editor, tick **3D reference** on any `ben_turn*` frame to trace over the render at that angle. The renders never replace the saved frames; `source/turntable-pilot-135.json` is a hand-cleaned draft of the missing 135° key made from one. See [the render path](docs/TURNTABLE_REVIEW.md#3d-reference-renders) for the method, the pilot comparison and what the automatic output gets wrong.
+
 ## Fizz Stunner study
 
 The **Fizz Stunner · on its own** section shows eleven editable views at enlarged and native scale, plus turnaround and discharge/recoil loops. The four-by-five holstered patch and eight-by-six held side profile are exact source artwork; opposite side views are mirrored. Front, rear and quarter views are labelled interpretations of the tiny sidearm. Every frame exports as PNG/SVG, and both loops export as GIF/SVG.
