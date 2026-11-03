@@ -3,17 +3,16 @@
   "width": 32,
   "height": 52,
   "groundY": 46,
-  "durationMs": 810,
-  "sampleCount": 9,
+  "durationMs": 640,
+  "sampleCount": 8,
   "frameDurationsMs": [
-    140,
+    100,
     60,
     80,
-    140,
+    110,
     80,
     70,
     60,
-    100,
     80
   ],
   "root": [
@@ -232,17 +231,17 @@
         "phase": 0.8,
         "root": [
           13,
-          38
+          36
         ],
         "lean": 9,
-        "headRoll": 3,
+        "headRoll": 2,
         "nearHand": [
-          18,
-          34
+          15,
+          32
         ],
         "farHand": [
-          16,
-          33
+          14,
+          31
         ],
         "nearAnkle": [
           10,
@@ -254,8 +253,7 @@
         ],
         "expression": "normal",
         "nearSupport": true,
-        "farSupport": true,
-        "hold": true
+        "farSupport": true
       },
       {
         "phase": 1,
@@ -295,8 +293,7 @@
       0.52,
       0.62,
       0.71,
-      0.8,
-      0.9
+      0.8
     ]
   }
 }
