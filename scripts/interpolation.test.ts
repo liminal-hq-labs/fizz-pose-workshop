@@ -95,20 +95,39 @@ test('rolled heads keep every helmet pixel inked at any tilt', () => {
   }
 });
 
-test('the fall is its own looping cycle: arms flung out to either side, legs dangling, never touching down', () => {
+test('the fall braces for impact: arms guarding the chest, knees bent and feet together, swaying without flailing', () => {
   const fall = rig('fall'), jump = rig('jump'), saved = loadSavedFrames();
   expect(fall.performance!.loop).toBe(true); expect(fall.mirrored).toBeFalsy();
   expect(sampleRig(fall, 0)).toEqual(sampleRig(fall, 1));
+  const guard: [number, number][][] = [[], []];
   for (let i = 0; i < fall.sampleCount; i++) {
-    const pose = sampleRig(fall, sampleTime(fall, i)), shoulder = torsoPoint(pose, [0, fall.torso.shoulderY]);
+    const pose = sampleRig(fall, sampleTime(fall, i)), shoulder = torsoPoint(pose, [0, fall.torso.shoulderY]), lean = pose.torsoAngle * 180 / Math.PI;
     expect(pose.contact).toBe('flight');
-    expect(pose.nearArm[2][0]).toBeGreaterThan(pose.neck[0] + 2); expect(pose.farArm[2][0]).toBeLessThan(pose.neck[0] - 2);
-    for (const arm of [pose.nearArm, pose.farArm]) expect(arm[2][1]).toBeLessThan(shoulder[1] + 2);
-    for (const leg of [pose.nearLeg, pose.farLeg]) expect(leg[2][1]).toBeGreaterThan(pose.root[1] + 6);
+    // A slight forward crouch that never tips back.
+    expect(lean).toBeGreaterThan(5); expect(lean).toBeLessThan(11);
+    // Both hands are drawn in front of the chest and face, between chin and belly height.
+    [pose.nearArm, pose.farArm].forEach((arm, side) => {
+      expect(arm[2][0]).toBeGreaterThan(pose.neck[0] + 2); expect(arm[2][1]).toBeGreaterThan(shoulder[1] - 4); expect(arm[2][1]).toBeLessThan(shoulder[1] + 3);
+      guard[side].push([arm[2][0] - shoulder[0], arm[2][1] - shoulder[1]]);
+    });
+    // Knees bent, ready to land, with the feet together or lightly staggered.
+    for (const leg of [pose.nearLeg, pose.farLeg]) expect(distance(leg[0], leg[2])).toBeLessThan(fall.legs.thighLength + fall.legs.shinLength - 1.5);
+    expect(Math.abs(pose.nearFoot.ankle[0] - pose.farFoot.ankle[0])).toBeLessThanOrEqual(4);
   }
+  // No flailing: each guarding hand stays within a pixel and a half of its place relative to the shoulder across the loop.
+  for (const hand of guard) for (const axis of [0, 1]) expect(Math.max(...hand.map(point => point[axis])) - Math.min(...hand.map(point => point[axis]))).toBeLessThanOrEqual(1.5);
+  // Clearly not the jump: the jump's apex spreads the feet sixteen pixels apart.
+  const apex = sampleRig(jump, jump.performance!.keys[2].phase); expect(apex.farFoot.ankle[0] - apex.nearFoot.ankle[0]).toBeGreaterThan(14);
+  // The left-facing fall turns round with the Stunner on the far (right) hip rather than mirroring it across.
+  const left = rig('fall-left'); expect(left.facing).toBe('left'); expect(left.performance).toBe(fall.performance);
+  for (let i = 1; i <= fall.sampleCount; i++) {
+    const a = saved[`ben_fallRig${i}`], b = saved[`ben_fallLeft${i}`];
+    expect(b.grid).not.toEqual(a.grid.map(row => [...row].reverse().join(''))); expect(b.grid.join('').split('M').length - 1).toBeLessThanOrEqual(2);
+  }
+
   // Distinct sprites: no fall frame repeats a jump frame, and none is a mirror of another Stunner-bearing frame.
   const fallFrames = Array.from({ length: fall.sampleCount }, (_, i) => saved[`ben_fallRig${i + 1}`]);
-  const others = Object.entries(saved).filter(([name]) => name.startsWith('ben_') && !name.startsWith('ben_fallRig')).map(([, frame]) => frame);
+  const others = Object.entries(saved).filter(([name]) => name.startsWith('ben_') && !name.startsWith('ben_fallRig') && !name.startsWith('ben_fallLeft')).map(([, frame]) => frame);
   for (const frame of fallFrames) {
     expect(frame.grid.join('')).toContain('M');
     for (let i = 0; i < jump.sampleCount; i++) expect(frame.grid).not.toEqual(saved[`ben_jumpRig${i + 1}`].grid);

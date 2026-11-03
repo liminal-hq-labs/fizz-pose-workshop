@@ -19,6 +19,7 @@ import type { SideRig } from './run.ts';
 
 // The left-facing jump turns the right-facing rig round, keeping the Stunner on Ben's right (far) hip, so both share one set of keys.
 const jumpLeft: SideRig = { ...(jump as SideRig), name: 'Ben · left-facing jump rig', facing: 'left' };
+const fallLeft: SideRig = { ...(fall as SideRig), name: 'Ben · left-facing brace-for-impact fall rig', facing: 'left' };
 
 export interface RigEntry { rig: SideRig; prefix: string; animation: string; folder: string; title: string; labels: readonly string[]; }
 export const rigCatalogue: readonly RigEntry[] = [
@@ -28,7 +29,8 @@ export const rigCatalogue: readonly RigEntry[] = [
  {rig:ladder as SideRig,prefix:'ben_ladder',animation:'climb',folder:'ben-ladder',title:'Ladder climb',labels:['Left reach','Right hand rises','Right reach','Right support','Left hand rises','Left reach again']},
  {rig:jump as SideRig,prefix:'ben_jumpRig',animation:'jump',folder:'ben-jump',title:'Jump',labels:['Crouch','Launch','Apex','Fall','Land','Recover']},
  {rig:jumpLeft,prefix:'ben_jumpLeft',animation:'jump-left',folder:'ben-jump-left',title:'Jump left',labels:['Crouch','Launch','Apex','Fall','Land','Recover']},
- {rig:fall as SideRig,prefix:'ben_fallRig',animation:'fall',folder:'ben-fall',title:'Fall',labels:['Arms flung out','Near arm flaps up','Knees paddle','Arms sweep down','Far arm flaps up','Knees paddle back']},
+ {rig:fall as SideRig,prefix:'ben_fallRig',animation:'fall',folder:'ben-fall',title:'Fall · brace for impact',labels:['Braced · lowest','Leans in · rising','Leans in · high','Braced · highest','Leans back · dropping','Leans back · low']},
+ {rig:fallLeft,prefix:'ben_fallLeft',animation:'fall-left',folder:'ben-fall-left',title:'Fall left · brace for impact',labels:['Braced · lowest','Leans in · rising','Leans in · high','Braced · highest','Leans back · dropping','Leans back · low']},
  {rig:death as SideRig,prefix:'ben_death',animation:'death',folder:'ben-death',title:'Dramatic death',labels:['The shock','Belly clutch · wobble left','Tongue out · wobble right','Seeing stars · wobble left','Last groan · wobble right','Topple','Curtain call']},
  {rig:ledge as SideRig,prefix:'ben_ledge',animation:'mantle',folder:'ben-ledge',title:'Ledge pull',labels:['Hang','Pull','Haul','Chest over edge','Elbows lock','Swing the knee','Knee up','Plant the foot','Push to crouch','Rise','Stand']},
  {rig:ledgeLeft as SideRig,prefix:'ben_ledgeLeft',animation:'mantle-left',folder:'ben-ledge-left',title:'Ledge pull left',labels:['Hang left','Pull','Haul','Chest over edge','Elbows lock','Swing the knee','Knee up','Plant the foot','Push to crouch','Rise','Stand']},
