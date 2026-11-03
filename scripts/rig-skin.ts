@@ -97,10 +97,12 @@ export class Pixels {
   }
   frame(): Frame { return { width: this.width, height: this.height, grid: this.rows.map(row => row.join('')) }; }
 }
-export function paintArm(out: Pixels, chain: Chain, skin: RigSkin, near: boolean): void {
+export function paintArm(out: Pixels, chain: Chain, skin: RigSkin, near: boolean, sleeveSlide = 0): void {
   const colours = skin.palette, [shoulder, elbow, hand] = chain;
   out.segment(chain, 2, near ? colours.skin : colours.skinShadow, colours.outline);
-  const cuff: Vec2 = [(shoulder[0] + elbow[0]) / 2, (shoulder[1] + elbow[1]) / 2];
+  // The sleeve covers the upper half of the upper arm; cloth follow-through slides its cuff a pixel along the bone.
+  const length = Math.hypot(elbow[0] - shoulder[0], elbow[1] - shoulder[1]), reach = Math.max(.15, Math.min(.95, .5 + sleeveSlide / length));
+  const cuff: Vec2 = [shoulder[0] + (elbow[0] - shoulder[0]) * reach, shoulder[1] + (elbow[1] - shoulder[1]) * reach];
   out.segment([shoulder, cuff], 2, near ? colours.shirt : colours.shirtShadow);
   out.pixel(Math.round(hand[0]), Math.round(hand[1]), colours.skinShadow);
 }
@@ -148,6 +150,22 @@ export function shoeBadgePoint(foot:RigFoot,skin:RigSkin):Vec2{
  const point=skin.shoe.badge?.point??[0,0],height=skin.shoe.ball[1]+(point[1]-skin.shoe.ball[1])*(1-foot.compression);
  return add(foot.ankle,rotate([point[0],height],foot.pitch));
 }
+/**
+ * The shirt patch with its cloth state applied: the hem row (directly above the belt) flares one shirt pixel past its back
+ * or front outline. Only that row changes, so the collar, emblem, belt and Stunner keep their authored pixels.
+ */
+export function clothedTorso(rig: SideRig, skin: RigSkin, pose: RigPose): Patch {
+  const hem = rig.clothing?.hem, cloth = pose.cloth;
+  if (!hem || !cloth || (!cloth.hemBack && !cloth.hemFront)) return skin.torso;
+  const flare = (row: PixelRow): PixelRow => {
+    if (row.y !== hem.row) return row;
+    let { x, pixels } = row;
+    if (cloth.hemBack) { pixels = pixels[0] + pixels[1] + pixels.slice(1); x -= 1; }
+    if (cloth.hemFront) pixels = pixels.slice(0, -1) + pixels[pixels.length - 2] + pixels[pixels.length - 1];
+    return { x, y: row.y, pixels };
+  };
+  return { ...skin.torso, rows: skin.torso.rows.map(flare), towards: skin.torso.towards?.map(flare), away: skin.torso.away?.map(flare) };
+}
 const stunnerSwingDegrees = 35;
 function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin, leg: Chain = pose.nearLeg): void {
   const [hip, knee] = leg;
@@ -187,17 +205,17 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner =
   // A far-side Stunner is drawn first, so the far leg, torso and near limbs cover it and only what truly peeks out shows.
   if (farStunner && !pose.weapon) paintStunner(out, pose, skin, pose.farLeg);
   out.segment(pose.farLeg, 2, colours.denim, colours.outline); paintFoot(out, pose.farFoot, skin, false);
-  paintArm(out, pose.farArm, skin, false);
+  paintArm(out, pose.farArm, skin, false, pose.cloth?.farSleeve);
   out.segment(pose.nearLeg, 2, colours.denim, colours.outline);
   out.segment(pose.nearLeg, 1, colours.denimSeam);
   paintFoot(out, pose.nearFoot, skin, true);
-  out.patch(skin.torso, pose.root, pose.torsoAngle, pose.torsoTurn);
+  out.patch(clothedTorso(rig, skin, pose), pose.root, pose.torsoAngle, pose.torsoTurn);
   // A performance knee raised above the hip (climbing onto a ledge, tucking in a fall) passes in front of the shirt.
   if (pose.presentation && pose.nearLeg[1][1] < pose.nearLeg[0][1] + 2) {
     out.segment(pose.nearLeg, 2, colours.denim, colours.outline); out.segment(pose.nearLeg, 1, colours.denimSeam); paintFoot(out, pose.nearFoot, skin, true);
   }
   if (!pose.weapon && !farStunner) paintStunner(out, pose, skin);
-  paintArm(out, pose.nearArm, skin, true);
+  paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
   if (pose.weapon) {
     out.patch({ anchor: skin.weapon.anchor, rows: skin.weapon.pixels.map((pixels, y) => ({x: 0, y, pixels})) }, pose.weapon.grip, pose.weapon.angle);
     if (pose.weapon.flash) {

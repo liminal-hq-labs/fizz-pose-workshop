@@ -105,6 +105,17 @@ Small head rolls are drawn as a whole-pixel row shear (`tiltOffset` in `src/rig/
 
 The holstered Stunner swings with the near thigh by at most 35° in performances, so a raised knee cannot fold it up behind the shirt. A near knee raised above the hip (climbing onto the ledge, kicking in a fall) is drawn in front of the shirt.
 
+### Cloth parts
+
+A rig opts into secondary shirt motion with `clothing` in its JSON (`src/rig/clothing.ts`). It is deterministic and subtle at sprite scale: one pixel of movement in the right frames. The settings are:
+
+- `lag`: the follow-through delay in cycles.
+- `airflow`: the constant world velocity, in pixels per cycle, that an in-place rig stands for. A fall uses `[0, 40]`.
+- `hem`: `row` (the shirt row directly above the belt), `threshold` (the speed in pixels per cycle that flares the hem) and `flutter` (whole waves per cycle, so a loop stays seamless).
+- `sleeves`: `slide` (pixels a cuff may move along the upper arm) and `threshold` (the arm-swing speed, in degrees per cycle, for a full slide).
+
+The sampler takes the body's velocity `lag` cycles earlier plus the airflow. Moving forwards or backwards drags the hem out behind the motion. Falling or rising lifts it, so it flares one shirt pixel past its back or front outline, alternating with the flutter. The cuffs lag the upper arm's swing, and they ride up the arm in turn with that flutter. The skin changes only the hem row of the torso patch and the cuff position, so the collar, emblem, belt and Stunner keep their authored pixels and the outline stays closed. The fall and left fall use it. The run, look loop and standing sprites are pinned reference art and do not. The jump and ledge pull render cleanly with it but keep their approved art for now, and the front-view death and phone use a different shirt patch.
+
 | Rig | View and pose sequence | Playback |
 |---|---|---|
 | Ladder climb | Back view; opposite hands and feet alternate, with bent elbows and knees | Loop |

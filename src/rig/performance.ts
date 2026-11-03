@@ -6,6 +6,7 @@
 import { add, radians, rotate, solveTwoBone, tiltPixel, wrap, type Vec2, type Chain } from './kinematics.ts';
 import { sampleFace, type FaceLandmark, type FacePose } from './face.ts';
 import { torsoPoint, type RigFoot, type RigPose, type SideRig } from './run.ts';
+import { clothPose, type ClothingSettings, type ClothPose } from './clothing.ts';
 
 export type Expression = 'normal' | 'startled' | 'grit' | 'tongue' | 'dizzy' | 'wince' | 'out' | 'whistle';
 export interface PerformanceKey {
@@ -148,6 +149,14 @@ function tiltedFace(face: FacePose, upright: FacePose, angle: number): FacePose 
   return { ...face, eye: landmark(face.eye, upright.eye), mouth: landmark(face.mouth, upright.mouth), ear: landmark(face.ear, upright.ear), nose: landmark(face.nose, upright.nose), noseTip: landmark(face.noseTip, upright.noseTip), cheek: landmark(face.cheek, upright.cheek), chin: landmark(face.chin, upright.chin), eyePixels: upright.eyePixels.map(pixel), mouthPixels: upright.mouthPixels.map(pixel) };
 }
 
+/** Lagged body and arm velocities (per cycle, from the same curves) feed the cloth's follow-through. */
+function clothAt(settings: ClothingSettings, clip: PerformanceSettings, curves: ClipCurves, t: number): ClothPose {
+  const time = (value: number): number => clip.loop ? wrap(value) : Math.max(0, Math.min(1, value)), h = 1e-3, then = t - settings.lag;
+  const rate = (curve: Curve): number => (evaluateCurve(curve, time(then + h)) - evaluateCurve(curve, time(then - h))) / (2 * h);
+  const degrees = 180 / Math.PI;
+  return clothPose(settings, t, [rate(curves.scalar.rootX), rate(curves.scalar.rootY)], [rate(curves.limbs.nearHand.angle) * degrees, rate(curves.limbs.farHand.angle) * degrees]);
+}
+
 export function samplePerformance(rig: SideRig, time: number): RigPose {
   const clip = rig.performance; if (!clip || !Number.isFinite(time)) throw new Error('Performance rig requires finite time and action goals.');
   const t = clip.loop ? wrap(time) : Math.max(0, Math.min(1, time));
@@ -179,6 +188,7 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const face = tiltedFace(sampleFace(joints.neck, 0, rig.face, t, headAngle), sampleFace(joints.neck, 0, rig.face, t), headAngle);
   return { time: t, root, torsoAngle, torsoTurn: 0, headTurn: 0, headAngle, neck: joints.neck, face, nearArm, farArm, nearLeg, farLeg, nearFoot, farFoot,
     contact: a.nearSupport && a.farSupport ? 'both' : a.nearSupport ? 'near' : a.farSupport ? 'far' : 'flight',
+    cloth: rig.clothing ? clothAt(rig.clothing, clip, curves, t) : undefined,
     presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: clip.environment, cameraShoes: rig.motion === 'death', phone, notes},
   };
 }

@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import type { PerformanceSettings, Expression } from './performance.ts';
+import type { ClothingSettings, ClothPose } from './clothing.ts';
 import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
@@ -17,6 +18,8 @@ export interface SideRig {
    * Fizz Stunner stays on his right hip, which is then the far side, so it is drawn behind the body instead of copied across.
    */
   facing?: 'right' | 'left';
+  /** Optional cloth parts (shirt hem and sleeves) with follow-through; see `src/rig/clothing.ts`. */
+  clothing?: ClothingSettings;
   pogo?: { compressedLength: number; extendedLength: number; shaftLength: number; lift: number; pegOffset: number };
   fire?: { recoil: number; kickDegrees: number };
   name: string; width: number; height: number; groundY: number; durationMs: number; sampleCount: number;
@@ -32,6 +35,7 @@ export interface RigFoot { ankle: Vec2; ball: Vec2; toe: Vec2; heel: Vec2; pitch
 export interface RigPose {
   face: FacePose;
   headAngle?: number;
+  cloth?: ClothPose;
   presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; environment?: PerformanceSettings['environment'] };
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;

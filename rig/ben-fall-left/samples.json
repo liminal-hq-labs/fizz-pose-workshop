@@ -252,6 +252,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": true,
+        "nearSleeve": 0,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -499,6 +505,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": false,
+        "nearSleeve": -1,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -746,6 +758,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": false,
+        "nearSleeve": -1,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -993,6 +1011,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": true,
+        "nearSleeve": 0,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -1240,6 +1264,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": false,
+        "hemFront": true,
+        "nearSleeve": 0,
+        "farSleeve": -1
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -1487,6 +1517,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": false,
+        "hemFront": true,
+        "nearSleeve": 0,
+        "farSleeve": -1
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",

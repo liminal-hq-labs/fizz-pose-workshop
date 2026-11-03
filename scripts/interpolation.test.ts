@@ -164,6 +164,35 @@ test('the left-facing jump turns Ben round with his Stunner on the far (right) h
   expect(() => validateRig({ ...left, mirrored: true })).toThrow();
 });
 
+test('shirt cloth moves only on the rigs that opt in, and only in its hem and sleeves', () => {
+  const clothed = ['fall', 'fall-left'];
+  for (const { animation, rig: clip } of rigCatalogue) {
+    if (clothed.includes(animation)) { expect(clip.clothing).toBeDefined(); continue; }
+    // The run, look loop, standing and every other rig keep their authored shirt.
+    expect(clip.clothing).toBeUndefined();
+    for (let i = 0; i < clip.sampleCount; i++) expect(sampleRig(clip, sampleTime(clip, i)).cloth).toBeUndefined();
+  }
+  for (const name of clothed) {
+    const clip = rig(name), plain = { ...clip, clothing: undefined }, states = new Set<string>();
+    for (let i = 0; i < clip.sampleCount; i++) {
+      const pose = sampleRig(clip, sampleTime(clip, i)), on = skinRig(clip, skin, pose), off = skinRig(plain, skin, sampleRig(plain, sampleTime(plain, i)));
+      states.add(JSON.stringify(pose.cloth));
+      // The outline stays closed, and the collar (rows down to the head anchor), emblem, belt and Stunner keep every pixel.
+      // A cuff riding up only uncovers the arm's own skin.
+      expect(exposedEdges(on)).toBe(exposedEdges(off));
+      const collar = pose.face.pixelAnchor[1];
+      on.grid.forEach((row, y) => [...row].forEach((code, x) => {
+        if (code === off.grid[y][x]) return;
+        for (const kept of 'DyMm') { expect(code).not.toBe(kept); expect(off.grid[y][x]).not.toBe(kept); }
+        expect(y).toBeGreaterThan(collar);
+      }));
+      let changed = 0; on.grid.forEach((row, y) => [...row].forEach((code, x) => { if (code !== off.grid[y][x]) changed++; })); expect(changed).toBeLessThanOrEqual(6);
+    }
+    // The hem and sleeves really move through the loop: at least three different cloth states.
+    expect(states.size).toBeGreaterThanOrEqual(3);
+  }
+});
+
 test('the Fizz Stunner stays on the hip in every jump, fall and ledge-pull frame, however high the knee rises', () => {
   const saved = loadSavedFrames();
   for (const { animation, prefix, rig: clip } of rigCatalogue) {
