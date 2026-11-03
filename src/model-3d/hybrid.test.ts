@@ -171,6 +171,51 @@ describe("hybrid Ben", () => {
     const jeans = restBox("Jeans_continuous");
     expect(jeans.max.x - jeans.min.x).toBeGreaterThan(torsoWidth(12));
   });
+  test("the back runs smoothly from the collar to the waist, with no hump", () => {
+    // The back silhouette seen from the side: the rearmost shirt surface at each height, found by rays
+    // from behind. It must swell once, at the shoulder blades, and come forward steadily from there to
+    // the waist and to the collar; and below the shoulders' rounding into the collar, no stretch may
+    // stand out behind the chord between its neighbours by more than a gentle curve would.
+    const shirt = named("Shirt_torso")[0],
+      span = 0.8,
+      problems: string[] = [];
+    for (const [pose, phase] of [
+      ["Standing", 0],
+      ["Whistle", 0.5],
+      ["Run", 0.25],
+      ["Fall", 0.5],
+    ] as const) {
+      applyBenPose(model, pose, phase);
+      const posed = snapshot(shirt).mesh,
+        pelvis = model.bones.pelvis.matrixWorld,
+        restPelvis = new THREE.Matrix4().makeTranslation(model.rest.pelvis).invert();
+      for (const x of [-0.8, 0, 0.8]) {
+        const back = (y: number): number => {
+          // In the pelvis frame, so a run's lean does not tilt the measuring rays.
+          const from = new THREE.Vector3(x, y, -10).applyMatrix4(restPelvis).applyMatrix4(pelvis),
+            dir = new THREE.Vector3(0, 0, 1).transformDirection(pelvis),
+            hit = new THREE.Raycaster(from, dir).intersectObject(posed)[0];
+          return hit.distance - 10;
+        };
+        const heights = Array.from({ length: 83 }, (_, i) => 12 + i * 0.1),
+          profile = heights.map(back),
+          rearmost = profile.indexOf(Math.min(...profile)),
+          where = `${pose} ${phase} x ${x}`,
+          // Standing still the back is nearly straight; a run or a brace bends it at the spine joint.
+          limit = pose === "Standing" || pose === "Whistle" ? 0.04 : 0.08;
+        profile.forEach((z, i) => {
+          const step = i > rearmost ? z - profile[i - 1] : i < rearmost ? z - profile[i + 1] : 0;
+          if (step < -0.005) problems.push(`${where}: back swells again at y ${heights[i].toFixed(1)}`);
+        });
+        for (let y = 12.8; y <= 18.8; y += 0.2) {
+          const bulge = back(y) - (back(y - span) + back(y + span)) / 2;
+          if (bulge < -limit) problems.push(`${where}: lump of ${(-bulge).toFixed(3)} at y ${y.toFixed(1)}`);
+        }
+      }
+      release([posed]);
+    }
+    expect(problems.slice(0, 6)).toEqual([]);
+  }, 60_000);
   test("the Stunner and its holster ride on the right hip only", () => {
     applyBenPose(model, "Standing");
     for (const mesh of model.meshes.filter((m) => /^Stunner|^Holster/.test(m.name))) {
@@ -378,7 +423,7 @@ describe("hybrid Ben", () => {
       p.fromBufferAttribute(shirtPositions, i);
       const r = Math.hypot(p.x, (p.z - hybrid.neck.z) / hybrid.neck.depth),
         a = Math.atan2(p.x, p.z - hybrid.neck.z);
-      if (Math.abs(r - 1.42) < 0.06 && Math.abs(p.y - collarTop(a)) < 0.06) {
+      if (Math.abs(r - (hybrid.neck.radius + 0.08)) < 0.06 && Math.abs(p.y - collarTop(a)) < 0.06) {
         lips++;
         expect(n.fromBufferAttribute(shirtNormals, i).y).toBeGreaterThan(0.5);
       }

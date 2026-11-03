@@ -60,8 +60,11 @@ export interface HybridBenModel extends BenModel {
  */
 export const hybrid = {
   headDrop: 1.0,
-  /** Neck tube axis and its depth-to-width ratio; the collar is built around the same axis. */
-  neck: { z: -0.25, depth: 0.92, radius: 1.25 },
+  /**
+   * Neck tube axis at the collar, its depth-to-width ratio and radius; the collar is built round the same
+   * axis. Above the collar the neck leans `lean` units forward into the jaw.
+   */
+  neck: { z: 0, depth: 0.82, radius: 1.35, lean: 0.25 },
   /** Collar top at the front; it climbs `collarRise` at the back. */
   collarTop: 21.1,
   collarRise: 0.45,
@@ -76,6 +79,57 @@ export const hybrid = {
 /** The hybrid's skull: the artboard's egg face joined to the shared cranium the helmet is fitted to. */
 export function hybridHeadField(x: number, y: number, z: number): number {
   return smoothUnion(craniumField(x, y, z), artifactFace(x, y, z), 0.5);
+}
+
+/**
+ * Shirt torso cross-sections up the body: height, half-width, front and back. Widest at the belly and
+ * still full at the waist, as in the Codex model; the back stays nearly upright from the waist to the
+ * shoulder blades and rounds gently over into the collar, with no hump; the top closes round the neck.
+ */
+export const torsoSections: readonly (readonly [number, number, number, number])[] = [
+  [10.0, 2.0, 1.6, -1.6],
+  [11.0, 2.1, 1.68, -1.65],
+  [12.5, 2.3, 1.88, -1.76],
+  [14.5, 2.48, 2.05, -1.82],
+  [16.0, 2.48, 2.05, -1.84],
+  [17.5, 2.4, 1.98, -1.84],
+  [18.8, 2.3, 1.88, -1.82],
+  [19.7, 2.15, 1.78, -1.78],
+  [20.3, 1.85, 1.45, -1.6],
+  [20.7, 1.35, 1.0, -1.2],
+  [21.0, 0.6, 0.45, -0.55],
+];
+const torsoTop = 21.05,
+  sectionStep = 0.05;
+// Linear between the sections, then smoothed, so the silhouette has no kinks.
+const sectionTable = ((): Float64Array[] => {
+  const [y0] = torsoSections[0],
+    count = Math.round((torsoTop - y0) / sectionStep) + 1;
+  let rows = Array.from({ length: count }, (_, i) => {
+    const y = Math.min(y0 + i * sectionStep, torsoSections.at(-1)![0]);
+    let k = 0;
+    while (k < torsoSections.length - 2 && torsoSections[k + 1][0] < y) k++;
+    const a = torsoSections[k],
+      b = torsoSections[k + 1],
+      t = (y - a[0]) / (b[0] - a[0]);
+    return Float64Array.from([1, 2, 3], (c) => THREE.MathUtils.lerp(a[c], b[c], t));
+  });
+  for (let pass = 0; pass < 3; pass++)
+    rows = rows.map((_, i) => {
+      const out = new Float64Array(3);
+      let n = 0;
+      for (let j = Math.max(0, i - 8); j <= Math.min(rows.length - 1, i + 8); j++, n++)
+        for (let c = 0; c < 3; c++) out[c] += rows[j][c];
+      return out.map((v) => v / n);
+    });
+  return rows;
+})();
+export function torsoSection(y: number): { width: number; front: number; back: number } {
+  const f = THREE.MathUtils.clamp((y - torsoSections[0][0]) / sectionStep, 0, sectionTable.length - 1),
+    i = Math.min(Math.floor(f), sectionTable.length - 2),
+    t = f - i,
+    v = (c: number): number => THREE.MathUtils.lerp(sectionTable[i][c], sectionTable[i + 1][c], t);
+  return { width: v(0), front: v(1), back: v(2) };
 }
 
 /** Hair coverage on the hybrid head, 0 on skin to 1 on hair, in the head frame. */
@@ -378,10 +432,16 @@ export function createHybridBenModel(
     return smax(tube, along - s.hem, 0.08);
   };
   const torsoField = (x: number, y: number, z: number): number => {
-    // The Codex barrel: widest at the belly and still full at the waist, so the belt wraps it.
-    let d = ellipsoid(x, y, z, [0, 14.6, 0.05], [2.5, 6.0, 2.05]);
-    // A shoulder yoke closes the shirt round the neck base and carries the back up behind the neck.
-    d = smoothUnion(d, ellipsoid(x, y, z, [0, 19.2, -0.3], [2.45, 1.45, 2.3]), 1.0);
+    // The Codex barrel, lofted through `torsoSection` so the back runs smoothly from the waist to the
+    // collar and the top closes over the shoulders round the neck.
+    const s = torsoSection(y),
+      dz = (s.front - s.back) / 2,
+      zc = (s.front + s.back) / 2;
+    let d = smax(
+      (Math.hypot(x / s.width, (z - zc) / dz) - 1) * Math.min(s.width, dz),
+      Math.max(y - torsoTop, torsoSections[0][0] - y),
+      0.3,
+    );
     // Round Codex shoulders under the sleeve caps.
     for (const sign of [-1, 1])
       d = smoothUnion(d, ellipsoid(x, y, z, [sign * 2.35, 18.55, 0], [1.25, 1.2, 1.4]), 0.6);
@@ -463,7 +523,8 @@ export function createHybridBenModel(
   // The white collar: a rolled band with real thickness, one closed smooth surface round the neck axis.
   // Its inner face lies inside the neck and its skirt dips into the shirt yoke at every angle, so the
   // neck, collar and shirt overlap instead of meeting edge to edge. It is part of the shirt mesh.
-  const collarSegments = 128,
+  const R = nk.radius,
+    collarSegments = 128,
     collarProfile = 48,
     collarPositions: number[] = [],
     collarIndices: number[] = [];
@@ -471,16 +532,16 @@ export function createHybridBenModel(
     const a = (i / collarSegments) * Math.PI * 2 - Math.PI,
       top = collarTop(a),
       ring: [number, number][] = [
-        [1.0, shirtTop(a, 1.0) - 0.7],
-        [1.06, top - 0.3],
-        [1.2, top - 0.03],
-        [1.42, top + 0.02],
-        [1.6, top - 0.1],
-        [1.8, THREE.MathUtils.lerp(top, shirtTop(a, 1.8), 0.55)],
-        [1.98, shirtTop(a, 1.98) + 0.1],
-        [2.12, shirtTop(a, 2.12) - 0.1],
-        [1.92, shirtTop(a, 1.92) - 0.42],
-        [1.45, shirtTop(a, 1.45) - 0.62],
+        [R - 0.3, shirtTop(a, R - 0.3) - 0.7],
+        [R - 0.24, top - 0.3],
+        [R - 0.12, top - 0.03],
+        [R + 0.08, top + 0.02],
+        [R + 0.25, top - 0.1],
+        [R + 0.42, THREE.MathUtils.lerp(top, shirtTop(a, R + 0.42), 0.55)],
+        [R + 0.53, shirtTop(a, R + 0.53) + 0.08],
+        [R + 0.62, shirtTop(a, R + 0.62) - 0.1],
+        [R + 0.46, shirtTop(a, R + 0.46) - 0.42],
+        [R + 0.1, shirtTop(a, R + 0.1) - 0.62],
       ],
       curve = new THREE.CatmullRomCurve3(
         ring.map(([r, y]) => new THREE.Vector3(r, y, 0)),
@@ -563,7 +624,13 @@ export function createHybridBenModel(
   for (let i = 0; i <= neckRings; i++) {
     const y = THREE.MathUtils.lerp(18.9, 23.4, i / neckRings);
     for (let j = 0; j < neckSegments; j++) {
-      const p = around((j / neckSegments) * Math.PI * 2 - Math.PI, nk.radius + 0.35 * THREE.MathUtils.smoothstep(y, 21.8, 22.9), y);
+      const p = around(
+        (j / neckSegments) * Math.PI * 2 - Math.PI,
+        nk.radius + 0.3 * THREE.MathUtils.smoothstep(y, 21.8, 22.9),
+        y,
+      );
+      // Leaning slightly forward out of the shoulders into the jaw.
+      p.z += nk.lean * THREE.MathUtils.smoothstep(y, 21.4, 23.2);
       neckPositions.push(p.x, p.y, p.z);
     }
   }
