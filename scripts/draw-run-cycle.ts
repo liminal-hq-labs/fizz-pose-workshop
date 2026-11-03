@@ -33,7 +33,7 @@ if (import.meta.main) {
     }
     Object.assign(authored.frames, frames);
     authored.animations[animation] = { frames: Object.keys(frames), durationsMs: Object.keys(frames).map(() => rig.durationMs / rig.sampleCount) };
-    // The six-frame cut for the DOS build reuses every other twelve-frame sprite at twice the duration, so no extra art is stored.
+    // The six-frame cut reuses every other twelve-frame sprite at twice the duration, so no extra art is stored.
     const half = Object.keys(frames).filter((_, i) => i % 2 === 0);
     authored.animations[animation + '-6'] = { frames: half, durationsMs: half.map(() => (rig.durationMs / rig.sampleCount) * 2) };
     await exportRig(rig, skin, root + 'rig/' + folder);
