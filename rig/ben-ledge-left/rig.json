@@ -3,15 +3,20 @@
   "width": 40,
   "height": 72,
   "groundY": 68,
-  "durationMs": 1080,
-  "sampleCount": 6,
+  "durationMs": 1100,
+  "sampleCount": 11,
   "frameDurationsMs": [
     240,
-    160,
-    160,
-    160,
-    160,
-    200
+    80,
+    90,
+    90,
+    90,
+    90,
+    90,
+    90,
+    90,
+    70,
+    80
   ],
   "root": [
     22,
@@ -132,7 +137,8 @@
         ],
         "expression": "normal",
         "nearSupport": false,
-        "farSupport": false
+        "farSupport": false,
+        "hold": true
       },
       {
         "phase": 0.2,
@@ -155,8 +161,8 @@
           57
         ],
         "farAnkle": [
-          26,
-          56
+          24,
+          57
         ],
         "expression": "normal",
         "nearSupport": false,
@@ -183,8 +189,8 @@
           54
         ],
         "farAnkle": [
-          29,
-          50
+          23,
+          52
         ],
         "expression": "normal",
         "nearSupport": false,
@@ -211,7 +217,7 @@
           36
         ],
         "farAnkle": [
-          21,
+          22,
           50
         ],
         "expression": "normal",
@@ -221,25 +227,25 @@
       {
         "phase": 0.8,
         "root": [
-          29,
-          36
+          28,
+          34.5
         ],
-        "lean": 12,
+        "lean": 18,
         "headRoll": 0,
         "nearHand": [
-          29,
-          34
+          30,
+          33
         ],
         "farHand": [
-          31,
-          34
+          32,
+          33
         ],
         "nearAnkle": [
           31,
           36
         ],
         "farAnkle": [
-          26,
+          24,
           43
         ],
         "expression": "normal",
@@ -272,7 +278,8 @@
         ],
         "expression": "normal",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "hold": true
       }
     ],
     "environment": {
@@ -281,7 +288,20 @@
       "y": 38,
       "width": 15,
       "spacing": 0
-    }
+    },
+    "sampleTimes": [
+      0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1
+    ]
   },
   "mirrored": true
 }

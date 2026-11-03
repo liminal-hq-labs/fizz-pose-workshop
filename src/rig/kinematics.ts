@@ -40,3 +40,9 @@ export function bezier(points: readonly Vec2[], t: number): Vec2 {
   while (work.length > 1) work = work.slice(0, -1).map((p, i) => [lerp(p[0], work[i + 1][0], t), lerp(p[1], work[i + 1][1], t)]);
   return work[0];
 }
+/**
+ * Whole-pixel horizontal shift for a row `dy` pixels below a tilted patch's anchor. Small head rolls are drawn as a row
+ * shear rather than a free rotation: every authored row keeps its pixels and outline, and only whole rows step sideways.
+ */
+export function tiltOffset(dy: number, angle: number): number { return Math.round(-dy * Math.tan(angle)) || 0; }
+export function tiltPixel(anchor: Vec2, local: Vec2, angle: number): Vec2 { return [anchor[0] + local[0] + tiltOffset(local[1], angle), anchor[1] + local[1]]; }

@@ -1,0 +1,1150 @@
+{
+  "name": "Classic Fizz side-view skin",
+  "head": {
+    "anchor": [
+      13,
+      14
+    ],
+    "rows": [
+      {
+        "y": 2,
+        "x": 10,
+        "pixels": "kkkkkk"
+      },
+      {
+        "y": 3,
+        "x": 8,
+        "pixels": "kkgggWggkk"
+      },
+      {
+        "y": 4,
+        "x": 7,
+        "pixels": "kgggggWgggk"
+      },
+      {
+        "y": 5,
+        "x": 7,
+        "pixels": "kGGgggWGGgk"
+      },
+      {
+        "y": 6,
+        "x": 7,
+        "pixels": "kGGggggWGGk"
+      },
+      {
+        "y": 7,
+        "x": 7,
+        "pixels": "kGGGGGGGGGGGk"
+      },
+      {
+        "y": 8,
+        "x": 7,
+        "pixels": "kGDDLLLLLLLLk"
+      },
+      {
+        "y": 9,
+        "x": 9,
+        "pixels": "kWWLWWWWk"
+      },
+      {
+        "y": 10,
+        "x": 9,
+        "pixels": "kLWWLWWWWk"
+      },
+      {
+        "y": 11,
+        "x": 10,
+        "pixels": "kLWWWWWk"
+      },
+      {
+        "y": 12,
+        "x": 11,
+        "pixels": "kLWWWk"
+      },
+      {
+        "y": 13,
+        "x": 11,
+        "pixels": "kLLLk"
+      },
+      {
+        "y": 14,
+        "x": 10,
+        "pixels": "kWWWWk"
+      }
+    ],
+    "towards": [
+      {
+        "y": 9,
+        "x": 9,
+        "pixels": "kWWLWWWWk"
+      },
+      {
+        "y": 10,
+        "x": 9,
+        "pixels": "kWWWLWWWWk"
+      },
+      {
+        "y": 11,
+        "x": 10,
+        "pixels": "kLWWWWWk"
+      }
+    ],
+    "away": [
+      {
+        "y": 9,
+        "x": 9,
+        "pixels": "kWWLWWWWk"
+      },
+      {
+        "y": 10,
+        "x": 9,
+        "pixels": "kLLWLWWWWk"
+      },
+      {
+        "y": 11,
+        "x": 10,
+        "pixels": "kLWWWWWk"
+      }
+    ]
+  },
+  "torso": {
+    "anchor": [
+      13,
+      24
+    ],
+    "rows": [
+      {
+        "y": 15,
+        "x": 10,
+        "pixels": "krrrrrk"
+      },
+      {
+        "y": 16,
+        "x": 9,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "y": 17,
+        "x": 10,
+        "pixels": "kRRRRyrk"
+      },
+      {
+        "y": 18,
+        "x": 10,
+        "pixels": "kRRRRyRk"
+      },
+      {
+        "y": 19,
+        "x": 10,
+        "pixels": "kRRRRRRk"
+      },
+      {
+        "y": 20,
+        "x": 10,
+        "pixels": "kRRRRRRk"
+      },
+      {
+        "y": 21,
+        "x": 10,
+        "pixels": "kRRRRRRk"
+      },
+      {
+        "y": 22,
+        "x": 10,
+        "pixels": "kRRRRRRk"
+      },
+      {
+        "y": 23,
+        "x": 10,
+        "pixels": "kDDyDDk"
+      }
+    ],
+    "towards": [
+      {
+        "y": 15,
+        "x": 9,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "y": 16,
+        "x": 9,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "y": 17,
+        "x": 9,
+        "pixels": "kRRRRyyRk"
+      },
+      {
+        "y": 18,
+        "x": 9,
+        "pixels": "kRRRRyRRk"
+      }
+    ],
+    "away": [
+      {
+        "y": 15,
+        "x": 11,
+        "pixels": "krrrrrk"
+      },
+      {
+        "y": 16,
+        "x": 10,
+        "pixels": "krrrrrrk"
+      },
+      {
+        "y": 17,
+        "x": 11,
+        "pixels": "kRRRRRk"
+      },
+      {
+        "y": 18,
+        "x": 11,
+        "pixels": "kRRRRRk"
+      }
+    ]
+  },
+  "stunner": {
+    "anchor": [
+      1.5,
+      -0.5
+    ],
+    "pixels": [
+      "kDDk",
+      "kMmk",
+      "kMMk",
+      ".kMk",
+      "..k."
+    ],
+    "hipOffset": [
+      -1.2,
+      -0.8
+    ]
+  },
+  "palette": {
+    "outline": "k",
+    "shirt": "r",
+    "shirtShadow": "R",
+    "skin": "W",
+    "skinShadow": "L",
+    "denim": "B",
+    "denimSeam": "c",
+    "shoe": "R",
+    "shoeHighlight": "r",
+    "sole": "W",
+    "farSole": "L"
+  },
+  "shoe": {
+    "anchor": [
+      0,
+      0
+    ],
+    "toe": [
+      3,
+      2
+    ],
+    "flexX": 1,
+    "rows": [
+      {
+        "x": -2,
+        "y": -1,
+        "pixels": "kkkkkkk"
+      },
+      {
+        "x": -2,
+        "y": 0,
+        "pixels": "kRRrrRk"
+      },
+      {
+        "x": -2,
+        "y": 1,
+        "pixels": "kRRRWWk"
+      },
+      {
+        "x": -2,
+        "y": 2,
+        "pixels": "kWWWWWk"
+      }
+    ],
+    "farRows": [
+      {
+        "x": -2,
+        "y": -1,
+        "pixels": "kkkkkkk"
+      },
+      {
+        "x": -2,
+        "y": 0,
+        "pixels": "kRRRRRk"
+      },
+      {
+        "x": -2,
+        "y": 1,
+        "pixels": "kRRRLLk"
+      },
+      {
+        "x": -2,
+        "y": 2,
+        "pixels": "kLLLLLk"
+      }
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "badge": {
+      "point": [
+        0,
+        0
+      ],
+      "colour": "y",
+      "notes": "One yellow outer-side detail bound to the rear shoe segment, behind the forefoot hinge. Draw on the near shoe after flex/compression so subpixel rasterisation cannot erase it."
+    }
+  },
+  "face": {
+    "eye": "B",
+    "mouth": "R",
+    "ear": "L"
+  },
+  "weapon": {
+    "anchor": [
+      2,
+      4
+    ],
+    "pixels": [
+      ".kkkkkkk",
+      "kDDDDDDk",
+      "kMmmmmMk",
+      ".kMMkkkk",
+      "..kMk...",
+      "..kkk..."
+    ]
+  },
+  "headFront": {
+    "anchor": [
+      11,
+      14
+    ],
+    "rows": [
+      {
+        "x": 9,
+        "y": 2,
+        "pixels": "kkkkk"
+      },
+      {
+        "x": 7,
+        "y": 3,
+        "pixels": "kkggWggkk"
+      },
+      {
+        "x": 6,
+        "y": 4,
+        "pixels": "kggggWggggk"
+      },
+      {
+        "x": 6,
+        "y": 5,
+        "pixels": "kgGGgWgGGgk"
+      },
+      {
+        "x": 6,
+        "y": 6,
+        "pixels": "kGgggWgggGk"
+      },
+      {
+        "x": 6,
+        "y": 7,
+        "pixels": "kGGGGGGGGGk"
+      },
+      {
+        "x": 6,
+        "y": 8,
+        "pixels": "kLLLLLLLLLk"
+      },
+      {
+        "x": 7,
+        "y": 9,
+        "pixels": "kWWWWWWWk"
+      },
+      {
+        "x": 7,
+        "y": 10,
+        "pixels": "kWWWLWWWk"
+      },
+      {
+        "x": 8,
+        "y": 11,
+        "pixels": "kWWWWWk"
+      },
+      {
+        "x": 9,
+        "y": 12,
+        "pixels": "kWLWk"
+      },
+      {
+        "x": 9,
+        "y": 13,
+        "pixels": "kLLLk"
+      },
+      {
+        "x": 8,
+        "y": 14,
+        "pixels": "kWWWWWk"
+      }
+    ]
+  },
+  "headBack": {
+    "anchor": [
+      11,
+      14
+    ],
+    "rows": [
+      {
+        "x": 9,
+        "y": 2,
+        "pixels": "kkkkk"
+      },
+      {
+        "x": 7,
+        "y": 3,
+        "pixels": "kkggWggkk"
+      },
+      {
+        "x": 6,
+        "y": 4,
+        "pixels": "kggggWggggk"
+      },
+      {
+        "x": 6,
+        "y": 5,
+        "pixels": "kgGGgWgGGgk"
+      },
+      {
+        "x": 6,
+        "y": 6,
+        "pixels": "kGgggWgggGk"
+      },
+      {
+        "x": 6,
+        "y": 7,
+        "pixels": "kGGGGGGGGGk"
+      },
+      {
+        "x": 6,
+        "y": 8,
+        "pixels": "kLLLLLLLLLk"
+      },
+      {
+        "x": 7,
+        "y": 9,
+        "pixels": "kLLLLLLLk"
+      },
+      {
+        "x": 8,
+        "y": 10,
+        "pixels": "kNNNNNk"
+      },
+      {
+        "x": 9,
+        "y": 11,
+        "pixels": "kNNNk"
+      },
+      {
+        "x": 9,
+        "y": 12,
+        "pixels": "kLLLk"
+      },
+      {
+        "x": 9,
+        "y": 13,
+        "pixels": "kWWWk"
+      },
+      {
+        "x": 8,
+        "y": 14,
+        "pixels": "kWWWWWk"
+      }
+    ]
+  },
+  "torsoFront": {
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 8,
+        "y": 15,
+        "pixels": "krrrrrk"
+      },
+      {
+        "x": 7,
+        "y": 16,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "x": 7,
+        "y": 17,
+        "pixels": "kRRryrRRk"
+      },
+      {
+        "x": 7,
+        "y": 18,
+        "pixels": "kRRyyyRRk"
+      },
+      {
+        "x": 7,
+        "y": 19,
+        "pixels": "kRRRNRRRk"
+      },
+      {
+        "x": 7,
+        "y": 20,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 21,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 22,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 23,
+        "pixels": "kDDDyDDDk"
+      }
+    ]
+  },
+  "torsoBack": {
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 8,
+        "y": 15,
+        "pixels": "krrrrrk"
+      },
+      {
+        "x": 7,
+        "y": 16,
+        "pixels": "krrrrrrrk"
+      },
+      {
+        "x": 7,
+        "y": 17,
+        "pixels": "kRRrRrRRk"
+      },
+      {
+        "x": 7,
+        "y": 18,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 19,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 20,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 21,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 22,
+        "pixels": "kRRRRRRRk"
+      },
+      {
+        "x": 7,
+        "y": 23,
+        "pixels": "kDDDRDDDk"
+      }
+    ]
+  },
+  "cameraShoe": {
+    "anchor": [
+      3,
+      1
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": ".kkkkk."
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "kRRRRRk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kWWWWWk"
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "kLDDDLk"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": "kDLLLDk"
+      },
+      {
+        "x": 0,
+        "y": 5,
+        "pixels": "kLDDDLk"
+      },
+      {
+        "x": 0,
+        "y": 6,
+        "pixels": ".kkkkk."
+      }
+    ]
+  },
+  "backShoe": {
+    "anchor": [
+      2,
+      2
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": ".kkk."
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "kRRRk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kRrRk"
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "kWWWk"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": ".kkk."
+      }
+    ]
+  },
+  "standingLeft": {
+    "anchor": [
+      13,
+      24
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "........kkkkkk.........."
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "......kkggWgggkk........"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": ".....kgggWggGGgk........"
+      },
+      {
+        "x": 0,
+        "y": 5,
+        "pixels": ".....kgGGWggGGGGk......."
+      },
+      {
+        "x": 0,
+        "y": 6,
+        "pixels": ".....kGgWgggGGGGk......."
+      },
+      {
+        "x": 0,
+        "y": 7,
+        "pixels": "....kGGGGGGGGGGGk......."
+      },
+      {
+        "x": 0,
+        "y": 8,
+        "pixels": "....kLLLLLLLLDDGk......."
+      },
+      {
+        "x": 0,
+        "y": 9,
+        "pixels": "......kWWBWWBWWk........"
+      },
+      {
+        "x": 0,
+        "y": 10,
+        "pixels": "......kWWWLWWWWk........"
+      },
+      {
+        "x": 0,
+        "y": 11,
+        "pixels": ".......kWRRRWLk........."
+      },
+      {
+        "x": 0,
+        "y": 12,
+        "pixels": "........kWWWLk.........."
+      },
+      {
+        "x": 0,
+        "y": 13,
+        "pixels": "........DkLLk..........."
+      },
+      {
+        "x": 0,
+        "y": 14,
+        "pixels": "........kWWWWk.........."
+      },
+      {
+        "x": 0,
+        "y": 15,
+        "pixels": ".......krrrrrrkk........"
+      },
+      {
+        "x": 0,
+        "y": 16,
+        "pixels": ".......krryyrrrrk......."
+      },
+      {
+        "x": 0,
+        "y": 17,
+        "pixels": ".......kRRyNkkrRk......."
+      },
+      {
+        "x": 0,
+        "y": 18,
+        "pixels": ".......kRRRRRkrRk......."
+      },
+      {
+        "x": 0,
+        "y": 19,
+        "pixels": ".......kRRRRRkWWk......."
+      },
+      {
+        "x": 0,
+        "y": 20,
+        "pixels": "......kkRRRRRRWLk......."
+      },
+      {
+        "x": 0,
+        "y": 21,
+        "pixels": ".....kWkRRRRRLWLk......."
+      },
+      {
+        "x": 0,
+        "y": 22,
+        "pixels": ".....kLkkRRRWWWLk......."
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "pixels": "......kDDyWDWWkk........"
+      },
+      {
+        "x": 0,
+        "y": 24,
+        "pixels": ".......kBBBkBBk........."
+      },
+      {
+        "x": 0,
+        "y": 25,
+        "pixels": ".......kBkBBBck........."
+      },
+      {
+        "x": 0,
+        "y": 26,
+        "pixels": ".......kBkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 27,
+        "pixels": ".......kBkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 28,
+        "pixels": ".......kBkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 29,
+        "pixels": ".......kRkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 30,
+        "pixels": "....kkkRRkBbck.........."
+      },
+      {
+        "x": 0,
+        "y": 31,
+        "pixels": "...kWWWRkkRRRRk........."
+      },
+      {
+        "x": 0,
+        "y": 32,
+        "pixels": "...kWWkkkRRRyRk........."
+      },
+      {
+        "x": 0,
+        "y": 33,
+        "pixels": ".....kWWWRRRRRk........."
+      },
+      {
+        "x": 0,
+        "y": 34,
+        "pixels": ".....kWWWWWWWWk........."
+      },
+      {
+        "x": 0,
+        "y": 35,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 36,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 37,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 38,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 39,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 40,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 41,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 42,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 43,
+        "pixels": "........................"
+      }
+    ]
+  },
+  "standingRight": {
+    "anchor": [
+      13,
+      24
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "..........kkkkkk........"
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "........kkgggWggkk......"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": "........kgGGggWgggk....."
+      },
+      {
+        "x": 0,
+        "y": 5,
+        "pixels": ".......kGGGGggWGGgk....."
+      },
+      {
+        "x": 0,
+        "y": 6,
+        "pixels": ".......kGGGGgggWgGk....."
+      },
+      {
+        "x": 0,
+        "y": 7,
+        "pixels": ".......kGGGGGGGGGGGk...."
+      },
+      {
+        "x": 0,
+        "y": 8,
+        "pixels": ".......kGDDLLLLLLLLk...."
+      },
+      {
+        "x": 0,
+        "y": 9,
+        "pixels": "........kWWBWWBWWk......"
+      },
+      {
+        "x": 0,
+        "y": 10,
+        "pixels": "........kWWWWLWWWk......"
+      },
+      {
+        "x": 0,
+        "y": 11,
+        "pixels": ".........kLWRRRWk......."
+      },
+      {
+        "x": 0,
+        "y": 12,
+        "pixels": "..........kLWWWk........"
+      },
+      {
+        "x": 0,
+        "y": 13,
+        "pixels": "...........kLLkD........"
+      },
+      {
+        "x": 0,
+        "y": 14,
+        "pixels": "..........kWWWWk........"
+      },
+      {
+        "x": 0,
+        "y": 15,
+        "pixels": "........kkrrrrrrk......."
+      },
+      {
+        "x": 0,
+        "y": 16,
+        "pixels": ".......krrrryyrrk......."
+      },
+      {
+        "x": 0,
+        "y": 17,
+        "pixels": ".......kRrkkNyRRk......."
+      },
+      {
+        "x": 0,
+        "y": 18,
+        "pixels": ".......kRrkRRRRRk......."
+      },
+      {
+        "x": 0,
+        "y": 19,
+        "pixels": ".......kWWkRRRRRk......."
+      },
+      {
+        "x": 0,
+        "y": 20,
+        "pixels": ".......kLWRRRRRRkk......"
+      },
+      {
+        "x": 0,
+        "y": 21,
+        "pixels": ".......kLWLRRRRRkWk....."
+      },
+      {
+        "x": 0,
+        "y": 22,
+        "pixels": ".......kLWWWRRRkkLk....."
+      },
+      {
+        "x": 0,
+        "y": 23,
+        "pixels": "........kkWWDWyDDk......"
+      },
+      {
+        "x": 0,
+        "y": 24,
+        "pixels": "........kDDkkBBBk......."
+      },
+      {
+        "x": 0,
+        "y": 25,
+        "pixels": "........kMmMkBkBk......."
+      },
+      {
+        "x": 0,
+        "y": 26,
+        "pixels": "........kMMkbBkBk......."
+      },
+      {
+        "x": 0,
+        "y": 27,
+        "pixels": ".........kMkbBkBk......."
+      },
+      {
+        "x": 0,
+        "y": 28,
+        "pixels": "..........kcbBkBk......."
+      },
+      {
+        "x": 0,
+        "y": 29,
+        "pixels": "..........kcbBkRk......."
+      },
+      {
+        "x": 0,
+        "y": 30,
+        "pixels": "..........kcbBkRRkkk...."
+      },
+      {
+        "x": 0,
+        "y": 31,
+        "pixels": ".........kRRRRkkRWWWk..."
+      },
+      {
+        "x": 0,
+        "y": 32,
+        "pixels": ".........kRyRRRkkkWWk..."
+      },
+      {
+        "x": 0,
+        "y": 33,
+        "pixels": ".........kRRRRRWWWk....."
+      },
+      {
+        "x": 0,
+        "y": 34,
+        "pixels": ".........kWWWWWWWWk....."
+      },
+      {
+        "x": 0,
+        "y": 35,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 36,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 37,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 38,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 39,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 40,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 41,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 42,
+        "pixels": "........................"
+      },
+      {
+        "x": 0,
+        "y": 43,
+        "pixels": "........................"
+      }
+    ]
+  },
+  "phoneBack": {
+    "anchor": [
+      2,
+      3
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": ".kkk."
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "pixels": "kLDDk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kDkDk"
+      },
+      {
+        "x": 0,
+        "y": 3,
+        "pixels": "kDyDk"
+      },
+      {
+        "x": 0,
+        "y": 4,
+        "pixels": "kDDDk"
+      },
+      {
+        "x": 0,
+        "y": 5,
+        "pixels": "kLLLk"
+      },
+      {
+        "x": 0,
+        "y": 6,
+        "pixels": ".kkk."
+      }
+    ]
+  }
+}

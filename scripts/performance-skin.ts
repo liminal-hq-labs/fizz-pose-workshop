@@ -3,12 +3,12 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-import { add, rotate, type Vec2 } from '../src/rig/kinematics.ts';
+import { add, tiltOffset, tiltPixel, type Vec2 } from '../src/rig/kinematics.ts';
 import type { RigPose, SideRig } from '../src/rig/run.ts';
-import { paintArm, type Pixels, type RigSkin } from './rig-skin.ts';
+import { paintArm, type Patch, type Pixels, type RigSkin } from './rig-skin.ts';
 
 function headPixel(pose: RigPose, local: Vec2): Vec2 {
-  const point = add(pose.face.pixelAnchor, rotate(local, pose.headAngle ?? 0)); return [Math.round(point[0]), Math.round(point[1])];
+  return tiltPixel(pose.face.pixelAnchor, local, pose.headAngle ?? 0);
 }
 export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: RigPose): void {
   const back = pose.presentation!.view === 'back', phone = pose.presentation!.phone;
@@ -22,7 +22,7 @@ export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: 
   paintArm(out, pose.nearArm, skin, true);
   // Hands remain in front of the belly or phone instead of being hidden by the shirt.
   if (!back) for (const hand of [pose.farArm[2], pose.nearArm[2]]) out.segment([hand, add(hand, [.6,0])], 1, 'W', 'k');
-  out.patch(back ? skin.headBack : skin.headFront, pose.face.pixelAnchor, pose.headAngle ?? 0);
+  out.tiltPatch(back ? skin.headBack : skin.headFront, pose.face.pixelAnchor, pose.headAngle ?? 0);
   if (!back) {
     const pixel = (x: number, y: number, colour: string): void => {const p=headPixel(pose,[x,y]);out.pixel(p[0],p[1],colour);};
     const expression = pose.presentation!.expression;
@@ -52,12 +52,48 @@ export function paintIdleProps(out: Pixels, skin: RigSkin, pose: RigPose): void 
   }
 }
 
-export function paintStandingIdle(out: Pixels, skin: RigSkin, pose: RigPose): void {
-  const left = pose.presentation!.standing === 'left';
-  out.patch(left ? skin.standingLeft : skin.standingRight, pose.root, 0);
-  // Replace the original three-pixel mouth with a puckered shape; the saved stance stays fixed.
-  for (const x of left ? [13,14,15] : [16,17,18]) out.pixel(x,11,'W');
-  const [x,y] = pose.face.mouth.pixel;
-  out.pixel(x,y,'R');out.pixel(x+(left?1:-1),y,'R');
-  paintIdleProps(out, skin, {...pose,presentation:{...pose.presentation!,expression:'normal'}});
+/** A near foot pitched at least this far lifts its toe in a standing idle. */
+const toeLiftRadians = 4 * Math.PI / 180;
+
+/** How a standing idle pose places the saved standing sprite: which source row each canvas row shows and its sideways shift. */
+interface StandingPlacement { readonly shiftX: number; readonly restY: number; readonly bob: number; sourceRow(y: number): number; offsetX(sy: number): number; }
+function standingPlacement(rig: SideRig, skin: RigSkin, pose: RigPose): StandingPlacement {
+  const side = pose.presentation!.standing!, art = side === 'left' ? skin.standingLeft : skin.standingRight, layers = skin.standingIdle[side];
+  const shiftX = Math.round(rig.root[0]) - art.anchor[0], restY = Math.round(rig.root[1]) - art.anchor[1];
+  const bob = Math.round(pose.root[1]) - Math.round(rig.root[1]), sway = Math.round(pose.root[0]) - Math.round(rig.root[0]);
+  return {
+    shiftX, restY, bob,
+    // Rows above the knee ride the pelvis; a dip drops the knee row (the knees soften) and a rise repeats it.
+    sourceRow: y => { const sy = y - restY; return sy < layers.kneeRow + bob ? sy - bob : Math.max(sy, layers.kneeRow); },
+    offsetX: sy => sy >= layers.kneeRow ? 0 :
+      sway + (sy < layers.chestRow ? tiltOffset(layers.chestRow - art.anchor[1], pose.torsoAngle) : 0) + (sy < layers.neckRow ? tiltOffset(sy - layers.neckRow, pose.headAngle ?? 0) : 0),
+  };
+}
+
+/** Canvas pixels of the standing idle's lower lip and visible eyes for a pose, following its bob, lean and head roll. */
+export function standingIdleLandmarks(rig: SideRig, skin: RigSkin, pose: RigPose): { lip: Vec2; eyes: Vec2[] } {
+  const layers = skin.standingIdle[pose.presentation!.standing!], place = standingPlacement(rig, skin, pose);
+  const at = (point: readonly number[]): Vec2 => [point[0] + place.shiftX + place.offsetX(point[1]), point[1] + place.restY + place.bob];
+  return { lip: at(layers.lip), eyes: layers.eyes.map(at) };
+}
+
+/**
+ * Paints a whistling standing idle from the saved standing sprite, split into layers instead of redrawn: the pelvis bob
+ * dips the head and torso by whole pixels over planted shoes, lean and head roll shear whole rows (so every row keeps its
+ * outline), the near toe swaps to an authored lifted variant, and the lips and eyes are painted at their head-local pixels.
+ */
+export function paintStandingIdle(out: Pixels, rig: SideRig, skin: RigSkin, pose: RigPose): void {
+  const presentation = pose.presentation!, side = presentation.standing!, art = side === 'left' ? skin.standingLeft : skin.standingRight, layers = skin.standingIdle[side];
+  const replaced = new Set(layers.toeUp.map(row => row.y));
+  const patch: Patch = Math.abs(pose.nearFoot.pitch) >= toeLiftRadians ? {anchor: art.anchor, rows: [...art.rows.filter(row => !replaced.has(row.y)), ...layers.toeUp]} : art;
+  const place = standingPlacement(rig, skin, pose);
+  out.mapped(patch, (x, y) => { const sy = place.sourceRow(y); return [x - place.shiftX - place.offsetX(sy), sy]; });
+  // Head-local features follow the same bob and shear as the rows they sit on.
+  const paint = (point: readonly number[], colour: string): void => out.pixel(point[0] + place.shiftX + place.offsetX(point[1]), point[1] + place.restY + place.bob, colour);
+  for (const point of layers.mouth) paint(point, skin.palette.skin);
+  for (const point of layers.pucker) paint(point, 'R');
+  // The lower lip pulses grey to red and back as the lips push out to blow each note; a blink closes the eyes to light grey.
+  paint(layers.lip, (presentation.pucker ?? 0) >= .5 ? 'R' : skin.palette.skinShadow);
+  if ((presentation.blink ?? 0) >= .5) for (const point of layers.eyes) paint(point, skin.palette.skinShadow);
+  paintIdleProps(out, skin, {...pose, presentation: {...presentation, expression: 'normal'}});
 }

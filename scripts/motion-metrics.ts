@@ -19,10 +19,13 @@ export function loadSavedFrames(): Frames {
 }
 export const savedAnimations: Readonly<Record<string, Animation>> = authored.animations;
 
-/** One step from frame `from` to the next frame in playback order; the last step wraps to the first frame because every saved cycle loops. */
+/**
+ * One step from frame `from` to the next frame in playback order. A loop's last step wraps to its first frame; a one-shot
+ * (saved with `loop: false`) holds its final pose and replays only after a rest, so it has no wrapping step.
+ */
 export interface CycleStep { readonly from: number; readonly to: number; }
-export function cycleSteps(length: number): readonly CycleStep[] {
-  return Array.from({ length }, (_, from) => ({ from, to: (from + 1) % length }));
+export function cycleSteps(length: number, loop = true): readonly CycleStep[] {
+  return Array.from({ length: loop ? length : length - 1 }, (_, from) => ({ from, to: (from + 1) % length }));
 }
 
 export function changedPixels(a: Frame, b: Frame): number {

@@ -3,7 +3,8 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-import { sampleRig, sampleTime } from './sample.ts';
+import { sampleRig } from './sample.ts';
+import { oneShotRestMs, replaysContinuously } from './timing.ts';
 
 import { type RigPose, type SideRig } from './run.ts';
 import type { Vec2 } from './kinematics.ts';
@@ -44,7 +45,9 @@ export function rigSvg(rig: SideRig, time?: number): string {
   const envelope = (body: string): string => `<svg xmlns="http://www.w3.org/2000/svg" width="${rig.width * 10}" height="${rig.height * 10}" viewBox="0 0 ${rig.width} ${rig.height}"><title>${rig.name.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</title><rect width="100%" height="100%" fill="#102018"/>${body}</svg>\n`;
   if (time !== undefined) return envelope(rigDrawing(sampleRig(rig, time), rig.groundY, rig.width));
   const count = 60, loop = rig.performance?.loop ?? true;
-  const css = Array.from({ length: count }, (_, i) => `.f${i}{animation:r${i} ${rig.durationMs}ms steps(1,end) ${loop ? 'infinite' : '1 forwards'}}@keyframes r${i}{0%{visibility:${i === 0 ? 'visible' : 'hidden'}}${(i / count * 100).toFixed(6)}%{visibility:visible}${((i + 1) / count * 100).toFixed(6)}%{visibility:hidden}100%{visibility:${!loop && i === count-1 ? 'visible' : 'hidden'}}}`).join('')
+  // The animation always loops; a one-shot rests on its final pose for `oneShotRestMs` before replaying.
+  const total = rig.durationMs + (replaysContinuously(rig) ? 0 : oneShotRestMs), span = rig.durationMs / total, last = (i: number): boolean => !loop && i === count - 1;
+  const css = Array.from({ length: count }, (_, i) => `.f${i}{animation:r${i} ${total}ms steps(1,end) infinite}@keyframes r${i}{0%{visibility:${i === 0 ? 'visible' : 'hidden'}}${(i / count * span * 100).toFixed(6)}%{visibility:visible}${last(i) ? '' : `${((i + 1) / count * span * 100).toFixed(6)}%{visibility:hidden}`}100%{visibility:${last(i) ? 'visible' : 'hidden'}}}`).join('')
     + '@media(prefers-reduced-motion:reduce){.f{animation:none!important;visibility:hidden!important}.f0{visibility:visible!important}}';
-  return envelope(`<style>${css}</style>` + Array.from({ length: count }, (_, i) => `<g class="f f${i}" visibility="hidden">${rigDrawing(sampleRig(rig, sampleTime({...rig,sampleCount:count}, i)), rig.groundY, rig.width)}</g>`).join(''));
+  return envelope(`<style>${css}</style>` + Array.from({ length: count }, (_, i) => `<g class="f f${i}" visibility="hidden">${rigDrawing(sampleRig(rig, i / (loop ? count : count - 1)), rig.groundY, rig.width)}</g>`).join(''));
 }

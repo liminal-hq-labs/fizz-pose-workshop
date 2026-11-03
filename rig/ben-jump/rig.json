@@ -161,8 +161,8 @@
         "expression": "normal",
         "nearSupport": false,
         "farSupport": false,
-        "nearFootDegrees": -15,
-        "farFootDegrees": 20
+        "nearFootDegrees": 135,
+        "farFootDegrees": 40
       },
       {
         "phase": 0.4,
@@ -191,8 +191,8 @@
         "expression": "normal",
         "nearSupport": false,
         "farSupport": false,
-        "nearFootDegrees": -28,
-        "farFootDegrees": 28
+        "nearFootDegrees": 150,
+        "farFootDegrees": -5
       },
       {
         "phase": 0.6,
@@ -221,8 +221,8 @@
         "expression": "normal",
         "nearSupport": false,
         "farSupport": false,
-        "nearFootDegrees": -18,
-        "farFootDegrees": 20
+        "nearFootDegrees": 140,
+        "farFootDegrees": 40
       },
       {
         "phase": 0.8,
@@ -280,6 +280,7 @@
         "nearSupport": true,
         "farSupport": true
       }
-    ]
+    ],
+    "replay": "continuous"
   }
 }
