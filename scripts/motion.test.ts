@@ -151,3 +151,19 @@ test('run and look up/down cycles stay byte-for-byte identical to the pinned ref
   for (const [name, animation] of Object.entries(pinned.animations)) expect(savedAnimations[name]).toEqual(animation);
   for (const [name, frame] of Object.entries(pinned.frames)) expect(frames[name]).toEqual(frame);
 });
+
+// The whistling idles move every frame (bob, sway, nod, toe tap, lip pulse, blink and floating notes) and loop without a
+// hold: every step, including the wrap from frame 6 to frame 1, changes pixels and none jolts. The blink and lip frames are
+// intended differences, so they need no known-failure entries.
+test('whistling idles change on every step, wrap naturally and need no known-failure entries', () => {
+  for (const name of ['whistle-left', 'whistle-right']) {
+    const animation = savedAnimations[name], sequence = animation.frames.map(frame => frames[frame]);
+    expect(animation.loop).not.toBe(false);
+    expect(new Set(animation.durationsMs).size).toBeGreaterThan(1);
+    const changes = cycleSteps(sequence.length).map(({ from, to }) => changedPixels(sequence[from], sequence[to]));
+    expect(Math.min(...changes)).toBeGreaterThan(0);
+    expect(Math.max(...changes)).toBeLessThanOrEqual(spikeRatio * median(changes));
+    expect(changes.at(-1)!).toBeLessThanOrEqual(Math.max(...changes.slice(0, -1)));
+    expect(knownFailures.some(failure => failure.subject === name)).toBe(false);
+  }
+});

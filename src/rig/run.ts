@@ -36,7 +36,7 @@ export interface RigPose {
   face: FacePose;
   headAngle?: number;
   cloth?: ClothPose;
-  presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; environment?: PerformanceSettings['environment'] };
+  presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; pucker?: number; blink?: number; environment?: PerformanceSettings['environment'] };
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
   contact: 'near' | 'far' | 'flight' | 'pogo' | 'both';
