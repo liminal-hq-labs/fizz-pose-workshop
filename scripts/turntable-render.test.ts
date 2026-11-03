@@ -202,10 +202,9 @@ describe("editor underlay", () => {
 
 describe("135° pilot", () => {
   const frame: Frame = { width: pilot.width, height: pilot.height, grid: pilot.grid };
-  test("is a draft beside the saved turntable, not a saved frame", () => {
-    expect(pilot.status).toBe("draft");
-    expect(Object.hasOwn(edits, "ben_turn135")).toBe(true);
-    expect((edits as Record<string, Frame>).ben_turn135.grid).not.toEqual(pilot.grid);
+  test("became the saved 135° turntable key", () => {
+    expect(pilot.status).toBe("adopted");
+    expect((edits as Record<string, Frame>).ben_turn135.grid).toEqual(pilot.grid);
   });
   test("matches the saved standing sprites' canvas, crown and sole rows with a closed outline", () => {
     expect([frame.width, frame.height]).toEqual([rig.width, rig.height]);

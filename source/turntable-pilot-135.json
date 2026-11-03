@@ -1,8 +1,8 @@
 {
   "name": "ben_turn135 pilot",
-  "status": "draft",
+  "status": "adopted",
   "angle": 135,
-  "method": "Hand-cleaned from models/ben-3d/turntable-reference/sprite-135.png (bun run turntable:render, sprite-faithful head, sprite proportions), redrawn to the saved standing sprites' rows, outline, shoe and Stunner conventions. Not part of edits.json or the saved turntable.",
+  "method": "Hand-cleaned from models/ben-3d/turntable-reference/sprite-135.png (bun run turntable:render, sprite-faithful head, sprite proportions), redrawn to the saved standing sprites' rows, outline, shoe and Stunner conventions. Adopted unchanged as the 135° turntable key in source/ben-turntable-keys.json.",
   "width": 32,
   "height": 44,
   "grid": [

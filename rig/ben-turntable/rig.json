@@ -192,11 +192,11 @@
   "referenceNotes": {
     "front": "ben_standFront supplies face, helmet width, emblem and front shoes.",
     "frontQuarters": "ben_stand and ben_standRight supply the left and right three-quarter stands, short sleeves, belt and hip equipment.",
-    "profiles": "ben_walkRight1–6 supply true side head, nose, brim, torso depth and shoe proportions; mirrored for the left profile. Running lean, bob and stride are excluded.",
+    "profiles": "ben_walkRight1 supplies the true side head, nose and brim of the 90° key, which is mirrored for 270° without the Stunner. Running lean, bob and stride are excluded.",
     "rear": "ben_ladder1 and the saved climbing back skin supply rear helmet, rim, hair and shirt. Climbing limb positions are excluded.",
     "pose": "One neutral standing post: fixed pelvis, neck, shoulders, elbows, wrists, hips, knees and ankles. Positive yaw turns his face towards screen right.",
     "equipment": "Fizz Stunner stays on the same anatomical right hip throughout the turn.",
-    "shoes": "Directional pixel shoes retain a six-pixel front width and ten-pixel quarter/profile length. Heel, ankle and toe are tracked independently; length foreshortens towards front/rear rather than changing abruptly between templates.",
-    "headRegistration": "Front, true profiles and rear share the same skull centre at screen x=15. The right side patch anchors at 16 and mirrored left at 14 to account for its forward brim; rear anchors at 15. Facial profile eyes project symmetrically to x=18 and x=12."
+    "shoes": "Shoes come from the keys: the saved front and quarter stands, and the profile and rear keys drawn to match them, with four colour rows and a white near sole on row 34. In-betweens slide between them; the far shoe rises a row in the quarter views.",
+    "headRegistration": "The front, rear and profile skulls centre on x=15 and the profile head on x=16; the saved quarter stands sit at x=17 (right) and x=14 (left), so the head drifts a pixel at a time through the turn."
   }
 }

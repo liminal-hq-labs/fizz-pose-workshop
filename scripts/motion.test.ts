@@ -24,11 +24,8 @@ interface KnownFailure { readonly check: Check; readonly subject: string; readon
 // Existing faults recorded so the suite passes today. Each entry must still fail: when a fix lands, the test below
 // reports the entry as stale and it has to be removed in the same change. Never add an entry to make new work pass.
 const knownFailures: readonly KnownFailure[] = [
-  // The turntable's pinned 45° and 315° standing sprites carry light-blue shading that none of their in-betweens have,
-  // and the interpolated rear half loses helmet rim ink between keys.
-  { check: 'feature-pop', subject: 'standing-360', at: '3:+b', fixedBy: 'Phase 5: turntable rebuild with gradual feature fades' },
-  { check: 'feature-pop', subject: 'standing-360', at: '21:+b', fixedBy: 'Phase 5: turntable rebuild with gradual feature fades' },
-  ...['4', '5', '6', '7', '8', '16', '17', '18', '19'].map(at => ({ check: 'helmet-rim' as const, subject: 'standing-360', at, fixedBy: 'Phase 5: turntable rebuild' })),
+  // The turntable's profile stops (75°, 90°, 270°, 285°) wear the running sprites' side helmet, whose brim tip has no ink below it.
+  ...['5', '6', '18', '19'].map(at => ({ check: 'helmet-rim' as const, subject: 'standing-360', at, fixedBy: 'intended: the pinned running head\'s open brim tip' })),
   // The jump keeps its approved six-frame timing, which drops the head 8 pixels from the fall pose to the landing in one step.
   ...['jump', 'jump-left'].map(subject => ({ check: 'head-travel' as const, subject, at: '3>4', fixedBy: 'kept by request: the original six-frame jump timing' })),
   // The seated phone idle sits down onto the ground: the whole body drops eight rows over three 120 ms frames, while the

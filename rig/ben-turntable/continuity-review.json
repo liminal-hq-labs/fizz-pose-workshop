@@ -1,563 +1,245 @@
 {
-  "shoePatchHeights": {
-    "front": 5,
-    "quarter": 5,
-    "side": 5,
-    "rearQuarter": 5,
-    "rear": 5
-  },
+  "notes": "Per-stop continuity: crown and lowest sole rows, Stunner pixels (purple, on the right hip only) and pixels changed from the previous stop. The occupied width must fit a 24-pixel crop (x4–27).",
   "frames": [
     {
       "name": "ben_turn000",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 9,
+      "right": 21,
+      "stunnerPixels": 3,
+      "changedFromPrevious": 119,
+      "cleanedRows": 0
     },
     {
       "name": "ben_turn015",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 11,
-          "right": 21
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 21
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 21
-        }
-      ]
+      "left": 9,
+      "right": 22,
+      "stunnerPixels": 3,
+      "changedFromPrevious": 108,
+      "cleanedRows": 17
     },
     {
       "name": "ben_turn030",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 11,
-          "right": 21
-        },
-        {
-          "y": 5,
-          "left": 11,
-          "right": 21
-        },
-        {
-          "y": 6,
-          "left": 11,
-          "right": 21
-        }
-      ]
+      "left": 10,
+      "right": 22,
+      "stunnerPixels": 6,
+      "changedFromPrevious": 187,
+      "cleanedRows": 30
     },
     {
       "name": "ben_turn045",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 12,
-          "right": 22
-        },
-        {
-          "y": 5,
-          "left": 11,
-          "right": 22
-        },
-        {
-          "y": 6,
-          "left": 11,
-          "right": 22
-        }
-      ]
+      "left": 11,
+      "right": 24,
+      "stunnerPixels": 6,
+      "changedFromPrevious": 177,
+      "cleanedRows": 0
     },
     {
       "name": "ben_turn060",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 11,
-          "right": 21
-        },
-        {
-          "y": 5,
-          "left": 11,
-          "right": 21
-        },
-        {
-          "y": 6,
-          "left": 11,
-          "right": 21
-        }
-      ]
+      "left": 11,
+      "right": 24,
+      "stunnerPixels": 5,
+      "changedFromPrevious": 94,
+      "cleanedRows": 14
     },
     {
       "name": "ben_turn075",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 11,
-          "right": 21
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 21
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 21
-        }
-      ]
+      "left": 11,
+      "right": 24,
+      "stunnerPixels": 7,
+      "changedFromPrevious": 125,
+      "cleanedRows": 14
     },
     {
       "name": "ben_turn090",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 11,
+      "right": 24,
+      "stunnerPixels": 7,
+      "changedFromPrevious": 94,
+      "cleanedRows": 0
     },
     {
       "name": "ben_turn105",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 1,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 11,
+      "right": 23,
+      "stunnerPixels": 7,
+      "changedFromPrevious": 171,
+      "cleanedRows": 27
     },
     {
       "name": "ben_turn120",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 2,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 10,
+      "right": 22,
+      "stunnerPixels": 5,
+      "changedFromPrevious": 215,
+      "cleanedRows": 29
     },
     {
       "name": "ben_turn135",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 4,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 10,
+      "right": 21,
+      "stunnerPixels": 5,
+      "changedFromPrevious": 65,
+      "cleanedRows": 0
     },
     {
       "name": "ben_turn150",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 6,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 10,
+      "right": 21,
+      "stunnerPixels": 5,
+      "changedFromPrevious": 27,
+      "cleanedRows": 2
     },
     {
       "name": "ben_turn165",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 7,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 9,
+      "right": 22,
+      "stunnerPixels": 5,
+      "changedFromPrevious": 117,
+      "cleanedRows": 6
     },
     {
       "name": "ben_turn180",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 8,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 9,
+      "right": 22,
+      "stunnerPixels": 5,
+      "changedFromPrevious": 16,
+      "cleanedRows": 0
     },
     {
       "name": "ben_turn195",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 7,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 9,
+      "right": 21,
+      "stunnerPixels": 2,
+      "changedFromPrevious": 104,
+      "cleanedRows": 5
     },
     {
       "name": "ben_turn210",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 6,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 9,
+      "right": 20,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 107,
+      "cleanedRows": 5
     },
     {
       "name": "ben_turn225",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 4,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 9,
+      "right": 20,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 28,
+      "cleanedRows": 0
     },
     {
       "name": "ben_turn240",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 2,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 8,
+      "right": 20,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 61,
+      "cleanedRows": 4
     },
     {
       "name": "ben_turn255",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 1,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 7,
+      "right": 19,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 214,
+      "cleanedRows": 4
     },
     {
       "name": "ben_turn270",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 6,
+      "right": 19,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 173,
+      "cleanedRows": 0
     },
     {
       "name": "ben_turn285",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 6,
+      "right": 19,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 100,
+      "cleanedRows": 4
     },
     {
       "name": "ben_turn300",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 9,
-          "right": 19
-        },
-        {
-          "y": 5,
-          "left": 9,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 9,
-          "right": 20
-        }
-      ]
+      "left": 7,
+      "right": 20,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 204,
+      "cleanedRows": 4
     },
     {
       "name": "ben_turn315",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 9,
-          "right": 19
-        },
-        {
-          "y": 5,
-          "left": 9,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 9,
-          "right": 20
-        }
-      ]
+      "left": 7,
+      "right": 20,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 91,
+      "cleanedRows": 0
     },
     {
       "name": "ben_turn330",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 9,
-          "right": 19
-        },
-        {
-          "y": 5,
-          "left": 9,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 9,
-          "right": 20
-        }
-      ]
+      "left": 9,
+      "right": 21,
+      "stunnerPixels": 0,
+      "changedFromPrevious": 163,
+      "cleanedRows": 4
     },
     {
       "name": "ben_turn345",
       "crownY": 2,
       "soleY": 34,
-      "rearHairPixels": 0,
-      "domeRows": [
-        {
-          "y": 4,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 5,
-          "left": 10,
-          "right": 20
-        },
-        {
-          "y": 6,
-          "left": 10,
-          "right": 20
-        }
-      ]
+      "left": 8,
+      "right": 20,
+      "stunnerPixels": 1,
+      "changedFromPrevious": 130,
+      "cleanedRows": 4
     }
   ]
 }
