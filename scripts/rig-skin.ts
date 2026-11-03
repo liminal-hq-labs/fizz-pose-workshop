@@ -11,11 +11,30 @@ import { add, rotate, tiltOffset, type Chain, type Vec2 } from '../src/rig/kinem
 import { validateRig, type RigFoot, type RigPose, type SideRig } from '../src/rig/run.ts';
 import type { Frame, Frames } from '../src/types.ts';
 
-interface PixelRow { x: number; y: number; pixels: string; }
+export interface PixelRow { x: number; y: number; pixels: string; }
+/**
+ * Layers a saved standing sprite for an idle performance. Coordinates are patch-local (the saved sprite's own pixels). Rows
+ * above `kneeRow` ride the pelvis. Rows above `chestRow` lean as one rigid block (shifted by the lean at that row, so the
+ * helmet never shears apart) and rows above `neckRow` also roll about the neck. Lower rows stay planted, so a one-pixel dip
+ * drops the knee row (the knees soften) and a rise repeats it.
+ */
+export interface StandingIdleLayers {
+  neckRow: number; chestRow: number; kneeRow: number;
+  /** The saved mouth, painted skin colour while whistling. */
+  mouth: number[][];
+  /** The two-pixel red pucker at the front of the face. */
+  pucker: number[][];
+  /** The lower-lip pixel under the pucker: light grey when relaxed, red when the lips push out to blow a note. */
+  lip: number[];
+  /** The visible blue eye pixels, which turn light grey for a blink. */
+  eyes: number[][];
+  /** Replacement rows for the planted shoes while the near toe lifts off the ground. */
+  toeUp: PixelRow[];
+}
 export interface Patch { anchor: number[]; rows: PixelRow[]; towards?: PixelRow[]; away?: PixelRow[]; }
 export interface RigSkin {
   name: string; head: Patch; torso: Patch;
-  standingLeft: Patch; standingRight: Patch; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
+  standingLeft: Patch; standingRight: Patch; standingIdle: { left: StandingIdleLayers; right: StandingIdleLayers }; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
   face: { eye: string; mouth: string; ear: string };
   shoe: { badge?: {point:number[];colour:string}; anchor: number[]; toe: number[]; ball: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
   weapon: { anchor: number[]; pixels: string[] };
@@ -55,6 +74,8 @@ export class Pixels {
       return [Math.round(local[0] + patch.anchor[0]), Math.round(local[1] + patch.anchor[1])];
     });
   }
+  /** Draws a patch through an explicit canvas-to-patch pixel map, for layered whole-sprite idles. */
+  mapped(patch: Patch, map: (x: number, y: number) => readonly [number, number]): void { this.draw(patch, 0, false, map); }
   /** Draws a head patch rolled by `angle` as a whole-pixel row shear about its anchor (see `tiltOffset`). */
   tiltPatch(patch: Patch, target: Vec2, angle: number, turn = 0): void {
     this.draw(patch, turn, angle !== 0, (x, y) => {
@@ -149,7 +170,7 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
   const out = new Pixels(rig.width, rig.height), colours = skin.palette;
   // Performance rigs roll the head and lean the torso well past the run's few degrees, so their rotated patches keep their ink.
   out.sealRotations = Boolean(pose.presentation);
-  if (pose.presentation?.standing) {paintStandingIdle(out, skin, pose); return out.frame();}
+  if (pose.presentation?.standing) {paintStandingIdle(out, rig, skin, pose); return out.frame();}
   if (pose.presentation && pose.presentation.view !== 'side') {
     paintFacingBody(out, rig, skin, pose); out.closeNotches(pose.face.pixelAnchor[1], pose.face.pixelAnchor[1] + 4); return out.frame();
   }

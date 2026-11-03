@@ -17,12 +17,30 @@ export interface PerformanceKey {
   hold?: boolean;
   /** A deliberate comic beat: the pose snaps to this key and rests on it, so head roll or lean may swing across zero here. */
   beat?: boolean;
+  /** Whistling lips: 0 relaxed, 1 fully puckered. The standing idle paints its lower-lip pixel red from 0.5. */
+  pucker?: number;
+  /** Eyelids: 0 open, 1 closed. The standing idle swaps its eye pixels to light grey from 0.5. */
+  blink?: number;
 }
+/**
+ * Musical notes for a whistling idle. Each note lives for two cycles along one cubic Bézier `path` (canvas points), leaving
+ * the lips at `emitPhase`; the younger note covers the first half of the path and the older note the second, so one note
+ * leaves per cycle and both are always visible.
+ */
+export interface NoteSettings { emitPhase: number; path: number[][]; }
 export interface PerformanceSettings {
   view: 'side' | 'back' | 'front'; standing?: 'left' | 'right'; loop: boolean; keys: PerformanceKey[];
   /** Phases of the saved sprite samples. Keys need not sit on them; omitted means evenly spaced samples. */
   sampleTimes?: number[];
   environment?: { kind: 'ladder' | 'ledge'; x: number; y: number; width: number; spacing: number };
+  notes?: NoteSettings;
+}
+
+/** Where a note born at `emitPhase` sits at cycle time `t`, `generation` cycles after it left the lips. */
+export function notePosition(notes: NoteSettings, t: number, generation: number): Vec2 {
+  const s = (wrap(t - notes.emitPhase) + generation) / 2, u = 1 - s, [p0, p1, p2, p3] = notes.path;
+  const blend = (axis: 0 | 1): number => u * u * u * p0[axis] + 3 * u * u * s * p1[axis] + 3 * u * s * s * p2[axis] + s * s * s * p3[axis];
+  return [blend(0), blend(1)];
 }
 
 type Limb = 'nearHand' | 'farHand' | 'nearAnkle' | 'farAnkle';
@@ -77,7 +95,7 @@ const origins: Record<Limb, keyof Body> = { nearHand: 'nearShoulder', farHand: '
 
 /** Curves for one clip, built once per settings object so sampling stays allocation-light. */
 interface ClipCurves {
-  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot', Curve>;
+  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink', Curve>;
   limbs: Record<Limb, { x: Curve; y: Curve; angle: Curve; reach: Curve; grounded: readonly boolean[] }>;
   phone?: { from: number; x: Curve; y: Curve };
 }
@@ -113,6 +131,7 @@ function clipCurves(rig: SideRig, clip: PerformanceSettings): ClipCurves {
     scalar: {
       rootX: curve(keys.map(key => key.root[0])), rootY: curve(keys.map(key => key.root[1])), lean: curve(keys.map(key => key.lean)), headRoll: curve(keys.map(key => key.headRoll)),
       nearFoot: curve(keys.map(key => key.nearFootDegrees ?? 0)), farFoot: curve(keys.map(key => key.farFootDegrees ?? 0)),
+      pucker: curve(keys.map(key => key.pucker ?? 0)), blink: curve(keys.map(key => key.blink ?? 0)),
     },
     limbs: { nearHand: limb('nearHand'), farHand: limb('farHand'), nearAnkle: limb('nearAnkle'), farAnkle: limb('farAnkle') },
     phone,
@@ -157,11 +176,10 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const farLeg = solve(joints.farHip, target('farAnkle'), rig.legs.thighLength, rig.legs.shinLength, 1);
   const nearFoot = foot(nearLeg[2], a.nearSupport, rig, radians(at(curves.scalar.nearFoot))), farFoot = foot(farLeg[2], a.farSupport, rig, radians(at(curves.scalar.farFoot)));
   const phone: Vec2 | undefined = curves.phone && t >= curves.phone.from ? [evaluateCurve(curves.phone.x, t), evaluateCurve(curves.phone.y, t)] : undefined;
-  const noteX = clip.standing === 'left' ? [1,4] : [25,28];
-  const notes: Vec2[] | undefined = rig.motion === 'whistle' ? [[noteX[0], 12 - 3 * Math.sin(t * Math.PI * 2)], [noteX[1], 7 - 2 * Math.cos(t * Math.PI * 2)]] : undefined;
+  const notes: Vec2[] | undefined = clip.notes ? [notePosition(clip.notes, t, 0), notePosition(clip.notes, t, 1)] : undefined;
   const face = tiltedFace(sampleFace(joints.neck, 0, rig.face, t, headAngle), sampleFace(joints.neck, 0, rig.face, t), headAngle);
   return { time: t, root, torsoAngle, torsoTurn: 0, headTurn: 0, headAngle, neck: joints.neck, face, nearArm, farArm, nearLeg, farLeg, nearFoot, farFoot,
     contact: a.nearSupport && a.farSupport ? 'both' : a.nearSupport ? 'near' : a.farSupport ? 'far' : 'flight',
-    presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: clip.environment, cameraShoes: rig.motion === 'death', phone, notes},
+    presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: clip.environment, cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink)},
   };
 }

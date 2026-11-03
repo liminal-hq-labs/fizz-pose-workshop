@@ -92,7 +92,7 @@ Dying, ledge pulling and sitting down with the phone are natural one-shots and h
 
 **Phone-screen lighting note:** use the screen as a small dynamic light on Ben’s face and hands in the game, fading it with screen visibility. The note is saved with the phone rig; sprite exports keep the game’s sixteen-colour palette, and engine lighting is not implemented in this workshop.
 
-Whistling has separate left- and right-facing sets derived directly from the saved standing sprites. Their bodies and equipment stay still while the mouth puckers and musical notes animate. The jump spreads its legs and angles its feet in flight, returning to flat soles at landing. Both ledge directions have separate editable frames and saved rigs.
+Whistling has separate left- and right-facing sets derived directly from the saved standing sprites, with the Fizz Stunner on his right hip only. Ben bobs on two beats, sways and nods, lifts his near toe before each beat and blinks, while his lower lip pulses grey to red and back as each note floats off his lips. The jump spreads its legs and angles its feet in flight, returning to flat soles at landing. Both ledge directions have separate editable frames and saved rigs.
 
 The **Look up & down** loop uses the saved front-facing look and bend poses: 800 ms looking up, 400 ms per downward pose and 200 ms per neutral transition. It reuses the existing artwork.
 
