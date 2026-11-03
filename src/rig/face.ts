@@ -9,12 +9,13 @@ import type { Frame } from '../types.ts';
 export interface FaceSettings { yawDegrees: number; eye: number[]; mouth: number[]; ear: number[]; shiftAmplitude: number; shiftLimits?: number[]; eyeTravelPixels?: number; profile: { nose: number[]; cheek: number[]; chin: number[] }; }
 export interface FaceLandmark { local: Vec2; world: Vec2; pixel: Vec2; }
 export interface FacePose { anchor: Vec2; pixelAnchor: Vec2; yaw: number; shift: number; pixelShift: number; eye: FaceLandmark; mouth: FaceLandmark; mouthPixels: Vec2[]; ear: FaceLandmark; nose: FaceLandmark; noseTip: FaceLandmark; noseVisible: boolean; cheek: FaceLandmark; chin: FaceLandmark; }
-export function sampleFace(anchor: Vec2, turn: number, settings: FaceSettings, time = 0, angle = 0, restAnchor?: Vec2): FacePose {
+// `snappedAnchor` lets a rig seat the head on its own quantised body instead of rounding the continuous neck.
+export function sampleFace(anchor: Vec2, turn: number, settings: FaceSettings, time = 0, angle = 0, restAnchor?: Vec2, snappedAnchor?: Vec2): FacePose {
   const yaw = radians(settings.yawDegrees) * turn;
   const rawShift = settings.shiftAmplitude * Math.sin(time * Math.PI * 2);
   let shift = Math.max(settings.shiftLimits?.[0] ?? -Infinity, Math.min(settings.shiftLimits?.[1] ?? Infinity, rawShift));
   let pixelShift = Math.round(shift);
-  const pixelAnchor: Vec2 = [Math.round(anchor[0]), Math.round(anchor[1])];
+  const pixelAnchor: Vec2 = snappedAnchor ? [snappedAnchor[0], snappedAnchor[1]] : [Math.round(anchor[0]), Math.round(anchor[1])];
   if (restAnchor && settings.eyeTravelPixels !== undefined) {
     const projectedEye = settings.eye[0] * Math.cos(yaw) + settings.eye[2] * Math.sin(yaw);
     const half = settings.eyeTravelPixels / 2;

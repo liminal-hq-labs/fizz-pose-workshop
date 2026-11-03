@@ -88,6 +88,16 @@ export function validateRig(rig: SideRig): void {
   if (positive.some(value => !Number.isFinite(value) || value <= 0) || !Number.isInteger(rig.sampleCount) || rig.sampleCount < 2 || rig.durationMs / rig.sampleCount % 10 !== 0) throw new Error("Rig dimensions, bones and GIF frame timing must be valid positive values.");
   if (!Number.isInteger(rig.width) || !Number.isInteger(rig.height) || rig.groundY >= rig.height || rig.groundY < 0) throw new Error("Rig ground must fit the pixel canvas.");
 }
+// Snaps the running head to the pixel grid the torso patch is drawn on. The column follows the rest neck plus the
+// rounded sway, so the sub-pixel pitch sway cannot hop the helmet sideways in only half of the cycle. The row is the
+// lowest canvas row that the torso patch still maps to the neck at that column, so the collar always rests directly
+// on the shirt: rounding the continuous neck instead leaves a one-pixel ink gap whenever the neck sits near a pixel edge.
+export function seatedHead(rig: SideRig, root: Vec2, torsoAngle: number, neck: Vec2, restNeck: Vec2): Vec2 {
+  const x = Math.round(restNeck[0]) + Math.round(neck[0] - restNeck[0]);
+  // The torso patch shows local row round(-dx sin a + dy cos a); keep the largest canvas row whose local row is at or above the neck.
+  const bound = root[1] + (-rig.torso.neckHeight + .5 + (x - root[0]) * Math.sin(torsoAngle)) / Math.cos(torsoAngle);
+  return [x, Math.ceil(bound) - 1];
+}
 export function sampleRunRig(rig: SideRig, time: number): RigPose {
   if (!(rig.stride.stanceFraction > 0 && rig.stride.stanceFraction < .5)) throw new Error('Running requires alternating stance and flight.');
   const t = wrap(time), theta = t * tau;
@@ -103,7 +113,7 @@ export function sampleRunRig(rig: SideRig, time: number): RigPose {
   const farFlex = radians(rig.arms.elbowDegrees - rig.arms.elbowFlexDegrees * Math.sin(armTheta));
   const neck = torsoPoint(base, [0, -rig.torso.neckHeight]);
   const restNeck = torsoPoint({root:[rig.root[0],rig.root[1]],torsoAngle:radians(rig.torso.leanDegrees)},[0,-rig.torso.neckHeight]);
-  const face = sampleFace(neck, headTurn, rig.face, t, 0, restNeck);
+  const face = sampleFace(neck, headTurn, rig.face, t, 0, restNeck, seatedHead(rig, root, torsoAngle, neck, restNeck));
   const nearFoot = footTarget(rig, t), farFoot = footTarget(rig, t + .5);
   const nearHip = add(root, [rig.legs.hipSpread, 0]), farHip = add(root, [-rig.legs.hipSpread, 0]);
   const nearLeg = solveTwoBone(nearHip, nearFoot.ankle, rig.legs.thighLength, rig.legs.shinLength);
