@@ -8,7 +8,7 @@ import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
 export interface SideRig {
-  motion?: 'run' | 'pogo' | 'fire' | 'ladder' | 'jump' | 'death' | 'ledge' | 'whistle' | 'phone';
+  motion?: 'run' | 'pogo' | 'fire' | 'ladder' | 'jump' | 'fall' | 'death' | 'ledge' | 'whistle' | 'phone';
   lightingNote?: string;
   performance?: PerformanceSettings;
   mirrored?: boolean;
@@ -75,16 +75,18 @@ function footTarget(rig: SideRig, cycle: number, near = false): RigFoot {
   return { ankle, ball, toe, heel: add(ankle, rotate([rig.feet.heel[0], rig.feet.heel[1]], pitch)), pitch, toePitch, compression, stance, progress };
 }
 export function validateRig(rig: SideRig): void {
-  if (rig.motion && !["run", "pogo", "fire", "ladder", "jump", "death", "ledge", "whistle", "phone"].includes(rig.motion)) throw new Error("Unknown rig motion.");
+  if (rig.motion && !["run", "pogo", "fire", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion)) throw new Error("Unknown rig motion.");
   if (rig.motion === "pogo" && (!rig.pogo || Object.values(rig.pogo).some(value => !Number.isFinite(value) || value <= 0) || rig.pogo.compressedLength > rig.pogo.extendedLength)) throw new Error("Pogo spring settings must be positive and ordered.");
   if (rig.motion === "fire" && (!rig.fire || Object.values(rig.fire).some(value => !Number.isFinite(value) || value < 0))) throw new Error("Firing settings must be finite and non-negative.");
-  if (["ladder", "jump", "death", "ledge", "whistle", "phone"].includes(rig.motion ?? "")) {
+  if (["ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion ?? "")) {
     const clip = rig.performance;
     if (!clip || clip.keys.length < 2 || clip.keys[0].phase !== 0 || clip.keys.at(-1)!.phase !== 1) throw new Error("Performance goals must cover phases zero through one.");
     for (let i = 0; i < clip.keys.length; i++) {
       const key = clip.keys[i];
       if (!Number.isFinite(key.phase) || (i > 0 && key.phase <= clip.keys[i-1].phase) || ![key.lean,key.headRoll,...key.root,...key.nearHand,...key.farHand,...key.nearAnkle,...key.farAnkle,...(key.phone ?? [])].every(Number.isFinite)) throw new Error("Performance goals must be finite and strictly ordered.");
     }
+    const times = clip.sampleTimes;
+    if (times && (times.length !== rig.sampleCount || times.some((time, i) => !Number.isFinite(time) || time < 0 || time > 1 || (i > 0 && time <= times[i - 1])) || times[0] !== 0 || (clip.loop ? times.at(-1)! >= 1 : times.at(-1) !== 1))) throw new Error("Sample times must be one ordered phase per sprite, starting at zero and ending at one for a one-shot or before one for a loop.");
     if (clip.environment?.kind === "ladder" && !(clip.environment.spacing > 0)) throw new Error("Ladder rung spacing must be positive.");
   }
   const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.face.ear, ...Object.values(rig.face.profile).flat(), rig.face.shiftAmplitude, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];

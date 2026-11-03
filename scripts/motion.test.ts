@@ -6,6 +6,8 @@
 import { test, expect } from 'bun:test';
 import pinned from './fixtures/pinned-reference-motion.json';
 import { rigCatalogue } from '../src/rig/catalogue.ts';
+import { sampleRig, sampleTime } from '../src/rig/sample.ts';
+import { frameDurations, type TimedRig } from '../src/rig/timing.ts';
 import { loadSavedFrames, savedAnimations, cycleSteps, changedPixels, median, helmetCentre, colourCounts, exposedEdges, helmetCodes } from './motion-metrics.ts';
 
 // The run and look up/down cycles are the motion benchmark: smooth spacing, no frozen frames and no jolts. The thresholds
@@ -22,27 +24,6 @@ interface KnownFailure { readonly check: Check; readonly subject: string; readon
 // Existing faults recorded so the suite passes today. Each entry must still fail: when a fix lands, the test below
 // reports the entry as stale and it has to be removed in the same change. Never add an entry to make new work pass.
 const knownFailures: readonly KnownFailure[] = [
-  // Phone idle still snaps from standing to seated in its first step and back across the loop seam.
-  { check: 'spike', subject: 'phone-idle', at: '0>1', fixedBy: 'Phase 1: add holds and in-betweens to the phone idle' },
-  { check: 'spike', subject: 'phone-idle', at: '5>0', fixedBy: 'Phase 1: add holds and in-betweens to the phone idle' },
-  // The ledge pull jumps the head 8 to 9 pixels in its last steps and teleports from standing back to hanging at the seam.
-  ...['mantle', 'mantle-left'].flatMap(subject => ['3>4', '4>5', '5>0'].map(at => ({ check: 'head-travel' as const, subject, at, fixedBy: 'Phase 1/2: ledge anticipation, holds and interpolated in-betweens' }))),
-  // The magenta belt vanishes for the push-to-crouch frame.
-  { check: 'feature-pop', subject: 'mantle', at: '4:-M', fixedBy: 'Phase 2: redraw the ledge rig with continuous patches' },
-  { check: 'feature-pop', subject: 'mantle-left', at: '4:-M', fixedBy: 'Phase 2: redraw the ledge rig with continuous patches' },
-  // Jump drops the head 8 pixels from apex to fall in one step.
-  { check: 'head-travel', subject: 'jump', at: '3>4', fixedBy: 'Phase 1/2: jump anticipation and interpolated fall' },
-  // Nearest-neighbour patch rotation drops pixels of the helmet's ink rim.
-  { check: 'helmet-rim', subject: 'jump', at: '2', fixedBy: 'Phase 2: restrict patch rotation to authored angle variants' },
-  { check: 'helmet-rim', subject: 'death', at: '2', fixedBy: 'Phase 2: restrict patch rotation to authored angle variants' },
-  { check: 'helmet-rim', subject: 'death', at: '3', fixedBy: 'Phase 2: restrict patch rotation to authored angle variants' },
-  // Death's head roll swings left and right on every key and its lean reverses twice. The comic wobble is intended, so Phase 2
-  // must author it as deliberate beats (and replace these entries with a dedicated wobble test) rather than flip at every key.
-  { check: 'roll-flip', subject: 'death', at: 'headRoll 1>2', fixedBy: 'Phase 2: author the death wobble as deliberate beats' },
-  { check: 'roll-flip', subject: 'death', at: 'headRoll 2>3', fixedBy: 'Phase 2: author the death wobble as deliberate beats' },
-  { check: 'roll-flip', subject: 'death', at: 'headRoll 3>4', fixedBy: 'Phase 2: author the death wobble as deliberate beats' },
-  { check: 'roll-flip', subject: 'death', at: 'lean 3>4', fixedBy: 'Phase 2: author the death wobble as deliberate beats' },
-  { check: 'roll-flip', subject: 'death', at: 'lean 4>5', fixedBy: 'Phase 2: author the death wobble as deliberate beats' },
   // The turntable's pinned 45° and 315° standing sprites carry light-blue shading that none of their in-betweens have,
   // and the interpolated rear half loses helmet rim ink between keys.
   { check: 'feature-pop', subject: 'standing-360', at: '3:+b', fixedBy: 'Phase 5: turntable rebuild with gradual feature fades' },
@@ -56,7 +37,8 @@ const knownFailures: readonly KnownFailure[] = [
 ];
 
 const frames = loadSavedFrames();
-const cycles = Object.entries(savedAnimations).map(([name, animation]) => ({ name, sequence: animation.frames.map(key => frames[key]) }));
+// One-shots (saved with `loop: false`) hold their final pose and replay after a rest, so they have no wrapping step.
+const cycles = Object.entries(savedAnimations).map(([name, animation]) => ({ name, loop: animation.loop !== false, sequence: animation.frames.map(key => frames[key]) }));
 const key = (failure: Pick<KnownFailure, 'check' | 'subject' | 'at'>): string => `${failure.check} ${failure.subject} @ ${failure.at}`;
 
 function findings(check: Check): string[] {
@@ -67,13 +49,15 @@ function findings(check: Check): string[] {
       const keys = rig.performance?.keys ?? [];
       for (let i = 1; i < keys.length; i++) {
         const a = keys[i - 1][channel], b = keys[i][channel];
+        // A swing onto a key marked `beat` is a deliberate comic snap; the death wobble test below holds those to account.
+        if (keys[i].beat) continue;
         if (Math.sign(a) * Math.sign(b) < 0 && Math.abs(a) >= rollFlip && Math.abs(b) >= rollFlip) add(animation, `${channel} ${i - 1}>${i}`);
       }
     }
     return found;
   }
-  for (const { name, sequence } of cycles) {
-    const steps = cycleSteps(sequence.length), changes = steps.map(({ from, to }) => changedPixels(sequence[from], sequence[to]));
+  for (const { name, loop, sequence } of cycles) {
+    const steps = cycleSteps(sequence.length, loop), changes = steps.map(({ from, to }) => changedPixels(sequence[from], sequence[to]));
     if (check === 'duplicate') steps.forEach(({ from, to }, i) => { if (changes[i] === 0) add(name, `${from}>${to}`); });
     if (check === 'spike') { const limit = spikeRatio * median(changes); steps.forEach(({ from, to }, i) => { if (changes[i] > limit) add(name, `${from}>${to}`); }); }
     if (check === 'head-travel') for (const { from, to } of steps) {
@@ -83,6 +67,7 @@ function findings(check: Check): string[] {
     if (check === 'feature-pop' && sequence.length > 2) {
       const counts = sequence.map(colourCounts);
       sequence.forEach((_, i) => {
+        if (!loop && (i === 0 || i === sequence.length - 1)) return;
         const before = counts[(i + sequence.length - 1) % sequence.length], now = counts[i], after = counts[(i + 1) % sequence.length];
         for (const code of new Set([...Object.keys(before), ...Object.keys(now), ...Object.keys(after)])) {
           const [p, c, n] = [before[code] ?? 0, now[code] ?? 0, after[code] ?? 0];
@@ -117,6 +102,35 @@ for (const check of Object.keys(descriptions) as Check[]) test(`motion: ${descri
   expect(found.filter(item => !allowed.includes(item))).toEqual([]);
   // A known failure that no longer reproduces has been fixed: delete its entry so the guard covers that cycle again.
   expect(allowed.filter(item => !found.includes(item))).toEqual([]);
+});
+
+// Death is comic, not realistic: the head wobbles from side to side on held beats while the body sags one way, then a single
+// deliberate topple ends it. Each beat is its own saved sprite held long enough to read, and nothing flips sides between beats.
+test('death wobbles on deliberate, readable beats and topples once', () => {
+  const entry = rigCatalogue.find(item => item.animation === 'death')!, rig = entry.rig as TimedRig, keys = rig.performance!.keys;
+  const times = Array.from({ length: rig.sampleCount }, (_, i) => sampleTime(rig, i)), holds = frameDurations(rig);
+  const flips = (channel: 'headRoll' | 'lean'): number[] => keys.flatMap((key, i) => i && Math.sign(keys[i - 1][channel]) * Math.sign(key[channel]) < 0 ? [i] : []);
+  const rollFlips = flips('headRoll'), leanFlips = flips('lean');
+  // At least three wobbles, each landing on a beat that is sampled as its own sprite and held for at least 160 ms.
+  expect(rollFlips.length).toBeGreaterThanOrEqual(3);
+  for (const i of [...rollFlips, ...leanFlips]) {
+    expect(keys[i].beat).toBe(true);
+    const sample = times.indexOf(keys[i].phase);
+    expect(sample).toBeGreaterThanOrEqual(0); expect(holds[sample]).toBeGreaterThanOrEqual(160);
+  }
+  // The wobble alternates sides on consecutive flips, so it reads as one rhythm rather than random twitching.
+  for (let i = 1; i < rollFlips.length; i++) expect(Math.sign(keys[rollFlips[i]].headRoll)).toBe(-Math.sign(keys[rollFlips[i - 1]].headRoll));
+  // The body sways one way and topples to the other side exactly once, at the final, held key, with the head flopping along.
+  expect(leanFlips).toEqual([keys.length - 1]);
+  const last = keys[keys.length - 1]; expect(last.hold).toBe(true); expect(Math.sign(last.headRoll)).toBe(Math.sign(last.lean));
+  // A wobble stays within the seated head's range, and the sampled curve comes to rest on every beat.
+  for (const key of keys) expect(Math.abs(key.headRoll)).toBeLessThanOrEqual(12);
+  for (const i of rollFlips) {
+    const at = keys[i].phase, roll = (t: number): number => sampleRig(rig, t).headAngle! * 180 / Math.PI;
+    expect(roll(at)).toBeCloseTo(keys[i].headRoll, 6);
+    // Zero velocity on the beat: a step of 0.005 either side moves the roll by a tiny second-order amount, not a first-order swing.
+    for (const step of [-.005, .005]) expect(Math.abs(roll(Math.min(1, at + step)) - keys[i].headRoll)).toBeLessThan(.1);
+  }
 });
 
 test('the reference cycles use their measured spacing as the benchmark', () => {

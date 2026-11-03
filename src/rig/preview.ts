@@ -1,4 +1,4 @@
-// Compares a smooth side-view rig with its six editable sprite samples in the workshop.
+// Compares a smooth side-view rig with its editable sprite samples in the workshop.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
@@ -6,7 +6,7 @@
 import skin from '../../source/ben-side-skin.json';
 import { mountFaceInspector } from './face-inspector.ts';
 import { rigCatalogue } from './catalogue.ts';
-import { sampleRig, sampleTime } from './sample.ts';
+import { sampleIndex, sampleRig, sampleTime } from './sample.ts';
 import { type SideRig, type RigPose } from './run.ts';
 import type { Chain, Vec2 } from './kinematics.ts';
 import type { WorkshopData } from '../types.ts';
@@ -16,11 +16,11 @@ export function mountRigPreview(data: WorkshopData): void {
   const section: HTMLElement = mount;
   const actions = rigCatalogue;
   let action = actions[0], rig = action.rig;
-  section.innerHTML = `<h2>Rig first, six sprites second.</h2><p>The cyan limbs face the camera; purple limbs are behind. Yellow feet are supported by the ground or pogo pegs. Watch the continuous rig, switch to six sampled poses, or pause and step through each pose. Both views use the same rig time.</p>
-    <div class="controls"><label>Action <select id="rig-action">${actions.map((entry,i) => `<option value="${i}">${entry.title}</option>`).join('')}</select></label><button id="rig-play">Pause rig</button><label>Rig speed <select id="rig-speed"><option value="0.25">Quarter speed</option><option value="0.5" selected>Half speed</option><option value="1">Normal speed</option></select></label><label>Rig display <select id="rig-mode"><option value="smooth">Continuous</option><option value="samples">Six samples</option></select></label><label><input id="rig-overlay" type="checkbox">Overlay sampled rig on sprite</label><button id="rig-prev">Previous pose</button><button id="rig-next">Next pose</button></div>
+  section.innerHTML = `<h2>Rig first, sprites second.</h2><p>The cyan limbs face the camera; purple limbs are behind. Yellow feet are supported by the ground or pogo pegs. Watch the continuous rig, switch to the sampled sprite poses, or pause and step through each pose. Both views use the same rig time.</p>
+    <div class="controls"><label>Action <select id="rig-action">${actions.map((entry,i) => `<option value="${i}">${entry.title}</option>`).join('')}</select></label><button id="rig-play">Pause rig</button><label>Rig speed <select id="rig-speed"><option value="0.25">Quarter speed</option><option value="0.5" selected>Half speed</option><option value="1">Normal speed</option></select></label><label>Rig display <select id="rig-mode"><option value="smooth">Continuous</option><option value="samples">Sprite samples</option></select></label><label><input id="rig-overlay" type="checkbox">Overlay sampled rig on sprite</label><button id="rig-prev">Previous pose</button><button id="rig-next">Next pose</button></div>
     <label class="rig-scrubber">Cycle position <input id="rig-time" type="range" min="0" max="1000" value="0"><output id="rig-position"></output></label>
-    <div class="rig-comparison"><article><h3>Continuous rig</h3><div class="rig-stage"><canvas id="rig-bones" role="img" aria-label="Animated character skeleton with fixed-length arms and legs"></canvas></div></article><article><h3>Six sprite samples</h3><div class="rig-stage"><canvas id="rig-avatar" role="img" aria-label="The sprite sample corresponding to the rig phase"></canvas></div></article></div>
-    <p class="small"><a href="rig/ben-running/rig.svg" target="_blank">Animated rig SVG</a> · <a href="rig/ben-running/samples.json">Joint samples</a> · <a href="rig/ben-running/rig.json">Rig settings</a> · <a href="rig/ben-running/skin.json">Sprite skin</a> · <a href="rig/ben-running/sprites.gif" target="_blank">Six-frame GIF</a></p>`;
+    <div class="rig-comparison"><article><h3>Continuous rig</h3><div class="rig-stage"><canvas id="rig-bones" role="img" aria-label="Animated character skeleton with fixed-length arms and legs"></canvas></div></article><article><h3>Sprite samples</h3><div class="rig-stage"><canvas id="rig-avatar" role="img" aria-label="The sprite sample corresponding to the rig phase"></canvas></div></article></div>
+    <p class="small"><a href="rig/ben-running/rig.svg" target="_blank">Animated rig SVG</a> · <a href="rig/ben-running/samples.json">Joint samples</a> · <a href="rig/ben-running/rig.json">Rig settings</a> · <a href="rig/ben-running/skin.json">Sprite skin</a> · <a href="rig/ben-running/sprites.gif" target="_blank">Sprite GIF</a></p>`;
   let updateFace = mountFaceInspector(section, rig, data, skin.face, action.prefix, action.folder);
   const $ = <T extends HTMLElement>(query: string): T => section.querySelector<T>(query)!;
   const bones = $<HTMLCanvasElement>('#rig-bones'), avatar = $<HTMLCanvasElement>('#rig-avatar');
@@ -82,9 +82,7 @@ export function mountRigPreview(data: WorkshopData): void {
     }
     context.restore();
   }
-  function currentIndex(): number {
-    return rig.performance && !rig.performance.loop ? Math.max(0, Math.min(rig.sampleCount - 1, Math.round(time * (rig.sampleCount - 1)))) : Math.max(0, Math.min(rig.sampleCount - 1, Math.floor(time * rig.sampleCount + 1e-8)));
-  }
+  function currentIndex(): number { return sampleIndex(rig, time); }
   function tick(now: number): void {
     if (playing) {
       const next = time + Math.max(0, Math.min(now - last, 100)) * speed / rig.durationMs;
@@ -101,7 +99,7 @@ export function mountRigPreview(data: WorkshopData): void {
     frame.grid.forEach((row, y) => [...row].forEach((code, x) => { const colour = data.palette[code]; if (colour) { pixel.fillStyle = colour; pixel.fillRect(x * scale, y * scale, scale, scale); } }));
     if (overlay.checked) skeleton(pixel, sampleRig(rig, sample), true);
     slider.value = String(Math.floor(time * 1000));
-    $<HTMLOutputElement>('#rig-position').textContent = `${index + 1}/6 · ${action.labels[index]}${rig.lightingNote ? ' · Screen light: brighten face and hands dynamically' : ''}`;
+    $<HTMLOutputElement>('#rig-position').textContent = `${index + 1}/${rig.sampleCount} · ${action.labels[index]}${rig.lightingNote ? ' · Screen light: brighten face and hands dynamically' : ''}`;
     section.dataset.pose = String(index + 1);
     updateFace(index, mode.value === 'samples' ? sampleRig(rig, sample) : pose);
     requestAnimationFrame(tick);

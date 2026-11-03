@@ -87,24 +87,39 @@ The side-view skin preserves the original helmet and facial outline. The nose pr
 
 ## Climbing, jumping and expressive performances
 
-`src/rig/catalogue.ts` registers all eleven rigs and their frame names, labels, animation names and export folders. `source/ben-ladder-rig.json`, `ben-jump-rig.json`, `ben-death-rig.json`, `ben-ledge-rig.json`, `ben-whistle-left-rig.json`, `ben-whistle-right-rig.json`, `ben-ledge-left-rig.json` and `ben-phone-rig.json` define six poses each. `performance.keys` stores pelvis position, torso lean, head roll, hand and ankle targets, expression and support flags. The continuous solver in `src/rig/performance.ts` smoothly interpolates these goals and solves fixed-length arms and legs. Unreachable goals and invalid phase ordering stop the export.
+`src/rig/catalogue.ts` registers all twelve rigs and their frame names, labels, animation names and export folders. `source/ben-ladder-rig.json`, `ben-jump-rig.json`, `ben-fall-rig.json`, `ben-death-rig.json`, `ben-ledge-rig.json`, `ben-whistle-left-rig.json`, `ben-whistle-right-rig.json`, `ben-ledge-left-rig.json` and `ben-phone-rig.json` define the performances. `performance.keys` stores pelvis position, torso lean, head roll, hand and ankle targets, expression and support flags. The continuous solver in `src/rig/performance.ts` interpolates these goals and solves fixed-length arms and legs. Unreachable goals and invalid phase ordering stop the export.
 
-Run `bun run draw:performances` then `bun run generate` to rebuild the 48 performance frames and eight saved export folders. This explicitly replaces the matching editor overrides. Ordinary generation preserves manual adjustments. The two existing action rigs still use `bun run draw:actions`; running uses `bun run draw:run`.
+Run `bun run draw:performances` then `bun run generate` to rebuild the performance frames and their saved export folders. Name animations to redraw only those rigs, for example `bun run draw:performances jump fall`. An editor override that differs from the previous redraw is a manual edit and is kept; pass `--replace-edits` to adopt the rig's grids instead. Ordinary generation preserves manual adjustments. The two existing action rigs still use `bun run draw:actions`; running uses `bun run draw:run`.
+
+### Interpolation through keys
+
+Every channel (pelvis, lean, head roll, foot angles, phone) follows a monotone cubic Hermite curve through its keys, with Fritsch–Butland tangents for uneven key spacing. Velocity carries through each key instead of easing to a stop, but the curve never overshoots a key, so a held value stays still and a limb never exceeds its keyed reach. Loops use periodic tangents across the seam; one-shots start and end at rest. A key marked `hold: true` rests on its pose (anticipation, impact, final pose). A key marked `beat: true` is a deliberate comic snap that also rests, and it is the only place head roll or lean may swing across zero by three degrees or more.
+
+Free hands and feet are interpolated as an angle and reach about their shoulder or hip, so they swing on arcs instead of cutting straight lines through the body. A target keyed at the same canvas point on both ends of a segment (a ledge grip) stays pinned, and a foot supported on both keys slides along its support.
+
+Keys need not sit on sample times. `performance.sampleTimes` lists the phase of each saved sprite (one per `sampleCount`, starting at zero, and ending at one for a one-shot), so in-betweens can fall wherever the motion needs them. `frameDurationsMs` then sets each sprite's hold: the jump holds its crouch and apex, the ledge pull holds its hang, and the death holds every beat.
+
+### Ink-safe patch rotation
+
+Small head rolls are drawn as a whole-pixel row shear (`tiltOffset` in `src/rig/kinematics.ts`) rather than a free rotation: every authored row of the helmet and face keeps its pixels and outline, and only whole rows step sideways. The rig's eye, mouth and expression pixels follow the same shear. Larger torso leans still rotate, but performance rigs seal the result: any drawn pixel whose source was fully enclosed in its patch, and which now touches empty canvas, gets ink in that neighbour. Performance rigs also ink one-pixel notches in the collar and shoulder band (the four rows below the collar), where a limb outline meets the shirt. Only existing palette codes are written. Run, pogo and firing keep the plain nearest-neighbour rotation so their saved references stay byte-for-byte.
+
+The holstered Stunner swings with the near thigh by at most 35° in performances, so a raised knee cannot fold it up behind the shirt. A near knee raised above the hip (climbing onto the ledge, kicking in a fall) is drawn in front of the shirt.
 
 | Rig | View and pose sequence | Playback |
 |---|---|---|
 | Ladder climb | Back view; opposite hands and feet alternate, with bent elbows and knees | Loop |
-| Jump | Crouch, launch, apex, fall, land, recover | Hold final pose |
-| Dramatic death | Shock, belly clutch, tongue out, dizzy eyes, wince, final comic collapse; both oversized soles face the camera | Hold final pose |
-| Ledge pull · left and right | Hang, pull, chest over edge, knee up, push to crouch, stand; grips stay pinned through the pull | Hold final pose |
+| Jump | Nine sprites: crouch (held), launch, rise, apex (held), tip over, fall, drop, land, recover | Hold final pose |
+| Fall | Six sprites at 90 ms: arms flung out forward and back and flapping in opposition, legs dangling and paddling, a startled open mouth; never touches down | Loop |
+| Dramatic death | Seven sprites: startled take, then the head wobbles left, right, left, right on held beats (clutch, tongue out, dizzy eyes, wince) while the body sags one way, a topple in-between and a final comic collapse to the other side; both oversized soles face the camera | Hold final pose |
+| Ledge pull · left and right | Eleven sprites: hang (held), pull, haul, chest over edge, elbows lock, swing the knee, knee up, plant the foot, push to crouch, rise, stand; grips stay pinned through the pull | Hold final pose |
 | Whistling idle · left and right | Saved standing artwork with a puckered mouth and musical notes; body and equipment stay fixed | Loop |
-| Seated phone idle | Face camera, fold legs, take out phone, raise screen, read, settle; crossed shins and both hands around the phone | Hold seated pose |
+| Seated phone idle | Nine sprites: face camera, bend the knees, sit down, fold legs, reach for the phone, take it out, raise screen, read, settle; crossed shins and both hands around the phone | Hold seated pose |
 
 Back-view climbing uses a rear helmet and shirt skin with no visible face. Front-facing death and phone poses use the saved front-facing Ben artwork for their helmet and face proportions, with rig-painted expressions. Death presents large sole patches towards the viewer and keeps both hands at the belly; head roll and changing expressions provide the exaggerated performance. The phone back has a small camera detail and yellow Fizz mark, with no baked screen glow. The phone rig uses wider folded-leg bones to make the crossed-leg silhouette readable.
 
 Ladder and ledge geometry appears only as a guide in the skeleton preview and skeleton SVGs. Sprite exports stay transparent and contain the character and personal equipment. These are in-place art studies; the game simulation will supply world movement.
 
-One-shot performances include both endpoint poses, using sample times `i / (sampleCount - 1)`. The rig viewer and saved skeleton SVG stop at the final pose. The **Action loops** gallery and its animated sprite SVG/GIF exports repeat these sequences for art review. Use **Play rig** to replay a completed rig or **Restart animations** to replay gallery actions. Loops use `i / sampleCount` and wrap continuously. Front/back facial inspection compares the head crop with the saved project artwork, so comic mouth shapes and hidden faces are reported correctly while edited drafts remain detectable.
+One-shot performances include both endpoint poses, using their `sampleTimes` or, without them, `i / (sampleCount - 1)`. The rig viewer and saved skeleton SVG stop at the final pose. One-shots are saved with `loop: false`: the **Action loops** gallery holds the final pose for 1.2 s and then replays, so the review never snaps from the last pose straight back to the first, and their animated SVG/GIF exports play once and hold. The motion tests therefore measure no wrapping step for one-shots. Use **Play rig** to replay a completed rig or **Restart animations** to replay gallery actions. Loops use `i / sampleCount` and wrap continuously. Front/back facial inspection compares the head crop with the saved project artwork, so comic mouth shapes and hidden faces are reported correctly while edited drafts remain detectable.
 
 ### Phone-screen lighting
 
@@ -115,6 +130,10 @@ Left and right whistling rigs use complete patches of the current saved `ben_sta
 `src/rig/reflect.ts` reflects the complete skeleton, facial anchors, feet, environment guides and skin for left-facing actions. `source/ben-ledge-left-rig.json` sets `mirrored: true` over the shared right-facing goals. Both ledge directions have separate editable frames, previews and export folders.
 
 The jump’s airborne keys spread the ankles sixteen pixels apart at the apex and set independent `nearFootDegrees` and `farFootDegrees`. Shoes return flat before landing.
+
+The death is comic and friendly rather than a realistic fall. Its wobble is authored as `beat` keys: each roll flip lands on a beat that is sampled as its own sprite and held for at least 160 ms, consecutive flips alternate sides, the roll stays within 12°, and the lean flips only once, at the final held collapse, with the head flopping the same way. `scripts/motion.test.ts` checks these rules in place of the generic roll-flip guard.
+
+The fall (`source/ben-fall-rig.json`, `ben_fallRig1`–`6`) is a right-facing loop distinct from the jump. It is never a mirror of another sprite, because the Fizz Stunner sits on one hip only; a left-facing fall needs its own pose rather than a flipped copy.
 
 The front-facing **Look up & down** loop reuses the saved standing, look-up, half-bend and full-bend sprites. Its sequence is neutral → up → neutral → half-down → full-down → half-down. Looking up holds for 800 ms, each downward pose for 400 ms and each neutral transition for 200 ms. Run `bun run draw:look-loop` then `bun run generate` to restore this timing without redrawing any artwork.
 

@@ -3,14 +3,17 @@
   "width": 40,
   "height": 56,
   "groundY": 48,
-  "durationMs": 1200,
-  "sampleCount": 6,
+  "durationMs": 1440,
+  "sampleCount": 9,
   "frameDurationsMs": [
     240,
+    120,
+    120,
+    160,
+    120,
+    160,
+    160,
     200,
-    160,
-    160,
-    280,
     160
   ],
   "root": [
@@ -132,7 +135,8 @@
         ],
         "expression": "normal",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "hold": true
       },
       {
         "phase": 0.2,
@@ -288,8 +292,20 @@
         "phone": [
           20,
           35
-        ]
+        ],
+        "hold": true
       }
+    ],
+    "sampleTimes": [
+      0,
+      0.06,
+      0.13,
+      0.2,
+      0.3,
+      0.4,
+      0.6,
+      0.8,
+      1
     ]
   },
   "lightingNote": "The back case faces the player; the screen faces Ben. Use the hidden screen as a small dynamic light that brightens his face and hands once raised. Keep that glow separate from the sixteen-colour sprite pixels until engine lighting is added."

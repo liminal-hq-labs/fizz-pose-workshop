@@ -3,15 +3,18 @@
   "width": 32,
   "height": 52,
   "groundY": 46,
-  "durationMs": 720,
-  "sampleCount": 6,
+  "durationMs": 900,
+  "sampleCount": 9,
   "frameDurationsMs": [
-    180,
+    160,
+    60,
     80,
-    130,
-    100,
-    110,
-    120
+    140,
+    80,
+    70,
+    60,
+    120,
+    130
   ],
   "root": [
     13,
@@ -112,15 +115,15 @@
           13,
           38
         ],
-        "lean": 8,
-        "headRoll": 0,
+        "lean": 10,
+        "headRoll": 2,
         "nearHand": [
-          16,
-          34
+          11,
+          36
         ],
         "farHand": [
-          15,
-          33
+          10,
+          35
         ],
         "nearAnkle": [
           10,
@@ -132,61 +135,62 @@
         ],
         "expression": "normal",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "hold": true
       },
       {
-        "phase": 0.2,
+        "phase": 0.18,
         "root": [
           13,
-          32
+          33
         ],
         "lean": 8,
-        "headRoll": -3,
+        "headRoll": -2,
         "nearHand": [
-          19,
-          25
+          18,
+          26
         ],
         "farHand": [
           17,
-          25
+          26
         ],
         "nearAnkle": [
-          7,
-          39
+          8,
+          40
         ],
         "farAnkle": [
-          20,
-          38
+          18,
+          40
         ],
         "expression": "normal",
         "nearSupport": false,
         "farSupport": false,
-        "nearFootDegrees": -15,
-        "farFootDegrees": 20
+        "nearFootDegrees": -20,
+        "farFootDegrees": 12
       },
       {
-        "phase": 0.4,
+        "phase": 0.42,
         "root": [
           13,
           27
         ],
-        "lean": 15,
+        "lean": 14,
         "headRoll": -4,
         "nearHand": [
-          16,
-          24
-        ],
-        "farHand": [
           17,
           23
         ],
+        "farHand": [
+          18,
+          22
+        ],
         "nearAnkle": [
           6,
-          32
+          33
         ],
         "farAnkle": [
           22,
-          31
+          32
         ],
         "expression": "normal",
         "nearSupport": false,
@@ -195,34 +199,34 @@
         "farFootDegrees": 28
       },
       {
-        "phase": 0.6,
+        "phase": 0.62,
         "root": [
           13,
-          30
+          31
         ],
         "lean": 10,
-        "headRoll": 2,
+        "headRoll": 1,
         "nearHand": [
-          18,
+          19,
           26
         ],
         "farHand": [
-          16,
+          17,
           27
         ],
         "nearAnkle": [
           7,
-          36
+          37
         ],
         "farAnkle": [
           21,
-          36
+          37
         ],
         "expression": "normal",
         "nearSupport": false,
         "farSupport": false,
-        "nearFootDegrees": -18,
-        "farFootDegrees": 20
+        "nearFootDegrees": -16,
+        "farFootDegrees": 18
       },
       {
         "phase": 0.8,
@@ -230,7 +234,7 @@
           13,
           38
         ],
-        "lean": 8,
+        "lean": 9,
         "headRoll": 3,
         "nearHand": [
           18,
@@ -250,7 +254,8 @@
         ],
         "expression": "normal",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "hold": true
       },
       {
         "phase": 1,
@@ -280,6 +285,17 @@
         "nearSupport": true,
         "farSupport": true
       }
+    ],
+    "sampleTimes": [
+      0,
+      0.1,
+      0.22,
+      0.42,
+      0.52,
+      0.62,
+      0.71,
+      0.8,
+      1
     ]
   }
 }
