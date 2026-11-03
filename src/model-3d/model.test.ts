@@ -886,7 +886,8 @@ describe("Ben volumetric character", () => {
       (p) => p.y > hairline(p.x, p.z) + 0.3 && p.y < 28,
       40,
     );
-    // The neck ring: one sample per sector all the way round, inside the collar band at that angle.
+    // The neck: 64 sectors all the way round, at four heights from the shoulders below the collar up to
+    // just under the collar top. Below the band is where a thin upper back once let the nape show.
     const neck = (() => {
       const positions = restPositions("Neck"),
         sectors = new Map<number, number>(),
@@ -895,14 +896,16 @@ describe("Ben volumetric character", () => {
         p.fromBufferAttribute(positions, i);
         const a = Math.atan2(p.x, p.z + 0.5),
           back = (1 - Math.cos(a)) / 2;
-        if (p.y < 20.15 + 0.6 * back + 0.15 || p.y > 21.05 + 0.6 * back - 0.2)
-          continue;
-        const sector = Math.floor(((a + Math.PI) / (2 * Math.PI)) * 64) % 64;
+        const top = 21.05 + 0.6 * back - 0.2;
+        if (p.y < 19.0 || p.y > top) continue;
+        const band = Math.min(3, Math.floor(((p.y - 19.0) / (top - 19.0)) * 4)),
+          sector =
+            (Math.floor(((a + Math.PI) / (2 * Math.PI)) * 64) % 64) + 64 * band;
         if (!sectors.has(sector)) sectors.set(sector, i);
       }
       return [...sectors.values()];
     })();
-    expect(neck.length).toBeGreaterThanOrEqual(60);
+    expect(neck.length).toBeGreaterThanOrEqual(240);
     // Covered when the first surface met on the way in is fabric or hair. Another part of the same body
     // (a forearm swinging in front of the upper arm, say) is an occluder, not a hole; skin and fabric
     // meeting within a hair's breadth is contact, drawn with the fabric in front.
@@ -998,7 +1001,8 @@ describe("Ben volumetric character", () => {
         p.fromBufferAttribute(neckSkin.geometry.getAttribute("position"), i);
         const out = p.clone().sub(neckBase);
         out.addScaledVector(up, -out.dot(up)).normalize();
-        for (const degrees of [-50, -25, 0, 25]) {
+        // From steeply below (a camera under the stage) to a little above.
+        for (const degrees of [-75, -50, -25, 0, 25]) {
           const e = THREE.MathUtils.degToRad(degrees),
             direction = out
               .clone()

@@ -467,6 +467,7 @@ export function mountBen3D(data: WorkshopData): void {
     width = 640,
     height = 640,
     fov = 30,
+    turn = 0,
   ): string => {
     const camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 300),
       target = new THREE.WebGLRenderTarget(width, height, { samples: 4 }),
@@ -478,7 +479,7 @@ export function mountBen3D(data: WorkshopData): void {
     applyBenPose(model, reviewPose, reviewPhase);
     placeLadder(reviewPose, reviewPhase);
     model.root.position.set(0, 0, 0);
-    model.root.rotation.y = 0;
+    model.root.rotation.y = THREE.MathUtils.degToRad(turn);
     model.root.updateMatrixWorld(true);
     model.skeleton.update();
     renderer.setRenderTarget(target);

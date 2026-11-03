@@ -787,7 +787,8 @@ export function createBenModel(
     d = smoothUnion(
       d,
       // The upper back stops just under the collar band, so the band sits on it rather than inside it.
-      ellipsoid(x, y, z, [0, 19.65, -0.75], [2.35, 1.2, 1.3]),
+      // Deep enough at the back to sit behind the neck, so the nape is covered by the back itself.
+      ellipsoid(x, y, z, [0, 19.4, -0.75], [2.35, 1.45, 1.65]),
       0.8,
     );
     // The shirt fills the waist and tucks into the waistband, so the belt wraps the body.
@@ -826,6 +827,21 @@ export function createBenModel(
         ),
       );
     }
+    // A yoke of fabric wraps the neck base from the shoulders up under the collar band, so the shirt
+    // closes round the neck at every angle instead of leaving the neck showing behind a thin back.
+    d = smoothUnion(
+      d,
+      // It narrows as it descends into the upper back, so it never forms a shelf seen from below.
+      Math.max(
+        (neckRadial(x, z) -
+          neckline.radius -
+          0.45 +
+          0.7 * Math.max(0, collarBottom(neckAngle(x, z)) - 0.2 - y)) *
+          neckline.depth,
+        y - collarBottom(neckAngle(x, z)) - 0.15,
+      ),
+      0.5,
+    );
     d = Math.max(smoothUnion(d, collarField(x, y, z), 0.1), 10.95 - y);
     // The open neckline is cut after the collar joins, leaving one clean inner wall.
     // It starts just inside the collar band at each angle, so the shirt back stays whole below the collar.
@@ -879,7 +895,7 @@ export function createBenModel(
   };
   const garment = sculptSurface(
       shirtField,
-      [-5.6, 10.6, -2.8],
+      [-5.6, 10.6, -3.1],
       [5.6, 22.0, 2.9],
       62,
       120000,
@@ -922,7 +938,7 @@ export function createBenModel(
     "Shirt_torso",
     garment,
     "spine",
-    mat("W", { ...finishes.cotton, vertexColours: true, inFront: true }),
+    mat("W", { ...finishes.cotton, vertexColours: true }),
   );
   weightSurface(rig, garment, shirtWeights);
   tube(
