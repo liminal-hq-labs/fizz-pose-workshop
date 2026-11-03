@@ -5,6 +5,14 @@
   "groundY": 48,
   "durationMs": 1200,
   "sampleCount": 6,
+  "frameDurationsMs": [
+    240,
+    200,
+    160,
+    160,
+    280,
+    160
+  ],
   "root": [
     20,
     34
@@ -225,14 +233,14 @@
           40
         ],
         "lean": 0,
-        "headRoll": 0,
+        "headRoll": -1,
         "nearHand": [
-          18,
-          35
+          18.5,
+          35.5
         ],
         "farHand": [
-          22,
-          35
+          22.5,
+          35.5
         ],
         "nearAnkle": [
           23,

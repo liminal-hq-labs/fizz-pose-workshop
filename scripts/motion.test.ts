@@ -22,14 +22,7 @@ interface KnownFailure { readonly check: Check; readonly subject: string; readon
 // Existing faults recorded so the suite passes today. Each entry must still fail: when a fix lands, the test below
 // reports the entry as stale and it has to be removed in the same change. Never add an entry to make new work pass.
 const knownFailures: readonly KnownFailure[] = [
-  // Firing holds by repeating identical frames: ready (6) equals settle (5) and aim (1), so the loop freezes for three beats.
-  { check: 'duplicate', subject: 'fizz-blaster', at: '4>5', fixedBy: 'Phase 1: remove duplicate frames and use per-frame durations' },
-  { check: 'duplicate', subject: 'fizz-blaster', at: '5>0', fixedBy: 'Phase 1: remove duplicate frames and use per-frame durations' },
-  // With three of six steps frozen, the median collapses and discharge and recovery read as spikes.
-  { check: 'spike', subject: 'fizz-blaster', at: '0>1', fixedBy: 'Phase 1: retime firing recoil' },
-  { check: 'spike', subject: 'fizz-blaster', at: '2>3', fixedBy: 'Phase 1: retime firing recoil' },
-  // Phone idle repeats "Read" as "Settle and scroll", then snaps back to standing across the loop seam.
-  { check: 'duplicate', subject: 'phone-idle', at: '4>5', fixedBy: 'Phase 1: remove the duplicate phone frame' },
+  // Phone idle still snaps from standing to seated in its first step and back across the loop seam.
   { check: 'spike', subject: 'phone-idle', at: '0>1', fixedBy: 'Phase 1: add holds and in-betweens to the phone idle' },
   { check: 'spike', subject: 'phone-idle', at: '5>0', fixedBy: 'Phase 1: add holds and in-betweens to the phone idle' },
   // The ledge pull jumps the head 8 to 9 pixels in its last steps and teleports from standing back to hanging at the seam.

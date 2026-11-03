@@ -2,6 +2,14 @@
   "durationMs": 1080,
   "loop": false,
   "frameDurationMs": 180,
+  "frameDurationsMs": [
+    240,
+    160,
+    160,
+    160,
+    160,
+    200
+  ],
   "samples": [
     {
       "time": 0,

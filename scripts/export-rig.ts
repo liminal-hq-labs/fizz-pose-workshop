@@ -8,6 +8,7 @@ import { sampleRig, sampleTime } from '../src/rig/sample.ts';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { type SideRig } from '../src/rig/run.ts';
+import { frameDurations } from '../src/rig/timing.ts';
 import { rigSvg } from '../src/rig/svg.ts';
 import { sampleRigSprites, type RigSkin } from './rig-skin.ts';
 import { gif, png, rects } from './images.ts';
@@ -22,12 +23,12 @@ export async function exportRig(rig: SideRig, skin: RigSkin, output: string): Pr
   const samples = frames.map((_, i) => sampleRig(rig, sampleTime(rig, i)));
   await writeFile(output + '/rig.json', JSON.stringify(rig, null, 2) + '\n');
   await writeFile(output + '/skin.json', JSON.stringify(skin, null, 2) + '\n');
-  await writeFile(output + '/samples.json', JSON.stringify({ durationMs: rig.durationMs, loop: rig.performance?.loop ?? true, lightingNote: rig.lightingNote, frameDurationMs: rig.durationMs / rig.sampleCount, samples }, null, 2) + '\n');
+  await writeFile(output + '/samples.json', JSON.stringify({ durationMs: rig.durationMs, loop: rig.performance?.loop ?? true, lightingNote: rig.lightingNote, frameDurationMs: rig.durationMs / rig.sampleCount, frameDurationsMs: frameDurations(rig), samples }, null, 2) + '\n');
   const face = faceSequence(frames, samples, palette, skin.face);
   await writeFile(output + '/face-sequence.json', face.json);
   await writeFile(output + '/face-sequence.svg', face.svg);
   await writeFile(output + '/rig.svg', rigSvg(rig));
-  await writeFile(output + '/sprites.gif', gif(frames, frames.map(() => rig.durationMs / rig.sampleCount), palette, rig.performance?.loop ?? true));
+  await writeFile(output + '/sprites.gif', gif(frames, frameDurations(rig), palette, rig.performance?.loop ?? true));
   for (const [i, frame] of frames.entries()) {
     const name = String(i + 1).padStart(2, '0');
     await writeFile(output + `/rig-${name}.svg`, rigSvg(rig, sampleTime(rig, i)));
