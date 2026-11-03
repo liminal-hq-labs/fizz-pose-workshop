@@ -33,7 +33,7 @@ export interface RigStills { prefix: string; times: readonly number[]; width: nu
  */
 export interface RigEntry { rig: SideRig; prefix: string; animation: string; folder: string; title: string; labels: readonly string[]; stills?: RigStills; then?: string; sequence?: { name: string; leadIn: string; repeats: number }; }
 export const rigCatalogue: readonly RigEntry[] = [
- {rig:run as SideRig,prefix:'ben_walkRight',animation:'walk-run',folder:'ben-running',title:'Run',labels:['Near contact','Near push-off','Flight · far leg leads','Far contact','Far push-off','Flight · near leg leads']},
+ {rig:run as SideRig,prefix:'ben_walkRight',animation:'walk-run',folder:'ben-running',title:'Run',labels:['Near contact','Near roll-through','Near push-off','Near toe-off','Flight · far leg leads','Far leg reaches','Far contact','Far roll-through','Far push-off','Far toe-off','Flight · near leg leads','Near leg reaches']},
  {rig:pogo as SideRig,prefix:'ben_pogoRight',animation:'pogo',folder:'ben-pogo',title:'Pogo',labels:['Compress','Launch','Rise','Apex','Fall','Land']},
  {rig:fire as SideRig,prefix:'ben_fireRight',animation:'fizz-blaster',folder:'ben-firing',title:'Fizz Stunner',labels:['Aim','Discharge','Recoil','Recover','Settle','Ready']},
  {rig:ladder as SideRig,prefix:'ben_ladder',animation:'climb',folder:'ben-ladder',title:'Ladder climb',labels:['Left hand grips high','Pull up on the left hand','Right hand lets go','Right hand reaches','Right hand grips high','Pull up on the right hand','Left hand lets go','Left hand reaches'],stills:{prefix:'ben_climb',times:[0,.5],width:24,height:44,offset:[4,6]}},

@@ -28,7 +28,7 @@ export interface SideRig {
   name: string; width: number; height: number; groundY: number; durationMs: number; sampleCount: number;
   root: number[];
   face: FaceSettings;
-  torso: { leanDegrees: number; pitchSwayDegrees: number; bobAmplitude: number; bobLag: number; shoulderY: number; shoulderSpread: number; shoulderTwist: number; neckHeight: number };
+  torso: { leanDegrees: number; pitchSwayDegrees: number; pitchSwayCycles?: number; bobAmplitude: number; bobLag: number; shoulderY: number; shoulderSpread: number; shoulderTwist: number; neckHeight: number };
   feet: { toe: number[]; heel: number[]; ball: number[]; landingToeDegrees: number; landingCompression: number };
   arms: { upperLength: number; forearmLength: number; swingDegrees: number; elbowDegrees: number; elbowFlexDegrees: number; phaseLead: number; biasDegrees: number };
   legs: { thighLength: number; shinLength: number; hipSpread: number };
@@ -132,7 +132,8 @@ export function sampleRunRig(rig: SideRig, time: number): RigPose {
   if (!(rig.stride.stanceFraction > 0 && rig.stride.stanceFraction < .5)) throw new Error('Running requires alternating stance and flight.');
   const t = wrap(time), theta = t * tau;
   const root: Vec2 = [rig.root[0], rig.root[1] + rig.torso.bobAmplitude * Math.cos(2 * tau * (t - rig.torso.bobLag))];
-  const torsoAngle = radians(rig.torso.leanDegrees + rig.torso.pitchSwayDegrees * Math.sin(theta));
+  // `pitchSwayCycles: 2` sways the trunk once per stride, so both strides lean alike; the default sways once per cycle.
+  const torsoAngle = radians(rig.torso.leanDegrees + rig.torso.pitchSwayDegrees * Math.sin(theta * (rig.torso.pitchSwayCycles ?? 1)));
   const armTheta = theta + rig.arms.phaseLead * tau;
   // `face.turnLead` (in cycles) lets the head turn run slightly ahead of the stride, so the camera-facing peak lands on one frame.
   const torsoTurn = -Math.cos(armTheta), headTurn = Math.sin(theta + (rig.face.turnLead ?? 0) * tau);
