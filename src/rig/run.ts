@@ -12,6 +12,11 @@ export interface SideRig {
   lightingNote?: string;
   performance?: PerformanceSettings;
   mirrored?: boolean;
+  /**
+   * `left` turns a right-facing rig round for left-facing sprites: the skeleton, face and patches mirror, but Ben's
+   * Fizz Stunner stays on his right hip, which is then the far side, so it is drawn behind the body instead of copied across.
+   */
+  facing?: 'right' | 'left';
   pogo?: { compressedLength: number; extendedLength: number; shaftLength: number; lift: number; pegOffset: number };
   fire?: { recoil: number; kickDegrees: number };
   name: string; width: number; height: number; groundY: number; durationMs: number; sampleCount: number;
@@ -75,6 +80,8 @@ function footTarget(rig: SideRig, cycle: number, near = false): RigFoot {
   return { ankle, ball, toe, heel: add(ankle, rotate([rig.feet.heel[0], rig.feet.heel[1]], pitch)), pitch, toePitch, compression, stance, progress };
 }
 export function validateRig(rig: SideRig): void {
+  if (rig.facing !== undefined && rig.facing !== 'right' && rig.facing !== 'left') throw new Error("Rig facing must be 'right' or 'left'.");
+  if (rig.facing === 'left' && rig.mirrored) throw new Error('A left-facing rig already turns round; it cannot also be a plain mirror.');
   if (rig.motion && !["run", "pogo", "fire", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion)) throw new Error("Unknown rig motion.");
   if (rig.motion === "pogo" && (!rig.pogo || Object.values(rig.pogo).some(value => !Number.isFinite(value) || value <= 0) || rig.pogo.compressedLength > rig.pogo.extendedLength)) throw new Error("Pogo spring settings must be positive and ordered.");
   if (rig.motion === "fire" && (!rig.fire || Object.values(rig.fire).some(value => !Number.isFinite(value) || value < 0))) throw new Error("Firing settings must be finite and non-negative.");

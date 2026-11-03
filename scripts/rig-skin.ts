@@ -109,13 +109,15 @@ export function paintFoot(out: Pixels, foot: RigFoot, skin: RigSkin, near: boole
   const heightScale = 1 - foot.compression;
   const read = (x: number, y: number): string => { const row = rows.get(y); return row && x >= row.x && x < row.x + row.pixels.length ? row.pixels[x - row.x] : '.'; };
   // A pointed or tucked performance foot rotates far enough to skip outline pixels, so it is sealed like a rotated patch.
+  // Off the ground, the sole no longer rests on anything, so it is inked like the rest of the shoe's edge.
   const seal = out.sealRotations && (foot.pitch !== 0 || foot.toePitch !== 0), drawn = new Set<number>(), enclosed: number[] = [];
+  const sole = Math.max(...rows.keys()), solid = (x: number, y: number): boolean => read(x, y) !== '.' || (y === sole + 1 && read(x, sole) !== '.');
   const draw = (x: number, y: number, sx: number, sy: number): void => {
     const code = read(sx, sy); if (code === '.') return;
     out.pixel(x, y, code);
     if (!seal) return;
     drawn.add(y * out.width + x);
-    if (code !== 'k' && read(sx - 1, sy) !== '.' && read(sx + 1, sy) !== '.' && read(sx, sy - 1) !== '.' && read(sx, sy + 1) !== '.') enclosed.push(y * out.width + x);
+    if (code !== 'k' && solid(sx - 1, sy) && solid(sx + 1, sy) && solid(sx, sy - 1) && solid(sx, sy + 1)) enclosed.push(y * out.width + x);
   };
   for (let y = 0; y < out.height; y++) for (let x = 0; x < out.width; x++) {
     const local = rotate([x - foot.ankle[0], y - foot.ankle[1]], -foot.pitch);
@@ -127,10 +129,12 @@ export function paintFoot(out: Pixels, foot: RigFoot, skin: RigSkin, near: boole
     const ty = Math.round(skin.shoe.ball[1] + front[1] / heightScale);
     if (tx >= skin.shoe.flexX) draw(x, y, tx, ty);
   }
+  // Ink never goes below the shoe's lowest row: a sole that is nearly flat faces the ground it is about to land on.
+  const bottom = Math.max(-1, ...[...drawn].map(index => Math.floor(index / out.width)));
   for (const index of enclosed) {
     const x = index % out.width, y = (index - x) / out.width;
     for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
-      if (nx >= 0 && ny >= 0 && nx < out.width && ny < out.height && !drawn.has(ny * out.width + nx) && out.rows[ny][nx] === '.') out.rows[ny][nx] = 'k';
+      if (nx >= 0 && ny >= 0 && nx < out.width && ny <= bottom && !drawn.has(ny * out.width + nx) && out.rows[ny][nx] === '.') out.rows[ny][nx] = 'k';
     }
   }
   if(near&&skin.shoe.badge){
@@ -145,8 +149,8 @@ export function shoeBadgePoint(foot:RigFoot,skin:RigSkin):Vec2{
  return add(foot.ankle,rotate([point[0],height],foot.pitch));
 }
 const stunnerSwingDegrees = 35;
-function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin): void {
-  const [hip, knee] = pose.nearLeg;
+function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin, leg: Chain = pose.nearLeg): void {
+  const [hip, knee] = leg;
   const thigh = Math.atan2(knee[0] - hip[0], knee[1] - hip[1]);
   // The holster hangs from the belt: in performances it follows the thigh only within a limited swing, so a raised knee
   // cannot fold it up behind the shirt and arm.
@@ -156,9 +160,11 @@ function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin): void {
   // Local y points down the thigh, so the sprite patch rotates by the negative leg angle.
   out.patch({ anchor: skin.stunner.anchor, rows }, anchor, -angle);
 }
-export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
-  if (rig.mirrored) {
-    const frame = skinRig({...rig,mirrored:false},skin,reflectPose(pose,rig.width));
+export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner = false): Frame {
+  if (rig.mirrored || rig.facing === 'left') {
+    // A plain mirror copies the Stunner to the other hip. A left-facing rig keeps it on Ben's right hip, which faces away
+    // from the camera, so the right-facing render hangs it on the far hip behind the body before the whole sprite turns.
+    const frame = skinRig({...rig,mirrored:false,facing:'right'},skin,reflectPose(pose,rig.width),rig.facing === 'left');
     return {...frame,grid:frame.grid.map(row=>[...row].reverse().join(''))};
   }
   const out = new Pixels(rig.width, rig.height), colours = skin.palette;
@@ -178,6 +184,8 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
     spring.push(p.tip); out.segment(spring, 1, 'L');
     out.pixel(Math.round(p.tip[0]), Math.round(p.tip[1]), 'k');
   }
+  // A far-side Stunner is drawn first, so the far leg, torso and near limbs cover it and only what truly peeks out shows.
+  if (farStunner && !pose.weapon) paintStunner(out, pose, skin, pose.farLeg);
   out.segment(pose.farLeg, 2, colours.denim, colours.outline); paintFoot(out, pose.farFoot, skin, false);
   paintArm(out, pose.farArm, skin, false);
   out.segment(pose.nearLeg, 2, colours.denim, colours.outline);
@@ -188,7 +196,7 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose): Frame {
   if (pose.presentation && pose.nearLeg[1][1] < pose.nearLeg[0][1] + 2) {
     out.segment(pose.nearLeg, 2, colours.denim, colours.outline); out.segment(pose.nearLeg, 1, colours.denimSeam); paintFoot(out, pose.nearFoot, skin, true);
   }
-  if (!pose.weapon) paintStunner(out, pose, skin);
+  if (!pose.weapon && !farStunner) paintStunner(out, pose, skin);
   paintArm(out, pose.nearArm, skin, true);
   if (pose.weapon) {
     out.patch({ anchor: skin.weapon.anchor, rows: skin.weapon.pixels.map((pixels, y) => ({x: 0, y, pixels})) }, pose.weapon.grip, pose.weapon.angle);

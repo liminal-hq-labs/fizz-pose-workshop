@@ -161,7 +161,7 @@
         "expression": "normal",
         "nearSupport": false,
         "farSupport": false,
-        "nearFootDegrees": 35,
+        "nearFootDegrees": 135,
         "farFootDegrees": 40
       },
       {
@@ -191,7 +191,7 @@
         "expression": "normal",
         "nearSupport": false,
         "farSupport": false,
-        "nearFootDegrees": 40,
+        "nearFootDegrees": 150,
         "farFootDegrees": -5
       },
       {
@@ -221,7 +221,7 @@
         "expression": "normal",
         "nearSupport": false,
         "farSupport": false,
-        "nearFootDegrees": 25,
+        "nearFootDegrees": 140,
         "farFootDegrees": 40
       },
       {

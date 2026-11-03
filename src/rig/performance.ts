@@ -69,6 +69,18 @@ export function evaluateCurve(curve: Curve, t: number): number {
 function foot(ankle: Vec2, supported: boolean, rig: SideRig, angle = 0): RigFoot {
   return {ankle, ball: add(ankle, rotate([rig.feet.ball[0], rig.feet.ball[1]], angle)), toe: add(ankle, rotate([rig.feet.toe[0], rig.feet.toe[1]], angle)), heel: add(ankle, rotate([rig.feet.heel[0], rig.feet.heel[1]], angle)), pitch: angle, toePitch: angle, compression: 0, stance: supported, progress: 0};
 }
+/**
+ * A pointed foot swinging back to flat on the way in to a landing must not dig its toe or heel through the ground. The
+ * shoe's outlined box (heel to toe, ankle collar to sole) is kept above the ground line by easing the pitch towards flat.
+ */
+function clearPitch(rig: SideRig, ankle: Vec2, pitch: number): number {
+  const lowest = (angle: number): number => Math.max(...[[rig.feet.heel[0] - 1.5, -1.5], [rig.feet.toe[0] + 1.5, -1.5], [rig.feet.heel[0] - 1.5, rig.feet.ball[1] + 1], [rig.feet.toe[0] + 1.5, rig.feet.ball[1] + 1]].map(corner => ankle[1] + rotate(corner as unknown as Vec2, angle)[1]));
+  const limit = rig.groundY + 1, flat = lowest(0);
+  if (pitch === 0 || lowest(pitch) <= Math.max(limit, flat)) return pitch;
+  let low = 0, high = 1;
+  for (let i = 0; i < 24; i++) { const mid = (low + high) / 2; if (lowest(pitch * mid) <= Math.max(limit, flat)) low = mid; else high = mid; }
+  return pitch * low;
+}
 interface Body { neck: Vec2; nearShoulder: Vec2; farShoulder: Vec2; nearHip: Vec2; farHip: Vec2; }
 function body(rig: SideRig, root: Vec2, torsoAngle: number): Body {
   const base = {root, torsoAngle};
@@ -160,7 +172,7 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const farArm = solve(joints.farShoulder, target('farHand'), rig.arms.upperLength, rig.arms.forearmLength, clip.view === 'side' ? -1 : 1);
   const nearLeg = solve(joints.nearHip, target('nearAnkle'), rig.legs.thighLength, rig.legs.shinLength, clip.view === 'side' ? 1 : -1);
   const farLeg = solve(joints.farHip, target('farAnkle'), rig.legs.thighLength, rig.legs.shinLength, 1);
-  const nearFoot = foot(nearLeg[2], a.nearSupport, rig, radians(at(curves.scalar.nearFoot))), farFoot = foot(farLeg[2], a.farSupport, rig, radians(at(curves.scalar.farFoot)));
+  const nearFoot = foot(nearLeg[2], a.nearSupport, rig, clearPitch(rig, nearLeg[2], radians(at(curves.scalar.nearFoot)))), farFoot = foot(farLeg[2], a.farSupport, rig, clearPitch(rig, farLeg[2], radians(at(curves.scalar.farFoot))));
   const phone: Vec2 | undefined = curves.phone && t >= curves.phone.from ? [evaluateCurve(curves.phone.x, t), evaluateCurve(curves.phone.y, t)] : undefined;
   const noteX = clip.standing === 'left' ? [1,4] : [25,28];
   const notes: Vec2[] | undefined = rig.motion === 'whistle' ? [[noteX[0], 12 - 3 * Math.sin(t * Math.PI * 2)], [noteX[1], 7 - 2 * Math.cos(t * Math.PI * 2)]] : undefined;

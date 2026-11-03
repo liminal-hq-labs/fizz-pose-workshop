@@ -8,7 +8,7 @@ import { reflectPose } from './reflect.ts';
 import { samplePerformance } from './performance.ts';
 import { sampleActionRig } from './actions.ts';
 export function sampleRig(rig: SideRig, time: number): RigPose {
-  if (rig.mirrored) return reflectPose(sampleRig({...rig,mirrored:false},time),rig.width);
+  if (rig.mirrored || rig.facing === 'left') return reflectPose(sampleRig({...rig,mirrored:false,facing:'right'},time),rig.width);
   if (rig.performance) return samplePerformance(rig, time);
   return rig.motion === 'pogo' || rig.motion === 'fire' ? sampleActionRig(rig, time) : sampleRunRig(rig, time);
 }

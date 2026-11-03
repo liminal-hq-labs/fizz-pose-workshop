@@ -8,7 +8,7 @@ import { rigCatalogue } from '../src/rig/catalogue.ts';
 import { evaluateCurve, monotoneCurve } from '../src/rig/performance.ts';
 import { sampleIndex, sampleRig, sampleTime } from '../src/rig/sample.ts';
 import { distance } from '../src/rig/kinematics.ts';
-import { torsoPoint, type SideRig } from '../src/rig/run.ts';
+import { torsoPoint, validateRig, type SideRig } from '../src/rig/run.ts';
 import { skinRig } from './rig-skin.ts';
 import { exposedEdges, helmetCodes, loadSavedFrames } from './motion-metrics.ts';
 import skin from '../source/ben-side-skin.json';
@@ -125,6 +125,24 @@ test('pointed and tucked jump shoes keep their ink outline around the red upper 
       if (code === 'R' || code === 'r') for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) expect(grid[y + dy]?.[x + dx] ?? '.').not.toBe('.');
     }));
   }
+});
+
+test('the left-facing jump turns Ben round with his Stunner on the far (right) hip instead of mirroring it across', () => {
+  const saved = loadSavedFrames(), right = rig('jump'), left = rig('jump-left');
+  expect(left.facing).toBe('left'); expect(left.mirrored).toBeFalsy(); expect(left.performance).toBe(right.performance);
+  expect(saved.ben_stand.grid.join('')).not.toContain('M');
+  for (let i = 1; i <= right.sampleCount; i++) {
+    const a = saved[`ben_jumpRig${i}`], b = saved[`ben_jumpLeft${i}`], mirror = a.grid.map(row => [...row].reverse().join(''));
+    expect(b.grid).not.toEqual(mirror);
+    // The visible near-hip holster of the right-facing frame is gone; at most a sliver of the far-side one peeks out.
+    const count = (grid: readonly string[], code: string): number => grid.join('').split(code).length - 1;
+    expect(count(a.grid, 'M')).toBeGreaterThanOrEqual(3); expect(count(b.grid, 'M')).toBeLessThanOrEqual(2);
+    mirror.forEach((row, y) => [...row].forEach((code, x) => { if (code === 'M' || code === 'm') expect(b.grid[y][x]).not.toBe(code); }));
+    // Everything else (face, collar, limbs, shoes and badge) is the turned-round right-facing pose.
+    let differing = 0; mirror.forEach((row, y) => [...row].forEach((code, x) => { if (b.grid[y][x] !== code) differing++; }));
+    expect(differing).toBeLessThan(25);
+  }
+  expect(() => validateRig({ ...left, mirrored: true })).toThrow();
 });
 
 test('the Fizz Stunner stays on the hip in every jump, fall and ledge-pull frame, however high the knee rises', () => {
