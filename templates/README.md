@@ -67,7 +67,7 @@ This is an external art workshop, not a game asset replacement. The taller side-
 
 ## Continuous rig and reusable animation tools
 
-[Rig guide](docs/RIG.md) describes the saved rig, skin bindings, sampler, exporter and how to reuse them for another character. `source/ben-side-rig.json` defines bone lengths and motion; `source/ben-side-skin.json` defines the pixel patches. `src/rig/` contains the reusable continuous solver and viewer. `scripts/draw-run-cycle.ts` samples six poses into the editable grids and saves the reusable exports in `rig/ben-running/`. Run `bun run draw:run`, then `bun run generate`, to redraw Ben from the rig. Ordinary generation preserves manual editor overrides.
+[Rig guide](docs/RIG.md) describes the saved rig, skin bindings, sampler, exporter and how to reuse them for another character. `source/ben-side-rig.json` defines bone lengths and motion; `source/ben-side-skin.json` defines the pixel patches. `src/rig/` contains the reusable continuous solver and viewer. `scripts/draw-run-cycle.ts` samples twelve poses for each direction into the editable grids and saves the reusable exports in `rig/ben-running/` and `rig/ben-running-left/`. Run `bun run draw:run`, then `bun run generate`, to redraw Ben from the rig. Ordinary generation preserves manual editor overrides.
 
 | Frame | Legs and contact | Arms | Body |
 |---|---|---|---|
