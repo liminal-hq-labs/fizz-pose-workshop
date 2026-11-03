@@ -301,6 +301,25 @@ At one byte per pixel a 24 × 44 crop costs 1,056 bytes and at four bits 528 byt
 
 `source/ben-side-skin.json` defines `shoe.badge`, including its local point and yellow palette code. `shoeBadgePoint` in `scripts/rig-skin.ts` applies the shoe pitch and compression; the pixel renderer binds the badge to the nearest visible red upper pixel on the near shoe. The six running exports include the restored badge. Other saved action artwork is preserved; explicitly redrawing those rigs uses the shared skin’s badge rule.
 
+## Shoe audit
+
+Every saved Ben frame was measured for its shoes (colour width and rows, toe cap, sole, badge and outline) and compared view by view. Ben wears one design, red high-tops with a white toe cap and a white sole, drawn in four families:
+
+| Family | Source | Used by | Shape (colour pixels) | Toe cap, sole, badge | Pitch |
+|---|---|---|---|---|---|
+| Standing high-top (canonical for standing views) | Saved `ben_standFront`, `ben_standRight`, `ben_stand` | Standing stands, look loop, whistle loops, the turntable | Four rows. Front: 4 wide each, widening down. Quarter near shoe 8 long, far shoe raised two rows. Turntable profile 9 long | White outer toe cap and full white sole; the yellow badge on the near shoe's outer side in quarter and profile views; none from the front | Flat (standing) |
+| Side rig shoe (canonical for side views) | `shoe` in `source/ben-side-skin.json` | Run (both directions and the six-frame cuts), jump, fall, ledge pulls, pogo, firing, the seated phone's tucked feet | Three rows, 5 long: `RRrrR` upper, `RRRWW` toe cap, `WWWWW` sole, ink top | White toe cap and sole on the near shoe, grey (`L`) on the far shoe; the yellow badge bound behind the forefoot hinge | Follows the leg: heel and forefoot hinge, toe-off, flight and landing angles, pogo peg angles |
+| Front rig shoe | `frontShoe` in the side skin | Front-facing performance rigs on their feet (the phone sit-down's first three sprites) | The standing front high-top: four rows, 4 wide, one patch per side | White outer toe cap and sole, no badge | Flat |
+| Rear rig shoe | `backShoe` in the side skin | Ladder climb (`ben_ladder1`–`8`, `ben_climb1`–`2`) | Four rows, 3 wide, with a grey heel tab, as the rear turntable shoe | White sole | Flat on the rung |
+
+The comic death's `cameraShoe` shows oversized soles to the camera on purpose and is left as it is. Older single study frames (`ben_shoot`, `ben_aimUp`, `ben_aimDown`, `ben_jump`, `ben_pogo`, `ben_pogo2`, `ben_mantle1`–`3`) use hand-drawn side shoes of the side rig's size (5 × 3), several with a dark-grey outsole row under the white sole. They are original study art and are kept as drawn.
+
+What varied, and what changed:
+
+- The front-facing phone sprites wore the rear heel patch (3 × 3, a highlighted heel and no toe cap) instead of the front stand's high-tops. They now use `frontShoe`, copied from the saved front stand and checked against it in `scripts/shoes.test.ts`.
+- The climbing heel shoe was one row shorter than the rear turntable shoe. `backShoe` now has its four rows and grey heel tab; the climb's grips, footholds and timing are unchanged.
+- The side rig shoe is the shortest family: 5 long by three colour rows, against 8–9 long by four rows for the standing quarter and profile shoes. That gap is the squashed look across the side-view cycles. It is the pinned, A-rated running shoe, and one shared patch draws every side rig, so making it taller or longer would redraw the run and its six-frame cuts. That is left for a decision rather than changed here.
+
 ## Volumetric model rig
 
 The separate [3D model rig](BEN_3D.md) uses a shared Three.js skeleton with 24 joints and a portable GLB export. It adds actual rounded body depth, editable joints, continuous running and named demonstration poses. It does not regenerate or replace the pixel rig’s existing sprites.
