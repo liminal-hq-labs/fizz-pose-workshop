@@ -31,7 +31,9 @@ export function sampleActionRig(rig: SideRig, time: number): RigPose {
     pogo = { tip, springTop, shaftTop, grips: [nearHand, farHand], pegs: [[root[0] - 4.5, pegY], [root[0] + 5, pegY]], springLength, grounded };
   } else if (rig.motion === 'fire') {
     const settings = rig.fire; if (!settings) throw new Error('Firing rig requires recoil settings.');
-    const recoil = smoothstep((t - .08) / .08) * (1 - smoothstep((t - .2) / .36));
+    // The muzzle flash leads the recoil: it fires at t = .12 to .22 while the kick is still building, the kick peaks by t = .33
+    // and then eases back across the rest of the loop, so no two sampled frames repeat.
+    const recoil = smoothstep((t - .12) / .2) * (1 - smoothstep((t - .33) / .67));
     root = [rig.root[0] - recoil * settings.recoil * .55, rig.root[1]];
     torsoAngle = radians(rig.torso.leanDegrees - recoil * 6);
     nearAnkle = [rig.root[0] + 2, rig.groundY - 2]; farAnkle = [rig.root[0] - 3, rig.groundY - 2];
