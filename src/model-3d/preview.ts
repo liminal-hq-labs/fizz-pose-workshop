@@ -29,6 +29,7 @@ import {
   type SpriteFrame,
   type SpritePasses,
 } from "./sprite-passes.ts";
+import { createPogoStick, pogoState, pogoStick } from "./pogo.ts";
 import skinSvg from "../../source/ben-3d-skins.svg?raw";
 import config from "../../source/ben-3d.json";
 import type { WorkshopData } from "../types.ts";
@@ -37,7 +38,7 @@ export function mountBen3D(data: WorkshopData): void {
   const mount = document.querySelector<HTMLElement>("#ben-3d");
   if (!mount) return;
   const section: HTMLElement = mount;
-  section.innerHTML = `<h2>Ben in three dimensions</h2><p>A lean, rigged character with a vented bicycle helmet, brown-blond hair, a white-collared shirt, tapered jeans, red running shoes with white soles and a holstered Fizz Stunner. The SVG artwork is bound to the curved surfaces.</p><div class="controls"><button id="model-play">Pause rotation</button><label>Pose <select id="model-pose">${poseNames.map((name) => `<option>${name}</option>`).join("")}</select></label><label>Build <select id="model-build">${benBuilds.map((build) => `<option value="${build.id}">${build.label}</option>`).join("")}</select></label><label>Head style <select id="model-head"></select></label><label>Shirt print <select id="model-print">${shirtPrints.map((print) => `<option value="${print.id}">${print.label}</option>`).join("")}</select></label><label>View <select id="model-camera"><option value="studio">Studio · orbit freely</option><option value="sprite">Sprite orthographic</option></select></label><label><input id="model-rig" type="checkbox">Show skeleton</label><label><input id="model-animate" type="checkbox" checked>Animate pose</label><button id="model-reset">Reset model</button></div><label class="rig-scrubber">Turn <input id="model-yaw" type="range" min="0" max="360" value="25"><output id="model-angle">25°</output></label><div class="model-comparison"><div class="model-stage"><canvas id="model-canvas" aria-label="Rigged three-dimensional Ben character" role="img"></canvas><p id="model-status" class="small" role="status"></p></div><article class="model-reference"><h3>Calibrated sprite reference</h3><label>Reference <select id="model-reference">${config.references.map((ref, i) => `<option value="${i}">${ref.label}</option>`).join("")}</select></label><canvas id="model-sprite" width="320" height="440" role="img" aria-label="Calibrated sprite for model proportion review"></canvas><div class="controls"><button id="model-align">Match reference view</button><label><input id="model-overlay" type="checkbox">Overlay reference</label></div><p class="small">Orthographic view uses the same 32 × 44 frame and one world unit per source pixel. Compare the standing pose for proportions; the quarter sprites have different hand and foot poses.</p></article></div><details class="model-rig-controls"><summary>Pose the rig and move Ben</summary><div class="controls"><label>Bone <select id="model-bone">${config.bones
+  section.innerHTML = `<h2>Ben in three dimensions</h2><p>A lean, rigged character with a vented bicycle helmet, brown-blond hair, a white-collared shirt, tapered jeans, red running shoes with white soles and a holstered Fizz Stunner. The SVG artwork is bound to the curved surfaces.</p><div class="controls"><button id="model-play">Pause rotation</button><label>Pose <select id="model-pose">${poseNames.map((name) => `<option>${name}</option>`).join("")}</select></label><label>Build <select id="model-build">${benBuilds.map((build) => `<option value="${build.id}">${build.label}</option>`).join("")}</select></label><label>Head style <select id="model-head"></select></label><label>Shirt print <select id="model-print">${shirtPrints.map((print) => `<option value="${print.id}">${print.label}</option>`).join("")}</select></label><label>View <select id="model-camera"><option value="studio">Studio · orbit freely</option><option value="sprite">Sprite orthographic</option></select></label><label><input id="model-rig" type="checkbox">Show skeleton</label><label><input id="model-pogo" type="checkbox" checked>Pogo stick</label><label><input id="model-animate" type="checkbox" checked>Animate pose</label><button id="model-reset">Reset model</button></div><label class="rig-scrubber">Turn <input id="model-yaw" type="range" min="0" max="360" value="25"><output id="model-angle">25°</output></label><div class="model-comparison"><div class="model-stage"><canvas id="model-canvas" aria-label="Rigged three-dimensional Ben character" role="img"></canvas><p id="model-status" class="small" role="status"></p></div><article class="model-reference"><h3>Calibrated sprite reference</h3><label>Reference <select id="model-reference">${config.references.map((ref, i) => `<option value="${i}">${ref.label}</option>`).join("")}</select></label><canvas id="model-sprite" width="320" height="440" role="img" aria-label="Calibrated sprite for model proportion review"></canvas><div class="controls"><button id="model-align">Match reference view</button><label><input id="model-overlay" type="checkbox">Overlay reference</label></div><p class="small">Orthographic view uses the same 32 × 44 frame and one world unit per source pixel. Compare the standing pose for proportions; the quarter sprites have different hand and foot poses.</p></article></div><details class="model-rig-controls"><summary>Pose the rig and move Ben</summary><div class="controls"><label>Bone <select id="model-bone">${config.bones
     .filter((b) => !b.name.endsWith("Knee") && b.name !== "muzzleFlash")
     .map((b) => `<option>${b.name}</option>`)
     .join(
@@ -135,7 +136,18 @@ export function mountBen3D(data: WorkshopData): void {
   });
   ladderProp.visible = false;
   model.root.add(ladderProp);
+  // The pogo stick is an optional prop for the Pogo pose: Ben's grips and pegs follow it, and its spring compresses.
+  const pogoProp = createPogoStick(data.palette),
+    pogoToggle = $<HTMLInputElement>("#model-pogo"),
+    pogoTip = new THREE.Vector3();
+  pogoProp.group.visible = false;
+  model.root.add(pogoProp.group);
   const placeLadder = (shown: BenPose, at: number): void => {
+    pogoProp.group.visible = shown === "Pogo" && pogoToggle.checked;
+    if (pogoProp.group.visible) {
+      const state = pogoState(at);
+      pogoProp.pose(state, pogoTip.set(0, config.floorY + state.lift, pogoStick.z));
+    }
     ladderProp.visible = shown === "Climb";
     if (!ladderProp.visible) return;
     const r = ladder.rungSpacing,
@@ -239,13 +251,13 @@ export function mountBen3D(data: WorkshopData): void {
   const setBuild = (id: BenBuild): void => {
     if (id === buildId) return;
     scene.remove(model.root, helper);
-    model.root.remove(ladderProp);
+    model.root.remove(ladderProp, pogoProp.group);
     model.dispose();
     helper.dispose();
     buildId = id;
     model = build(id);
     scene.add(model.root);
-    model.root.add(ladderProp);
+    model.root.add(ladderProp, pogoProp.group);
     const shown = helper.visible;
     helper = new THREE.SkeletonHelper(model.root);
     helper.visible = shown;
@@ -401,6 +413,7 @@ export function mountBen3D(data: WorkshopData): void {
     rail.dispose();
     rung.dispose();
     wood.dispose();
+    pogoProp.dispose();
     model.dispose();
     renderer.dispose();
   };
@@ -496,9 +509,11 @@ export function mountBen3D(data: WorkshopData): void {
     );
     camera.position.set(0, 0, 80);
     camera.lookAt(0, 0, 0);
+    // Jumping poses get extra headroom; the pogo bounce lifts Ben's feet off the ground on top of the stick.
+    const headroom = reviewPose === "Pogo" ? 8 : 4;
     if (reviewPose !== "Standing") {
-      camera.top += 4;
-      camera.bottom += 4;
+      camera.top += headroom;
+      camera.bottom += headroom;
       camera.updateProjectionMatrix();
     }
     const target = new THREE.WebGLRenderTarget(width, height, { samples: 4 });

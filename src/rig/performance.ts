@@ -7,12 +7,23 @@ import { add, radians, rotate, solveTwoBone, tiltPixel, wrap, type Vec2, type Ch
 import { sampleFace, type FaceLandmark, type FacePose } from './face.ts';
 import { torsoPoint, type RigFoot, type RigPose, type SideRig } from './run.ts';
 import { clothPose, type ClothingSettings, type ClothPose } from './clothing.ts';
+import { ankleOnPeg, pogoStickPose, type PogoStickPose } from './pogo.ts';
 
 export type Expression = 'normal' | 'startled' | 'grit' | 'tongue' | 'dizzy' | 'wince' | 'out' | 'whistle';
 export interface PerformanceKey {
   nearFootDegrees?: number; farFootDegrees?: number;
   phase: number; root: number[]; lean: number; headRoll: number;
-  nearHand: number[]; farHand: number[]; nearAnkle: number[]; farAnkle: number[];
+  /**
+   * Hand and ankle goals. A clip that rides a pogo stick (`stick` on its keys) leaves them out: the hands close on the
+   * stick's grips and the soles stand on its pegs, so they follow the stick exactly between keys.
+   */
+  nearHand?: number[]; farHand?: number[]; nearAnkle?: number[]; farAnkle?: number[];
+  /**
+   * The pogo stick this key rides, from `rig.pogo`: the tip's column `x`, its `lift` off the ground in pixels, the spring's
+   * `compression` (0 extended, 1 fully loaded) and the shaft's `lean` in degrees (positive tips the handlebar forward). Each
+   * foot's `nearFootDegrees`/`farFootDegrees` then turns the foot about its peg on top of that lean.
+   */
+  stick?: { x: number; lift: number; compression: number; lean: number };
   expression: Expression; nearSupport: boolean; farSupport: boolean; phone?: number[];
   /** The motion comes to rest on this key (anticipation, impact or a held pose) instead of carrying velocity through it. */
   hold?: boolean;
@@ -73,6 +84,29 @@ export function notePosition(notes: NoteSettings, t: number, generation: number)
   const s = (wrap(t - notes.emitPhase) + generation) / 2, u = 1 - s, [p0, p1, p2, p3] = notes.path;
   const blend = (axis: 0 | 1): number => u * u * u * p0[axis] + 3 * u * u * s * p1[axis] + 3 * u * s * s * p2[axis] + s * s * s * p3[axis];
   return [blend(0), blend(1)];
+}
+
+/** Whether a clip rides a pogo stick; `validateRig` requires every key to key the stick, or none. */
+export function ridesStick(clip: PerformanceSettings): boolean { return Boolean(clip.keys[0].stick); }
+
+type BoundLimb = 'nearHand' | 'farHand' | 'nearAnkle' | 'farAnkle';
+/** The stick a pogo key rides, placed from its keyed channels. */
+function keyStick(rig: SideRig, stick: NonNullable<PerformanceKey['stick']>): PogoStickPose {
+  return pogoStickPose(rig.pogo!, rig.groundY, stick.x, stick.lift, stick.compression, radians(stick.lean));
+}
+/** Hands on the grips and soles on the pegs, with each foot turned about its peg by its keyed angle plus the stick's lean. */
+function stickGoals(rig: SideRig, stick: PogoStickPose, nearFoot: number, farFoot: number): Record<BoundLimb, Vec2> {
+  return {
+    nearHand: stick.grips[0], farHand: stick.grips[1],
+    nearAnkle: ankleOnPeg(stick.pegs[0], rig.feet.ball, stick.lean + nearFoot), farAnkle: ankleOnPeg(stick.pegs[1], rig.feet.ball, stick.lean + farFoot),
+  };
+}
+/** A key's goal for a limb: keyed directly, or for a pogo key, bound to its stick. */
+export function keyGoal(rig: SideRig, key: PerformanceKey, name: BoundLimb): readonly number[] {
+  const keyed = key[name];
+  if (keyed) return keyed;
+  if (!key.stick || !rig.pogo) throw new Error(`Performance key at phase ${key.phase} needs ${name} or a pogo stick.`);
+  return stickGoals(rig, keyStick(rig, key.stick), radians(key.nearFootDegrees ?? 0), radians(key.farFootDegrees ?? 0))[name];
 }
 
 /** Whether a clip keys its knees; `validateRig` requires all keys or none. */
@@ -143,7 +177,7 @@ const origins: Record<Limb, keyof Body> = { nearHand: 'nearShoulder', farHand: '
 
 /** Curves for one clip, built once per settings object so sampling stays allocation-light. */
 interface ClipCurves {
-  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink' | 'screen' | 'nearTap' | 'farTap' | 'gaze' | 'breath', Curve>;
+  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink' | 'screen' | 'nearTap' | 'farTap' | 'gaze' | 'breath' | 'stickX' | 'stickLift' | 'stickCompression' | 'stickLean', Curve>;
   limbs: Partial<Record<Limb, { x: Curve; y: Curve; angle: Curve; reach: Curve; grounded: readonly boolean[] }>>;
   phone?: { from: number; x: Curve; y: Curve };
 }
@@ -156,7 +190,7 @@ function clipCurves(rig: SideRig, clip: PerformanceSettings): ClipCurves {
   const limb = (name: Limb): NonNullable<ClipCurves['limbs'][Limb]> => {
     // Each limb target is also keyed as an angle and reach about its shoulder or hip, so free limbs swing on arcs. Angles
     // unwrap along the keys so a swing never takes the long way round.
-    const goal = (key: PerformanceKey): number[] => key[name]!;
+    const goal = (key: PerformanceKey): readonly number[] => name === 'nearKnee' || name === 'farKnee' ? key[name]! : keyGoal(rig, key, name);
     const polar = keys.map((key, i) => { const origin = bodies[i][origins[name]]; return [Math.atan2(goal(key)[1] - origin[1], goal(key)[0] - origin[0]), Math.hypot(goal(key)[0] - origin[0], goal(key)[1] - origin[1])]; });
     for (let i = 1; i < polar.length; i++) while (Math.abs(polar[i][0] - polar[i - 1][0]) > Math.PI) polar[i][0] -= Math.sign(polar[i][0] - polar[i - 1][0]) * 2 * Math.PI;
     return {
@@ -176,16 +210,20 @@ function clipCurves(rig: SideRig, clip: PerformanceSettings): ClipCurves {
     const held = keys.slice(phoneFrom), heldPhases = held.map(key => key.phase), heldRests = held.map(key => Boolean(key.hold || key.beat));
     // The phone is keyed in canvas space but carried by the far hand: its offset from that grip is what interpolates, so it
     // never drifts out of the hand between keys.
-    const offset = (key: PerformanceKey, axis: 0 | 1): number => (key.phone ?? held[0].phone!)[axis] - key.farHand[axis];
+    const offset = (key: PerformanceKey, axis: 0 | 1): number => (key.phone ?? held[0].phone!)[axis] - keyGoal(rig, key, 'farHand')[axis];
     phone = { from: keys[phoneFrom].phase, x: monotoneCurve(heldPhases, held.map(key => offset(key, 0)), false, heldRests), y: monotoneCurve(heldPhases, held.map(key => offset(key, 1)), false, heldRests) };
   }
   const curves: ClipCurves = {
     scalar: {
-      rootX: curve(keys.map(key => key.root[0])), rootY: curve(keys.map(key => key.root[1])), lean: curve(keys.map(key => key.lean)), headRoll: curve(keys.map(key => key.headRoll)),
+      // A pogo ride carries the pelvis on the stick: its keyed root interpolates as an offset from the stick's ride point, so the
+      // body rides the stick between keys instead of drifting out of reach of the grips and pegs.
+      rootX: curve(keys.map(key => key.root[0] - (key.stick ? keyStick(rig, key.stick).ride[0] : 0))), rootY: curve(keys.map(key => key.root[1] - (key.stick ? keyStick(rig, key.stick).ride[1] : 0))), lean: curve(keys.map(key => key.lean)), headRoll: curve(keys.map(key => key.headRoll)),
       nearFoot: curve(keys.map(key => key.nearFootDegrees ?? 0)), farFoot: curve(keys.map(key => key.farFootDegrees ?? 0)),
       pucker: curve(keys.map(key => key.pucker ?? 0)), blink: curve(keys.map(key => key.blink ?? 0)),
       screen: curve(keys.map(key => key.screen ?? 0)), nearTap: curve(keys.map(key => key.taps?.[0] ?? 0)), farTap: curve(keys.map(key => key.taps?.[1] ?? 0)),
       gaze: curve(keys.map(key => key.gaze ?? 0)), breath: curve(keys.map(key => key.breath ?? 0)),
+      stickX: curve(keys.map(key => key.stick?.x ?? 0)), stickLift: curve(keys.map(key => key.stick?.lift ?? 0)),
+      stickCompression: curve(keys.map(key => key.stick?.compression ?? 0)), stickLean: curve(keys.map(key => key.stick?.lean ?? 0)),
     },
     limbs: { nearHand: limb('nearHand'), farHand: limb('farHand'), nearAnkle: limb('nearAnkle'), farAnkle: limb('farAnkle'), ...(keys[0].nearKnee ? { nearKnee: limb('nearKnee'), farKnee: limb('farKnee') } : {}) },
     phone,
@@ -233,10 +271,15 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const a = t >= keys[keys.length - 1].phase ? keys[keys.length - 1] : keys[index];
   // Goals are solved in world coordinates, then the travel so far is taken off so the sprite stays in place.
   const shift: Vec2 = [(clip.travel?.[0] ?? 0) * t, (clip.travel?.[1] ?? 0) * t];
-  const worldRoot: Vec2 = [at(curves.scalar.rootX), at(curves.scalar.rootY)], torsoAngle = radians(at(curves.scalar.lean)), headAngle = radians(at(curves.scalar.headRoll));
+  // A pogo ride places the stick first; the pelvis rides its collar and the hands and feet follow its grips and pegs exactly.
+  const stick = ridesStick(clip) ? pogoStickPose(rig.pogo!, rig.groundY, at(curves.scalar.stickX), at(curves.scalar.stickLift), at(curves.scalar.stickCompression), radians(at(curves.scalar.stickLean))) : undefined;
+  const worldRoot: Vec2 = [at(curves.scalar.rootX) + (stick?.ride[0] ?? 0), at(curves.scalar.rootY) + (stick?.ride[1] ?? 0)], torsoAngle = radians(at(curves.scalar.lean)), headAngle = radians(at(curves.scalar.headRoll));
   const root: Vec2 = [worldRoot[0] - shift[0], worldRoot[1] - shift[1]];
   const breath = at(curves.scalar.breath), world = body(rig, worldRoot, torsoAngle, breath), joints = body(rig, root, torsoAngle, breath);
+  const nearFootAngle = radians(at(curves.scalar.nearFoot)), farFootAngle = radians(at(curves.scalar.farFoot));
+  const bound = stick ? stickGoals(rig, stick, nearFootAngle, farFootAngle) : undefined;
   const target = (name: Limb): Vec2 => {
+    if (bound && name !== 'nearKnee' && name !== 'farKnee') return bound[name];
     const limb = curves.limbs[name]!;
     if (limb.grounded[index]) return [at(limb.x) - shift[0], at(limb.y) - shift[1]];
     const origin = world[origins[name]], angle = at(limb.angle), reach = at(limb.reach);
@@ -259,7 +302,9 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const knees = keysKnees(clip);
   const nearLeg = knees ? through(joints.nearHip, target('nearKnee'), target('nearAnkle')) : solve(joints.nearHip, target('nearAnkle'), rig.legs.thighLength, rig.legs.shinLength, clip.view === 'side' ? 1 : -1);
   const farLeg = knees ? through(joints.farHip, target('farKnee'), target('farAnkle')) : solve(joints.farHip, target('farAnkle'), rig.legs.thighLength, rig.legs.shinLength, 1);
-  const nearFoot = foot(nearLeg[2], a.nearSupport, rig, clearPitch(rig, nearLeg[2], radians(at(curves.scalar.nearFoot)))), farFoot = foot(farLeg[2], a.farSupport, rig, clearPitch(rig, farLeg[2], radians(at(curves.scalar.farFoot))));
+  // On a pogo stick each foot stands on its peg, pitched with the shaft; elsewhere a pointed foot eases flat near the ground.
+  const nearFoot = stick ? foot(nearLeg[2], true, rig, stick.lean + nearFootAngle) : foot(nearLeg[2], a.nearSupport, rig, clearPitch(rig, nearLeg[2], nearFootAngle));
+  const farFoot = stick ? foot(farLeg[2], true, rig, stick.lean + farFootAngle) : foot(farLeg[2], a.farSupport, rig, clearPitch(rig, farLeg[2], farFootAngle));
   const farGrip = farArm[2], phone: Vec2 | undefined = curves.phone && t >= curves.phone.from ? [farGrip[0] + evaluateCurve(curves.phone.x, t), farGrip[1] + evaluateCurve(curves.phone.y, t)] : undefined;
   const notes: Vec2[] | undefined = clip.notes ? [notePosition(clip.notes, t, 0), notePosition(clip.notes, t, 1)] : undefined;
   const face = tiltedFace(sampleFace(joints.neck, 0, rig.face, t, headAngle), sampleFace(joints.neck, 0, rig.face, t), headAngle);
@@ -271,8 +316,8 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
     cloth = { ...cloth, nearSleeve: cloth.nearSleeve - raised(nearArm), farSleeve: cloth.farSleeve - raised(farArm) };
   }
   return { time: t, root, torsoAngle, torsoTurn: 0, headTurn: 0, headAngle, neck: joints.neck, face, nearArm, farArm, nearLeg, farLeg, nearFoot, farFoot,
-    contact: a.nearSupport && a.farSupport ? 'both' : a.nearSupport ? 'near' : a.farSupport ? 'far' : 'flight',
-    cloth,
+    contact: stick ? stick.grounded ? 'pogo' : 'flight' : a.nearSupport && a.farSupport ? 'both' : a.nearSupport ? 'near' : a.farSupport ? 'far' : 'flight',
+    cloth, ...(stick ? { pogo: stick } : {}),
     presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: scrolledEnvironment(clip, shift), cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink),
       ...(a.seated ? { seated: true } : {}), ...(a.shinOver ? { shinOver: a.shinOver } : {}), ...(clip.frontHolster ? { frontHolster: true } : {}),
       gaze: at(curves.scalar.gaze), breath,

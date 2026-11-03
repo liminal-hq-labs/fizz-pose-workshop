@@ -85,17 +85,15 @@ The right-facing run stays pinned byte for byte: the left run adds frames withou
 
 The viewer's **Overlay sampled rig on sprite** draws continuous joints, while the skin draws a joint into pixel `round(x)`. `reflectPose` maps joints about pixel indices (`width - 1 - x`) so the rounded pixels mirror exactly, but a continuous point mirrors about the canvas edge (`width - x`). `overlayShift` in `src/rig/reflect.ts` therefore moves the overlay of every left-facing or mirrored rig one pixel right, so each joint sits on its left-facing pixel exactly as far (at most one pixel from its centre) as on the right-facing one. Reflected eye and mouth pixel lists stay in canvas reading order, so the face inspector and `face-sequence.json` match the pixels measured from the saved left sprites.
 
-Pogo and firing still have right-facing rigs only (`ben_pogoRight*`, `ben_fireRight*`). Firing needs the held weapon moved to the far hand before it can use `facing: "left"`, and a left pogo needs its own review of the stick, grips and pegs.
+Firing still has a right-facing rig only (`ben_fireRight*`): it needs the held weapon moved to the far hand before it can use `facing: "left"`. The pogo ride has both directions; see [Pogo ride](#pogo-ride).
 
-## Pogo and Fizz Stunner rigs
+## Fizz Stunner rig
 
-`src/rig/sample.ts` selects the continuous sampler using `motion`: omitted or `run` for running, `pogo` for spring motion and `fire` for the Fizz Stunner. `src/rig/actions.ts` solves action arms and legs with fixed bone lengths and explicit grip/ankle targets. The elbow pole keeps elbows beneath the aimed hands. All motions use the shared skin and facial landmark projection.
-
-`source/ben-pogo-rig.json` sets spring compression and extension, shaft length, peg height and flight lift. Ground contact occupies phases `0–0.18` and `0.82–1`; the spring extends before flight and compresses after landing. The tip rises six pixels during flight. The pelvis follows the pegs, the shoe soles sit on the pegs and the hands follow the handle. The 24 × 52 canvas includes clearance for the helmet and stick. The six 150 ms samples are compression, launch, rise, apex, fall and landing.
+`src/rig/sample.ts` selects the continuous sampler: a rig with `performance` keys uses `src/rig/performance.ts`, `motion: "fire"` uses the Fizz Stunner sampler in `src/rig/actions.ts`, and anything else runs. `actions.ts` solves the firing arms and legs with fixed bone lengths and explicit grip/ankle targets. The elbow pole keeps elbows beneath the aimed hands. All motions use the shared skin and facial landmark projection.
 
 `source/ben-fire-rig.json` sets recoil distance and muzzle kick. Feet stay fixed while the pelvis and torso react to recoil; both hands follow the gun. The held purple Stunner replaces its holstered patch. The 32 × 44 canvas allows room for the muzzle and flash. The six 100 ms samples are aim, discharge, recoil, recovery, settle and ready; the discharge sample includes a small palette-coloured flash. The firing gaze stays aimed, with `face.shiftAmplitude` set to zero.
 
-Run `bun run draw:actions` then `bun run generate` to update the twelve editable action frames and their active gallery loops. This overwrites the corresponding editor overrides. `rig/ben-pogo/` and `rig/ben-firing/` contain the configuration, shared skin, joint samples, continuous SVG, six static skeleton SVGs, six PNG/SVG sprites, GIF and facial sequence measurements. The generic exporter accepts either action rig, for example `bun run rig:export source/ben-pogo-rig.json source/ben-side-skin.json rig/ben-pogo`.
+Run `bun run draw:actions` then `bun run generate` to update the six editable firing frames and their gallery loop. This overwrites the corresponding editor overrides. `rig/ben-firing/` contains the configuration, shared skin, joint samples, continuous SVG, six static skeleton SVGs, six PNG/SVG sprites, GIF and facial sequence measurements. The generic exporter accepts any rig, for example `bun run rig:export source/ben-fire-rig.json source/ben-side-skin.json rig/ben-firing`.
 
 The viewer's **Action** selector switches between the saved rigs. Continuous motion, six samples, speed, scrubbing, stepping, overlays, facial inspection and download links follow the selected action. The sprite sheet uses the maximum frame dimensions for its cells and records each frame's native rectangle in `assets.json`.
 
@@ -119,9 +117,36 @@ Keys need not sit on sample times. `performance.sampleTimes` lists the phase of 
 
 ### Ink-safe patch rotation
 
-Small head rolls are drawn as a whole-pixel row shear (`tiltOffset` in `src/rig/kinematics.ts`) rather than a free rotation: every authored row of the helmet and face keeps its pixels and outline, and only whole rows step sideways. The rig's eye, mouth and expression pixels follow the same shear. Larger torso leans still rotate, but performance rigs seal the result: any drawn pixel whose source was fully enclosed in its patch, and which now touches empty canvas, gets ink in that neighbour. Performance rigs also ink one-pixel notches in the collar and shoulder band (the four rows below the collar), where a limb outline meets the shirt. Only existing palette codes are written. Run, pogo and firing keep the plain nearest-neighbour rotation so their saved references stay byte-for-byte.
+Small head rolls are drawn as a whole-pixel row shear (`tiltOffset` in `src/rig/kinematics.ts`) rather than a free rotation: every authored row of the helmet and face keeps its pixels and outline, and only whole rows step sideways. The rig's eye, mouth and expression pixels follow the same shear. Larger torso leans still rotate, but performance rigs seal the result: any drawn pixel whose source was fully enclosed in its patch, and which now touches empty canvas, gets ink in that neighbour. Performance rigs also ink one-pixel notches in the collar and shoulder band (the four rows below the collar), where a limb outline meets the shirt. Only existing palette codes are written. Run and firing keep the plain nearest-neighbour rotation so their saved references stay byte-for-byte.
 
 The holstered Stunner swings with the near thigh by at most 35° in performances, so a raised knee cannot fold it up behind the shirt. A near knee raised above the hip (climbing onto the ledge, kicking in a fall) is drawn in front of the shirt.
+
+### Pogo ride
+
+`source/ben-pogo-rig.json` (`ben_pogoRight1`–`12`, animation `pogo`, exports in `rig/ben-pogo/`) is a performance loop on a 24 × 44 canvas, posed from the [3D pogo reference](BEN_3D.md#pogo-stick). Its left-facing set (`ben_pogoLeft1`–`12`, animation `pogo-left`, exports in `rig/ben-pogo-left/`) shares the same keys through `facing: "left"`, so the stick, limbs and face turn round while the Fizz Stunner stays on Ben's right hip, hidden on the far side. Neither set is a plain mirror. The older `ben_pogo` and `ben_pogo2` study frames are kept as they were.
+
+The stick is part of the rig rather than painted on afterwards. `pogo` in the rig JSON sets its pixel dimensions (`src/rig/pogo.ts`): a two-row rubber tip, a coil spring of five rows extended and two compressed, a peg collar, a 14-row shaft and a T handlebar, plus where each sole rests on its peg and where each hand closes on its grip. Every key carries `stick`: the tip's column `x`, its `lift` off the ground, the spring's `compression` (0 extended, 1 fully loaded) and the shaft's `lean` in degrees. These channels interpolate like any other, and the sampler then places the stick and binds Ben to it:
+
+- The hands close on the grips and the ball of each foot stands on its peg exactly, at every sampled time, so pogo keys leave out the hand and ankle goals that other performances key.
+- Each foot turns about its peg by the stick's lean plus its own `nearFootDegrees` or `farFootDegrees`, so the feet follow the pegs instead of staying flat: about 3° at the deepest squash, rising to 22° toe-down as he drives up off the balls of his feet, and easing back in flight.
+- The keyed `root` interpolates as an offset from the stick's continuous ride point (`ride`, the collar before it snaps to whole rows), so the pelvis rides the stick between keys without drifting out of reach, while the tip, spring, pegs and soles step a whole row at a time and never part by a stray pixel.
+
+The pixel skin (`pogoLayers` in `scripts/rig-skin.ts`) draws the stick in layers: the far peg and far grip behind Ben; the outlined shaft, rubber tip, coils and collar behind his near leg; the near peg under the near shoe; and the near grip under the near hand. Separate lit coils with the plunger showing between them squeeze into a packed block of two rows, so compression reads at sprite size. The shaft really passes behind the near leg, but at 24 × 44 the near thigh, shin and forearm would hide it, so its one-pixel yellow core is drawn again in front of the legs and shirt, as pogo sprites traditionally show it, with only the near shoe and near hand over it. The red band sits just below the handlebar. Turned slightly towards the camera, the far grip sits in front of the shaft and the near grip behind it, as the far eye shows in front on the run. This rig's arms are 3.8 and 3.4 px so the hands can reach the handlebar at belly height when the legs straighten.
+
+| Frame | Phase | Hold | Pose |
+|---|---|---|---|
+| 1 | 0.00 | 40 ms | Touchdown: tip lands, legs reaching, toes slightly down |
+| 2 | 0.05 | 50 ms | Load the spring: knees give, four spring rows |
+| 3–4 | 0.11, 0.17 | 50, 60 ms | Deepest squash: two packed rows, the helmet five rows lower, held over two frames for comic anticipation |
+| 5–6 | 0.24, 0.31 | 60 ms each | Drive up and the spring snaps out, heels rising |
+| 7 | 0.38 | 80 ms | Lift-off: legs straight, toes pointed 22° |
+| 8–9 | 0.47, 0.58 | 90 ms each | Rise, pulling the stick up under him |
+| 10 | 0.69 | 90 ms | Apex tuck: the tip three rows off the ground, knees drawn up |
+| 11–12 | 0.80, 0.90 | 80, 90 ms | Drop and reach down for the next touchdown |
+
+The loop is 840 ms. The game supplies the bounce height: the sprite lifts its tip only three rows, so Ben stays in his 24 × 44 cell and the helmet never clips the top edge. `scripts/pogo.test.ts` checks the dimensions and timing in both directions, that the spring compresses only on the ground and the tip never sinks through it, the grips and pegs binding with fixed bones, the foot pitch (never flat), the pelvis behind the shaft, loop closure and step sizes, that the saved frames are the rig redrawn, the stick layers for every spring length, and that the right set shows the Stunner while the left set hides it without either being a mirror. Run `bun run draw:performances pogo pogo-left` and `bun run generate` to redraw them.
+
+At one byte per pixel each 24 × 44 frame costs 1,056 bytes, and at four bits 528 bytes. Each twelve-frame direction is 12,672 bytes (12.4 KB) at 8 bits or 6,336 bytes (6.2 KB) at 4 bits, and both directions together 25,344 bytes (24.8 KB) or 12,672 bytes (12.4 KB), before trimming the transparent border. The two directions cannot be one stored set flipped at blit time, because the Stunner shows only facing right.
 
 ### Cloth parts
 

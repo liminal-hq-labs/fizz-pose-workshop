@@ -26,7 +26,7 @@ export function rigDrawing(pose: RigPose, ground: number, width: number): string
     for (let i = 1; i < 6; i++) coils.push([p.tip[0] + (i % 2 ? -1 : 1), p.springTop[1] + p.springLength * i / 6]);
     coils.push(p.tip);
     equipment = line([p.springTop, p.shaftTop], '#ddd', .4) + line(p.pegs, '#ddd', .4)
-      + line([[p.shaftTop[0] - 3, p.shaftTop[1]], [p.shaftTop[0] + 3, p.shaftTop[1]]], '#ddd', .4)
+      + line(p.grips, '#ddd', .4)
       + line(coils, p.grounded ? '#fff66b' : '#ddd', .25);
   } else if (pose.weapon) equipment = line([pose.weapon.grip, pose.weapon.muzzle], pose.weapon.flash ? '#ffff55' : '#ff55ff', .8);
   return equipment + `<path d="M0 ${ground}H${width}" stroke="#465f50" stroke-width=".12"/>`

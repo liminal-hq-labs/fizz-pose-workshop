@@ -9,6 +9,7 @@ import { sampleRig, sampleTime } from '../src/rig/sample.ts';
 
 import { add, rotate, tiltOffset, type Chain, type Vec2 } from '../src/rig/kinematics.ts';
 import { validateRig, type RigFoot, type RigPose, type SideRig } from '../src/rig/run.ts';
+import type { PogoStickPose } from '../src/rig/pogo.ts';
 import type { Frame, Frames } from '../src/types.ts';
 
 export interface PixelRow { x: number; y: number; pixels: string; }
@@ -228,30 +229,32 @@ export function paintRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner 
   if (pose.presentation && pose.presentation.view !== 'side') {
     paintFacingBody(out, rig, skin, pose); out.closeNotches(pose.face.pixelAnchor[1], pose.face.pixelAnchor[1] + 4); return out;
   }
-  if (pose.pogo) {
-    const p = pose.pogo;
-    out.segment([p.shaftTop, p.springTop], 1, 'L', 'k');
-    out.segment(p.pegs, 1, 'L', 'k');
-    out.segment([[p.shaftTop[0] - 3, p.shaftTop[1]], [p.shaftTop[0] + 3, p.shaftTop[1]]], 1, 'D', 'k');
-    const spring: Vec2[] = [p.springTop];
-    for (let i = 1; i < 6; i++) spring.push([p.tip[0] + (i % 2 ? -1 : 1), p.springTop[1] + p.springLength * i / 6]);
-    spring.push(p.tip); out.segment(spring, 1, 'L');
-    out.pixel(Math.round(p.tip[0]), Math.round(p.tip[1]), 'k');
-  }
+  // A pogo stick stands between Ben's legs: its far peg and grip sit behind him, the shaft passes in front of the far leg and
+  // his belly but behind the near leg, and the near peg and grip come in front, under the near shoe and hand.
+  const stick = pose.pogo ? pogoLayers(pose.pogo) : undefined;
+  if (stick) { out.part = 'prop'; stick.back.forEach(([x, y, code]) => out.pixel(x, y, code)); out.part = ''; }
   // A far-side Stunner is drawn first, so the far leg, torso and near limbs cover it and only what truly peeks out shows.
   if (farStunner && !pose.weapon) paintStunner(out, pose, skin, pose.farLeg);
   out.segment(pose.farLeg, 2, colours.denim, colours.outline); paintFoot(out, pose.farFoot, skin, false);
   paintArm(out, pose.farArm, skin, false, pose.cloth?.farSleeve);
+  if (stick) { out.part = 'prop'; stick.shaft.forEach(([x, y, code]) => out.pixel(x, y, code)); out.part = ''; }
   out.segment(pose.nearLeg, 2, colours.denim, colours.outline);
   out.segment(pose.nearLeg, 1, colours.denimSeam);
   paintFoot(out, pose.nearFoot, skin, true);
+  if (stick) { out.part = 'prop'; stick.front.forEach(([x, y, code]) => out.pixel(x, y, code)); out.part = ''; }
   out.patch(clothedTorso(rig, skin, pose), pose.root, pose.torsoAngle, pose.torsoTurn);
+
   // A performance knee raised above the hip (climbing onto a ledge, tucking in a fall) passes in front of the shirt, and in
   // front of the near arm too: on a ledge the knee comes up between the planted hands.
   const kneeUp = Boolean(pose.presentation) && pose.nearLeg[1][1] < pose.nearLeg[0][1] + 2;
   const raisedLeg = (): void => { out.segment(pose.nearLeg, 2, colours.denim, colours.outline); out.segment(pose.nearLeg, 1, colours.denimSeam); paintFoot(out, pose.nearFoot, skin, true); };
   if (kneeUp) raisedLeg();
   if (!pose.weapon && !farStunner) paintStunner(out, pose, skin);
+  if (stick) {
+    out.part = 'prop'; [...stick.core, ...stick.grip].forEach(([x, y, code]) => out.pixel(x, y, code)); out.part = '';
+    // The near shoe stands on its peg in front of the shaft.
+    paintFoot(out, pose.nearFoot, skin, true);
+  }
   paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
   // The holster hangs from the back of the belt, so it stays over the thigh as the knee swings up.
   if (kneeUp && pose.presentation?.view === 'side' && pose.presentation.environment?.kind === 'ledge') { raisedLeg(); if (!pose.weapon && !farStunner) paintStunner(out, pose, skin); }
@@ -275,6 +278,40 @@ export function paintRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner 
   paintIdleProps(out, skin, pose);
   if (pose.presentation) out.closeNotches(pose.face.pixelAnchor[1], pose.face.pixelAnchor[1] + 4);
   return out;
+}
+type StickPixel = readonly [number, number, string];
+/**
+ * The side-view pogo stick in draw layers. Rows are counted up the shaft from the rubber tip, each row's centre column
+ * following the lean: a two-row rubber foot, the coil spring (separate lit coils with the plunger showing between them when
+ * extended, packed solid when compressed), the dark peg collar, the yellow shaft with a red band below the handlebar, and
+ * the T handlebar with a grip at each end.
+ *
+ * The shaft really passes between Ben's legs, behind the near leg, but at sprite size the near thigh, shin and forearm would
+ * then hide all of it. Its outlined tube is drawn behind Ben, so it gives the silhouette, and its one-pixel yellow `core`
+ * is drawn again in front of his legs and shirt, as pogo sprites traditionally show it, under only the near hand and shoe.
+ */
+export function pogoLayers(stick: PogoStickPose): { back: StickPixel[]; shaft: StickPixel[]; core: StickPixel[]; front: StickPixel[]; grip: StickPixel[] } {
+  const back: StickPixel[] = [], shaft: StickPixel[] = [], core: StickPixel[] = [], front: StickPixel[] = [], grip: StickPixel[] = [];
+  const slope = Math.tan(stick.lean), length = stick.springLength;
+  const column = (d: number): number => Math.round(stick.tip[0] + d * slope), row = (d: number): number => stick.tip[1] - d;
+  const strip = (layer: StickPixel[], d: number, from: number, pixels: string): void => { [...pixels].forEach((code, i) => { if (code !== '.') layer.push([column(d) + from + i, row(d), code]); }); };
+  strip(shaft, 0, -1, 'kkk'); strip(shaft, 1, -2, 'kDDDk');
+  // Extended coils stand apart with the plunger between them; from three rows the spring closes up into a packed block.
+  const packed = length <= 3;
+  for (let i = 0; i < length; i++) strip(shaft, 2 + i, -2, packed || i % 2 === 0 ? (i % 4 < 2 ? 'kLWLk' : 'kWLLk') : '.kDk.');
+  const collar = 2 + length, top = collar + Math.round(stick.collar[1] - stick.shaftTop[1]);
+  strip(shaft, collar, -2, 'kDDDk');
+  for (let d = collar + 1; d < top; d++) { const band = top - d >= 3 && top - d <= 4; strip(shaft, d, -1, band ? 'kRk' : 'kyk'); strip(core, d, 0, band ? 'R' : 'y'); }
+  // The T handlebar: a yellow bar across the top of the shaft with a dark grip at each end. Turned a little towards the
+  // camera, Ben's far side swings forward, so the far grip sits in front of the shaft and the near grip behind it.
+  strip(shaft, top, -1, 'yyy'); strip(shaft, top + 1, -1, 'kkk'); strip(shaft, top - 1, -1, 'kkk');
+  strip(back, top, 2, 'Dk'); strip(back, top + 1, 2, 'kk'); strip(back, top - 1, 2, 'kk');
+  strip(grip, top, -3, 'kD'); strip(grip, top + 1, -3, 'kk'); strip(grip, top - 1, -3, 'kk');
+  // Footpegs: the far peg stands one row higher, behind the far shoe; the near peg runs forward under the near shoe.
+  strip(back, collar + 1, -4, 'kkkk'); strip(back, collar, -4, 'kDDk'); strip(back, collar - 1, -4, 'kk');
+  strip(front, collar, 1, 'DDyk'); strip(front, collar - 1, 4, 'k');
+  for (let x = 0; x < 4; x++) front.push([column(collar) + 1 + x, row(collar) + 1, 'k']);
+  return { back, shaft, core, front, grip };
 }
 export function sampleRigSprites(rig: SideRig, skin: RigSkin, prefix = 'ben_walkRight'): Frames {
   validateRig(rig);

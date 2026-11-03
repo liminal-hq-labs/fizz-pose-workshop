@@ -6,6 +6,7 @@
 import type { PerformanceSettings, Expression } from './performance.ts';
 import type { ClothingSettings, ClothPose } from './clothing.ts';
 import type { LightingSettings } from './lighting.ts';
+import { validPogo, type PogoSettings, type PogoStickPose } from './pogo.ts';
 import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
@@ -23,7 +24,8 @@ export interface SideRig {
   facing?: 'right' | 'left';
   /** Optional cloth parts (shirt hem and sleeves) with follow-through; see `src/rig/clothing.ts`. */
   clothing?: ClothingSettings;
-  pogo?: { compressedLength: number; extendedLength: number; shaftLength: number; lift: number; pegOffset: number };
+  /** The pogo stick a `pogo` performance rides; see `src/rig/pogo.ts`. */
+  pogo?: PogoSettings;
   fire?: { recoil: number; kickDegrees: number };
   name: string; width: number; height: number; groundY: number; durationMs: number; sampleCount: number;
   root: number[];
@@ -45,7 +47,7 @@ export interface RigPose {
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
   contact: 'near' | 'far' | 'flight' | 'pogo' | 'both';
-  pogo?: { tip: Vec2; springTop: Vec2; shaftTop: Vec2; grips: readonly [Vec2, Vec2]; pegs: readonly [Vec2, Vec2]; springLength: number; grounded: boolean };
+  pogo?: PogoStickPose;
   weapon?: { grip: Vec2; muzzle: Vec2; angle: number; flash: boolean };
 }
 export function torsoPoint(pose: Pick<RigPose, 'root' | 'torsoAngle'>, local: Vec2): Vec2 { return add(pose.root, rotate(local, pose.torsoAngle)); }
@@ -92,14 +94,16 @@ export function validateRig(rig: SideRig): void {
   if (rig.facing !== undefined && rig.facing !== 'right' && rig.facing !== 'left') throw new Error("Rig facing must be 'right' or 'left'.");
   if (rig.facing === 'left' && rig.mirrored) throw new Error('A left-facing rig already turns round; it cannot also be a plain mirror.');
   if (rig.motion && !["run", "pogo", "fire", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion)) throw new Error("Unknown rig motion.");
-  if (rig.motion === "pogo" && (!rig.pogo || Object.values(rig.pogo).some(value => !Number.isFinite(value) || value <= 0) || rig.pogo.compressedLength > rig.pogo.extendedLength)) throw new Error("Pogo spring settings must be positive and ordered.");
+  if (rig.motion === "pogo" && (!validPogo(rig.pogo) || !rig.performance?.keys.every(key => key.stick && [key.stick.x, key.stick.lift, key.stick.compression, key.stick.lean].every(Number.isFinite)))) throw new Error("A pogo ride needs positive, ordered stick settings and the stick keyed on every key.");
   if (rig.motion === "fire" && (!rig.fire || Object.values(rig.fire).some(value => !Number.isFinite(value) || value < 0))) throw new Error("Firing settings must be finite and non-negative.");
-  if (["ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion ?? "")) {
+  if (["pogo", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion ?? "")) {
     const clip = rig.performance;
     if (!clip || clip.keys.length < 2 || clip.keys[0].phase !== 0 || clip.keys.at(-1)!.phase !== 1) throw new Error("Performance goals must cover phases zero through one.");
     for (let i = 0; i < clip.keys.length; i++) {
       const key = clip.keys[i];
-      if (!Number.isFinite(key.phase) || (i > 0 && key.phase <= clip.keys[i-1].phase) || ![key.lean,key.headRoll,...key.root,...key.nearHand,...key.farHand,...key.nearAnkle,...key.farAnkle,...(key.phone ?? []),...(key.nearKnee ?? []),...(key.farKnee ?? [])].every(Number.isFinite)) throw new Error("Performance goals must be finite and strictly ordered.");
+      if (!Number.isFinite(key.phase) || (i > 0 && key.phase <= clip.keys[i-1].phase) || ![key.lean,key.headRoll,...key.root,...(key.nearHand ?? []),...(key.farHand ?? []),...(key.nearAnkle ?? []),...(key.farAnkle ?? []),...(key.phone ?? []),...(key.nearKnee ?? []),...(key.farKnee ?? [])].every(Number.isFinite)) throw new Error("Performance goals must be finite and strictly ordered.");
+      // Free limbs need all four goals; a pogo key leaves them to the stick.
+      if (!key.stick && !(key.nearHand && key.farHand && key.nearAnkle && key.farAnkle)) throw new Error("Performance keys need hand and ankle goals unless they ride a pogo stick.");
       if (Boolean(key.nearKnee) !== Boolean(clip.keys[0].nearKnee) || Boolean(key.farKnee) !== Boolean(clip.keys[0].nearKnee)) throw new Error("Keyed knees must be given for both legs on every key, or on none.");
     }
     const times = clip.sampleTimes;
@@ -109,7 +113,7 @@ export function validateRig(rig: SideRig): void {
       // A travelling loop closes in world coordinates: its last key is its first key moved by one cycle's travel.
       const [first, last] = [clip.keys[0], clip.keys.at(-1)!], [dx, dy] = clip.travel;
       const moved = (a: readonly number[], b: readonly number[]): boolean => b[0] === a[0] + dx && b[1] === a[1] + dy;
-      if (!clip.loop || clip.travel.length !== 2 || !clip.travel.every(Number.isFinite) || !(["root", "nearHand", "farHand", "nearAnkle", "farAnkle"] as const).every(name => moved(first[name], last[name])) || first.lean !== last.lean || first.headRoll !== last.headRoll) throw new Error("A travelling loop must end on its first key moved by the travel.");
+      if (!clip.loop || clip.travel.length !== 2 || !clip.travel.every(Number.isFinite) || !(["root", "nearHand", "farHand", "nearAnkle", "farAnkle"] as const).every(name => moved(first[name] ?? [], last[name] ?? [])) || first.lean !== last.lean || first.headRoll !== last.headRoll) throw new Error("A travelling loop must end on its first key moved by the travel.");
     }
   }
   const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.face.ear, ...Object.values(rig.face.profile).flat(), rig.face.shiftAmplitude, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];

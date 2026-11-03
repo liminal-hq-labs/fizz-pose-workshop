@@ -56,8 +56,10 @@ test('performance motion keeps its velocity through keys that are not holds or b
 test('free hands and feet swing on arcs about the shoulder and hip within their keyed reach', () => {
   for (const { rig: clip } of performances) {
     const keys = clip.performance!.keys;
+    // A pogo ride's hands and feet are bound to the stick's grips and pegs rather than swinging free; see pogo.test.ts.
+    if (keys[0].stick) continue;
     for (let i = 0; i < keys.length - 1; i++) for (const [limb, chain] of [['nearHand', 'nearArm'], ['farHand', 'farArm'], ['nearAnkle', 'nearLeg'], ['farAnkle', 'farLeg']] as const) {
-      const pinned = keys[i][limb].every((value, axis) => value === keys[i + 1][limb][axis]);
+      const pinned = keys[i][limb]!.every((value, axis) => value === keys[i + 1][limb]![axis]);
       const support = limb === 'nearAnkle' ? 'nearSupport' : limb === 'farAnkle' ? 'farSupport' : null;
       if (pinned || (support && keys[i][support] && keys[i + 1][support])) continue;
       const reach = (t: number): number => { const pose = sampleRig(clip, t); return distance(pose[chain][0], pose[chain][2]); };
