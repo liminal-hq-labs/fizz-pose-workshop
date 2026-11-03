@@ -184,7 +184,8 @@ test('shirt cloth moves only on the rigs that opt in, and only in its hem and sl
       const collar = pose.face.pixelAnchor[1];
       const onUpperArm = (x: number, y: number): boolean => [pose.nearArm, pose.farArm].some(([shoulder, elbow]) => {
         const [dx, dy] = [elbow[0] - shoulder[0], elbow[1] - shoulder[1]], s = Math.max(0, Math.min(1, ((x - shoulder[0]) * dx + (y - shoulder[1]) * dy) / (dx * dx + dy * dy)));
-        return Math.hypot(x - shoulder[0] - s * dx, y - shoulder[1] - s * dy) <= 1.5;
+        // The two-pixel arm brush starts a pixel up and left of the rounded bone, so its pixels lie within two of it.
+        return Math.hypot(x - shoulder[0] - s * dx, y - shoulder[1] - s * dy) <= 2;
       });
       on.grid.forEach((row, y) => [...row].forEach((code, x) => {
         if (code === off.grid[y][x]) return;
@@ -193,8 +194,8 @@ test('shirt cloth moves only on the rigs that opt in, and only in its hem and sl
       }));
       let changed = 0; on.grid.forEach((row, y) => [...row].forEach((code, x) => { if (code !== off.grid[y][x]) changed++; })); expect(changed).toBeLessThanOrEqual(6);
     }
-    // The hem and sleeves really move through the loop: at least three different cloth states.
-    expect(states.size).toBeGreaterThanOrEqual(3);
+    // The cloth really moves: a fluttering hem passes through at least three states, sleeves alone ride up and settle back.
+    expect(states.size).toBeGreaterThanOrEqual(clip.clothing!.hem ? 3 : 2);
   }
 });
 

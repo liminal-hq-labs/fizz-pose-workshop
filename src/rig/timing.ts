@@ -26,5 +26,25 @@ export const oneShotRestMs = 1200;
 export function exportDurations(durations: readonly number[], loop: boolean): number[] {
   return durations.map((duration, index) => !loop && index === durations.length - 1 ? duration + oneShotRestMs : duration);
 }
+/** One playback cycle in milliseconds: every frame's hold, plus the rest on a one-shot's final pose. */
+export function playbackCycleMs(durations: readonly number[], loop: boolean): number {
+  return exportDurations(durations, loop).reduce((sum, duration) => sum + duration, 0);
+}
+/**
+ * Where playback stands `elapsedMs` after it started, in the same timing the gallery and exports use. It always wraps: a loop
+ * runs straight on, and a one-shot rests on its final pose and then replays from the first frame. `progress` runs from 0 to
+ * 1 through the frame's own hold and stays at 1 during the rest.
+ */
+export function playbackFrame(durations: readonly number[], loop: boolean, elapsedMs: number): { index: number; progress: number } {
+  const cycle = playbackCycleMs(durations, loop);
+  let time = ((elapsedMs % cycle) + cycle) % cycle, index = 0;
+  while (index < durations.length - 1 && time >= durations[index]) { time -= durations[index]; index++; }
+  return { index, progress: Math.min(1, time / durations[index]) };
+}
+/** The elapsed playback time at which frame `index` starts. */
+export function frameStartMs(durations: readonly number[], index: number): number {
+  return durations.slice(0, index).reduce((sum, duration) => sum + duration, 0);
+}
+
 /** Whether a rig's saved sprite animation and exports loop straight back to the first frame, with no rest on the final pose. */
 export function replaysContinuously(rig: SideRig): boolean { return !rig.performance || rig.performance.loop || rig.performance.replay === 'continuous'; }

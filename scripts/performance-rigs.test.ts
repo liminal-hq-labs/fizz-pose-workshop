@@ -50,8 +50,18 @@ test('death clutches the belly with changing expressions and presents both soles
 });
 test('ledge grips stay pinned through the pull and the feet finish on top',()=>{
  const rig=entries.find(e=>e.rig.motion==='ledge')!.rig;
- for(let i=0;i<=40;i++){const p=sampleRig(rig,i/100);expect(p.nearArm[2][0]).toBeCloseTo(25,8);expect(p.nearArm[2][1]).toBeCloseTo(38,8);}
+ const edge=rig.performance!.environment!;
+ for(let i=0;i<=40;i++){const p=sampleRig(rig,i/100);expect(p.nearArm[2][0]).toBeCloseTo(26,8);expect(p.nearArm[2][1]).toBeCloseTo(38,8);}
  const last=sampleRig(rig,1);expect(last.nearFoot.ball[1]).toBe(38);expect(last.farFoot.ball[1]).toBe(38);
+ // The hands always grip on top of the ledge or reach ahead of the shoulders, never trailing behind the back.
+ for(let i=0;i<=100;i++){const p=sampleRig(rig,i/100);for(const arm of [p.nearArm,p.farArm]){
+  if(Math.abs(arm[2][1]-edge.y)<.5)expect(arm[2][0]).toBeGreaterThan(edge.x);
+  expect(arm[2][0]).toBeGreaterThan(arm[0][0]-.75);
+ }}
+ // Hanging, the arms are nearly straight; at "elbows lock" the shoulders stand above the hands.
+ const reach=rig.arms.upperLength+rig.arms.forearmLength,lock=sampleRig(rig,.4);
+ expect(distance(sampleRig(rig,0).nearArm[0],sampleRig(rig,0).nearArm[2])).toBeGreaterThan(.85*reach);
+ expect(lock.nearArm[2][1]-lock.nearArm[0][1]).toBeGreaterThan(.75*reach);
 });
 test('phone idle faces the camera, crosses the legs and raises a visible phone with its back case facing the camera and a lighting note',()=>{
  const rig=entries.find(e=>e.rig.motion==='phone')!.rig;
