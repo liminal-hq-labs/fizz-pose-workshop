@@ -23,7 +23,7 @@ const fallLeft: SideRig = { ...(fall as SideRig), name: 'Ben · left-facing brac
 
 export interface RigEntry { rig: SideRig; prefix: string; animation: string; folder: string; title: string; labels: readonly string[]; }
 export const rigCatalogue: readonly RigEntry[] = [
- {rig:run as SideRig,prefix:'ben_walkRight',animation:'walk-run',folder:'ben-running',title:'Run',labels:['Near contact','Near push-off','Flight · far leg leads','Far contact','Far push-off','Flight · near leg leads']},
+ {rig:run as SideRig,prefix:'ben_walkRight',animation:'walk-run',folder:'ben-running',title:'Run',labels:['Near contact','Near roll-through','Near push-off','Near toe-off','Flight · far leg leads','Far leg reaches','Far contact','Far roll-through','Far push-off','Far toe-off','Flight · near leg leads','Near leg reaches']},
  {rig:pogo as SideRig,prefix:'ben_pogoRight',animation:'pogo',folder:'ben-pogo',title:'Pogo',labels:['Compress','Launch','Rise','Apex','Fall','Land']},
  {rig:fire as SideRig,prefix:'ben_fireRight',animation:'fizz-blaster',folder:'ben-firing',title:'Fizz Stunner',labels:['Aim','Discharge','Recoil','Recover','Settle','Ready']},
  {rig:ladder as SideRig,prefix:'ben_ladder',animation:'climb',folder:'ben-ladder',title:'Ladder climb',labels:['Left reach','Right hand rises','Right reach','Right support','Left hand rises','Left reach again']},

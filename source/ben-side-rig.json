@@ -4,7 +4,7 @@
   "height": 44,
   "groundY": 34,
   "durationMs": 600,
-  "sampleCount": 6,
+  "sampleCount": 12,
   "root": [
     11.5,
     24
@@ -12,6 +12,7 @@
   "torso": {
     "leanDegrees": 18,
     "pitchSwayDegrees": 1.2,
+    "pitchSwayCycles": 2,
     "bobAmplitude": 0.75,
     "bobLag": 0.04,
     "shoulderY": -7.5,

@@ -1,4 +1,4 @@
-// Samples Ben's reusable continuous rig into the six editable running frames.
+// Samples Ben's reusable continuous rig into the twelve editable running frames.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
@@ -29,6 +29,6 @@ if (import.meta.main) {
   await writeFile(root + 'source/poses.json', JSON.stringify(authored, null, 2) + '\n');
   await writeFile(root + 'edits.json', JSON.stringify(edits, null, 2) + '\n');
   await exportRig(rig, skin, root + 'rig/ben-running');
-  console.log('Sampled six running sprites from the continuous right-side rig and saved the rig exports.');
+  console.log(`Sampled ${rig.sampleCount} running sprites from the continuous right-side rig and saved the rig exports.`);
   if (kept.length) console.log(`Kept manual editor overrides for ${kept.join(', ')}; run with --replace-edits to replace them.`);
 }

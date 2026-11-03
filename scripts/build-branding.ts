@@ -11,7 +11,8 @@ import type { Frame, WorkshopData } from '../src/types.ts';
 const root = new URL('../', import.meta.url);
 const data = await Bun.file(new URL('assets.json', root)).json() as WorkshopData;
 const standing = data.frames.ben_standFront;
-const running = Array.from({ length: 6 }, (_, i) => data.frames[`ben_walkRight${i + 1}`]);
+// The hero keeps its six-frame loop: every other frame of the twelve-frame run, which are its six key poses.
+const running = Array.from({ length: 6 }, (_, i) => data.frames[`ben_walkRight${2 * i + 1}`]);
 if (!standing || running.some(frame => !frame)) throw new Error('Generate the saved standing and running sprites before building branding.');
 const header = '<!-- (c) Copyright 2026 Liminal HQ, Scott Morris; SPDX-License-Identifier: Apache-2.0 OR MIT -->';
 const sprite = (frame: Frame): string => `<g shape-rendering="crispEdges">${rects(frame, data.palette)}</g>`;
