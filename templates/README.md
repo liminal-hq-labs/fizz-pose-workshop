@@ -125,3 +125,7 @@ The **Rigged 3D** section adds a fully volumetric Three.js character with a 24-b
 [AGENTS.md](AGENTS.md) contains the contributor rules; [CLAUDE.md](CLAUDE.md) provides the Claude entry point. The workshop uses Canadian English, signed Conventional Commits and Bun/TypeScript tooling. Preserve original reference art and project saves when experimenting with poses.
 
 The [animated hero](assets/hero.svg) and [SVG avatar](assets/avatar.svg) are built from saved Ben sprites. Run `bun run branding:build` after deliberate updates to their references; [identity notes](assets/README.md) describe regeneration and the matching PNG used in Forgejo project settings.
+
+## Licence
+
+The workshop's source code is dual-licensed under [Apache-2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at your option. The licences do not cover the original Classic Fizz reference artwork or other imported assets, which keep their own provenance and rights; see `source/classic-fizz-original.json` and `original-study.png`.
