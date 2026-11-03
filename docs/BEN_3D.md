@@ -19,9 +19,40 @@ The model is a posing and reference figure for the sprites, and a possible basis
 
 Ben is a skinny kid: a narrow ribcage and shoulders, a thin waist and hips, slender legs and thin ankles, so the helmet and head read big on a small body. The arm muscles (deltoid, biceps and forearm) keep their earlier shape and size; the arms move inwards with the narrower shoulders, and the gap left under each arm keeps the sleeves free of the torso. The order of widths still follows the sprite: shirt shoulders, then helmet, then face. Tests in `src/model-3d/model.test.ts` hold these proportions.
 
+## Builds: hybrid and current
+
+Choose **Build** in the viewer controls. Two builds share the 26-bone rig, the pose and animation library in `poses.ts`, the turntable and the review tools:
+
+- **Hybrid (artifact head, Codex body)** (`hybrid`, the default): `createHybridBenModel(svg, print)` in `src/model-3d/hybrid.ts`.
+- **Current (PR #7)** (`current`): `createBenModel(svg, style)` in `src/model-3d/model.ts`, with head styles A–G.
+
+The hybrid is composed from three sources. It builds the current model, keeps the parts that model does best, removes everything else by name and adds its own head and body:
+
+| Part | Source | Notes |
+|---|---|---|
+| Bicycle helmet, stripe, grey rim, foam liner | Current model | The same `cycleHelmet()` mesh and stripe decal, lowered one unit (`hybrid.headDrop`) with the head. The shell still crowns about one unit above the skull. |
+| Running shoes, laces, binding, stitching, badge | Current model | Unchanged meshes, with the toe joint flex. |
+| Ray-gun Stunner, holster band, muzzle flash, phone | Current model | Unchanged; the Stunner stays on the right hip only. The short holster strap is rebuilt to hang from the hybrid belt. |
+| Arms and hands | Current model | The deltoid, biceps, elbow, tapering forearm, four-fingered hands and per-thumb bones, at the same size. Inside the sleeve the shoulder and upper arm sit 0.55 units deeper so the fabric has room when the arm is raised; below the hem the shape is unchanged. |
+| Skinned sleeves and shoulder caps | Current model | The sleeve tubes skinned rigidly to the upper arms. The chest-to-arm hand-over is widened, and the barrel's side under the arm stays with the torso, so raised arms stretch the cap and armpit instead of tearing it. |
+| Torso, waist, hips, belt, jeans | Original Codex model | The Codex barrel torso (widest at the belly and still full at the waist), round shoulders and a full pelvis, slimmed to the skinny-kid rig: about 5 units wide at the belly, on hips about 5.5 wide. The belt is traced row by row round the shirt and jeans where they meet, so it sits in the crease over the hips with no daylight above or below. The jeans keep the current knee helpers, leg weights and cuffs into the shoes. |
+| Head, face, ears, smile | The artboard's "Adventure kid" kit | One smooth egg face (1.07 times taller than wide) joined to the shared cranium the helmet fits, tall glossy dark-blue oval eyes with a white glint turned to the skin normal, a small round nose, a thin red half-circle smile and small ears at mid-depth. Hair is painted into the head surface along a smooth hairline. EGA base colours and this project's physical materials replace the artboard's toon shader. |
+| Neck and collar | New | A short neck: about half a unit of skin between the collar and the jaw at the front. |
+| Chest print | The artboard's emblems | **Shirt print** offers the Bubble trio (default), Fizz drop and Bottle cap from the artboard, and the sprite's yellow cross. |
+
+The hybrid's neck, collar and shirt are built so they cannot open from any angle. The shirt is closed over the shoulders: a yoke ellipsoid covers the neck base and carries the back up behind it, and there is no neck hole. The neck is a smooth tube that starts deep inside the yoke, rises through the collar and flares into the jaw. The white collar is a rolled band with real thickness: one closed, smoothly shaded surface whose inner face lies inside the neck and whose skirt is traced 0.1–0.6 units below the yoke's surface at every angle. It is merged into the shirt mesh. Below the collar top the neck, collar and shirt are all skinned to the chest, so they move as one through the run twist, head turns and the whistling idle. No surfaces are coplanar, and no hole is cut through a smoothed mesh.
+
+The Bubble trio, Fizz drop and Bottle cap are the artboard's chest logos, drawn as fine polygons, cut into short edges and laid in layers on the shirt's front surface, skinned with the shirt. The sprites show a yellow cross on the chest, which **Sprite cross** keeps. The Bubble trio uses the same yellow and brown, so it reads as the same Fizz print in a rounder shape.
+
+`src/model-3d/hybrid.test.ts` checks the kept and replaced parts, finite normalised weights, disposal and print swaps, the head on its short neck, the skinny proportions, the Stunner side, the helmet fit all round (the skull stays inside the liner and within half a unit of it under the shell) and the belt standing off the body by one belt thickness at three heights. A sweep casts rays from 72 directions, from 55° below to 50° above, at points inside the neck and just under the neck skin below the collar top, in 14 poses including four phases of the whistling idle, run, climb, fall, jump, firing, phone and both looks. Each ray must meet an outside face first: a view into the inside of the shirt, neck or head, a view through to nothing or bare neck below the collar's top edge fails the test. Cameras inside the head, an arm or the shirt are skipped. A second test checks that the neck below y 20 stays inside the shirt and that the neck and collar wind outwards. The sleeve coverage test from the current model runs on the hybrid's arms.
+
+`bun run model:review` writes the hybrid's plates to `models/ben-3d/review/hybrid/`: the same reference comparison, poses and action cycles as the current model, plus `hybrid-angles.png` (front, three-quarter, side, back and two from below, perspective) and `hybrid-neck-angles.png` (the same six views framed on the neck and collar). The hybrid's overall height is two pixels under the sprite at every angle, the edge of the tolerance, because the head and helmet are lowered one unit for the shorter neck.
+
+Known limits: a fully raised arm (climb, jump) still creases the armpit fabric visibly, though no skin shows through it; the hybrid's head is not in the downloadable GLB, which still exports the current build.
+
 ## Head styles
 
-Choose **Head style** in the viewer controls to swap Ben's head and face live; the pose and the rest of the model are kept. All six styles share the cranium, so the same fitted helmet, hair line, neck and straps fit each one. Each style uses EGA palette colours, and its eyes are at most slightly lidded. `headStyles` in `src/model-3d/head.ts` defines them; `createBenModel(svg, style)` and `model.setHeadStyle(id)` select one. The default, and the style exported in the GLB, is A.
+With the current build, choose **Head style** in the viewer controls to swap Ben's head and face live; the pose and the rest of the model are kept. All seven styles share the cranium, so the same fitted helmet, hair line, neck and straps fit each one. Each style uses EGA palette colours, and its eyes are at most slightly lidded. `headStyles` in `src/model-3d/head.ts` defines them; `createBenModel(svg, style)` and `model.setHeadStyle(id)` select one. The default, and the style exported in the GLB, is A.
 
 - **A · Soft cartoon** (`cartoon`): a round, soft head with big simple blue eyes, tiny highlights and a subtle lid, a small nose bump and a simple red smile.
 - **B · Sprite-faithful** (`sprite`): the closest to the pixel sprite. A flat-fronted, faceted face with flat blue eye dots, the sprite's grey bumpy nose as a small block, blocky ears and grey banding under the chin. Its smile curves up at the corners, with a lighter upper-lip edge and a small crease at each corner.
@@ -29,8 +60,9 @@ Choose **Head style** in the viewer controls to swap Ben's head and face live; t
 - **D · Toy figure** (`toy`): a chunky toy-figure head. A glossy rounded cylinder with painted-on eyes and smile, a ball nose and nub ears.
 - **E · Realistic (original)** (`realistic`): the first sculpted head, with a jaw line, brow ridge, carved eye sockets with lidded eyeballs, a bridged nose and lips. It sits on the same neck and collar as the other styles.
 - **F · Sprite head, realer** (`sprite-real`): the sprite-faithful head made more real. It keeps the flat front, bumpy nose block, blue eye dots and big-headed proportions, and adds real ears, a narrower jaw with a gentle chin and defined cheekbones. It has the same smile as B.
+- **G · Artifact kid** (`artifact`): the hybrid's artboard head on the current model's neck. Its egg face reaches lower, so the chin meets the longer neck; it has glossy painted blue eyes, a round nose, a U-shaped smile and small ears.
 
-`bun run model:review` saves `head-style-cartoon.png`, `head-style-sprite.png`, `head-style-stylised.png`, `head-style-toy.png`, `head-style-realistic.png` and `head-style-sprite-real.png` in `models/ben-3d/review/`. Each shows the head, neck and collar at front, three-quarter and right-profile angles.
+`bun run model:review` saves `head-style-cartoon.png`, `head-style-sprite.png`, `head-style-stylised.png`, `head-style-toy.png`, `head-style-realistic.png`, `head-style-sprite-real.png` and `head-style-artifact.png` in `models/ben-3d/review/`. Each shows the head, neck and collar at front, three-quarter and right-profile angles.
 
 ## Preview and rig
 
@@ -52,7 +84,8 @@ Open **Pose the rig and move Ben** to rotate individual joints or translate the 
 - `source/ben-3d.json`: rest joints, calibrated dimensions and six sprite references.
 - `source/ben-3d-skins.svg`: named surface artwork for the helmet stripe, chest emblem, shoe badge and phone mark.
 - `src/model-3d/model.ts`: volumetric geometry, materials and skin bindings.
-- `src/model-3d/head.ts`: the shared cranium, the four head styles, the hairline and the hair cap built from the head surface.
+- `src/model-3d/head.ts`: the shared cranium, the head styles, the artboard face, the hairline and the hair cap built from the head surface.
+- `src/model-3d/hybrid.ts`: the hybrid build: kept equipment from the current model, the artboard head, the Codex body, the closed neck and collar, and the chest prints.
 - `src/model-3d/sculpt.ts`: smooth implicit surfaces, surface projection and continuous four-influence skinning. Sculpted surfaces keep their largest connected piece, then each vertex is snapped back onto the field and shaded with the field gradient, so curved parts do not show marching-cubes terracing. Cavity shading darkens sockets and creases towards a palette shade through vertex colours.
 - `src/model-3d/equipment.ts`: the fitted, ventilated bicycle helmet, plus joined running-shoe geometry and surface profiles.
 - `src/model-3d/rig.ts`: skeleton hierarchy and shared vertex skin weights.
