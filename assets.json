@@ -11043,6 +11043,42 @@
         50,
         50
       ]
+    },
+    "walk-run-6": {
+      "frames": [
+        "ben_walkRight1",
+        "ben_walkRight3",
+        "ben_walkRight5",
+        "ben_walkRight7",
+        "ben_walkRight9",
+        "ben_walkRight11"
+      ],
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
+    },
+    "walk-run-left-6": {
+      "frames": [
+        "ben_walkLeft1",
+        "ben_walkLeft3",
+        "ben_walkLeft5",
+        "ben_walkLeft7",
+        "ben_walkLeft9",
+        "ben_walkLeft11"
+      ],
+      "durationsMs": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ]
     }
   },
   "sheet": {

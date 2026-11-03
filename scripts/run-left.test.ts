@@ -121,3 +121,11 @@ test('the sampled-rig overlay sits on the left sprites exactly as it does on the
     });
   }
 });
+
+test('the six-frame DOS cuts reuse every other twelve-frame sprite over the same 600 ms loop', () => {
+  for (const [name, six] of [['walk-run', 'walk-run-6'], ['walk-run-left', 'walk-run-left-6']]) {
+    const full = savedAnimations[name], cut = savedAnimations[six];
+    expect(cut.frames).toEqual(full.frames.filter((_: string, i: number) => i % 2 === 0));
+    expect(cut.durationsMs.reduce((a: number, b: number) => a + b, 0)).toBe(full.durationsMs.reduce((a: number, b: number) => a + b, 0));
+  }
+});

@@ -26,6 +26,8 @@ bun run validate
 
 `draw:run` replaces the twelve right-facing and twelve left-facing running grids in `source/poses.json` from the rig and saves `rig/ben-running/` and `rig/ben-running-left/`. Name an animation to redraw only that direction, for example `bun run draw:run walk-run-left`. In `edits.json` it updates only the running overrides that still match the previous redraw; an override that differs is a manual edit, so it is kept and reported. Run `bun run draw:run -- --replace-edits` to discard those edits deliberately. `generate` rebuilds the normal sprite files and gallery with saved editor overrides applied. Ordinary generation does not redraw the rig.
 
+The run also saves six-frame cuts for the DOS build, `walk-run-6` and `walk-run-left-6`. Each reuses every other twelve-frame sprite (1, 3, 5 and so on) at 100 ms, so it stores no extra art and keeps the same 600 ms loop, and any change to the twelve-frame run carries through when `draw:run` is rerun. The twelve-frame run stays the web master.
+
 The lab’s **Rig first, six sprites second** section previews the continuous skeleton and its current editable sprite samples. **Six samples** holds the rig at the same six times as the sprite. **Overlay sampled rig on sprite** shows the sampled skeleton over the artwork. The previous/next buttons pause and step through the six poses, including the last-to-first transition. The standalone `rig/ben-running/rig.svg` animates 60 samples of the same rig; reduced-motion preferences show its first pose.
 
 ## Reuse with another character
