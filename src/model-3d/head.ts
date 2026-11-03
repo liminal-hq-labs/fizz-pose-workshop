@@ -36,7 +36,8 @@ function withSkull(face: number, x: number, y: number, z: number): number {
 
 type Colour = keyof typeof palette;
 export interface HeadStyle {
-  readonly id: "cartoon" | "sprite" | "stylised" | "toy";
+  readonly id:
+    "cartoon" | "sprite" | "stylised" | "toy" | "realistic" | "sprite-real";
   readonly label: string;
   /** One-line description for the viewer and the docs. */
   readonly summary: string;
@@ -62,7 +63,7 @@ export interface HeadStyle {
   };
   readonly nose: "sculpted" | "block" | "ball";
   readonly mouth: {
-    readonly kind: "smile" | "bar";
+    readonly kind: "smile" | "bar" | "grin";
     readonly y: number;
     readonly width: number;
     readonly curve: number;
@@ -106,6 +107,84 @@ const spriteField: Field = (x, y, z) => {
     0.6,
   );
   return withSkull(d, x, y, z);
+};
+// F: the sprite head made more real: a narrower jaw and gentle chin, defined cheekbones and real ears,
+// keeping the flat front, bumpy nose block, blue eye dots and the big-headed sprite proportions.
+const spriteRealField: Field = (x, y, z) => {
+  let d = smoothUnion(
+    ellipsoid(x, y, z, [0, 25.1, 0.4], [2.85, 2.25, 3.0]),
+    ellipsoid(x, y, z, [0, 23.45, 0.85], [2.0, 1.5, 2.35]),
+    0.9,
+  );
+  for (const sign of [-1, 1])
+    d = smoothUnion(
+      d,
+      ellipsoid(x, y, z, [sign * 1.8, 25.15, 1.85], [0.85, 0.55, 0.85]),
+      0.45,
+    );
+  d = smoothUnion(
+    d,
+    ellipsoid(x, y, z, [0, 22.55, 1.65], [0.72, 0.48, 0.7]),
+    0.5,
+  );
+  d = smax(d, z - 2.95, 0.6);
+  return withSkull(d, x, y, z);
+};
+// E: the original realistic sculpt: skull, jaw, chin, cheekbones, brow, eye sockets, bridged nose and lips.
+const realisticField: Field = (x, y, z) => {
+  let d = ellipsoid(x, y, z, [0, 25.05, 0.85], [2.4, 2.75, 2.75]);
+  for (const sign of [-1, 1]) {
+    d = smoothUnion(
+      d,
+      capsuleDistance(
+        x,
+        y,
+        z,
+        [sign * 1.95, 24.35, -0.35],
+        [sign * 0.68, 22.9, 1.85],
+        0.42,
+      ),
+      0.7,
+    );
+    d = smoothUnion(
+      d,
+      ellipsoid(x, y, z, [sign * 1.5, 25.2, 2.05], [0.92, 0.8, 0.95]),
+      0.55,
+    );
+  }
+  d = smoothUnion(
+    d,
+    ellipsoid(x, y, z, [0, 23.95, 2.25], [1.25, 0.95, 1.1]),
+    0.6,
+  );
+  d = smoothUnion(d, ellipsoid(x, y, z, [0, 22.9, 2.0], [0.88, 0.6, 0.8]), 0.5);
+  d = withSkull(d, x, y, z);
+  d = smoothUnion(
+    d,
+    capsuleDistance(x, y, z, [-1.75, 26.85, 2.95], [1.75, 26.85, 2.95], 0.5),
+    0.55,
+  );
+  for (const sign of [-1, 1])
+    d = smoothSubtract(
+      d,
+      ellipsoid(x, y, z, [sign * 1.15, 26.1, 3.45], [0.82, 0.62, 0.72]),
+      0.32,
+    );
+  d = smoothUnion(
+    d,
+    capsuleDistance(x, y, z, [0, 26.35, 3.2], [0, 25.1, 3.95], 0.3),
+    0.3,
+  );
+  d = smoothUnion(
+    d,
+    ellipsoid(x, y, z, [0, 24.98, 3.5], [0.6, 0.34, 0.46]),
+    0.25,
+  );
+  return smoothSubtract(
+    d,
+    capsuleDistance(x, y, z, [-0.72, 23.86, 3.42], [0.72, 23.86, 3.42], 0.08),
+    0.12,
+  );
 };
 // C: the sculpted face softened halfway towards a cartoon, with simple brows and blushed cheeks.
 const stylisedField: Field = (x, y, z) => {
@@ -188,7 +267,7 @@ export const headStyles: readonly HeadStyle[] = [
     id: "sprite",
     label: "B · Sprite-faithful",
     summary:
-      "The closest to the pixel sprite: a flat-fronted, faceted face with flat blue eye dots, a grey bumpy nose block and a wide red mouth bar.",
+      "The closest to the pixel sprite: a flat-fronted, faceted face with flat blue eye dots, a grey bumpy nose block and an upturned smile with a lighter upper lip and corner creases.",
     field: spriteField,
     flat: true,
     resolution: 36,
@@ -197,7 +276,7 @@ export const headStyles: readonly HeadStyle[] = [
     underChin: 23.1,
     eyes: { kind: "pixel", x: 1.3, y: 26.0, size: 1.5 },
     nose: "block",
-    mouth: { kind: "bar", y: 23.7, width: 1.55, curve: 0, radius: 0.21 },
+    mouth: { kind: "grin", y: 23.72, width: 0.8, curve: 0.24, radius: 0.13 },
     ears: { centre: [2.95, 25.3, -0.45], radii: [0.36, 1.0, 0.7], box: true },
   },
   {
@@ -236,6 +315,45 @@ export const headStyles: readonly HeadStyle[] = [
     mouth: { kind: "smile", y: 23.7, width: 0.8, curve: 0.25, radius: 0.075 },
     ears: { centre: [2.9, 25.2, -0.3], radii: [0.36, 0.6, 0.45], box: false },
   },
+  {
+    id: "realistic",
+    label: "E · Realistic (original)",
+    summary:
+      "The first sculpted head: a jaw line, brow ridge, carved eye sockets with lidded eyeballs, a bridged nose and lips.",
+    field: realisticField,
+    flat: false,
+    resolution: 70,
+    finish: "skin",
+    cavity: 0.35,
+    eyes: { kind: "ball", x: 1.15, y: 26.1, size: 1.09 },
+    nose: "sculpted",
+    mouth: { kind: "smile", y: 23.88, width: 0.85, curve: 0.16, radius: 0.12 },
+    brows: { y: 27.12, width: 0.6, radius: 0.085, colour: "N" },
+    ears: {
+      centre: [2.95, 25.45, -0.5],
+      radii: [0.32, 0.82, 0.56],
+      box: false,
+    },
+  },
+  {
+    id: "sprite-real",
+    label: "F · Sprite head, realer",
+    summary:
+      "The sprite-faithful head with real ears, a narrower jaw, a gentle chin and defined cheekbones, keeping the flat bumpy nose, blue eye dots and a defined smile.",
+    field: spriteRealField,
+    flat: false,
+    resolution: 60,
+    finish: "skin",
+    cavity: 0.2,
+    eyes: { kind: "pixel", x: 1.25, y: 26.0, size: 1.4 },
+    nose: "block",
+    mouth: { kind: "grin", y: 23.72, width: 0.78, curve: 0.24, radius: 0.13 },
+    ears: {
+      centre: [2.88, 25.35, -0.45],
+      radii: [0.32, 0.8, 0.56],
+      box: false,
+    },
+  },
 ];
 export const defaultHeadStyle = headStyles[0];
 export function headStyle(id: string): HeadStyle {
@@ -255,27 +373,38 @@ export function hairline(x: number, z: number): number {
 
 // Close-cropped hair: the head surface above the hairline, lifted along its normals.
 // Building it from the head mesh avoids a hidden inner surface and keeps it parallel to the skull.
-export function hairCap(head: THREE.BufferGeometry): THREE.BufferGeometry {
+// Every triangle that reaches the hair region is kept, so the cap has no holes. Across the hairline its
+// thickness and colour fade into the skin, which hides the triangle edges instead of leaving a ragged cut.
+export function hairCap(
+  head: THREE.BufferGeometry,
+  hair: THREE.Color,
+  skin: THREE.Color,
+): THREE.BufferGeometry {
   const positions = head.getAttribute("position"),
     normals = head.getAttribute("normal"),
     index = head.index!,
     remap = new Map<number, number>(),
     out: number[] = [],
+    colours: number[] = [],
     faces: number[] = [],
     p = new THREE.Vector3(),
-    n = new THREE.Vector3();
-  const covered = (i: number): boolean => {
+    n = new THREE.Vector3(),
+    c = new THREE.Color();
+  const coverage = (i: number): number => {
     p.fromBufferAttribute(positions, i);
-    return p.y > hairline(p.x, p.z);
+    return THREE.MathUtils.smoothstep(p.y - hairline(p.x, p.z), -0.35, 0.1);
   };
   const vertex = (i: number): number => {
     let j = remap.get(i);
     if (j === undefined) {
+      const amount = coverage(i);
       p.fromBufferAttribute(positions, i);
       n.fromBufferAttribute(normals, i);
-      p.addScaledVector(n, hairThickness);
+      p.addScaledVector(n, 0.02 + (hairThickness - 0.02) * amount);
       j = out.length / 3;
       out.push(p.x, p.y, p.z);
+      c.copy(skin).lerp(hair, amount);
+      colours.push(c.r, c.g, c.b);
       remap.set(i, j);
     }
     return j;
@@ -283,15 +412,16 @@ export function hairCap(head: THREE.BufferGeometry): THREE.BufferGeometry {
   for (let t = 0; t < index.count; t += 3) {
     const a = index.getX(t),
       b = index.getX(t + 1),
-      c = index.getX(t + 2);
-    if (covered(a) && covered(b) && covered(c))
-      faces.push(vertex(a), vertex(b), vertex(c));
+      d = index.getX(t + 2);
+    if (Math.max(coverage(a), coverage(b), coverage(d)) > 0)
+      faces.push(vertex(a), vertex(b), vertex(d));
   }
-  const hair = new THREE.BufferGeometry();
-  hair.setAttribute("position", new THREE.Float32BufferAttribute(out, 3));
-  hair.setIndex(faces);
-  hair.computeVertexNormals();
-  return hair;
+  const cap = new THREE.BufferGeometry();
+  cap.setAttribute("position", new THREE.Float32BufferAttribute(out, 3));
+  cap.setAttribute("color", new THREE.Float32BufferAttribute(colours, 3));
+  cap.setIndex(faces);
+  cap.computeVertexNormals();
+  return cap;
 }
 
 /** Places a facial detail on the front of a face, a small distance proud of the skin. */

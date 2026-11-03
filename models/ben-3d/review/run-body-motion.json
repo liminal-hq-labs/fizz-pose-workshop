@@ -6,14 +6,14 @@
   "runPelvisOffset": -0.55,
   "strideHalfLength": 2.6,
   "recoveryLift": 1.9,
-  "maxKneeFlexDegrees": 109.0722558713107,
-  "maxAnkleTargetError": 3.3820826609804605e-15,
+  "maxKneeFlexDegrees": 108.07842944592461,
+  "maxAnkleTargetError": 3.1791949213824896e-15,
   "maxWaistError": 0,
   "maxTorsoDegreesError": 0,
   "samples": [
     {
-      "rightKneeFlexDegrees": 56.93063210002104,
-      "ankleTargetError": 1.3322676295501878e-15,
+      "rightKneeFlexDegrees": 56.169141895663486,
+      "ankleTargetError": 2.7012892057857038e-15,
       "phase": 0,
       "sourceWaistDelta": -0.6572300100328974,
       "modelWaistDelta": -0.6572300100328974,
@@ -26,8 +26,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 60.45782570848337,
-      "ankleTargetError": 1.0175362097255202e-15,
+      "rightKneeFlexDegrees": 59.961523954815235,
+      "ankleTargetError": 6.280369834735101e-16,
       "phase": 0.016666666666666666,
       "sourceWaistDelta": -0.7179896231490517,
       "modelWaistDelta": -0.7179896231490517,
@@ -40,8 +40,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 61.230175149500994,
-      "ankleTargetError": 4.965068306494546e-16,
+      "rightKneeFlexDegrees": 61.08794331686106,
+      "ankleTargetError": 1.897149936107019e-15,
       "phase": 0.03333333333333333,
       "sourceWaistDelta": -0.7473696444371285,
       "modelWaistDelta": -0.7473696444371285,
@@ -166,8 +166,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 33.32409356324473,
-      "ankleTargetError": 1.831026719408895e-15,
+      "rightKneeFlexDegrees": 32.91230530666951,
+      "ankleTargetError": 1.4895204919483639e-15,
       "phase": 0.18333333333333332,
       "sourceWaistDelta": 0.1712631525829913,
       "modelWaistDelta": 0.1712631525829913,
@@ -180,8 +180,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 34.23333905333931,
-      "ankleTargetError": 3.3820826609804605e-15,
+      "rightKneeFlexDegrees": 32.98707848855122,
+      "ankleTargetError": 1.897149936107019e-15,
       "phase": 0.2,
       "sourceWaistDelta": 0.3193344686738051,
       "modelWaistDelta": 0.3193344686738051,
@@ -194,8 +194,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 32.99428578386937,
-      "ankleTargetError": 1.831026719408895e-15,
+      "rightKneeFlexDegrees": 32.08637410982604,
+      "ankleTargetError": 1.7763568394002505e-15,
       "phase": 0.21666666666666667,
       "sourceWaistDelta": 0.4534493361467824,
       "modelWaistDelta": 0.4534493361467824,
@@ -208,8 +208,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 27.302345532596547,
-      "ankleTargetError": 1.7763568394002505e-15,
+      "rightKneeFlexDegrees": 26.466585814038496,
+      "ankleTargetError": 2.589462819655575e-15,
       "phase": 0.23333333333333334,
       "sourceWaistDelta": 0.5677462917388176,
       "modelWaistDelta": 0.5677462917388176,
@@ -222,8 +222,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 18.914631130740133,
-      "ankleTargetError": 9.930136612989092e-16,
+      "rightKneeFlexDegrees": 17.81246088167316,
+      "ankleTargetError": 1.831026719408895e-15,
       "phase": 0.25,
       "sourceWaistDelta": 0.6572300100328974,
       "modelWaistDelta": 0.6572300100328974,
@@ -236,8 +236,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 14.031681199325476,
-      "ankleTargetError": 9.930136612989092e-16,
+      "rightKneeFlexDegrees": 12.526199579565287,
+      "ankleTargetError": 2.220446049250313e-15,
       "phase": 0.26666666666666666,
       "sourceWaistDelta": 0.7179896231490517,
       "modelWaistDelta": 0.7179896231490517,
@@ -250,8 +250,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 13.29942288930053,
-      "ankleTargetError": 2.8435583831733384e-15,
+      "rightKneeFlexDegrees": 11.601529802602698,
+      "ankleTargetError": 0,
       "phase": 0.2833333333333333,
       "sourceWaistDelta": 0.7473696444371285,
       "modelWaistDelta": 0.7473696444371285,
@@ -264,8 +264,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 17.46278021559712,
-      "ankleTargetError": 2.3914935841127266e-15,
+      "rightKneeFlexDegrees": 16.064867968186434,
+      "ankleTargetError": 1.831026719408895e-15,
       "phase": 0.3,
       "sourceWaistDelta": 0.7440860259858582,
       "modelWaistDelta": 0.7440860259858582,
@@ -278,8 +278,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 24.15991979573178,
-      "ankleTargetError": 1.4043333874306805e-15,
+      "rightKneeFlexDegrees": 23.07480402936082,
+      "ankleTargetError": 1.6011864169946884e-15,
       "phase": 0.31666666666666665,
       "sourceWaistDelta": 0.7082822776781121,
       "modelWaistDelta": 0.7082822776781121,
@@ -292,8 +292,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 32.07488413045917,
-      "ankleTargetError": 6.280369834735101e-16,
+      "rightKneeFlexDegrees": 30.96787954475431,
+      "ankleTargetError": 2.8522145930998398e-15,
       "phase": 0.3333333333333333,
       "sourceWaistDelta": 0.6415231951203815,
       "modelWaistDelta": 0.6415231951203815,
@@ -306,8 +306,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 41.179346060986404,
-      "ankleTargetError": 1.88411095042053e-15,
+      "rightKneeFlexDegrees": 39.81771998043021,
+      "ankleTargetError": 2.6645352591003757e-15,
       "phase": 0.35,
       "sourceWaistDelta": 0.5467264705660568,
       "modelWaistDelta": 0.5467264705660568,
@@ -320,8 +320,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 50.12025147519216,
-      "ankleTargetError": 1.2755491433176288e-15,
+      "rightKneeFlexDegrees": 48.55879955361081,
+      "ankleTargetError": 2.3914935841127266e-15,
       "phase": 0.36666666666666664,
       "sourceWaistDelta": 0.4280351757633234,
       "modelWaistDelta": 0.4280351757633234,
@@ -334,8 +334,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 58.73801587826634,
-      "ankleTargetError": 1.6011864169946884e-15,
+      "rightKneeFlexDegrees": 57.01795625829027,
+      "ankleTargetError": 9.930136612989092e-16,
       "phase": 0.38333333333333336,
       "sourceWaistDelta": 0.29063668983907576,
       "modelWaistDelta": 0.29063668983907576,
@@ -348,8 +348,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 66.91378121562845,
-      "ankleTargetError": 4.965068306494546e-16,
+      "rightKneeFlexDegrees": 65.07058259827842,
+      "ankleTargetError": 4.440892098500626e-16,
       "phase": 0.4,
       "sourceWaistDelta": 0.1405359859392945,
       "modelWaistDelta": 0.1405359859392945,
@@ -362,8 +362,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 74.53009147656186,
-      "ankleTargetError": 1.616509124176106e-15,
+      "rightKneeFlexDegrees": 72.61077822186188,
+      "ankleTargetError": 3.1401849173675502e-15,
       "phase": 0.4166666666666667,
       "sourceWaistDelta": -0.015706814912519462,
       "modelWaistDelta": -0.015706814912519462,
@@ -376,8 +376,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 81.47748363749776,
-      "ankleTargetError": 2.2315206618374916e-15,
+      "rightKneeFlexDegrees": 79.54301474305218,
+      "ankleTargetError": 1.4043333874306805e-15,
       "phase": 0.43333333333333335,
       "sourceWaistDelta": -0.1712631525829913,
       "modelWaistDelta": -0.1712631525829913,
@@ -390,7 +390,7 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 87.64894828013215,
+      "rightKneeFlexDegrees": 85.77047368529257,
       "ankleTargetError": 1.3322676295501878e-15,
       "phase": 0.45,
       "sourceWaistDelta": -0.3193344686738051,
@@ -404,8 +404,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 92.9412718765164,
-      "ankleTargetError": 1.4043333874306805e-15,
+      "rightKneeFlexDegrees": 91.18843637814705,
+      "ankleTargetError": 1.3322676295501878e-15,
       "phase": 0.4666666666666667,
       "sourceWaistDelta": -0.4534493361467824,
       "modelWaistDelta": -0.4534493361467824,
@@ -418,8 +418,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 97.45723588053856,
-      "ankleTargetError": 1.4043333874306805e-15,
+      "rightKneeFlexDegrees": 95.87325986852252,
+      "ankleTargetError": 9.930136612989092e-16,
       "phase": 0.48333333333333334,
       "sourceWaistDelta": -0.5677462917388176,
       "modelWaistDelta": -0.5677462917388176,
@@ -432,8 +432,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 101.38348342512435,
-      "ankleTargetError": 4.440892098500626e-16,
+      "rightKneeFlexDegrees": 99.94426925273989,
+      "ankleTargetError": 1.0175362097255202e-15,
       "phase": 0.5,
       "sourceWaistDelta": -0.6572300100328974,
       "modelWaistDelta": -0.6572300100328974,
@@ -446,8 +446,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 104.61071116192687,
-      "ankleTargetError": 1.2560739669470201e-15,
+      "rightKneeFlexDegrees": 103.29780538118665,
+      "ankleTargetError": 1.7763568394002505e-15,
       "phase": 0.5166666666666667,
       "sourceWaistDelta": -0.7179896231490517,
       "modelWaistDelta": -0.7179896231490517,
@@ -460,8 +460,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 107.03067336561995,
-      "ankleTargetError": 1.4043333874306805e-15,
+      "rightKneeFlexDegrees": 105.83117962974198,
+      "ankleTargetError": 2.2644195468014703e-15,
       "phase": 0.5333333333333333,
       "sourceWaistDelta": -0.7473696444371285,
       "modelWaistDelta": -0.7473696444371285,
@@ -474,8 +474,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 108.54434720486255,
-      "ankleTargetError": 1.4895204919483639e-15,
+      "rightKneeFlexDegrees": 107.45002784886015,
+      "ankleTargetError": 4.965068306494546e-16,
       "phase": 0.55,
       "sourceWaistDelta": -0.7440860259858582,
       "modelWaistDelta": -0.7440860259858582,
@@ -488,8 +488,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 109.0722558713107,
-      "ankleTargetError": 1.5700924586837751e-15,
+      "rightKneeFlexDegrees": 108.07842944592461,
+      "ankleTargetError": 1.2161883888976235e-15,
       "phase": 0.5666666666666667,
       "sourceWaistDelta": -0.7082822776781121,
       "modelWaistDelta": -0.7082822776781121,
@@ -502,8 +502,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 108.56586416723414,
-      "ankleTargetError": 1.790180836524724e-15,
+      "rightKneeFlexDegrees": 107.67032219410896,
+      "ankleTargetError": 2.5989654674417885e-15,
       "phase": 0.5833333333333334,
       "sourceWaistDelta": -0.6415231951203779,
       "modelWaistDelta": -0.6415231951203779,
@@ -516,8 +516,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 107.01591200250853,
-      "ankleTargetError": 1.7422013638940487e-15,
+      "rightKneeFlexDegrees": 106.21977746560592,
+      "ankleTargetError": 7.550332863779066e-16,
       "phase": 0.6,
       "sourceWaistDelta": -0.5467264705660568,
       "modelWaistDelta": -0.5467264705660568,
@@ -530,8 +530,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 104.45852549181896,
-      "ankleTargetError": 2.836098344511144e-15,
+      "rightKneeFlexDegrees": 103.75706815279287,
+      "ankleTargetError": 2.7834566603920697e-15,
       "phase": 0.6166666666666667,
       "sourceWaistDelta": -0.4280351757633234,
       "modelWaistDelta": -0.4280351757633234,
@@ -544,8 +544,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 100.95827478218857,
-      "ankleTargetError": 9.992007221626409e-16,
+      "rightKneeFlexDegrees": 100.3494538687752,
+      "ankleTargetError": 8.95090418262362e-16,
       "phase": 0.6333333333333333,
       "sourceWaistDelta": -0.2906366898390793,
       "modelWaistDelta": -0.2906366898390793,
@@ -558,8 +558,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 96.60935282514521,
-      "ankleTargetError": 1.6011864169946884e-15,
+      "rightKneeFlexDegrees": 96.09155768946879,
+      "ankleTargetError": 1.9860273225978185e-15,
       "phase": 0.65,
       "sourceWaistDelta": -0.1405359859392945,
       "modelWaistDelta": -0.1405359859392945,
@@ -572,8 +572,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 91.52608284050041,
-      "ankleTargetError": 2.434909185329438e-15,
+      "rightKneeFlexDegrees": 91.14202211417384,
+      "ankleTargetError": 1.8610729195778454e-15,
       "phase": 0.6666666666666666,
       "sourceWaistDelta": 0.01570681491251591,
       "modelWaistDelta": 0.01570681491251591,
@@ -586,8 +586,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 85.93141953521543,
-      "ankleTargetError": 1.7763568394002505e-15,
+      "rightKneeFlexDegrees": 85.66331377646341,
+      "ankleTargetError": 2.3914935841127266e-15,
       "phase": 0.6833333333333333,
       "sourceWaistDelta": 0.1712631525829913,
       "modelWaistDelta": 0.1712631525829913,
@@ -600,8 +600,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 79.91713307299231,
-      "ankleTargetError": 1.831026719408895e-15,
+      "rightKneeFlexDegrees": 79.73193386602796,
+      "ankleTargetError": 2.0471501066083613e-15,
       "phase": 0.7,
       "sourceWaistDelta": 0.3193344686738051,
       "modelWaistDelta": 0.3193344686738051,
@@ -614,8 +614,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 73.56961910758004,
-      "ankleTargetError": 1.4043333874306805e-15,
+      "rightKneeFlexDegrees": 73.45238685494704,
+      "ankleTargetError": 1.4217791915866692e-15,
       "phase": 0.7166666666666667,
       "sourceWaistDelta": 0.4534493361467824,
       "modelWaistDelta": 0.4534493361467824,
@@ -628,8 +628,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 66.99489756312869,
-      "ankleTargetError": 2.5121479338940403e-15,
+      "rightKneeFlexDegrees": 66.93320666034737,
+      "ankleTargetError": 1.6011864169946884e-15,
       "phase": 0.7333333333333333,
       "sourceWaistDelta": 0.5677462917388176,
       "modelWaistDelta": 0.5677462917388176,
@@ -642,8 +642,8 @@
       "sourceFarStance": true
     },
     {
-      "rightKneeFlexDegrees": 60.302735477351305,
-      "ankleTargetError": 1.2560739669470201e-15,
+      "rightKneeFlexDegrees": 60.2924263646304,
+      "ankleTargetError": 4.440892098500626e-16,
       "phase": 0.75,
       "sourceWaistDelta": 0.6572300100328974,
       "modelWaistDelta": 0.6572300100328974,
@@ -656,8 +656,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 54.34514862058434,
-      "ankleTargetError": 1.6011864169946884e-15,
+      "rightKneeFlexDegrees": 54.30877373138371,
+      "ankleTargetError": 1.4043333874306805e-15,
       "phase": 0.7666666666666667,
       "sourceWaistDelta": 0.7179896231490517,
       "modelWaistDelta": 0.7179896231490517,
@@ -670,8 +670,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 48.84324542570528,
-      "ankleTargetError": 1.7763568394002505e-15,
+      "rightKneeFlexDegrees": 48.752972822545246,
+      "ankleTargetError": 8.881784197001252e-16,
       "phase": 0.7833333333333333,
       "sourceWaistDelta": 0.7473696444371285,
       "modelWaistDelta": 0.7473696444371285,
@@ -684,8 +684,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 43.83121428579369,
-      "ankleTargetError": 6.280369834735101e-16,
+      "rightKneeFlexDegrees": 43.67659510955201,
+      "ankleTargetError": 2.2644195468014703e-15,
       "phase": 0.8,
       "sourceWaistDelta": 0.7440860259858582,
       "modelWaistDelta": 0.7440860259858582,
@@ -698,8 +698,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 39.569948229232324,
-      "ankleTargetError": 4.440892098500626e-16,
+      "rightKneeFlexDegrees": 39.33998016365575,
+      "ankleTargetError": 1.6011864169946884e-15,
       "phase": 0.8166666666666667,
       "sourceWaistDelta": 0.7082822776781121,
       "modelWaistDelta": 0.7082822776781121,
@@ -712,8 +712,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 36.37413975077999,
-      "ankleTargetError": 1.6011864169946884e-15,
+      "rightKneeFlexDegrees": 36.03700752430174,
+      "ankleTargetError": 1.4043333874306805e-15,
       "phase": 0.8333333333333334,
       "sourceWaistDelta": 0.6415231951203779,
       "modelWaistDelta": 0.6415231951203779,
@@ -726,8 +726,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 34.51811915391801,
-      "ankleTargetError": 1.7763568394002505e-15,
+      "rightKneeFlexDegrees": 34.09089988000022,
+      "ankleTargetError": 9.155133597044475e-16,
       "phase": 0.85,
       "sourceWaistDelta": 0.5467264705660568,
       "modelWaistDelta": 0.5467264705660568,
@@ -740,8 +740,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 34.12338343188776,
-      "ankleTargetError": 1.2560739669470201e-15,
+      "rightKneeFlexDegrees": 33.61862277972463,
+      "ankleTargetError": 6.280369834735101e-16,
       "phase": 0.8666666666666667,
       "sourceWaistDelta": 0.4280351757633234,
       "modelWaistDelta": 0.4280351757633234,
@@ -754,8 +754,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 35.131352413299965,
-      "ankleTargetError": 2.5121479338940403e-15,
+      "rightKneeFlexDegrees": 34.56980500096813,
+      "ankleTargetError": 4.440892098500626e-16,
       "phase": 0.8833333333333333,
       "sourceWaistDelta": 0.2906366898390793,
       "modelWaistDelta": 0.2906366898390793,
@@ -768,8 +768,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 37.29285405464091,
-      "ankleTargetError": 8.881784197001252e-16,
+      "rightKneeFlexDegrees": 36.69535185983679,
+      "ankleTargetError": 1.3322676295501878e-15,
       "phase": 0.9,
       "sourceWaistDelta": 0.1405359859392945,
       "modelWaistDelta": 0.1405359859392945,
@@ -782,8 +782,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 40.266040042833,
-      "ankleTargetError": 1.9984014443252818e-15,
+      "rightKneeFlexDegrees": 39.64714657989745,
+      "ankleTargetError": 1.4043333874306805e-15,
       "phase": 0.9166666666666666,
       "sourceWaistDelta": -0.01570681491251591,
       "modelWaistDelta": -0.01570681491251591,
@@ -796,8 +796,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 43.71829464856222,
-      "ankleTargetError": 2.2644195468014703e-15,
+      "rightKneeFlexDegrees": 43.07767546924799,
+      "ankleTargetError": 1.2755491433176288e-15,
       "phase": 0.9333333333333333,
       "sourceWaistDelta": -0.1712631525829913,
       "modelWaistDelta": -0.1712631525829913,
@@ -810,8 +810,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 47.3759641040985,
-      "ankleTargetError": 2.9790409838967277e-15,
+      "rightKneeFlexDegrees": 46.684204296757514,
+      "ankleTargetError": 2.220446049250313e-15,
       "phase": 0.95,
       "sourceWaistDelta": -0.3193344686738051,
       "modelWaistDelta": -0.3193344686738051,
@@ -824,8 +824,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 50.94972265987906,
-      "ankleTargetError": 1.2755491433176288e-15,
+      "rightKneeFlexDegrees": 50.241058778002724,
+      "ankleTargetError": 1.3322676295501878e-15,
       "phase": 0.9666666666666667,
       "sourceWaistDelta": -0.4534493361467824,
       "modelWaistDelta": -0.4534493361467824,
@@ -838,8 +838,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 54.210487334885286,
-      "ankleTargetError": 6.280369834735101e-16,
+      "rightKneeFlexDegrees": 53.479433298968104,
+      "ankleTargetError": 2.220446049250313e-15,
       "phase": 0.9833333333333333,
       "sourceWaistDelta": -0.5677462917388176,
       "modelWaistDelta": -0.5677462917388176,
@@ -852,8 +852,8 @@
       "sourceFarStance": false
     },
     {
-      "rightKneeFlexDegrees": 56.93063210002104,
-      "ankleTargetError": 1.3322676295501878e-15,
+      "rightKneeFlexDegrees": 56.169141895663486,
+      "ankleTargetError": 2.7012892057857038e-15,
       "phase": 1,
       "sourceWaistDelta": -0.6572300100328974,
       "modelWaistDelta": -0.6572300100328974,

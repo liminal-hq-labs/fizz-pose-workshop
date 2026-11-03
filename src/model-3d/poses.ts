@@ -288,6 +288,11 @@ function handFrame(
     new THREE.Matrix4().makeBasis(x, y, z),
   );
 }
+/** The relaxed thumb's direction in the hand frame, from its base towards its tip. */
+function thumbRest(side: "right" | "left"): THREE.Vector3 {
+  const inward = side === "right" ? 1 : -1;
+  return new THREE.Vector3(inward * 0.37, -1.15, 0.25);
+}
 /** Ladder geometry shared by the climb pose and the preview's ladder prop. */
 // `top` is the highest rung a hand grabs; feet stand on rungs with the ankle `footHigh` above them at the top of a step.
 export const ladder = {
@@ -315,6 +320,22 @@ function climbLimb(phase: number, high: number): { y: number; reach: number } {
   const t = smooth(p, 0, 0.5);
   return { y: high - r + r * t, reach: Math.sin(Math.PI * (p / 0.5)) };
 }
+/**
+ * The texting grip, in the phone's own frame (screen towards −z, facing Ben). The phone tilts back by
+ * `tilt` degrees so the screen faces his eyes. The palms cup its back with the fingers up behind it,
+ * and each thumb bone swings round the side edge so the thumb tip presses `thumbTip` on the screen.
+ * Values are for the right hand (on Ben's right, −x); the left hand mirrors them. `fingers` and
+ * `thumb` (the hand's thumb-side direction) have their x measured inwards, towards the phone.
+ */
+export const phoneHold = {
+  /** Moves the phone from its rest attachment towards Ben's chest, so the forearms rise to it. */
+  offset: [0, 1, -1],
+  tilt: -25,
+  palm: [1.15, -1.25, 0.58],
+  fingers: [0.2, 0.95, 0.15],
+  thumb: [-1, 0.1, 0],
+  thumbTip: [0.9, -0.95, -0.5],
+};
 /** Firing sequence phases: reach, draw, aim, fire, recoil, lower and reholster. */
 export const firing = {
   reach: [0.06, 0.18],
@@ -721,19 +742,65 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
     }
   }
   if (pose === "Phone") {
-    aimArm(
-      model,
-      "right",
-      new THREE.Vector3(-1.3, 16, 4.8),
-      new THREE.Vector3(-6, 13, 3),
-    );
-    aimArm(
-      model,
-      "left",
-      new THREE.Vector3(1.3, 16, 4.8),
-      new THREE.Vector3(6, 13, 3),
-    );
+    b.phone.rotation.x = rad(phoneHold.tilt);
+    b.phone.position.add(new THREE.Vector3(...phoneHold.offset));
+    model.root.updateMatrixWorld(true);
   }
+  if (pose === "Phone")
+    for (const side of ["right", "left"] as const) {
+      const sign = side === "right" ? -1 : 1,
+        tilt = new THREE.Quaternion().setFromAxisAngle(
+          axisX,
+          rad(phoneHold.tilt),
+        ),
+        local = (v: readonly number[]): THREE.Vector3 =>
+          new THREE.Vector3(-sign * v[0], v[1], v[2]).applyQuaternion(tilt),
+        fingers = local(phoneHold.fingers).normalize(),
+        thumb = local(phoneHold.thumb);
+      thumb.addScaledVector(fingers, -thumb.dot(fingers)).normalize();
+      const down = fingers.clone().negate(),
+        hold = new THREE.Quaternion().setFromRotationMatrix(
+          new THREE.Matrix4().makeBasis(
+            new THREE.Vector3().crossVectors(down, thumb),
+            down,
+            thumb,
+          ),
+        ),
+        // Directions point inwards (towards the phone) for both hands; the palm sits on each hand's own side.
+        phoneAt = rest.phone
+          .clone()
+          .add(new THREE.Vector3(...phoneHold.offset)),
+        palm = new THREE.Vector3(
+          sign * phoneHold.palm[0],
+          phoneHold.palm[1],
+          phoneHold.palm[2],
+        )
+          .applyQuaternion(tilt)
+          .add(phoneAt),
+        wrist = palm.clone().sub(palmCentre.clone().applyQuaternion(hold));
+      aimArm(model, side, wrist, new THREE.Vector3(sign * 6, 12, 2));
+      orientInModel(model, b[side + "Hand"], hold);
+      // Swing the thumb from its relaxed line onto the screen.
+      const thumbBone = b[side + "Thumb"],
+        base = model.root.worldToLocal(
+          thumbBone.getWorldPosition(new THREE.Vector3()),
+        ),
+        relaxed = thumbRest(side).applyQuaternion(hold).normalize(),
+        target = new THREE.Vector3(
+          sign * phoneHold.thumbTip[0],
+          phoneHold.thumbTip[1],
+          phoneHold.thumbTip[2],
+        )
+          .applyQuaternion(tilt)
+          .add(phoneAt);
+      orientInModel(
+        model,
+        thumbBone,
+        new THREE.Quaternion()
+          .setFromUnitVectors(relaxed, target.sub(base).normalize())
+          .multiply(hold),
+      );
+    }
   if (pose === "Belly clutch") {
     aimArm(
       model,

@@ -68,10 +68,10 @@
   },
   "shoes": {
     "width": 2.526,
-    "length": 6.786,
+    "length": 6.09,
     "height": 2.572,
-    "toeZ": 4.836,
-    "heelZ": -1.95
+    "toeZ": 4.34,
+    "heelZ": -1.75
   },
   "bones": [
     "pelvis",
@@ -97,7 +97,9 @@
     "phone",
     "rightKnee",
     "leftKnee",
-    "muzzleFlash"
+    "muzzleFlash",
+    "rightThumb",
+    "leftThumb"
   ],
   "references": [
     {
@@ -161,7 +163,7 @@
     "strideHalfLength": 2.6,
     "recoveryLift": 1.9
   },
-  "meshCount": 85,
+  "meshCount": 88,
   "animations": [
     {
       "name": "Run",
