@@ -5,8 +5,8 @@
 
 import { test, expect } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { rigCatalogue } from '../src/rig/catalogue.ts';
-import { playbackElapsed, rigPlayback, sampleRig, sampleTime } from '../src/rig/sample.ts';
+import { handoverTarget, rigCatalogue } from '../src/rig/catalogue.ts';
+import { handoverMs, playbackElapsed, rigPlayback, sampleRig, sampleTime } from '../src/rig/sample.ts';
 import { exportDurations, frameDurations, oneShotRestMs, playbackCycleMs, playbackFrame, replaysContinuously } from '../src/rig/timing.ts';
 import { savedAnimations } from './motion-metrics.ts';
 
@@ -78,5 +78,22 @@ test('every gallery animation cycles and its GIF and SVG exports loop forever wi
     const gif = new Uint8Array(readFileSync(new URL(`rig/${folder}/sprites.gif`, root)));
     expect(gifLoops(gif)).toBe(0); expect(gifDelays(gif)).toEqual(exportDurations(frameDurations(rig), replaysContinuously(rig)));
     expect(readFileSync(new URL(`rig/${folder}/rig.svg`, root), 'utf8')).toContain('infinite');
+  }
+});
+
+test('a one-shot with a follow-up loop hands over in the viewer once its final sprite has had its hold', () => {
+  const handovers = rigCatalogue.filter(entry => entry.then);
+  expect(handovers.map(entry => `${entry.animation}>${entry.then}`)).toEqual(['phone-idle>phone-typing']);
+  for (const entry of handovers) {
+    const next = rigCatalogue[handoverTarget(entry)], at = handoverMs(entry.rig);
+    // The lead-in is a one-shot and its follow-up a loop that keeps cycling on the same timeline.
+    expect(replaysContinuously(entry.rig)).toBe(false); expect(replaysContinuously(next.rig)).toBe(true);
+    // The hand-over comes after every lead-in sprite has had its full hold, but before the rest a lone one-shot takes.
+    expect(at).toBe(frameDurations(entry.rig).reduce((sum, hold) => sum + hold, 0));
+    expect(rigPlayback(entry.rig, at - 1).index).toBe(entry.rig.sampleCount - 1);
+    expect(at).toBeLessThan(playbackCycleMs(frameDurations(entry.rig), false));
+    // The follow-up starts on its first sprite and its seam joins, so the viewer can loop it for as long as it plays.
+    expect(rigPlayback(next.rig, 0)).toEqual({ index: 0, time: 0 });
+    expect(rigPlayback(next.rig, playbackCycleMs(frameDurations(next.rig), true))).toEqual(rigPlayback(next.rig, 0));
   }
 });

@@ -34,6 +34,11 @@ export function rigPlayback(rig: SideRig, elapsedMs: number): { index: number; t
   const from = sampleTime(rig, index), to = index < rig.sampleCount - 1 ? sampleTime(rig, index + 1) : 1;
   return { index, time: from + (to - from) * progress };
 }
+/**
+ * When a one-shot with a follow-up loop (the phone sit-down into typing) hands over: once its final sprite has had its
+ * hold, skipping the rest a lone one-shot takes before replaying.
+ */
+export function handoverMs(rig: SideRig): number { return frameDurations(rig).reduce((sum, hold) => sum + hold, 0); }
 /** The elapsed playback time that shows rig `time`, the inverse of `rigPlayback` within the first cycle. */
 export function playbackElapsed(rig: SideRig, time: number): number {
   const durations = frameDurations(rig), index = sampleIndex(rig, time), from = sampleTime(rig, index), to = index < rig.sampleCount - 1 ? sampleTime(rig, index + 1) : 1;

@@ -22,6 +22,24 @@ export interface PerformanceKey {
   pucker?: number;
   /** Eyelids: 0 open, 1 closed. The standing idle swaps its eye pixels to light grey from 0.5. */
   blink?: number;
+  /**
+   * Keyed knees for poses a flat two-bone solve cannot project, such as sitting cross-legged facing the camera, where the
+   * thighs point out and towards the viewer. When a clip keys knees, every key must, and each leg is drawn through its
+   * interpolated knee: the projected thigh and shin may foreshorten but never exceed their bone lengths.
+   */
+  nearKnee?: number[]; farKnee?: number[];
+  /** The seat rests on the ground: the front-facing skin draws the seat, bunches the shirt hem and tucks the feet. */
+  seated?: boolean;
+  /** Which shin is drawn over the other where crossed legs overlap; omitted keeps the plain far-then-near leg order. */
+  shinOver?: 'near' | 'far';
+  /** Screen light: 0 dark or hidden, 1 fully lit. Interpolated; it only counts while a phone is held (see `lighting`). */
+  screen?: number;
+  /** Thumbs on the screen, `[near, far]`: 0 resting with the tip above the phone, 1 pressed down to tap or scroll. */
+  taps?: number[];
+  /** Eyes: 0 looking ahead, 1 glancing down (at a held phone). The front skin lowers the eye pixels by one from 0.5. */
+  gaze?: number;
+  /** Breathing: 0 out, 1 in. The neck and shoulders rise by this many pixels and the front shirt deepens its chest by one row. */
+  breath?: number;
 }
 /**
  * Musical notes for a whistling idle. Each note lives for two cycles along one cubic Bézier `path` (canvas points), leaving
@@ -46,6 +64,8 @@ export interface PerformanceSettings {
   travel?: number[];
   environment?: { kind: 'ladder' | 'ledge'; x: number; y: number; width: number; spacing: number };
   notes?: NoteSettings;
+  /** Draw the holstered Fizz Stunner on Ben's right hip in a front view (the camera's left). */
+  frontHolster?: boolean;
 }
 
 /** Where a note born at `emitPhase` sits at cycle time `t`, `generation` cycles after it left the lips. */
@@ -55,7 +75,10 @@ export function notePosition(notes: NoteSettings, t: number, generation: number)
   return [blend(0), blend(1)];
 }
 
-type Limb = 'nearHand' | 'farHand' | 'nearAnkle' | 'farAnkle';
+/** Whether a clip keys its knees; `validateRig` requires all keys or none. */
+export function keysKnees(clip: PerformanceSettings): boolean { return Boolean(clip.keys[0].nearKnee); }
+
+type Limb = 'nearHand' | 'farHand' | 'nearAnkle' | 'farAnkle' | 'nearKnee' | 'farKnee';
 interface Curve { readonly phases: readonly number[]; readonly values: readonly number[]; readonly slopes: readonly number[]; }
 
 /**
@@ -107,20 +130,21 @@ function clearPitch(rig: SideRig, ankle: Vec2, pitch: number): number {
   return pitch * low;
 }
 interface Body { neck: Vec2; nearShoulder: Vec2; farShoulder: Vec2; nearHip: Vec2; farHip: Vec2; }
-function body(rig: SideRig, root: Vec2, torsoAngle: number): Body {
+function body(rig: SideRig, root: Vec2, torsoAngle: number, breath = 0): Body {
   const base = {root, torsoAngle};
+  // An inhale lifts the neck and shoulders without moving the hips, so a seat stays on the ground.
   return {
-    neck: torsoPoint(base, [0, -rig.torso.neckHeight]),
-    nearShoulder: torsoPoint(base, [-rig.torso.shoulderSpread, rig.torso.shoulderY]), farShoulder: torsoPoint(base, [rig.torso.shoulderSpread, rig.torso.shoulderY]),
+    neck: torsoPoint(base, [0, -rig.torso.neckHeight - breath]),
+    nearShoulder: torsoPoint(base, [-rig.torso.shoulderSpread, rig.torso.shoulderY - breath]), farShoulder: torsoPoint(base, [rig.torso.shoulderSpread, rig.torso.shoulderY - breath]),
     nearHip: add(root, [-rig.legs.hipSpread, 0]), farHip: add(root, [rig.legs.hipSpread, 0]),
   };
 }
-const origins: Record<Limb, keyof Body> = { nearHand: 'nearShoulder', farHand: 'farShoulder', nearAnkle: 'nearHip', farAnkle: 'farHip' };
+const origins: Record<Limb, keyof Body> = { nearHand: 'nearShoulder', farHand: 'farShoulder', nearAnkle: 'nearHip', farAnkle: 'farHip', nearKnee: 'nearHip', farKnee: 'farHip' };
 
 /** Curves for one clip, built once per settings object so sampling stays allocation-light. */
 interface ClipCurves {
-  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink', Curve>;
-  limbs: Record<Limb, { x: Curve; y: Curve; angle: Curve; reach: Curve; grounded: readonly boolean[] }>;
+  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink' | 'screen' | 'nearTap' | 'farTap' | 'gaze' | 'breath', Curve>;
+  limbs: Partial<Record<Limb, { x: Curve; y: Curve; angle: Curve; reach: Curve; grounded: readonly boolean[] }>>;
   phone?: { from: number; x: Curve; y: Curve };
 }
 const cache = new WeakMap<PerformanceSettings, { torso: SideRig['torso']; legs: SideRig['legs']; curves: ClipCurves }>();
@@ -128,20 +152,21 @@ function clipCurves(rig: SideRig, clip: PerformanceSettings): ClipCurves {
   const known = cache.get(clip); if (known && known.torso === rig.torso && known.legs === rig.legs) return known.curves;
   const { keys, loop } = clip, phases = keys.map(key => key.phase), rests = keys.map(key => Boolean(key.hold || key.beat));
   const curve = (values: number[]): Curve => monotoneCurve(phases, values, loop, rests);
-  const bodies = keys.map(key => body(rig, [key.root[0], key.root[1]], radians(key.lean)));
-  const limb = (name: Limb): ClipCurves['limbs'][Limb] => {
+  const bodies = keys.map(key => body(rig, [key.root[0], key.root[1]], radians(key.lean), key.breath ?? 0));
+  const limb = (name: Limb): NonNullable<ClipCurves['limbs'][Limb]> => {
     // Each limb target is also keyed as an angle and reach about its shoulder or hip, so free limbs swing on arcs. Angles
     // unwrap along the keys so a swing never takes the long way round.
-    const polar = keys.map((key, i) => { const origin = bodies[i][origins[name]]; return [Math.atan2(key[name][1] - origin[1], key[name][0] - origin[0]), Math.hypot(key[name][0] - origin[0], key[name][1] - origin[1])]; });
+    const goal = (key: PerformanceKey): number[] => key[name]!;
+    const polar = keys.map((key, i) => { const origin = bodies[i][origins[name]]; return [Math.atan2(goal(key)[1] - origin[1], goal(key)[0] - origin[0]), Math.hypot(goal(key)[0] - origin[0], goal(key)[1] - origin[1])]; });
     for (let i = 1; i < polar.length; i++) while (Math.abs(polar[i][0] - polar[i - 1][0]) > Math.PI) polar[i][0] -= Math.sign(polar[i][0] - polar[i - 1][0]) * 2 * Math.PI;
     return {
-      x: curve(keys.map(key => key[name][0])), y: curve(keys.map(key => key[name][1])),
+      x: curve(keys.map(key => goal(key)[0])), y: curve(keys.map(key => goal(key)[1])),
       angle: curve(polar.map(([angle]) => angle)), reach: curve(polar.map(([, reach]) => reach)),
       // A target keyed at the same canvas point on both ends of a segment is a grip or planted foot and stays put, and a foot
       // supported on both keys slides along its support. Both follow the canvas curve instead of an arc.
       grounded: keys.slice(0, -1).map((key, i) => {
         const next = keys[i + 1], support = name === 'nearAnkle' ? 'nearSupport' : name === 'farAnkle' ? 'farSupport' : null;
-        return (key[name][0] === next[name][0] && key[name][1] === next[name][1]) || (support !== null && key[support] && next[support]);
+        return (goal(key)[0] === goal(next)[0] && goal(key)[1] === goal(next)[1]) || (support !== null && key[support] && next[support]);
       }),
     };
   };
@@ -149,15 +174,20 @@ function clipCurves(rig: SideRig, clip: PerformanceSettings): ClipCurves {
   let phone: ClipCurves['phone'];
   if (phoneFrom >= 0) {
     const held = keys.slice(phoneFrom), heldPhases = held.map(key => key.phase), heldRests = held.map(key => Boolean(key.hold || key.beat));
-    phone = { from: keys[phoneFrom].phase, x: monotoneCurve(heldPhases, held.map(key => key.phone?.[0] ?? held[0].phone![0]), false, heldRests), y: monotoneCurve(heldPhases, held.map(key => key.phone?.[1] ?? held[0].phone![1]), false, heldRests) };
+    // The phone is keyed in canvas space but carried by the far hand: its offset from that grip is what interpolates, so it
+    // never drifts out of the hand between keys.
+    const offset = (key: PerformanceKey, axis: 0 | 1): number => (key.phone ?? held[0].phone!)[axis] - key.farHand[axis];
+    phone = { from: keys[phoneFrom].phase, x: monotoneCurve(heldPhases, held.map(key => offset(key, 0)), false, heldRests), y: monotoneCurve(heldPhases, held.map(key => offset(key, 1)), false, heldRests) };
   }
   const curves: ClipCurves = {
     scalar: {
       rootX: curve(keys.map(key => key.root[0])), rootY: curve(keys.map(key => key.root[1])), lean: curve(keys.map(key => key.lean)), headRoll: curve(keys.map(key => key.headRoll)),
       nearFoot: curve(keys.map(key => key.nearFootDegrees ?? 0)), farFoot: curve(keys.map(key => key.farFootDegrees ?? 0)),
       pucker: curve(keys.map(key => key.pucker ?? 0)), blink: curve(keys.map(key => key.blink ?? 0)),
+      screen: curve(keys.map(key => key.screen ?? 0)), nearTap: curve(keys.map(key => key.taps?.[0] ?? 0)), farTap: curve(keys.map(key => key.taps?.[1] ?? 0)),
+      gaze: curve(keys.map(key => key.gaze ?? 0)), breath: curve(keys.map(key => key.breath ?? 0)),
     },
-    limbs: { nearHand: limb('nearHand'), farHand: limb('farHand'), nearAnkle: limb('nearAnkle'), farAnkle: limb('farAnkle') },
+    limbs: { nearHand: limb('nearHand'), farHand: limb('farHand'), nearAnkle: limb('nearAnkle'), farAnkle: limb('farAnkle'), ...(keys[0].nearKnee ? { nearKnee: limb('nearKnee'), farKnee: limb('farKnee') } : {}) },
     phone,
   };
   cache.set(clip, { torso: rig.torso, legs: rig.legs, curves });
@@ -179,7 +209,7 @@ function clothAt(settings: ClothingSettings, clip: PerformanceSettings, curves: 
   const time = (value: number): number => clip.loop ? wrap(value) : Math.max(0, Math.min(1, value)), h = 1e-3, then = t - settings.lag;
   const rate = (curve: Curve): number => (evaluateCurve(curve, time(then + h)) - evaluateCurve(curve, time(then - h))) / (2 * h);
   const degrees = 180 / Math.PI;
-  return clothPose(settings, t, [rate(curves.scalar.rootX), rate(curves.scalar.rootY)], [rate(curves.limbs.nearHand.angle) * degrees, rate(curves.limbs.farHand.angle) * degrees]);
+  return clothPose(settings, t, [rate(curves.scalar.rootX), rate(curves.scalar.rootY)], [rate(curves.limbs.nearHand!.angle) * degrees, rate(curves.limbs.farHand!.angle) * degrees]);
 }
 
 /**
@@ -205,9 +235,9 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const shift: Vec2 = [(clip.travel?.[0] ?? 0) * t, (clip.travel?.[1] ?? 0) * t];
   const worldRoot: Vec2 = [at(curves.scalar.rootX), at(curves.scalar.rootY)], torsoAngle = radians(at(curves.scalar.lean)), headAngle = radians(at(curves.scalar.headRoll));
   const root: Vec2 = [worldRoot[0] - shift[0], worldRoot[1] - shift[1]];
-  const world = body(rig, worldRoot, torsoAngle), joints = body(rig, root, torsoAngle);
+  const breath = at(curves.scalar.breath), world = body(rig, worldRoot, torsoAngle, breath), joints = body(rig, root, torsoAngle, breath);
   const target = (name: Limb): Vec2 => {
-    const limb = curves.limbs[name];
+    const limb = curves.limbs[name]!;
     if (limb.grounded[index]) return [at(limb.x) - shift[0], at(limb.y) - shift[1]];
     const origin = world[origins[name]], angle = at(limb.angle), reach = at(limb.reach);
     return [origin[0] + Math.cos(angle) * reach - shift[0], origin[1] + Math.sin(angle) * reach - shift[1]];
@@ -221,10 +251,16 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const back = clip.view === 'back';
   const nearArm = solve(joints.nearShoulder, target('nearHand'), rig.arms.upperLength, rig.arms.forearmLength, back ? 1 : -1);
   const farArm = solve(joints.farShoulder, target('farHand'), rig.arms.upperLength, rig.arms.forearmLength, clip.view === 'side' || back ? -1 : 1);
-  const nearLeg = solve(joints.nearHip, target('nearAnkle'), rig.legs.thighLength, rig.legs.shinLength, clip.view === 'side' ? 1 : -1);
-  const farLeg = solve(joints.farHip, target('farAnkle'), rig.legs.thighLength, rig.legs.shinLength, 1);
+  // Keyed knees foreshorten the legs instead of solving them flat: neither projected bone may exceed its length.
+  const through = (hip: Vec2, knee: Vec2, ankle: Vec2): Chain => {
+    if (Math.hypot(knee[0] - hip[0], knee[1] - hip[1]) > rig.legs.thighLength + 1e-6 || Math.hypot(ankle[0] - knee[0], ankle[1] - knee[1]) > rig.legs.shinLength + 1e-6) throw new Error(`${rig.motion} keyed knee stretches a leg at phase ${t.toFixed(3)}.`);
+    return [hip, knee, ankle];
+  };
+  const knees = keysKnees(clip);
+  const nearLeg = knees ? through(joints.nearHip, target('nearKnee'), target('nearAnkle')) : solve(joints.nearHip, target('nearAnkle'), rig.legs.thighLength, rig.legs.shinLength, clip.view === 'side' ? 1 : -1);
+  const farLeg = knees ? through(joints.farHip, target('farKnee'), target('farAnkle')) : solve(joints.farHip, target('farAnkle'), rig.legs.thighLength, rig.legs.shinLength, 1);
   const nearFoot = foot(nearLeg[2], a.nearSupport, rig, clearPitch(rig, nearLeg[2], radians(at(curves.scalar.nearFoot)))), farFoot = foot(farLeg[2], a.farSupport, rig, clearPitch(rig, farLeg[2], radians(at(curves.scalar.farFoot))));
-  const phone: Vec2 | undefined = curves.phone && t >= curves.phone.from ? [evaluateCurve(curves.phone.x, t), evaluateCurve(curves.phone.y, t)] : undefined;
+  const farGrip = farArm[2], phone: Vec2 | undefined = curves.phone && t >= curves.phone.from ? [farGrip[0] + evaluateCurve(curves.phone.x, t), farGrip[1] + evaluateCurve(curves.phone.y, t)] : undefined;
   const notes: Vec2[] | undefined = clip.notes ? [notePosition(clip.notes, t, 0), notePosition(clip.notes, t, 1)] : undefined;
   const face = tiltedFace(sampleFace(joints.neck, 0, rig.face, t, headAngle), sampleFace(joints.neck, 0, rig.face, t), headAngle);
   let cloth = rig.clothing ? clothAt(rig.clothing, clip, curves, t) : undefined;
@@ -237,6 +273,9 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   return { time: t, root, torsoAngle, torsoTurn: 0, headTurn: 0, headAngle, neck: joints.neck, face, nearArm, farArm, nearLeg, farLeg, nearFoot, farFoot,
     contact: a.nearSupport && a.farSupport ? 'both' : a.nearSupport ? 'near' : a.farSupport ? 'far' : 'flight',
     cloth,
-    presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: scrolledEnvironment(clip, shift), cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink)},
+    presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: scrolledEnvironment(clip, shift), cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink),
+      ...(a.seated ? { seated: true } : {}), ...(a.shinOver ? { shinOver: a.shinOver } : {}), ...(clip.frontHolster ? { frontHolster: true } : {}),
+      gaze: at(curves.scalar.gaze), breath,
+      ...(phone ? { screen: Math.max(0, Math.min(1, at(curves.scalar.screen))), taps: [at(curves.scalar.nearTap), at(curves.scalar.farTap)] } : {})},
   };
 }

@@ -1303,5 +1303,91 @@
         "pixels": ".kkk."
       }
     ]
+  },
+  "torsoFrontSeated": {
+    "notes": "Rows that replace the front shirt patch while seated: the hem bunches one pixel out over the belt on each side as the seat presses down.",
+    "rows": [
+      {
+        "x": 6,
+        "y": 22,
+        "pixels": "kRRRRRRRRRk"
+      },
+      {
+        "x": 6,
+        "y": 23,
+        "pixels": "kkDDDyDDDkk"
+      }
+    ]
+  },
+  "seatFront": {
+    "notes": "The seat resting on the ground, drawn behind the crossed legs in the shirt patch coordinates (the root is local 11,24). Its bottom ink row is the ground contact.",
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 5,
+        "y": 24,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 25,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 26,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 27,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 6,
+        "y": 28,
+        "pixels": "kkkkkkkkkkk"
+      }
+    ]
+  },
+  "holsterFront": {
+    "notes": "The holstered Fizz Stunner seen from the front on Ben's right hip (the camera's left), from the saved front stand. Offsets run from the root to the anchor pixel (the belt clip).",
+    "anchor": [
+      1,
+      0
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": "kDk"
+      },
+      {
+        "x": -1,
+        "y": 1,
+        "pixels": "kMmk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kMk"
+      },
+      {
+        "x": 1,
+        "y": 3,
+        "pixels": "kk"
+      }
+    ],
+    "standingOffset": [
+      -4,
+      0
+    ],
+    "seatedOffset": [
+      -6,
+      -1
+    ]
   }
 }

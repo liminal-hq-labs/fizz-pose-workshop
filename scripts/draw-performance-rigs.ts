@@ -53,6 +53,13 @@ if (import.meta.main) {
   authored.animations[entry.animation] = {frames:Object.keys(frames),durationsMs:frameDurations(entry.rig),loop:replaysContinuously(entry.rig)};
   await exportRig(entry.rig,skin,fileURLToPath(new URL('rig/'+entry.folder,root)));
  }
+ // A loop with a `sequence` also saves the whole performance: its lead-in once, then the loop `repeats` times, then a restart.
+ for (const {animation, sequence} of rigCatalogue) {
+  const loop = authored.animations[animation], lead = sequence && authored.animations[sequence.leadIn];
+  if (!sequence || !loop || !lead) continue;
+  const repeat = <T,>(items: readonly T[]): T[] => Array.from({length: sequence.repeats}, () => items).flat();
+  authored.animations[sequence.name] = {frames:[...lead.frames,...repeat(loop.frames)],durationsMs:[...(lead.durationsMs ?? []),...repeat(loop.durationsMs ?? [])],loop:true};
+ }
  await writeFile(new URL('source/poses.json',root),JSON.stringify(authored,null,2)+'\n');
  await writeFile(new URL('edits.json',root),JSON.stringify(edits,null,2)+'\n');
  console.log('Saved performance rigs and their editable poses.');
