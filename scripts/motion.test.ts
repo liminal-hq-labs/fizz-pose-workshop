@@ -31,6 +31,9 @@ const knownFailures: readonly KnownFailure[] = [
   ...['4', '5', '6', '7', '8', '16', '17', '18', '19'].map(at => ({ check: 'helmet-rim' as const, subject: 'standing-360', at, fixedBy: 'Phase 5: turntable rebuild' })),
   // The jump keeps its approved six-frame timing, which drops the head 8 pixels from the fall pose to the landing in one step.
   ...['jump', 'jump-left'].map(subject => ({ check: 'head-travel' as const, subject, at: '3>4', fixedBy: 'kept by request: the original six-frame jump timing' })),
+  // The seated phone idle sits down onto the ground: the whole body drops eight rows over three 120 ms frames, while the
+  // seated reading that follows only moves the hands, phone, thumb and head, so the sit-down steps dwarf the cycle median.
+  ...['0>1', '1>2', '2>3'].map(at => ({ check: 'spike' as const, subject: 'phone-idle', at, fixedBy: 'intended: sitting down drops the whole body to the ground' })),
   // Intended effects rather than faults: the Stunner's muzzle flash lasts one frame, and the study splits its long side-view
   // hold across the loop seam. Keep these while the effect stays deliberate.
   { check: 'feature-pop', subject: 'fizz-blaster', at: '1:+C', fixedBy: 'intended: one-frame muzzle flash' },
@@ -40,7 +43,10 @@ const knownFailures: readonly KnownFailure[] = [
 
 const frames = loadSavedFrames();
 // One-shots (saved with `loop: false`) hold their final pose and replay after a rest, so they have no wrapping step.
-const cycles = Object.entries(savedAnimations).map(([name, animation]) => ({ name, loop: animation.loop !== false, sequence: animation.frames.map(key => frames[key]) }));
+// A whole-performance sequence (a lead-in once, then a loop several times) restarts from its first pose by design, so it is
+// checked as its two parts, each a cycle above, plus the handover between them (`scripts/phone-rig.test.ts`).
+const sequences = new Set(rigCatalogue.flatMap(entry => entry.sequence ? [entry.sequence.name] : []));
+const cycles = Object.entries(savedAnimations).filter(([name]) => !sequences.has(name)).map(([name, animation]) => ({ name, loop: animation.loop !== false, sequence: animation.frames.map(key => frames[key]) }));
 const key = (failure: Pick<KnownFailure, 'check' | 'subject' | 'at'>): string => `${failure.check} ${failure.subject} @ ${failure.at}`;
 
 function findings(check: Check): string[] {
@@ -150,6 +156,30 @@ test('the reference cycles use their measured spacing as the benchmark', () => {
 test('run and look up/down cycles stay byte-for-byte identical to the pinned reference', () => {
   for (const [name, animation] of Object.entries(pinned.animations)) expect(savedAnimations[name]).toEqual(animation);
   for (const [name, frame] of Object.entries(pinned.frames)) expect(frames[name]).toEqual(frame);
+});
+
+// The Fizz Stunner hangs on Ben's right hip only, so a Ben frame that shows it can never be a plain flip of another saved
+// frame: a flip would carry the holster across to his left hip. (The standalone Stunner study's opposite views are mirrors
+// of the prop on its own, so only Ben's frames are checked.)
+test('no Stunner-bearing Ben frame is an exact mirror of any other saved frame', () => {
+  const ben = Object.entries(frames).filter(([name]) => name.startsWith('ben_')), mirrors: string[] = [];
+  for (const [name, frame] of ben) {
+    if (!frame.grid.some(row => /[Mm]/.test(row))) continue;
+    const flip = JSON.stringify(frame.grid.map(row => [...row].reverse().join('')));
+    for (const [other, candidate] of Object.entries(frames)) if (candidate.width === frame.width && candidate.height === frame.height && JSON.stringify(candidate.grid) === flip) mirrors.push(`${name} ~ ${other}`);
+  }
+  expect(mirrors).toEqual([]);
+});
+
+// The ladder climb loops hand over hand: every step moves, none jolts, the wrap reads like any other step and no two frames
+// repeat, so neither half of the loop is the other half held still.
+test('the ladder climb loops without duplicate frames or spikes and needs no known-failure entries', () => {
+  const animation = savedAnimations.climb, sequence = animation.frames.map(frame => frames[frame]);
+  expect(animation.loop).not.toBe(false); expect(sequence.length).toBe(8);
+  expect(new Set(sequence.map(frame => frame.grid.join('|'))).size).toBe(sequence.length);
+  const changes = cycleSteps(sequence.length).map(({ from, to }) => changedPixels(sequence[from], sequence[to]));
+  expect(Math.min(...changes)).toBeGreaterThan(0); expect(Math.max(...changes)).toBeLessThanOrEqual(spikeRatio * median(changes));
+  expect(knownFailures.some(failure => failure.subject === 'climb')).toBe(false);
 });
 
 // The whistling idles move every frame (bob, sway, nod, toe tap, lip pulse, blink and floating notes) and loop without a

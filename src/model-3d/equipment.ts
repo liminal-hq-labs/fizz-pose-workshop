@@ -192,9 +192,9 @@ export interface ShoeSection {
 }
 /**
  * Running-shoe scale against the authored sprite-sized profile below. A real running shoe is
- * about 15% of body height; Ben keeps a chunkier cartoon shoe at about 22% (6.8 units).
+ * about 15% of body height; Ben keeps a chunkier cartoon shoe at about 19% (6.1 units).
  */
-export const shoeScale = { x: 0.7, y: 0.85, z: 0.78 } as const;
+export const shoeScale = { x: 0.7, y: 0.85, z: 0.7 } as const;
 /** Model-space height of an authored shoe height, scaled up from the sole at −0.5. */
 export const shoeY = (y: number): number => (y + 0.5) * shoeScale.y - 0.5;
 /** The forefoot blends into the toe bone across this span ahead of the ankle. */
@@ -264,8 +264,9 @@ export function runnerTop(x: number, z: number): number {
 export const shoeSlots = ["upper", "capAndSole", "underside"] as const;
 /** The white rubber toe cap covers the front of the upper up to this height above the sole seam. */
 export const toeCap = {
-  fromZ: 4.55 * shoeScale.z,
-  tipZ: 5.75 * shoeScale.z,
+  fromZ: 4.1 * shoeScale.z,
+  // From here forward the white rubber also wraps over the top of the toe.
+  tipZ: 4.85 * shoeScale.z,
   segments: 5,
 };
 export function runningShoe(

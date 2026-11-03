@@ -32,7 +32,7 @@ test('facial landmarks share one right-and-left shift while following the rig an
     expect(face.ear.pixel[1] - face.eye.pixel[1]).toBe(1);
   }
 });
-test('all six actual sprite grids contain exactly the rig eye and mouth, including the loop seam', () => {
+test('all twelve actual sprite grids contain exactly the rig eye and mouth, including the loop seam', () => {
   const frames = Object.values(drawRunCycle()), positions = [];
   for (const [i, frame] of frames.entries()) {
     const face = sampleRunRig(rig, i / rig.sampleCount).face;
@@ -42,7 +42,7 @@ test('all six actual sprite grids contain exactly the rig eye and mouth, includi
     expect(frame.grid[face.mouth.pixel[1]][face.mouth.pixel[0]]).toBe(skin.face.mouth);
     positions.push(face.eye.pixel);
   }
-  expect(positions).toEqual([[17, 10], [18, 10], [18, 9], [17, 10], [16, 10], [17, 9]]);
+  expect(positions).toEqual([[17, 10], [18, 10], [18, 10], [18, 9], [18, 9], [17, 10], [17, 10], [17, 10], [16, 10], [16, 9], [17, 9], [17, 10]]);
   for (let i = 0; i < positions.length; i++) {
     const next = positions[(i + 1) % positions.length];
     expect(Math.abs(positions[i][0] - next[0])).toBeLessThanOrEqual(3);
@@ -50,25 +50,25 @@ test('all six actual sprite grids contain exactly the rig eye and mouth, includi
   }
 });
 
-// The head turn leads the stride slightly, so the away pose spans frames 2 and 3, the camera-facing peak is frame 5 and
-// frame 6 eases back to the profile features while keeping the camera-facing shading.
-test('six head-local samples turn away for two frames, then towards the camera for one peak frame', () => {
-  expect(Array.from({length: 6}, (_, i) => sampleRunRig(rig, i / 6).face.pixelShift)).toEqual([0, 1, 1, 0, -1, 0]);
+// The head turn leads the stride slightly, so the away pose spans frames 2 to 5, the camera-facing peak spans frames 9 and
+// 10, and frames 11 and 12 ease back to the profile features.
+test('twelve head-local samples turn away for four frames, then towards the camera for two peak frames', () => {
+  expect(Array.from({length: 12}, (_, i) => sampleRunRig(rig, i / 12).face.pixelShift)).toEqual([0, 1, 1, 1, 1, 0, 0, 0, -1, -1, 0, 0]);
 });
 
 test('nose silhouette tucks into the head at either turn while the ear and jaw stay still', () => {
  const frames=Object.values(drawRunCycle());
  for(const [i,frame]of frames.entries()){
-  const face=sampleRunRig(rig,i/6).face;
+  const face=sampleRunRig(rig,i/rig.sampleCount).face;
   expect(face.ear.pixel[0]-face.pixelAnchor[0]).toBe(-1);expect(face.chin.pixel[0]-face.pixelAnchor[0]).toBe(0);
   expect(Math.abs(face.pixelShift)).toBeLessThanOrEqual(2);
   expect(frame.grid[face.nose.pixel[1]][face.nose.pixel[0]]).toBe('k');
   expect(frame.grid[face.noseTip.pixel[1]][face.noseTip.pixel[0]]).toBe(face.noseVisible?'k':'.');
-  expect(face.noseVisible).toBe(i===0||i===3||i===5);
+  expect(face.noseVisible).toBe([0,5,6,7,10,11].includes(i));
  }
 });
 test('the mouth keeps its front pixel on the profile edge and widens backwards as the face turns towards the camera', () => {
- const faces=Array.from({length:6},(_,i)=>sampleRunRig(rig,i/6).face);
+ const faces=Array.from({length:12},(_,i)=>sampleRunRig(rig,i/12).face);
  for(const f of faces){
   const xs=f.mouthPixels.map(p=>p[0]-f.pixelAnchor[0]);
   expect(xs.at(-1)).toBe(rig.face.mouthFront);
@@ -76,14 +76,14 @@ test('the mouth keeps its front pixel on the profile edge and widens backwards a
   // The mouth always includes the pixel under the near eye.
   expect(xs).toContain(f.eye.pixel[0]-f.pixelAnchor[0]);
  }
- // One pixel turned away, two in profile (frames 1, 4 and 6) and three at the camera-facing peak.
- expect(faces.map(f=>f.mouthPixels.map(p=>p[0]))).toEqual([[17,18],[18],[18],[17,18],[16,17,18],[17,18]]);
+ // One pixel turned away (frames 2-5), two in profile and three at the camera-facing peak (frames 9 and 10).
+ expect(faces.map(f=>f.mouthPixels.map(p=>p[0]))).toEqual([[17,18],[18],[18],[18],[18],[17,18],[17,18],[17,18],[16,17,18],[16,17,18],[17,18],[17,18]]);
  // Only the camera-facing peak reveals the far eye, in front of the near eye.
- expect(faces.map(f=>f.eyePixels.map(p=>p[0]))).toEqual([[17],[18],[18],[17],[16,18],[17]]);
+ expect(faces.map(f=>f.eyePixels.map(p=>p[0]))).toEqual([[17],[18],[18],[18],[18],[17],[17],[17],[16,18],[16,18],[17],[17]]);
  const xs=faces.flatMap(f=>[...f.eyePixels,...f.mouthPixels].map(p=>p[0]));
  expect(Math.max(...xs)-Math.min(...xs)).toBeLessThanOrEqual(2);
 });
-test('the rig alone redraws the six saved run faces, without relying on editor overrides', () => {
+test('the rig alone redraws the twelve saved run frames, without relying on editor overrides', () => {
  // The pinned frames hold the hand-edited faces; the rig and skin reproduce them so a redraw does not lose them.
  for(const [name,frame] of Object.entries(drawRunCycle())) expect(frame).toEqual(pinned.frames[name as keyof typeof pinned.frames]);
 });
@@ -98,9 +98,9 @@ test('eye anchor travels at most two canvas pixels including the body bob, with 
 
 // The run's head turn is carried by the face sliding inside a still helmet, not by the helmet itself hopping.
 test('the running helmet keeps one column and bobs the same way in both strides', () => {
- const faces=Array.from({length:6},(_,i)=>sampleRunRig(rig,i/6).face);
+ const n=rig.sampleCount,faces=Array.from({length:n},(_,i)=>sampleRunRig(rig,i/n).face);
  expect(new Set(faces.map(f=>f.pixelAnchor[0])).size).toBe(1);
- for(let i=0;i<3;i++)expect(faces[i+3].pixelAnchor).toEqual(faces[i].pixelAnchor);
+ for(let i=0;i<n/2;i++)expect(faces[i+n/2].pixelAnchor).toEqual(faces[i].pixelAnchor);
 });
 test('the collar rests directly on the shirt in every running sprite, with no ink gap under the neck', () => {
  for(const [i,frame] of Object.values(drawRunCycle()).entries()){

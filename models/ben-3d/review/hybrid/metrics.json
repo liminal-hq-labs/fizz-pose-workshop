@@ -1,0 +1,433 @@
+{
+  "build": "hybrid",
+  "tolerancePixels": 2,
+  "relaxedChecks": {
+    "headWidth": {
+      "min": -4,
+      "max": 2,
+      "reason": "The sculpted face is 6 units wide, narrower than the helmet and shoulders, where the sprite face band is about 8 pixels; the model is intentionally up to four pixels narrower."
+    },
+    "torsoWidth": {
+      "min": -4,
+      "max": 2,
+      "reason": "Ben is built as a skinny kid: a narrow 4.9-unit ribcage and shoulders set 3.4 units from the centre, so the shirt-and-arms band is intentionally up to four pixels narrower than the sprite, most at the quarter views."
+    },
+    "shoeWidth": {
+      "min": -5,
+      "max": 2,
+      "reason": "Running shoes are 6.8 units long and 2.5 wide (about 22% of height) on slim legs set 1.45 from the centre, instead of the sprite-sized 8.7 by 3.6 (28%); combined shoe widths are intentionally up to five pixels narrower, most in profile."
+    },
+    "shoeHeight": {
+      "min": -3,
+      "max": 2,
+      "reason": "The shorter shoe has a proportionally lower 2.6-unit ankle collar than the sprite toe-cap rows."
+    }
+  },
+  "projection": "32 × 44 orthographic; one world unit per sprite pixel",
+  "referenceMasks": {
+    "helmet": "Coloured helmet and rim, excluding the black sprite outline",
+    "torso": "Clothing and arms, excluding the black sprite outline",
+    "shoes": "Coloured uppers and soles, excluding the black sprite outline",
+    "head": "Head meshes only, excluding the fitted helmet",
+    "overall": "Complete sprite envelope"
+  },
+  "actionCycles": [
+    {
+      "pose": "Firing",
+      "file": "firing-cycle.png",
+      "angle": 60,
+      "phases": [
+        0.14,
+        0.26,
+        0.42,
+        0.5,
+        0.56,
+        0.86
+      ]
+    },
+    {
+      "pose": "Jump",
+      "file": "jump-cycle.png",
+      "angle": 60,
+      "phases": [
+        0.12,
+        0.24,
+        0.4,
+        0.53,
+        0.72,
+        0.88
+      ]
+    },
+    {
+      "pose": "Fall",
+      "file": "fall-cycle.png",
+      "angle": 40,
+      "phases": [
+        0,
+        0.17,
+        0.33,
+        0.5,
+        0.67,
+        0.83
+      ]
+    },
+    {
+      "pose": "Climb",
+      "file": "climb-cycle.png",
+      "angle": 30,
+      "phases": [
+        0,
+        0.17,
+        0.33,
+        0.5,
+        0.67,
+        0.83
+      ]
+    },
+    {
+      "pose": "Look up",
+      "file": "look-up-cycle.png",
+      "angle": 0,
+      "phases": [
+        0,
+        0.18,
+        0.4,
+        0.6,
+        0.8,
+        0.98
+      ]
+    },
+    {
+      "pose": "Look down",
+      "file": "look-down-cycle.png",
+      "angle": 0,
+      "phases": [
+        0,
+        0.18,
+        0.4,
+        0.6,
+        0.8,
+        0.98
+      ]
+    }
+  ],
+  "runPhases": [
+    0,
+    0.16666666666666666,
+    0.3333333333333333,
+    0.5,
+    0.6666666666666666,
+    0.8333333333333334
+  ],
+  "poseOrder": [
+    "Standing",
+    "Run",
+    "Jump",
+    "Fall",
+    "Climb",
+    "Firing",
+    "Whistle",
+    "Phone",
+    "Look up",
+    "Look down",
+    "Belly clutch"
+  ],
+  "browserErrors": [],
+  "mobileOverflow": false,
+  "metrics": [
+    {
+      "angle": 0,
+      "frame": "ben_turn000",
+      "source": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 9,
+        "height": 31,
+        "top": 4,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 9,
+        "height": 6,
+        "top": 3,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 9,
+        "height": 9,
+        "top": 4,
+        "bottom": 12
+      },
+      "sourceShoes": {
+        "width": 9,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 5,
+        "height": 3,
+        "top": 32,
+        "bottom": 34
+      },
+      "differences": {
+        "height": -2,
+        "headWidth": -2,
+        "torsoWidth": -2,
+        "helmetWidth": 0,
+        "shoeWidth": -4,
+        "shoeHeight": -2
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 45,
+      "frame": "ben_turn045",
+      "source": {
+        "width": 14,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 10,
+        "height": 31,
+        "top": 4,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 11,
+        "height": 6,
+        "top": 3,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 10,
+        "height": 9,
+        "top": 4,
+        "bottom": 12
+      },
+      "sourceShoes": {
+        "width": 10,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 7,
+        "height": 3,
+        "top": 32,
+        "bottom": 34
+      },
+      "differences": {
+        "height": -2,
+        "headWidth": -3,
+        "torsoWidth": -3,
+        "helmetWidth": -1,
+        "shoeWidth": -3,
+        "shoeHeight": -2
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 90,
+      "frame": "ben_turn090",
+      "source": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 10,
+        "height": 31,
+        "top": 4,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 11,
+        "height": 6,
+        "top": 3,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 10,
+        "height": 9,
+        "top": 4,
+        "bottom": 12
+      },
+      "sourceShoes": {
+        "width": 10,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 6,
+        "height": 3,
+        "top": 32,
+        "bottom": 34
+      },
+      "differences": {
+        "height": -2,
+        "headWidth": -2,
+        "torsoWidth": -2,
+        "helmetWidth": -1,
+        "shoeWidth": -4,
+        "shoeHeight": -2
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 180,
+      "frame": "ben_turn180",
+      "source": {
+        "width": 14,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 9,
+        "height": 31,
+        "top": 4,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 9,
+        "height": 6,
+        "top": 3,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 9,
+        "height": 9,
+        "top": 4,
+        "bottom": 12
+      },
+      "sourceShoes": {
+        "width": 8,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 5,
+        "height": 3,
+        "top": 32,
+        "bottom": 34
+      },
+      "differences": {
+        "height": -2,
+        "headWidth": -2,
+        "torsoWidth": -2,
+        "helmetWidth": 0,
+        "shoeWidth": -3,
+        "shoeHeight": -2
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 270,
+      "frame": "ben_turn270",
+      "source": {
+        "width": 13,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 10,
+        "height": 31,
+        "top": 4,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 11,
+        "height": 6,
+        "top": 3,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 10,
+        "height": 9,
+        "top": 4,
+        "bottom": 12
+      },
+      "sourceShoes": {
+        "width": 10,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 6,
+        "height": 3,
+        "top": 32,
+        "bottom": 34
+      },
+      "differences": {
+        "height": -2,
+        "headWidth": -2,
+        "torsoWidth": -1,
+        "helmetWidth": -1,
+        "shoeWidth": -4,
+        "shoeHeight": -2
+      },
+      "withinTolerance": true
+    },
+    {
+      "angle": 315,
+      "frame": "ben_turn315",
+      "source": {
+        "width": 14,
+        "height": 33,
+        "top": 2,
+        "bottom": 34
+      },
+      "actual": {
+        "width": 10,
+        "height": 31,
+        "top": 4,
+        "bottom": 34
+      },
+      "sourceHelmet": {
+        "width": 11,
+        "height": 6,
+        "top": 3,
+        "bottom": 8
+      },
+      "helmet": {
+        "width": 10,
+        "height": 9,
+        "top": 4,
+        "bottom": 12
+      },
+      "sourceShoes": {
+        "width": 10,
+        "height": 5,
+        "top": 30,
+        "bottom": 34
+      },
+      "shoes": {
+        "width": 7,
+        "height": 3,
+        "top": 32,
+        "bottom": 34
+      },
+      "differences": {
+        "height": -2,
+        "headWidth": -3,
+        "torsoWidth": -3,
+        "helmetWidth": -1,
+        "shoeWidth": -3,
+        "shoeHeight": -2
+      },
+      "withinTolerance": true
+    }
+  ]
+}

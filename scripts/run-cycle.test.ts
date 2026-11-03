@@ -5,7 +5,7 @@
 
 import { test, expect } from 'bun:test';
 import rig from '../source/ben-side-rig.json';
-import { sampleRunRig, stanceTravel } from '../src/rig/run.ts';
+import { sampleRunRig, stanceTravel, type RigFoot, type RigPose } from '../src/rig/run.ts';
 import { distance, type Chain } from '../src/rig/kinematics.ts';
 import { drawRunCycle } from './draw-run-cycle.ts';
 import palette from '../source/game-palette.json';
@@ -39,21 +39,43 @@ test('supporting forefeet lock to virtual world ground and both feet clear it in
     expect(pose.nearFoot.toe[1]).toBeLessThan(rig.groundY - .5); expect(pose.farFoot.toe[1]).toBeLessThan(rig.groundY - .5);
   }
 });
-test('continuous rig closes without a joint reset and samples the expected six contact phases', () => {
+const contacts: RigPose['contact'][] = ['near', 'near', 'near', 'flight', 'flight', 'flight', 'far', 'far', 'far', 'flight', 'flight', 'flight'];
+test('continuous rig closes without a joint reset and samples the expected twelve contact phases', () => {
   expect(sampleRunRig(rig, 0)).toEqual(sampleRunRig(rig, 1));
   const last = sampleRunRig(rig, 1 - 1e-6), first = sampleRunRig(rig, 0);
   for (const key of ['nearArm', 'farArm', 'nearLeg', 'farLeg'] as const) for (let i = 0; i < 3; i++) expect(distance(last[key][i], first[key][i])).toBeLessThan(.001);
-  expect(Array.from({ length: 6 }, (_, i) => sampleRunRig(rig, i / 6).contact)).toEqual(['near', 'near', 'flight', 'far', 'far', 'flight']);
+  expect(Array.from({ length: 12 }, (_, i) => sampleRunRig(rig, i / 12).contact)).toEqual(contacts);
 });
-test('six palette sprites have alternating supporting soles and empty ground in flight', () => {
-  const frames = Object.values(drawRunCycle()); expect(frames.length).toBe(6);
+test('twelve palette sprites have alternating supporting soles and empty ground in flight', () => {
+  const frames = Object.values(drawRunCycle()); expect(frames.length).toBe(12);
   for (const [i, frame] of frames.entries()) {
     const floor = frame.grid[rig.groundY];
     expect(frame.grid.every(row => row.length === rig.width && [...row].every(c => Object.hasOwn(palette, c)))).toBe(true);
     expect(frame.grid.slice(rig.groundY + 1).every(row => row === '.'.repeat(rig.width))).toBe(true);
     expect(frame.grid.join('')).toContain('M');
-    if (i === 2 || i === 5) expect(/[WL]/.test(floor)).toBe(false);
-    else expect(floor).toContain(i < 3 ? 'W' : 'L');
+    // A foot within half a pixel of the ground (supporting, just leaving or about to land) shows its sole on the ground row.
+    const pose = sampleRunRig(rig, i / 12), low = (foot: RigFoot): boolean => rig.groundY - Math.max(foot.toe[1], foot.heel[1]) < .5;
+    expect(floor.includes('W')).toBe(low(pose.nearFoot)); expect(floor.includes('L')).toBe(low(pose.farFoot));
+    if (contacts[i] !== 'flight') expect(low(contacts[i] === 'near' ? pose.nearFoot : pose.farFoot)).toBe(true);
+  }
+});
+
+// Both strides are the same motion half a cycle apart: each joint matches its near/far counterpart six frames later, except
+// where the near foot deliberately swings wider to pass in front of the planted far shin.
+test('the second stride repeats the first with near and far swapped', () => {
+  for (let i = 0; i < 6; i++) {
+    const a = sampleRunRig(rig, i / 12), b = sampleRunRig(rig, (i + 6) / 12);
+    expect(distance(a.root, b.root)).toBeLessThan(1e-9); expect(b.torsoAngle).toBeCloseTo(a.torsoAngle, 10);
+    expect(distance(a.nearFoot.ankle, b.farFoot.ankle)).toBeLessThan(1e-9);
+    expect(distance(a.farFoot.ankle, b.nearFoot.ankle)).toBeLessThanOrEqual(rig.stride.nearPassForward + 1e-9);
+  }
+});
+// Twelve samples halve the per-step travel: no joint moves more than five pixels between consecutive sprites.
+test('no running joint jumps more than five pixels between consecutive frames, including the loop seam', () => {
+  const poses = Array.from({ length: 12 }, (_, i) => sampleRunRig(rig, i / 12));
+  for (let i = 0; i < 12; i++) {
+    const a = poses[i], b = poses[(i + 1) % 12];
+    for (const [p, q] of [[a.root, b.root], [a.neck, b.neck], [a.nearArm[2], b.nearArm[2]], [a.farArm[2], b.farArm[2]], [a.nearLeg[1], b.nearLeg[1]], [a.farLeg[1], b.farLeg[1]], [a.nearFoot.ankle, b.nearFoot.ankle], [a.farFoot.ankle, b.farFoot.ankle]]) expect(distance(p, q)).toBeLessThan(5);
   }
 });
 

@@ -83,6 +83,45 @@ await mkdir(output, { recursive: true });
 const data: WorkshopData = JSON.parse(
   await readFile(new URL("assets.json", root), "utf8"),
 );
+const actions = [
+  {
+    // Reach for the hip, draw, aim, fire with the flash, recoil and reholster.
+    pose: "Firing",
+    file: "firing-cycle.png",
+    angle: 60,
+    phases: [0.14, 0.26, 0.42, 0.5, 0.56, 0.86],
+  },
+  {
+    pose: "Jump",
+    file: "jump-cycle.png",
+    angle: 60,
+    phases: [0.12, 0.24, 0.4, 0.53, 0.72, 0.88],
+  },
+  {
+    pose: "Fall",
+    file: "fall-cycle.png",
+    angle: 40,
+    phases: [0, 0.17, 0.33, 0.5, 0.67, 0.83],
+  },
+  {
+    pose: "Climb",
+    file: "climb-cycle.png",
+    angle: 30,
+    phases: [0, 0.17, 0.33, 0.5, 0.67, 0.83],
+  },
+  {
+    pose: "Look up",
+    file: "look-up-cycle.png",
+    angle: 0,
+    phases: [0, 0.18, 0.4, 0.6, 0.8, 0.98],
+  },
+  {
+    pose: "Look down",
+    file: "look-down-cycle.png",
+    angle: 0,
+    phases: [0, 0.18, 0.4, 0.6, 0.8, 0.98],
+  },
+];
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH ?? "/usr/bin/chromium",
   args: [
@@ -121,6 +160,23 @@ try {
     api.renderer.shadowMap.enabled = false;
     api.renderer.setPixelRatio(1);
   });
+  // Each build is reviewed in turn: the current model's plates stay in `review/`, the hybrid's go in
+  // `review/hybrid/`, where it also gets perspective views from the front, sides, back and below.
+  const reviews: { build: string; metrics: unknown[]; withinTolerance: boolean }[] = [];
+  for (const build of ["current", "hybrid"] as const) {
+  const output = new URL(
+    build === "current" ? "models/ben-3d/review/" : "models/ben-3d/review/hybrid/",
+    root,
+  );
+  await mkdir(output, { recursive: true });
+  await page.evaluate((id) => {
+    (
+      document.querySelector("#ben-3d") as HTMLElement & {
+        modelReview: { setBuild: (id: string) => void };
+      }
+    ).modelReview.setBuild(id);
+  }, build);
+  console.log(`Reviewing the ${build} build.`);
   const views = (await page.evaluate(
     (angles) => {
       const api = (
@@ -289,45 +345,6 @@ try {
     paste(runPlate, decodeCapture(capture), i, 0),
   );
   await writeFile(new URL("run-cycle.png", output), PNG.sync.write(runPlate));
-  const actions = [
-    {
-      // Reach for the hip, draw, aim, fire with the flash, recoil and reholster.
-      pose: "Firing",
-      file: "firing-cycle.png",
-      angle: 60,
-      phases: [0.14, 0.26, 0.42, 0.5, 0.56, 0.86],
-    },
-    {
-      pose: "Jump",
-      file: "jump-cycle.png",
-      angle: 60,
-      phases: [0.12, 0.24, 0.4, 0.53, 0.72, 0.88],
-    },
-    {
-      pose: "Fall",
-      file: "fall-cycle.png",
-      angle: 40,
-      phases: [0, 0.17, 0.33, 0.5, 0.67, 0.83],
-    },
-    {
-      pose: "Climb",
-      file: "climb-cycle.png",
-      angle: 30,
-      phases: [0, 0.17, 0.33, 0.5, 0.67, 0.83],
-    },
-    {
-      pose: "Look up",
-      file: "look-up-cycle.png",
-      angle: 0,
-      phases: [0, 0.18, 0.4, 0.6, 0.8, 0.98],
-    },
-    {
-      pose: "Look down",
-      file: "look-down-cycle.png",
-      angle: 0,
-      phases: [0, 0.18, 0.4, 0.6, 0.8, 0.98],
-    },
-  ];
   for (const action of actions) {
     const images = await page.evaluate((action) => {
       const api = (
@@ -353,6 +370,64 @@ try {
     await writeFile(new URL(action.file, output), PNG.sync.write(plate));
   }
   console.log("Saved rig poses and timed action cycles.");
+  // The hybrid: perspective views from the front, three-quarter, side, back and two from below, framed
+  // on the whole figure and then on the neck, collar and shoulders.
+  if (build === "hybrid") {
+    const angles = [
+      { eye: [0, 16, 62], look: [0, 15, 0] },
+      { eye: [-44, 16, 44], look: [0, 15, 0] },
+      { eye: [-62, 16, 0], look: [0, 15, 0] },
+      { eye: [0, 16, -62], look: [0, 15, 0] },
+      { eye: [-30, -6, 48], look: [0, 17, 0] },
+      { eye: [24, -6, -50], look: [0, 17, 0] },
+    ];
+    for (const [file, frame, fov] of [
+      ["hybrid-angles.png", 0, 30],
+      ["hybrid-neck-angles.png", 1, 9],
+    ] as const) {
+      const images = await page.evaluate(
+        ({ angles, frame, fov }) => {
+          const api = (
+            document.querySelector("#ben-3d") as HTMLElement & {
+              modelReview: {
+                captureView: (
+                  eye: readonly number[],
+                  look: readonly number[],
+                  pose: string,
+                  phase: number,
+                  width: number,
+                  height: number,
+                  fov: number,
+                ) => string;
+              };
+            }
+          ).modelReview;
+          return angles.map((a) =>
+            api.captureView(
+              a.eye,
+              frame ? [0, 20.6, -0.2] : a.look,
+              "Standing",
+              0,
+              320,
+              440,
+              fov,
+            ),
+          );
+        },
+        { angles, frame, fov },
+      );
+      const plate = new PNG({ width: 1920, height: 440 });
+      images.forEach((capture, i) => paste(plate, decodeCapture(capture), i, 0));
+      await writeFile(new URL(file, output), PNG.sync.write(plate));
+    }
+    console.log("Saved hybrid perspective plates.");
+  }
+  reviews.push({
+    build,
+    metrics,
+    withinTolerance: metrics.every((metric) => metric.withinTolerance),
+  });
+  if (build === "hybrid") break;
   // One plate per head style: front, three-quarter and right profile, framed on the head and shoulders.
   for (const style of headStyles) {
     const images = await page.evaluate((id) => {
@@ -402,6 +477,7 @@ try {
     ).modelReview.setHeadStyle(id);
   }, defaultHeadStyle.id);
   console.log("Saved head-style plates.");
+  }
   await page.locator("#model-animate").evaluate((element: HTMLInputElement) => {
     element.checked = true;
     element.dispatchEvent(new Event("change", { bubbles: true }));
@@ -466,20 +542,22 @@ try {
     },
     actionCycles: actions,
     runPhases: Array.from({ length: 6 }, (_, i) => i / 6),
-    metrics,
     poseOrder: [...poseNames],
     browserErrors: errors,
     mobileOverflow: overflow,
   };
-  await writeFile(
-    new URL("metrics.json", output),
-    JSON.stringify(report, null, 2) + "\n",
-  );
-  console.log(JSON.stringify(report, null, 2));
+  for (const review of reviews) {
+    const folder = review.build === "current" ? "" : review.build + "/";
+    await writeFile(
+      new URL(`models/ben-3d/review/${folder}metrics.json`, root),
+      JSON.stringify({ build: review.build, ...report, metrics: review.metrics }, null, 2) + "\n",
+    );
+  }
+  console.log(JSON.stringify({ ...report, reviews }, null, 2));
   if (
     errors.length ||
     overflow ||
-    metrics.some((metric) => !metric.withinTolerance)
+    reviews.some((review) => !review.withinTolerance)
   )
     process.exitCode = 1;
 } finally {

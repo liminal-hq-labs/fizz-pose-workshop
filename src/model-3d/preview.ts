@@ -5,7 +5,14 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { createBenModel } from "./model.ts";
+import { createBenModel, type BenModel } from "./model.ts";
+import {
+  benBuilds,
+  createHybridBenModel,
+  shirtPrints,
+  type BenBuild,
+  type HybridBenModel,
+} from "./hybrid.ts";
 import { headStyles } from "./head.ts";
 import {
   applyBenPose,
@@ -30,7 +37,7 @@ export function mountBen3D(data: WorkshopData): void {
   const mount = document.querySelector<HTMLElement>("#ben-3d");
   if (!mount) return;
   const section: HTMLElement = mount;
-  section.innerHTML = `<h2>Ben in three dimensions</h2><p>A lean, rigged character with a vented bicycle helmet, brown-blond hair, a white-collared shirt, tapered jeans, red running shoes with white soles and a holstered Fizz Stunner. The SVG artwork is bound to the curved surfaces.</p><div class="controls"><button id="model-play">Pause rotation</button><label>Pose <select id="model-pose">${poseNames.map((name) => `<option>${name}</option>`).join("")}</select></label><label>Head style <select id="model-head">${headStyles.map((style) => `<option value="${style.id}" title="${style.summary}">${style.label}</option>`).join("")}</select></label><label>View <select id="model-camera"><option value="studio">Studio · orbit freely</option><option value="sprite">Sprite orthographic</option></select></label><label><input id="model-rig" type="checkbox">Show skeleton</label><label><input id="model-animate" type="checkbox" checked>Animate pose</label><button id="model-reset">Reset model</button></div><label class="rig-scrubber">Turn <input id="model-yaw" type="range" min="0" max="360" value="25"><output id="model-angle">25°</output></label><div class="model-comparison"><div class="model-stage"><canvas id="model-canvas" aria-label="Rigged three-dimensional Ben character" role="img"></canvas><p id="model-status" class="small" role="status"></p></div><article class="model-reference"><h3>Calibrated sprite reference</h3><label>Reference <select id="model-reference">${config.references.map((ref, i) => `<option value="${i}">${ref.label}</option>`).join("")}</select></label><canvas id="model-sprite" width="320" height="440" role="img" aria-label="Calibrated sprite for model proportion review"></canvas><div class="controls"><button id="model-align">Match reference view</button><label><input id="model-overlay" type="checkbox">Overlay reference</label></div><p class="small">Orthographic view uses the same 32 × 44 frame and one world unit per source pixel. Compare the standing pose for proportions; the quarter sprites have different hand and foot poses.</p></article></div><details class="model-rig-controls"><summary>Pose the rig and move Ben</summary><div class="controls"><label>Bone <select id="model-bone">${config.bones
+  section.innerHTML = `<h2>Ben in three dimensions</h2><p>A lean, rigged character with a vented bicycle helmet, brown-blond hair, a white-collared shirt, tapered jeans, red running shoes with white soles and a holstered Fizz Stunner. The SVG artwork is bound to the curved surfaces.</p><div class="controls"><button id="model-play">Pause rotation</button><label>Pose <select id="model-pose">${poseNames.map((name) => `<option>${name}</option>`).join("")}</select></label><label>Build <select id="model-build">${benBuilds.map((build) => `<option value="${build.id}">${build.label}</option>`).join("")}</select></label><label>Head style <select id="model-head"></select></label><label>Shirt print <select id="model-print">${shirtPrints.map((print) => `<option value="${print.id}">${print.label}</option>`).join("")}</select></label><label>View <select id="model-camera"><option value="studio">Studio · orbit freely</option><option value="sprite">Sprite orthographic</option></select></label><label><input id="model-rig" type="checkbox">Show skeleton</label><label><input id="model-animate" type="checkbox" checked>Animate pose</label><button id="model-reset">Reset model</button></div><label class="rig-scrubber">Turn <input id="model-yaw" type="range" min="0" max="360" value="25"><output id="model-angle">25°</output></label><div class="model-comparison"><div class="model-stage"><canvas id="model-canvas" aria-label="Rigged three-dimensional Ben character" role="img"></canvas><p id="model-status" class="small" role="status"></p></div><article class="model-reference"><h3>Calibrated sprite reference</h3><label>Reference <select id="model-reference">${config.references.map((ref, i) => `<option value="${i}">${ref.label}</option>`).join("")}</select></label><canvas id="model-sprite" width="320" height="440" role="img" aria-label="Calibrated sprite for model proportion review"></canvas><div class="controls"><button id="model-align">Match reference view</button><label><input id="model-overlay" type="checkbox">Overlay reference</label></div><p class="small">Orthographic view uses the same 32 × 44 frame and one world unit per source pixel. Compare the standing pose for proportions; the quarter sprites have different hand and foot poses.</p></article></div><details class="model-rig-controls"><summary>Pose the rig and move Ben</summary><div class="controls"><label>Bone <select id="model-bone">${config.bones
     .filter((b) => !b.name.endsWith("Knee") && b.name !== "muzzleFlash")
     .map((b) => `<option>${b.name}</option>`)
     .join(
@@ -63,7 +70,10 @@ export function mountBen3D(data: WorkshopData): void {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
   const scene = new THREE.Scene(),
-    model = createBenModel(skinSvg);
+    build = (id: BenBuild): BenModel | HybridBenModel =>
+      id === "hybrid" ? createHybridBenModel(skinSvg) : createBenModel(skinSvg);
+  let buildId: BenBuild = "hybrid",
+    model = build(buildId);
   scene.add(model.root);
   applyBenPose(model, "Standing");
   const studio = new THREE.PerspectiveCamera(35, 1, 0.1, 300);
@@ -138,7 +148,7 @@ export function mountBen3D(data: WorkshopData): void {
       ),
     );
   };
-  const helper = new THREE.SkeletonHelper(model.root);
+  let helper = new THREE.SkeletonHelper(model.root);
   helper.visible = false;
   (Array.isArray(helper.material)
     ? helper.material
@@ -204,6 +214,56 @@ export function mountBen3D(data: WorkshopData): void {
     section.dataset.headStyle = model.headStyle();
     dirty = true;
   };
+  // The hybrid has its own head and a choice of chest prints; the current build offers the head styles.
+  const headSelect = $<HTMLSelectElement>("#model-head"),
+    printSelect = $<HTMLSelectElement>("#model-print"),
+    buildSelect = $<HTMLSelectElement>("#model-build");
+  const syncBuildControls = (): void => {
+    headSelect.innerHTML =
+      buildId === "hybrid"
+        ? `<option value="artifact">Artifact kid (hybrid head)</option>`
+        : headStyles
+            .map(
+              (style) =>
+                `<option value="${style.id}" title="${style.summary}">${style.label}</option>`,
+            )
+            .join("");
+    headSelect.value = model.headStyle();
+    headSelect.disabled = buildId === "hybrid";
+    printSelect.disabled = buildId !== "hybrid";
+    if ("print" in model) printSelect.value = model.print();
+    buildSelect.value = buildId;
+    section.dataset.build = buildId;
+    section.dataset.headStyle = model.headStyle();
+  };
+  const setBuild = (id: BenBuild): void => {
+    if (id === buildId) return;
+    scene.remove(model.root, helper);
+    model.root.remove(ladderProp);
+    model.dispose();
+    helper.dispose();
+    buildId = id;
+    model = build(id);
+    scene.add(model.root);
+    model.root.add(ladderProp);
+    const shown = helper.visible;
+    helper = new THREE.SkeletonHelper(model.root);
+    helper.visible = shown;
+    (Array.isArray(helper.material) ? helper.material : [helper.material]).forEach(
+      (m) => (m.depthTest = false),
+    );
+    scene.add(helper);
+    overrides.clear();
+    applyBenPose(model, pose, phase);
+    syncBuildControls();
+    dirty = true;
+  };
+  buildSelect.onchange = () => setBuild(buildSelect.value as BenBuild);
+  printSelect.onchange = () => {
+    if ("setPrint" in model) model.setPrint(printSelect.value);
+    dirty = true;
+  };
+  syncBuildControls();
   $<HTMLInputElement>("#model-rig").onchange = (e) => {
     helper.visible = (e.target as HTMLInputElement).checked;
   };
@@ -463,6 +523,54 @@ export function mountBen3D(data: WorkshopData): void {
     model.root.rotation.y = THREE.MathUtils.degToRad(yaw);
     return { width, height, pixels: Array.from(pixels) };
   };
+  // A perspective view from any camera position, for close inspection from below, behind or the sides.
+  const captureView = (
+    eye: readonly number[],
+    look: readonly number[],
+    reviewPose: BenPose = "Standing",
+    reviewPhase = 0,
+    width = 640,
+    height = 640,
+    fov = 30,
+    turn = 0,
+  ): string => {
+    const camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 300),
+      target = new THREE.WebGLRenderTarget(width, height, { samples: 4 }),
+      oldTarget = renderer.getRenderTarget(),
+      oldPosition = model.root.position.clone(),
+      oldYaw = model.root.rotation.y;
+    camera.position.set(eye[0], eye[1], eye[2]);
+    camera.lookAt(look[0], look[1], look[2]);
+    applyBenPose(model, reviewPose, reviewPhase);
+    placeLadder(reviewPose, reviewPhase);
+    model.root.position.set(0, 0, 0);
+    model.root.rotation.y = THREE.MathUtils.degToRad(turn);
+    model.root.updateMatrixWorld(true);
+    model.skeleton.update();
+    renderer.setRenderTarget(target);
+    renderer.render(scene, camera);
+    const pixels = new Uint8Array(width * height * 4);
+    renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+    renderer.setRenderTarget(oldTarget);
+    target.dispose();
+    model.root.position.copy(oldPosition);
+    model.root.rotation.y = oldYaw;
+    applyBenPose(model, pose, phase);
+    dirty = true;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const bytes = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y++)
+      bytes.set(
+        pixels.subarray((height - 1 - y) * width * 4, (height - y) * width * 4),
+        y * width * 4,
+      );
+    canvas
+      .getContext("2d")!
+      .putImageData(new ImageData(bytes, width, height), 0, 0);
+    return canvas.toDataURL("image/png");
+  };
   const captureReview = (
     angle: number,
     width = 320,
@@ -519,7 +627,15 @@ export function mountBen3D(data: WorkshopData): void {
   // Browser review automation uses the same live model and orthographic camera, without a second implementation.
   Object.assign(section, {
     modelReview: {
-      model,
+      get model() {
+        return model;
+      },
+      setBuild,
+      setPrint: (id: string) => {
+        if ("setPrint" in model) model.setPrint(id);
+        printSelect.value = id;
+        dirty = true;
+      },
       renderer,
       scene,
       camera: ortho,
@@ -532,6 +648,7 @@ export function mountBen3D(data: WorkshopData): void {
       },
       renderReview,
       captureReview,
+      captureView,
       setAngle: (value: number) => {
         yaw = value;
         rotation = false;

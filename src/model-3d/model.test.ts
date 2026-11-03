@@ -28,6 +28,7 @@ import {
   craniumField,
   defaultHeadStyle,
   hairThickness,
+  hairline,
   headStyles,
 } from "./head.ts";
 const headField = defaultHeadStyle.field;
@@ -108,15 +109,37 @@ describe("Ben volumetric character", () => {
   });
   test("phone pose places both hands beside the phone and restores its hidden attachment", () => {
     applyBenPose(model, "Phone");
-    for (const [side, x] of [
-      ["right", -1.3],
-      ["left", 1.3],
-    ] as const)
-      expect(
-        model.bones[side + "Hand"]
-          .getWorldPosition(new THREE.Vector3())
-          .distanceTo(new THREE.Vector3(x, 16, 4.8)),
-      ).toBeLessThan(0.01);
+    // Measured in the phone's own frame: screen towards -z (Ben), back towards +z.
+    const toPhone = model.bones.phone.matrixWorld.clone().invert(),
+      // The body less a thin skin, so pads resting on the glass or the back count as contact, not overlap.
+      inside = new THREE.Box3(
+        new THREE.Vector3(-1.02, -1.67, -0.14),
+        new THREE.Vector3(1.02, 1.67, 0.09),
+      );
+    for (const side of ["right", "left"] as const) {
+      const arm = model.meshes.find(
+          (mesh) => mesh.name === side + "_arm_continuous",
+        )!,
+        positions = arm.geometry.getAttribute("position"),
+        p = new THREE.Vector3();
+      let onScreen = 0,
+        behind = 0;
+      for (let i = 0; i < positions.count; i++) {
+        arm.getVertexPosition(i, p).applyMatrix4(toPhone);
+        // No part of the hand or forearm passes through the phone body.
+        expect(inside.containsPoint(p)).toBe(false);
+        const overFace = Math.abs(p.x) < 1.0 && Math.abs(p.y) < 1.7;
+        if (overFace && p.z < -0.25) onScreen++;
+        if (overFace && p.z > 0.2) behind++;
+      }
+      // The thumb is over the screen, facing Ben, and the palm and fingers hold the back.
+      expect(onScreen).toBeGreaterThan(20);
+      expect(behind).toBeGreaterThan(200);
+      const thumbs = model.bones[side + "Thumb"]
+        .getWorldPosition(new THREE.Vector3())
+        .applyMatrix4(toPhone);
+      expect(Math.abs(thumbs.x)).toBeGreaterThan(1.0);
+    }
     expect(model.bones.phone.scale.x).toBe(1);
     applyBenPose(model, "Standing");
     expect(model.bones.phone.scale.x).toBe(0);
@@ -237,7 +260,7 @@ describe("Ben volumetric character", () => {
     // The collar is a white band in the shirt surface, not a separate ring.
     expect(
       model.meshes.some(
-        (mesh) => /collar/i.test(mesh.name) && mesh.name !== "Collar_sewn_edge",
+        (mesh) => /collar/i.test(mesh.name) && !mesh.name.endsWith("_edge"),
       ),
     ).toBe(false);
     const shirt = model.meshes.find((mesh) => mesh.name === "Shirt_torso")!,
@@ -263,7 +286,8 @@ describe("Ben volumetric character", () => {
       new THREE.Vector3(0, 25, -0.2),
       new THREE.Vector3(0, -1, 0),
     ).intersectObject(shirt);
-    expect(hits.every((hit) => hit.point.y < 19.6)).toBe(true);
+    // The opening's floor lies just below the collar band, hidden inside the neck.
+    expect(hits.every((hit) => hit.point.y < 20.7)).toBe(true);
   });
   test("proportions read as a more realistic Ben with the Stunner on his right hip", () => {
     applyBenPose(model, "Standing");
@@ -300,8 +324,8 @@ describe("Ben volumetric character", () => {
     expect(thigh).toBeGreaterThan(shin);
     expect(thigh).toBeGreaterThan(3.9);
     expect(shin).toBeGreaterThan(3.6);
-    expect(shoe.max.z - shoe.min.z).toBeGreaterThan(6.5);
-    expect(shoe.max.z - shoe.min.z).toBeLessThan(7.1);
+    expect(shoe.max.z - shoe.min.z).toBeGreaterThan(5.8);
+    expect(shoe.max.z - shoe.min.z).toBeLessThan(6.4);
     // Hands reach well below the wrist, with room for four fingers and a thumb.
     expect(r.rightHand.y - arm.min.y).toBeGreaterThan(2.3);
     for (const mesh of model.meshes.filter((m) =>
@@ -556,10 +580,17 @@ describe("Ben volumetric character", () => {
           )[0].face!.materialIndex
         ];
     expect(colours).toEqual(["aa0000", "ffffff", "aaaaaa"]);
-    for (const z of [-0.5, 1, 2.5, config.shoes.toeZ - 0.6])
+    // Red over the instep, with the white rubber cap wrapping over the top of the toe.
+    for (const z of [-0.5, 1, 2.2])
       expect(
         hit(new THREE.Vector3(x, 10, z), new THREE.Vector3(0, -1, 0)),
       ).toBe("aa0000");
+    expect(
+      hit(
+        new THREE.Vector3(x, 10, config.shoes.toeZ - 0.35),
+        new THREE.Vector3(0, -1, 0),
+      ),
+    ).toBe("ffffff");
     expect(
       hit(new THREE.Vector3(x, 0.45, 20), new THREE.Vector3(0, 0, -1)),
     ).toBe("ffffff");
@@ -786,4 +817,213 @@ describe("Ben volumetric character", () => {
       spare.dispose();
     }
   }, 120_000);
+  test("sleeves, hair and collar keep the skin beneath them covered in every pose", () => {
+    // Snapshots of the posed surfaces, so each ray is a plain triangle test rather than per-vertex skinning.
+    const snapshot = (mesh: THREE.SkinnedMesh): THREE.Mesh => {
+      const geometry = mesh.geometry.clone(),
+        positions = geometry.getAttribute("position"),
+        p = new THREE.Vector3();
+      for (let i = 0; i < positions.count; i++) {
+        mesh.getVertexPosition(i, p);
+        positions.setXYZ(i, p.x, p.y, p.z);
+      }
+      geometry.deleteAttribute("skinIndex");
+      geometry.deleteAttribute("skinWeight");
+      // Fresh bounds: a cloned rest-pose box would make the raycaster skip posed triangles outside it.
+      geometry.computeBoundingBox();
+      geometry.computeBoundingSphere();
+      return new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
+      );
+    };
+    const named = (name: string): THREE.SkinnedMesh =>
+      model.meshes.find((mesh) => mesh.name === name)!;
+    const restPositions = (name: string): THREE.BufferAttribute =>
+      named(name).geometry.getAttribute("position") as THREE.BufferAttribute;
+    const pick = (
+      name: string,
+      keep: (p: THREE.Vector3) => boolean,
+      count: number,
+    ): number[] => {
+      const positions = restPositions(name),
+        chosen: number[] = [],
+        p = new THREE.Vector3();
+      for (let i = 0; i < positions.count; i++)
+        if (keep(p.fromBufferAttribute(positions, i))) chosen.push(i);
+      const step = Math.max(1, Math.floor(chosen.length / count));
+      return chosen.filter((_, i) => i % step === 0).slice(0, count);
+    };
+    // Sleeve-covered arm skin: below the shoulder blend (where the cap stretches over the joint when the
+    // arm is raised), clear of the cuff (where you can see a little way up the sleeve) and on the
+    // outward-facing side, since inside the sleeve meets the torso.
+    const arms = (["right", "left"] as const).map((side) => {
+      const shoulder = model.rest[side + "UpperArm"],
+        elbow = model.rest[side + "Forearm"],
+        axis = elbow.clone().sub(shoulder),
+        length = axis.length(),
+        sign = side === "right" ? -1 : 1;
+      axis.normalize();
+      return {
+        side,
+        samples: pick(
+          side + "_arm_continuous",
+          (p) => {
+            const along = p.clone().sub(shoulder).dot(axis),
+              radial = p.clone().sub(shoulder).addScaledVector(axis, -along);
+            return (
+              along > 0.9 &&
+              along < 0.6 * length - 0.7 &&
+              radial.x * sign > -0.2 * radial.length()
+            );
+          },
+          48,
+        ),
+      };
+    });
+    const scalp = pick(
+      "Head",
+      (p) => p.y > hairline(p.x, p.z) + 0.3 && p.y < 28,
+      40,
+    );
+    // The neck: 64 sectors all the way round, at four heights from the shoulders below the collar up to
+    // just under the collar top. Below the band is where a thin upper back once let the nape show.
+    const neck = (() => {
+      const positions = restPositions("Neck"),
+        sectors = new Map<number, number>(),
+        p = new THREE.Vector3();
+      for (let i = 0; i < positions.count; i++) {
+        p.fromBufferAttribute(positions, i);
+        const a = Math.atan2(p.x, p.z + 0.5),
+          back = (1 - Math.cos(a)) / 2;
+        const top = 21.05 + 0.6 * back - 0.2;
+        if (p.y < 19.0 || p.y > top) continue;
+        const band = Math.min(3, Math.floor(((p.y - 19.0) / (top - 19.0)) * 4)),
+          sector =
+            (Math.floor(((a + Math.PI) / (2 * Math.PI)) * 64) % 64) + 64 * band;
+        if (!sectors.has(sector)) sectors.set(sector, i);
+      }
+      return [...sectors.values()];
+    })();
+    expect(neck.length).toBeGreaterThanOrEqual(240);
+    // Covered when the first surface met on the way in is fabric or hair. Another part of the same body
+    // (a forearm swinging in front of the upper arm, say) is an occluder, not a hole; skin and fabric
+    // meeting within a hair's breadth is contact, drawn with the fabric in front.
+    const covered = (
+      origin: THREE.Vector3,
+      target: THREE.Vector3,
+      covers: THREE.Mesh[],
+      skin: THREE.Mesh,
+    ): boolean => {
+      const hits = new THREE.Raycaster(
+          origin,
+          target.clone().sub(origin).normalize(),
+        ).intersectObjects([...covers, skin]),
+        hit = hits[0];
+      if (!hit) return false;
+      if (hit.object !== skin) return true;
+      if (hit.point.distanceTo(target) > 0.08) return true;
+      const cover = hits.find((h) => h.object !== skin);
+      return !!cover && cover.distance - hit.distance < 0.06;
+    };
+    const label = (p: THREE.Vector3): string =>
+      p
+        .toArray()
+        .map((v) => v.toFixed(2))
+        .join(",");
+    for (const [pose, phase] of [
+      ["Standing", 0],
+      ["Run", 0.25],
+      ["Run", 0.75],
+      ["Climb", 0.3],
+      ["Fall", 0.5],
+      ["Jump", 0.3],
+      ["Firing", firing.fire],
+      ["Phone", 0],
+    ] as const) {
+      applyBenPose(model, pose, phase);
+      // Rolled hems and the collar seam are part of the covering fabric.
+      const trim = model.meshes
+          .filter((mesh) => /_rolled_|Collar_sewn_edge/.test(mesh.name))
+          .map(snapshot),
+        shirt = snapshot(named("Shirt_torso")),
+        fabric = [shirt, ...trim],
+        hair = snapshot(named("Brown_blond_hair")),
+        head = snapshot(named("Head")),
+        neckSkin = snapshot(named("Neck")),
+        p = new THREE.Vector3(),
+        exposed: string[] = [];
+      for (const arm of arms) {
+        const skin = snapshot(named(arm.side + "_arm_continuous")),
+          s = model.bones[arm.side + "UpperArm"].getWorldPosition(
+            new THREE.Vector3(),
+          ),
+          e = model.bones[arm.side + "Forearm"].getWorldPosition(
+            new THREE.Vector3(),
+          ),
+          line = new THREE.Line3(s, e),
+          closest = new THREE.Vector3();
+        for (const i of arm.samples) {
+          p.fromBufferAttribute(skin.geometry.getAttribute("position"), i);
+          line.closestPointToPoint(p, true, closest);
+          const out = p.clone().sub(closest).normalize(),
+            below = out
+              .clone()
+              .add(new THREE.Vector3(0, -0.7, 0))
+              .normalize();
+          // From straight out and from below, as when looking up at the arm.
+          for (const direction of [out, below])
+            if (
+              !covered(p.clone().addScaledVector(direction, 6), p, fabric, skin)
+            )
+              exposed.push(arm.side + " arm " + label(p));
+        }
+        skin.geometry.dispose();
+        (skin.material as THREE.Material).dispose();
+      }
+      const headCentre = model.bones.head.localToWorld(
+        new THREE.Vector3(...config.head.centre).sub(model.rest.head),
+      );
+      for (const i of scalp) {
+        p.fromBufferAttribute(head.geometry.getAttribute("position"), i);
+        const origin = p
+          .clone()
+          .addScaledVector(p.clone().sub(headCentre).normalize(), 2);
+        if (!covered(origin, p, [hair], head))
+          exposed.push("scalp " + label(p));
+      }
+      // Collar rays sweep from well below to a little above, square to the chest, which leans and turns.
+      const neckBase = model.bones.neck.getWorldPosition(new THREE.Vector3()),
+        up = new THREE.Vector3(0, 1, 0).applyQuaternion(
+          model.bones.chest.getWorldQuaternion(new THREE.Quaternion()),
+        );
+      for (const i of neck) {
+        p.fromBufferAttribute(neckSkin.geometry.getAttribute("position"), i);
+        const out = p.clone().sub(neckBase);
+        out.addScaledVector(up, -out.dot(up)).normalize();
+        // From steeply below (a camera under the stage) to a little above.
+        for (const degrees of [-75, -50, -25, 0, 25]) {
+          const e = THREE.MathUtils.degToRad(degrees),
+            direction = out
+              .clone()
+              .multiplyScalar(Math.cos(e))
+              .addScaledVector(up, Math.sin(e));
+          if (
+            !covered(
+              p.clone().addScaledVector(direction, 6),
+              p,
+              fabric,
+              neckSkin,
+            )
+          )
+            exposed.push("neck " + degrees + "° " + label(p));
+        }
+      }
+      for (const mesh of [hair, head, neckSkin, ...fabric]) {
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+      }
+      expect({ pose, phase, exposed }).toEqual({ pose, phase, exposed: [] });
+    }
+  }, 180_000);
 });

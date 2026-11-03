@@ -36,10 +36,10 @@
   },
   "shoes": {
     "width": 2.526,
-    "length": 6.786,
+    "length": 6.09,
     "height": 2.572,
-    "toeZ": 4.836,
-    "heelZ": -1.95
+    "toeZ": 4.34,
+    "heelZ": -1.75
   },
   "bones": [
     {
@@ -161,6 +161,16 @@
       "name": "muzzleFlash",
       "parent": "stunner",
       "position": [-3.35, 7.037, -1.66]
+    },
+    {
+      "name": "rightThumb",
+      "parent": "rightHand",
+      "position": [-3.95, 10.65, 0.95]
+    },
+    {
+      "name": "leftThumb",
+      "parent": "leftHand",
+      "position": [3.95, 10.65, 0.95]
     }
   ],
   "references": [
