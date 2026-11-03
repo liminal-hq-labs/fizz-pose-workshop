@@ -5,6 +5,14 @@
   "groundY": 36,
   "durationMs": 1200,
   "sampleCount": 6,
+  "frameDurationsMs": [
+    240,
+    200,
+    160,
+    240,
+    140,
+    220
+  ],
   "root": [
     17,
     24
@@ -102,7 +110,7 @@
         "phase": 0,
         "root": [
           17,
-          24
+          25
         ],
         "lean": 0,
         "headRoll": 0,
@@ -124,7 +132,9 @@
         ],
         "expression": "whistle",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "pucker": 1,
+        "blink": 0
       },
       {
         "phase": 0.16666666666666666,
@@ -132,7 +142,7 @@
           17,
           24
         ],
-        "lean": 0,
+        "lean": -5,
         "headRoll": 0,
         "nearHand": [
           17,
@@ -152,7 +162,9 @@
         ],
         "expression": "whistle",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "pucker": 1,
+        "blink": 0
       },
       {
         "phase": 0.3333333333333333,
@@ -160,8 +172,8 @@
           17,
           24
         ],
-        "lean": 0,
-        "headRoll": 0,
+        "lean": -5,
+        "headRoll": -4,
         "nearHand": [
           17,
           22
@@ -180,13 +192,16 @@
         ],
         "expression": "whistle",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "nearFootDegrees": -10,
+        "pucker": 0,
+        "blink": 0
       },
       {
         "phase": 0.5,
         "root": [
           17,
-          24
+          25
         ],
         "lean": 0,
         "headRoll": 0,
@@ -208,7 +223,9 @@
         ],
         "expression": "whistle",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "pucker": 0,
+        "blink": 0
       },
       {
         "phase": 0.6666666666666666,
@@ -216,7 +233,7 @@
           17,
           24
         ],
-        "lean": 0,
+        "lean": 5,
         "headRoll": 0,
         "nearHand": [
           17,
@@ -236,7 +253,9 @@
         ],
         "expression": "whistle",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "pucker": 0,
+        "blink": 1
       },
       {
         "phase": 0.8333333333333334,
@@ -244,8 +263,8 @@
           17,
           24
         ],
-        "lean": 0,
-        "headRoll": 0,
+        "lean": 5,
+        "headRoll": 3,
         "nearHand": [
           17,
           22
@@ -264,13 +283,16 @@
         ],
         "expression": "whistle",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "nearFootDegrees": -10,
+        "pucker": 0,
+        "blink": 0
       },
       {
         "phase": 1,
         "root": [
           17,
-          24
+          25
         ],
         "lean": 0,
         "headRoll": 0,
@@ -292,9 +314,32 @@
         ],
         "expression": "whistle",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "pucker": 1,
+        "blink": 0
       }
     ],
-    "standing": "left"
+    "standing": "left",
+    "notes": {
+      "emitPhase": 0,
+      "path": [
+        [
+          6,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          2,
+          7
+        ],
+        [
+          0,
+          3
+        ]
+      ]
+    }
   }
 }

@@ -1104,6 +1104,130 @@
       }
     ]
   },
+  "standingIdle": {
+    "left": {
+      "neckRow": 14,
+      "chestRow": 17,
+      "kneeRow": 28,
+      "mouth": [
+        [
+          11,
+          11
+        ],
+        [
+          10,
+          11
+        ]
+      ],
+      "pucker": [
+        [
+          9,
+          11
+        ],
+        [
+          8,
+          11
+        ]
+      ],
+      "lip": [
+        9,
+        12
+      ],
+      "eyes": [
+        [
+          12,
+          9
+        ],
+        [
+          9,
+          9
+        ]
+      ],
+      "toeUp": [
+        {
+          "x": 3,
+          "y": 31,
+          "pixels": "kWWkkkRRRRRk"
+        },
+        {
+          "x": 3,
+          "y": 32,
+          "pixels": "kWkWWWRRRyRk"
+        },
+        {
+          "x": 5,
+          "y": 33,
+          "pixels": "kWWWWRRRRk"
+        },
+        {
+          "x": 9,
+          "y": 34,
+          "pixels": "kWWWWk"
+        }
+      ]
+    },
+    "right": {
+      "neckRow": 14,
+      "chestRow": 17,
+      "kneeRow": 28,
+      "mouth": [
+        [
+          12,
+          11
+        ],
+        [
+          13,
+          11
+        ]
+      ],
+      "pucker": [
+        [
+          14,
+          11
+        ],
+        [
+          15,
+          11
+        ]
+      ],
+      "lip": [
+        14,
+        12
+      ],
+      "eyes": [
+        [
+          11,
+          9
+        ],
+        [
+          14,
+          9
+        ]
+      ],
+      "toeUp": [
+        {
+          "x": 9,
+          "y": 31,
+          "pixels": "kRRRRRkkkWWk"
+        },
+        {
+          "x": 9,
+          "y": 32,
+          "pixels": "kRyRRRWWWkWk"
+        },
+        {
+          "x": 9,
+          "y": 33,
+          "pixels": "kRRRRWWWWk"
+        },
+        {
+          "x": 9,
+          "y": 34,
+          "pixels": "kWWWWk"
+        }
+      ]
+    }
+  },
   "phoneBack": {
     "anchor": [
       2,

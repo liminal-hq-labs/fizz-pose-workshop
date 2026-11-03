@@ -7,9 +7,10 @@ import stunnerStudy from '../source/fizz-stunner-study.json';
 import { rigCatalogue } from './rig/catalogue.ts';
 import type { WorkshopData } from './types.ts';
 
+import { oneShotRestMs } from './rig/timing.ts';
 export function mountGallery(data: WorkshopData): void {
   const $ = <T extends HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
-  const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · six spring phases', climb: 'Ladder climb · six phases', mantle: 'Ledge pull right · six phases', 'mantle-left': 'Ledge pull left · six phases', 'fizz-blaster': 'Fizz Stunner · six firing phases', 'look-up-down': 'Look up & down · front-facing', jump: 'Jump · crouch to landing', death: 'Dramatic death', 'whistle-left': 'Whistle left · standing idle', 'whistle-right': 'Whistle right · standing idle', 'phone-idle': 'Seated phone idle · camera-facing' };
+  const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · six spring phases', climb: 'Ladder climb · six phases', mantle: 'Ledge pull right · hang to stand', 'mantle-left': 'Ledge pull left · hang to stand', 'fizz-blaster': 'Fizz Stunner · six firing phases', 'look-up-down': 'Look up & down · front-facing', jump: 'Jump right · crouch to landing', 'jump-left': 'Jump left · Stunner on the far hip', fall: 'Fall right · bracing for impact', 'fall-left': 'Fall left · bracing for impact', death: 'Dramatic death', 'whistle-left': 'Whistle left · standing idle', 'whistle-right': 'Whistle right · standing idle', 'phone-idle': 'Seated phone idle · camera-facing' };
   function card(title: string, key: string, animated: boolean, extra = ''): string {
     return `<article><div class="stage"><canvas role="img" aria-label="${title}" data-${animated ? 'animation' : 'frame'}="${key}" ${extra}></canvas></div><h3>${title}</h3><p>${animated ? `<a href="animations/${key}.svg">Animated SVG</a> · <a href="animations/${key}.gif">GIF</a>` : `<a href="frames/${key}.png">PNG</a> · <a href="frames/${key}.svg">SVG</a>`}</p></article>`;
   }
@@ -40,7 +41,8 @@ export function mountGallery(data: WorkshopData): void {
       if (canvas.dataset.animation) {
         const animation = data.animations[canvas.dataset.animation];
         const duration = animation.durationsMs.reduce((sum,value)=>sum+value,0);
-        let time = animation.loop === false ? Math.min(elapsed, duration - 1) : elapsed % duration, index = 0;
+        // A one-shot holds its final pose for a rest before replaying, so the review never snaps from the end back to the start.
+        let time = animation.loop === false ? Math.min(elapsed % (duration + oneShotRestMs), duration - 1) : elapsed % duration, index = 0;
         while (index < animation.frames.length - 1 && time >= animation.durationsMs[index]) { time -= animation.durationsMs[index]; index++; }
         key = animation.frames[index];
       }
