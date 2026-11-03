@@ -1,0 +1,588 @@
+{
+  "name": "Ben · seated phone typing loop rig",
+  "width": 40,
+  "height": 56,
+  "groundY": 48,
+  "durationMs": 1040,
+  "sampleCount": 8,
+  "frameDurationsMs": [
+    100,
+    80,
+    100,
+    220,
+    90,
+    80,
+    110,
+    260
+  ],
+  "root": [
+    20,
+    44
+  ],
+  "torso": {
+    "leanDegrees": 0,
+    "pitchSwayDegrees": 1.2,
+    "bobAmplitude": 0.75,
+    "bobLag": 0.04,
+    "shoulderY": -7.5,
+    "shoulderSpread": 3.2,
+    "shoulderTwist": 0.4,
+    "neckHeight": 10
+  },
+  "arms": {
+    "upperLength": 3.5,
+    "forearmLength": 3.2,
+    "swingDegrees": 55,
+    "elbowDegrees": 90,
+    "elbowFlexDegrees": 4,
+    "phaseLead": 0.08333333333333333,
+    "biasDegrees": -8
+  },
+  "legs": {
+    "thighLength": 7.5,
+    "shinLength": 12.8,
+    "hipSpread": 1.5
+  },
+  "stride": {
+    "stanceFraction": 0.24,
+    "frontX": 3.5,
+    "backX": -4,
+    "lift": 6.5,
+    "toeOffDegrees": 25,
+    "recoveryToeDegrees": -12
+  },
+  "feet": {
+    "toe": [
+      3,
+      2
+    ],
+    "heel": [
+      -1,
+      2
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "landingToeDegrees": -28,
+    "landingCompression": 0.25
+  },
+  "face": {
+    "yawDegrees": 3,
+    "eye": [
+      -2,
+      -5,
+      0
+    ],
+    "mouth": [
+      0,
+      -3,
+      0
+    ],
+    "shiftAmplitude": 0,
+    "ear": [
+      -4,
+      -4,
+      0
+    ],
+    "profile": {
+      "nose": [
+        0,
+        -4,
+        0
+      ],
+      "cheek": [
+        -2,
+        -3,
+        0
+      ],
+      "chin": [
+        0,
+        -1,
+        0
+      ]
+    }
+  },
+  "motion": "phone",
+  "clothing": {
+    "lag": 0.04,
+    "sleeves": {
+      "slide": 1,
+      "threshold": 7
+    }
+  },
+  "performance": {
+    "view": "front",
+    "loop": true,
+    "frontHolster": true,
+    "keys": [
+      {
+        "phase": 0,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          23.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          40.5
+        ],
+        "farHand": [
+          23,
+          40.5
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 1,
+        "taps": [
+          0,
+          1
+        ],
+        "screen": 1,
+        "headRoll": -1
+      },
+      {
+        "phase": 0.125,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          23.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          41
+        ],
+        "farHand": [
+          23,
+          41.1
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 1,
+        "taps": [
+          1,
+          0
+        ],
+        "screen": 0.9,
+        "headRoll": -1
+      },
+      {
+        "phase": 0.25,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          23.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          40.5
+        ],
+        "farHand": [
+          23,
+          40.5
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 1,
+        "taps": [
+          0,
+          1
+        ],
+        "screen": 1,
+        "headRoll": -1,
+        "breath": 1
+      },
+      {
+        "phase": 0.375,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          23.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          40.5
+        ],
+        "farHand": [
+          23,
+          40.5
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 1,
+        "taps": [
+          0,
+          0
+        ],
+        "screen": 0.85,
+        "headRoll": -2,
+        "breath": 1,
+        "blink": 1
+      },
+      {
+        "phase": 0.5,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          23.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          41
+        ],
+        "farHand": [
+          23,
+          41.1
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 1,
+        "taps": [
+          1,
+          0
+        ],
+        "screen": 1,
+        "headRoll": -1
+      },
+      {
+        "phase": 0.625,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          22.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          40.5
+        ],
+        "farHand": [
+          23,
+          40.5
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 1,
+        "taps": [
+          0,
+          1
+        ],
+        "screen": 0.9,
+        "headRoll": -1
+      },
+      {
+        "phase": 0.75,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          23.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          41
+        ],
+        "farHand": [
+          23,
+          41.1
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 1,
+        "taps": [
+          1,
+          0
+        ],
+        "screen": 1,
+        "headRoll": 0,
+        "breath": 1
+      },
+      {
+        "phase": 0.875,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          23.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          40.5
+        ],
+        "farHand": [
+          23,
+          40.5
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 0,
+        "taps": [
+          0,
+          0
+        ],
+        "screen": 0.85,
+        "headRoll": 1,
+        "breath": 1
+      },
+      {
+        "phase": 1,
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "lean": 0,
+        "seated": true,
+        "shinOver": "near",
+        "root": [
+          20,
+          44
+        ],
+        "nearKnee": [
+          11.6,
+          41.5
+        ],
+        "farKnee": [
+          28.4,
+          41.5
+        ],
+        "nearAnkle": [
+          23.4,
+          46
+        ],
+        "farAnkle": [
+          16.6,
+          46
+        ],
+        "nearHand": [
+          17,
+          40.5
+        ],
+        "farHand": [
+          23,
+          40.5
+        ],
+        "phone": [
+          20,
+          40
+        ],
+        "gaze": 1,
+        "taps": [
+          0,
+          1
+        ],
+        "screen": 1,
+        "headRoll": -1
+      }
+    ]
+  },
+  "lightingNote": "The back case faces the player; the screen faces Ben. Use the hidden screen as a small dynamic light that brightens his face and hands once raised. Keep that glow separate from the sixteen-colour sprite pixels: lighting.json beside the sprite exports carries the light source, intensity and per-pixel mask for each frame.",
+  "lighting": {
+    "source": "phone",
+    "offset": [
+      0.5,
+      0
+    ],
+    "colour": {
+      "code": "c",
+      "hex": "#55ffff"
+    },
+    "radius": 14,
+    "falloff": "linear",
+    "levels": 3,
+    "parts": [
+      "face",
+      "hand",
+      "arm"
+    ],
+    "skin": [
+      "W",
+      "L"
+    ],
+    "spill": {
+      "parts": [
+        "shirt"
+      ],
+      "maxLevel": 1
+    }
+  }
+}

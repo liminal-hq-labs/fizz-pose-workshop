@@ -165,7 +165,7 @@ test('the left-facing jump turns Ben round with his Stunner on the far (right) h
 });
 
 test('shirt cloth moves only on the rigs that opt in, and only in its hem and sleeves', () => {
-  const clothed = ['fall', 'fall-left'];
+  const clothed = ['fall', 'fall-left', 'mantle', 'mantle-left', 'climb', 'phone-typing'];
   for (const { animation, rig: clip } of rigCatalogue) {
     if (clothed.includes(animation)) { expect(clip.clothing).toBeDefined(); continue; }
     // The run, look loop, standing and every other rig keep their authored shirt.
@@ -180,23 +180,30 @@ test('shirt cloth moves only on the rigs that opt in, and only in its hem and sl
       // The outline stays closed, and the collar (rows down to the head anchor), emblem, belt and Stunner keep every pixel.
       // A cuff riding up only uncovers the arm's own skin.
       expect(exposedEdges(on)).toBe(exposedEdges(off));
+      // An arm raised past the collar row (gripping a ledge or a rung) may move its cuff there, on its own upper arm only.
       const collar = pose.face.pixelAnchor[1];
+      const onUpperArm = (x: number, y: number): boolean => [pose.nearArm, pose.farArm].some(([shoulder, elbow]) => {
+        const [dx, dy] = [elbow[0] - shoulder[0], elbow[1] - shoulder[1]], s = Math.max(0, Math.min(1, ((x - shoulder[0]) * dx + (y - shoulder[1]) * dy) / (dx * dx + dy * dy)));
+        // The two-pixel arm brush starts a pixel up and left of the rounded bone, so its pixels lie within two of it.
+        return Math.hypot(x - shoulder[0] - s * dx, y - shoulder[1] - s * dy) <= 2;
+      });
       on.grid.forEach((row, y) => [...row].forEach((code, x) => {
         if (code === off.grid[y][x]) return;
         for (const kept of 'DyMm') { expect(code).not.toBe(kept); expect(off.grid[y][x]).not.toBe(kept); }
-        expect(y).toBeGreaterThan(collar);
+        if (y <= collar) expect(onUpperArm(x, y)).toBe(true);
       }));
       let changed = 0; on.grid.forEach((row, y) => [...row].forEach((code, x) => { if (code !== off.grid[y][x]) changed++; })); expect(changed).toBeLessThanOrEqual(6);
     }
-    // The hem and sleeves really move through the loop: at least three different cloth states.
-    expect(states.size).toBeGreaterThanOrEqual(3);
+    // The cloth really moves: a fluttering hem passes through at least three states, sleeves alone ride up and settle back.
+    expect(states.size).toBeGreaterThanOrEqual(clip.clothing!.hem ? 3 : 2);
   }
 });
 
-test('the Fizz Stunner stays on the hip in every jump, fall and ledge-pull frame, however high the knee rises', () => {
+test('the Fizz Stunner stays on the hip in every jump, fall, ledge-pull and climbing frame, however high the knee rises', () => {
   const saved = loadSavedFrames();
   for (const { animation, prefix, rig: clip } of rigCatalogue) {
-    if (!['jump', 'fall', 'mantle', 'mantle-left'].includes(animation)) continue;
+    // Left-facing sets hide the holster on the far hip (see the left-facing tests); from behind it hangs on the right hip.
+    if (!['jump', 'fall', 'mantle', 'climb'].includes(animation)) continue;
     for (let i = 1; i <= clip.sampleCount; i++) expect(saved[prefix + i].grid.join('')).toContain('M');
   }
 });

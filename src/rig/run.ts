@@ -5,12 +5,15 @@
 
 import type { PerformanceSettings, Expression } from './performance.ts';
 import type { ClothingSettings, ClothPose } from './clothing.ts';
+import type { LightingSettings } from './lighting.ts';
 import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
 export interface SideRig {
   motion?: 'run' | 'pogo' | 'fire' | 'ladder' | 'jump' | 'fall' | 'death' | 'ledge' | 'whistle' | 'phone';
   lightingNote?: string;
+  /** A dynamic prop light exported as data beside the unlit sprites; see `src/rig/lighting.ts`. */
+  lighting?: LightingSettings;
   performance?: PerformanceSettings;
   mirrored?: boolean;
   /**
@@ -36,7 +39,9 @@ export interface RigPose {
   face: FacePose;
   headAngle?: number;
   cloth?: ClothPose;
-  presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; pucker?: number; blink?: number; environment?: PerformanceSettings['environment'] };
+  presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; pucker?: number; blink?: number; environment?: PerformanceSettings['environment'];
+    /** Seated, crossed-leg and phone-screen state for front-facing idles; see `PerformanceKey`. */
+    seated?: boolean; shinOver?: 'near' | 'far'; frontHolster?: boolean; screen?: number; taps?: number[]; gaze?: number; breath?: number };
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
   contact: 'near' | 'far' | 'flight' | 'pogo' | 'both';
@@ -94,11 +99,18 @@ export function validateRig(rig: SideRig): void {
     if (!clip || clip.keys.length < 2 || clip.keys[0].phase !== 0 || clip.keys.at(-1)!.phase !== 1) throw new Error("Performance goals must cover phases zero through one.");
     for (let i = 0; i < clip.keys.length; i++) {
       const key = clip.keys[i];
-      if (!Number.isFinite(key.phase) || (i > 0 && key.phase <= clip.keys[i-1].phase) || ![key.lean,key.headRoll,...key.root,...key.nearHand,...key.farHand,...key.nearAnkle,...key.farAnkle,...(key.phone ?? [])].every(Number.isFinite)) throw new Error("Performance goals must be finite and strictly ordered.");
+      if (!Number.isFinite(key.phase) || (i > 0 && key.phase <= clip.keys[i-1].phase) || ![key.lean,key.headRoll,...key.root,...key.nearHand,...key.farHand,...key.nearAnkle,...key.farAnkle,...(key.phone ?? []),...(key.nearKnee ?? []),...(key.farKnee ?? [])].every(Number.isFinite)) throw new Error("Performance goals must be finite and strictly ordered.");
+      if (Boolean(key.nearKnee) !== Boolean(clip.keys[0].nearKnee) || Boolean(key.farKnee) !== Boolean(clip.keys[0].nearKnee)) throw new Error("Keyed knees must be given for both legs on every key, or on none.");
     }
     const times = clip.sampleTimes;
     if (times && (times.length !== rig.sampleCount || times.some((time, i) => !Number.isFinite(time) || time < 0 || time > 1 || (i > 0 && time <= times[i - 1])) || times[0] !== 0 || (clip.loop ? times.at(-1)! >= 1 : times.at(-1) !== 1))) throw new Error("Sample times must be one ordered phase per sprite, starting at zero and ending at one for a one-shot or before one for a loop.");
     if (clip.environment?.kind === "ladder" && !(clip.environment.spacing > 0)) throw new Error("Ladder rung spacing must be positive.");
+    if (clip.travel) {
+      // A travelling loop closes in world coordinates: its last key is its first key moved by one cycle's travel.
+      const [first, last] = [clip.keys[0], clip.keys.at(-1)!], [dx, dy] = clip.travel;
+      const moved = (a: readonly number[], b: readonly number[]): boolean => b[0] === a[0] + dx && b[1] === a[1] + dy;
+      if (!clip.loop || clip.travel.length !== 2 || !clip.travel.every(Number.isFinite) || !(["root", "nearHand", "farHand", "nearAnkle", "farAnkle"] as const).every(name => moved(first[name], last[name])) || first.lean !== last.lean || first.headRoll !== last.headRoll) throw new Error("A travelling loop must end on its first key moved by the travel.");
+    }
   }
   const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.face.ear, ...Object.values(rig.face.profile).flat(), rig.face.shiftAmplitude, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];
   if (numeric.some(value => !Number.isFinite(value)) || rig.root.length !== 2 || rig.face.eye.length !== 3 || rig.face.mouth.length !== 3 || rig.face.ear.length !== 3 || rig.feet.toe.length !== 2 || rig.feet.heel.length !== 2 || rig.feet.ball.length !== 2 || rig.feet.landingCompression < 0 || rig.feet.landingCompression >= .6) throw new Error('Rig coordinates and motion settings must be finite.');
