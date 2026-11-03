@@ -9,6 +9,7 @@ import skin from '../source/ben-side-skin.json';
 import { sampleRunRig } from '../src/rig/run.ts';
 import { sampleFace, facePixels } from '../src/rig/face.ts';
 import { drawRunCycle } from './draw-run-cycle.ts';
+import { skinRig } from './rig-skin.ts';
 
 test('small camera turns cannot push eye and mouth across independent world rounding boundaries', () => {
   const towards = sampleFace([10.49, 20.49], -1, rig.face), away = sampleFace([10.49, 20.49], 1, rig.face);
@@ -38,7 +39,7 @@ test('all six actual sprite grids contain exactly the rig eye and mouth, includi
     expect(frame.grid[face.mouth.pixel[1]][face.mouth.pixel[0]]).toBe(skin.face.mouth);
     positions.push(face.eye.pixel);
   }
-  expect(positions).toEqual([[17, 10], [18, 10], [18, 9], [17, 10], [16, 9], [16, 9]]);
+  expect(positions).toEqual([[17, 10], [18, 10], [18, 9], [17, 10], [16, 10], [16, 9]]);
   for (let i = 0; i < positions.length; i++) {
     const next = positions[(i + 1) % positions.length];
     expect(Math.abs(positions[i][0] - next[0])).toBeLessThanOrEqual(3);
@@ -47,7 +48,7 @@ test('all six actual sprite grids contain exactly the rig eye and mouth, includi
 });
 
 test('six head-local samples travel right then back left together', () => {
-  expect(Array.from({length: 6}, (_, i) => sampleRunRig(rig, i / 6).face.pixelShift)).toEqual([0, 1, 1, 0, 0, 0]);
+  expect(Array.from({length: 6}, (_, i) => sampleRunRig(rig, i / 6).face.pixelShift)).toEqual([0, 1, 1, 0, -1, -1]);
 });
 
 test('nose silhouette tucks into the head at either turn while the ear and jaw stay still', () => {
@@ -71,4 +72,26 @@ test('eye anchor travels at most two canvas pixels including the body bob, with 
  expect(Math.max(...xs)-Math.min(...xs)).toBeLessThanOrEqual(2);
  expect(Math.max(...ys)-Math.min(...ys)).toBeLessThanOrEqual(1);
  for(const f of faces){expect(f.mouth.pixel[0]).toBe(f.eye.pixel[0]);expect(f.mouth.pixel[1]-f.eye.pixel[1]).toBe(2);}
+});
+
+// The run's head turn is carried by the face sliding inside a still helmet, not by the helmet itself hopping.
+test('the running helmet keeps one column and bobs the same way in both strides while the face turns symmetrically', () => {
+ const faces=Array.from({length:6},(_,i)=>sampleRunRig(rig,i/6).face);
+ expect(new Set(faces.map(f=>f.pixelAnchor[0])).size).toBe(1);
+ for(let i=0;i<3;i++){expect(faces[i+3].pixelAnchor).toEqual(faces[i].pixelAnchor);expect(faces[i+3].pixelShift+faces[i].pixelShift).toBe(0);}
+});
+test('the collar rests directly on the shirt in every running sprite, with no ink gap under the neck', () => {
+ for(const [i,frame] of Object.values(drawRunCycle()).entries()){
+  const [x,y]=sampleRunRig(rig,i/rig.sampleCount).face.pixelAnchor;
+  // The collar is head-local row 14, on the anchor row, with white from two pixels behind the anchor to one in front.
+  expect(frame.grid[y].slice(x-2,x+2)).toBe('WWWW');
+  expect(frame.grid[y+1].slice(x-2,x+2)).toMatch(/[^k.]/);
+ }
+});
+test('turning the head never speckles the face with alternating grey and skin pixels', () => {
+ for(let i=0;i<=240;i++){
+  const pose=sampleRunRig(rig,i/240),frame=skinRig(rig,skin,pose),y=pose.face.pixelAnchor[1];
+  // Face rows run from just below the brim (head-local 9) to the jaw (head-local 12): the back shade and the ear may form two grey runs at most.
+  for(let row=y-5;row<=y-2;row++)expect(frame.grid[row].match(/L+/g)?.length??0).toBeLessThanOrEqual(2);
+ }
 });
