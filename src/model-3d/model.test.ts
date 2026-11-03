@@ -18,7 +18,8 @@ import {
   sampleRunFoot,
   poseDuration,
 } from "./poses.ts";
-import { cycleProfile } from "./equipment.ts";
+import { helmetOuter, helmetVents } from "./equipment.ts";
+import { craniumField, hairThickness, headField } from "./head.ts";
 import sideRig from "../../source/ben-side-rig.json";
 import { sampleRunRig } from "../rig/run.ts";
 import config from "../../source/ben-3d.json";
@@ -48,7 +49,12 @@ describe("Ben volumetric character", () => {
         bounds.union(mesh.boundingBox!);
       }
     expect(bounds.min.y).toBeCloseTo(config.floorY, 3);
-    expect(bounds.max.y).toBeCloseTo(config.crownY + 0.13, 1);
+    // The shell crown stays at the calibrated sprite crown; only the thin stripe stands proud of it.
+    const helmet = model.meshes.find((mesh) => mesh.name === "Helmet_dome")!;
+    helmet.computeBoundingBox();
+    expect(helmet.boundingBox!.max.y).toBeCloseTo(config.crownY, 1);
+    expect(bounds.max.y).toBeGreaterThanOrEqual(config.crownY);
+    expect(bounds.max.y).toBeLessThan(config.crownY + 0.1);
   });
   test("every vertex has finite normalised weights referring to the shared skeletal rig", () => {
     expect(model.skeleton.bones).toHaveLength(config.bones.length);
@@ -181,7 +187,8 @@ describe("Ben volumetric character", () => {
     applyBenPose(model, "Standing");
     const helmet = model.meshes.find((mesh) => mesh.name === "Helmet_dome")!,
       z = -2.0,
-      x = cycleProfile(z).width * Math.sin(0.32);
+      vent = helmetVents.find((v) => v.x > 0 && v.back < z && v.front > z)!,
+      x = vent.x;
     expect(
       new THREE.Raycaster(
         new THREE.Vector3(x, 40, z),
@@ -195,30 +202,126 @@ describe("Ben volumetric character", () => {
       ).intersectObject(helmet).length,
     ).toBeGreaterThan(0);
   });
-  test("hair conforms to the skull and the sewn collar has an open neckline", () => {
+  test("hair hugs the skull, the helmet clears it and the collar belongs to an open shirt neckline", () => {
     applyBenPose(model, "Standing");
     const hair = model.meshes
       .find((mesh) => mesh.name === "Brown_blond_hair")!
       .geometry.getAttribute("position");
     for (let i = 0; i < hair.count; i++) {
-      const distance = Math.hypot(
-        hair.getX(i) / 4.15,
-        (hair.getY(i) - 23.2) / 3.3,
-        (hair.getZ(i) - 0.2) / 3.65,
-      );
-      expect(distance).toBeGreaterThanOrEqual(1);
-      expect(distance).toBeLessThan(1.03);
+      const d = headField(hair.getX(i), hair.getY(i), hair.getZ(i));
+      expect(d).toBeGreaterThan(-0.26);
+      expect(d).toBeLessThan(hairThickness + 0.01);
     }
-    const collar = model.meshes.find(
-      (mesh) => mesh.name === "White_shirt_collar",
-    )!;
+    // About one unit of shell and foam between the top of the skull and the outer crown.
+    const skullTop = config.head.centre[1] + config.head.radii[1];
+    expect(config.crownY - skullTop).toBeGreaterThan(0.85);
+    expect(config.crownY - skullTop).toBeLessThan(1.2);
+    for (const [x, y, z] of [
+      [0, skullTop + 0.2, -0.35],
+      [3.2, 26.5, -0.35],
+      [0, 27.6, 3.3],
+    ])
+      expect(craniumField(x, y, z)).toBeGreaterThan(0);
+    expect(helmetOuter(0, config.crownY - 0.02, -0.4)).toBeLessThan(0);
+    // The collar is a white band in the shirt surface, not a separate ring.
     expect(
-      new THREE.Raycaster(
-        new THREE.Vector3(0, 25, 0),
-        new THREE.Vector3(0, -1, 0),
-      ).intersectObject(collar),
-    ).toHaveLength(0);
+      model.meshes.some(
+        (mesh) => /collar/i.test(mesh.name) && mesh.name !== "Collar_sewn_edge",
+      ),
+    ).toBe(false);
+    const shirt = model.meshes.find((mesh) => mesh.name === "Shirt_torso")!,
+      colours = shirt.geometry.getAttribute("color"),
+      positions = shirt.geometry.getAttribute("position");
+    let white = 0,
+      low = Infinity,
+      high = -Infinity;
+    for (let i = 0; i < colours.count; i++)
+      if (
+        colours.getX(i) > 0.8 &&
+        colours.getY(i) > 0.8 &&
+        positions.getY(i) > 19.5
+      ) {
+        white++;
+        low = Math.min(low, positions.getY(i));
+        high = Math.max(high, positions.getY(i));
+      }
+    expect(white).toBeGreaterThan(200);
+    expect(high - low).toBeGreaterThan(0.8);
+    expect(high - low).toBeLessThan(1.6);
+    const hits = new THREE.Raycaster(
+      new THREE.Vector3(0, 25, -0.2),
+      new THREE.Vector3(0, -1, 0),
+    ).intersectObject(shirt);
+    expect(hits.every((hit) => hit.point.y < 19.6)).toBe(true);
   });
+  test("proportions read as a more realistic Ben with the Stunner on his right hip", () => {
+    applyBenPose(model, "Standing");
+    const box = (name: string): THREE.Box3 => {
+      const result = new THREE.Box3();
+      for (const mesh of model.meshes.filter((m) => m.name === name)) {
+        mesh.geometry.computeBoundingBox();
+        result.union(mesh.geometry.boundingBox!);
+      }
+      return result;
+    };
+    const head = box("Head"),
+      shirt = box("Shirt_torso"),
+      shoe = box("right_shoe"),
+      neck = box("Neck"),
+      arm = box("right_arm_continuous"),
+      heads = (config.crownY - config.floorY) / (config.crownY - head.min.y);
+    expect(heads).toBeGreaterThan(3.4);
+    expect(heads).toBeLessThan(3.6);
+    // Shirt shoulders are wider than the helmet, which is wider than the face.
+    const helmet = box("Helmet_dome"),
+      faceWidth = head.max.x - head.min.x;
+    expect(shirt.max.x - shirt.min.x).toBeGreaterThan(
+      helmet.max.x - helmet.min.x,
+    );
+    expect(helmet.max.x - helmet.min.x).toBeGreaterThan(faceWidth);
+    expect(faceWidth).toBeLessThan(config.torso.size[0]);
+    // A visible neck between the collar band and the jaw.
+    expect(head.min.y - 21.05).toBeGreaterThan(0.7);
+    expect(neck.max.y - neck.min.y).toBeGreaterThan(4);
+    const r = model.rest,
+      thigh = r.rightThigh.distanceTo(r.rightShin),
+      shin = r.rightShin.distanceTo(r.rightFoot);
+    expect(thigh).toBeGreaterThan(shin);
+    expect(thigh).toBeGreaterThan(3.9);
+    expect(shin).toBeGreaterThan(3.6);
+    expect(shoe.max.z - shoe.min.z).toBeGreaterThan(6.5);
+    expect(shoe.max.z - shoe.min.z).toBeLessThan(7.1);
+    // Hands reach well below the wrist, with room for four fingers and a thumb.
+    expect(r.rightHand.y - arm.min.y).toBeGreaterThan(2.3);
+    for (const mesh of model.meshes.filter((m) =>
+      m.name.startsWith("Stunner"),
+    )) {
+      mesh.geometry.computeBoundingBox();
+      expect(mesh.geometry.boundingBox!.max.x).toBeLessThan(0);
+    }
+  });
+  test("disposing the model releases every geometry and material", () => {
+    const spare = createBenModel(
+      readFileSync(
+        new URL("../../source/ben-3d-skins.svg", import.meta.url),
+        "utf8",
+      ),
+    );
+    const disposed = new Set<object>(),
+      geometries = new Set(spare.meshes.map((mesh) => mesh.geometry)),
+      materials = new Set(
+        spare.meshes.flatMap((mesh) =>
+          Array.isArray(mesh.material) ? mesh.material : [mesh.material],
+        ),
+      );
+    for (const item of [...geometries, ...materials])
+      item.addEventListener("dispose", () => disposed.add(item));
+    spare.dispose();
+    expect(disposed.size).toBe(geometries.size + materials.size);
+    for (const material of materials)
+      for (const value of Object.values(material))
+        expect(value instanceof THREE.Texture).toBe(false);
+  }, 60_000);
   test("running plants each foot backwards and recovers it forwards with forward knees", () => {
     let previous = Infinity;
     for (const phase of [0, 0.04, 0.08, 0.12, 0.16, 0.2]) {
@@ -303,7 +406,8 @@ describe("Ben volumetric character", () => {
       positions = pants.geometry.getAttribute("position"),
       ring = Array.from({ length: positions.count }, (_, i) => i).filter(
         (i) =>
-          Math.abs(positions.getY(i) - 6.7) < 0.12 && positions.getX(i) < -0.8,
+          Math.abs(positions.getY(i) - model.rest.rightShin.y) < 0.12 &&
+          positions.getX(i) < -0.8,
       );
     expect(ring.length).toBeGreaterThan(10);
     let previous: THREE.Quaternion | null = null;
@@ -354,7 +458,12 @@ describe("Ben volumetric character", () => {
         .find((mesh) => mesh.name === "Jeans_continuous")!
         .geometry.getAttribute("position"),
       xs = Array.from({ length: p.count }, (_, i) => i)
-        .filter((i) => p.getY(i) > 2.0 && p.getY(i) < 2.4 && p.getX(i) < 0)
+        .filter(
+          (i) =>
+            p.getY(i) > model.rest.rightFoot.y - 0.1 &&
+            p.getY(i) < model.rest.rightFoot.y + 0.3 &&
+            p.getX(i) < 0,
+        )
         .map((i) => p.getX(i));
     expect(xs.length).toBeGreaterThan(10);
     expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(1.8);

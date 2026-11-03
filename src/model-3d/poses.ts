@@ -7,7 +7,7 @@ import * as THREE from "three";
 import sideRig from "../../source/ben-side-rig.json";
 import { sampleRunRig } from "../rig/run.ts";
 import config from "../../source/ben-3d.json";
-import { runnerProfile } from "./equipment.ts";
+import { runnerProfile, toeFlex } from "./equipment.ts";
 import { resetRig } from "./rig.ts";
 import type { BenModel } from "./model.ts";
 export const poseNames = [
@@ -178,7 +178,7 @@ export function sampleRunFoot(time: number): {
     b = rad(toe);
   let lowest = Infinity;
   for (const { z, y } of soleContacts) {
-    const w = THREE.MathUtils.smoothstep(z, 1.7, 3.0);
+    const w = THREE.MathUtils.smoothstep(z, toeFlex.start, toeFlex.end);
     const bentY =
         toeRestY + (y - toeRestY) * Math.cos(b) - (z - toeRestZ) * Math.sin(b),
       bentZ =

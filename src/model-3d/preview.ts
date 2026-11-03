@@ -79,7 +79,8 @@ export function mountBen3D(data: WorkshopData): void {
   key.shadow.camera.right = 25;
   key.shadow.camera.top = 38;
   key.shadow.camera.bottom = -10;
-  key.shadow.normalBias = 0.04;
+  key.shadow.normalBias = 0.12;
+  key.shadow.bias = -0.0005;
   scene.add(key);
   const fill = new THREE.DirectionalLight("#b9d7ff", 1.2);
   fill.position.set(30, 22, -25);

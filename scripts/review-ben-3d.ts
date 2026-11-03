@@ -20,6 +20,22 @@ type View = {
   image: string;
 };
 type Bounds = { width: number; height: number; top: number; bottom: number };
+type Check =
+  | "height"
+  | "headWidth"
+  | "torsoWidth"
+  | "helmetWidth"
+  | "shoeWidth"
+  | "shoeHeight";
+// Each check uses the shared pixel tolerance unless the model deliberately departs from the sprite there.
+const checks = config.reviewChecks as Partial<
+  Record<Check, { min: number; max: number; reason: string }>
+>;
+const range = (check: Check): { min: number; max: number } =>
+  checks[check] ?? {
+    min: -config.reviewTolerancePixels,
+    max: config.reviewTolerancePixels,
+  };
 function bounds(
   occupied: (x: number, y: number) => boolean,
   top = 0,
@@ -169,7 +185,7 @@ try {
           plate.data[to + c] = parseInt(colour.slice(1 + c * 2, 3 + c * 2), 16);
         plate.data[to + 3] = 255;
       }
-    const differences = {
+    const differences: Record<Check, number> = {
       height: actual.height - source.height,
       headWidth:
         bounds(
@@ -199,8 +215,9 @@ try {
       sourceShoes,
       shoes,
       differences,
-      withinTolerance: Object.values(differences).every(
-        (value) => Math.abs(value) <= config.reviewTolerancePixels,
+      withinTolerance: (Object.entries(differences) as [Check, number][]).every(
+        ([check, value]) =>
+          value >= range(check).min && value <= range(check).max,
       ),
     };
   });
@@ -373,6 +390,7 @@ try {
   );
   const report = {
     tolerancePixels: config.reviewTolerancePixels,
+    relaxedChecks: checks,
     projection: "32 × 44 orthographic; one world unit per sprite pixel",
     referenceMasks: {
       helmet: "Coloured helmet and rim, excluding the black sprite outline",
