@@ -92,6 +92,7 @@ Open **Pose the rig and move Ben** to rotate individual joints or translate the 
 - `src/model-3d/poses.ts`: skeletal poses, inverse kinematics and animation sampling.
 - `src/model-3d/svg-skin.ts`: SVG parsing, tessellation, curved-surface projection and winding correction.
 - `src/model-3d/preview.ts`: interactive Three.js preview and orthographic review renderer.
+- `src/model-3d/sprite-passes.ts`: unlit colour, normal and depth passes on a sprite canvas, used by `bun run turntable:render` to turn the standing model into reference sprite grids (see [3D reference renders](TURNTABLE_REVIEW.md#3d-reference-renders)).
 - `models/ben-3d/ben.glb`: portable skinned model containing ten named animation clips. Run, Jump, Fall, Climb, Whistle, Firing, Look up and Look down contain motion; the remaining clips hold their named poses. The ladder prop is preview-only and is not in the GLB. The phone attachment is hidden by scale outside the phone pose.
 - `models/ben-3d/rig.json` and `skins.svg`: exported configuration and surface artwork.
 

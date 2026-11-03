@@ -40,3 +40,50 @@ Profile/rear head registration is also unified. The model post is centred on x=1
 The running shoe skin omitted the yellow side detail. It is now a one-pixel badge bound to local shoe point (0, 0), behind the forefoot hinge. The binding follows the shoe’s pitch and compression and chooses the nearest red upper pixel so it does not paint the sole or outline. Each of the six saved running frames changes by exactly one yellow pixel; running pose, head, face, shoe outline and animation timing stay unchanged.
 
 `scripts/sprite-continuity.test.ts` verifies fixed shoe structure, registered head contours, the gradual hair reveal and the rig-bound badge. `rig/ben-turntable/continuity-review.json` records the generated crown/sole rows, rear hair counts and dome bounds.
+
+## 3D reference renders
+
+The saved in-betweens are row morphs between unrelated keys. The render path instead poses the 3D Ben (`docs/BEN_3D.md`) at a turntable yaw and turns the view into a sprite grid in the saved sprites' format, as a reference to trace and clean rather than a finished frame.
+
+```sh
+bun run turntable:render                      # every 15° stop, sprite-faithful head
+bun run turntable:render -- --angles 135,150  # selected stops only
+bun run turntable:render -- --head cartoon    # another head style, in variants/cartoon-sprite/
+bun run turntable:render -- --proportions model
+bun run turntable:render -- --from-captures   # re-run the conversion on the saved captures
+```
+
+The command starts its own Vite server on a free port (or uses `TURNTABLE_RENDER_URL`) and drives system Chromium with software WebGL, as `bun run model:review` does. It writes only to `models/ben-3d/turntable-reference/`; non-default head styles or proportions go to a `variants/` subfolder so the committed set stays the sprite-faithful one. Renders are reproducible: running it twice gives byte-identical files.
+
+### Method
+
+1. **Render.** `src/model-3d/sprite-passes.ts` renders the Standing pose through an orthographic camera that maps one model unit onto one canvas pixel on the turntable canvas (32 × 44, centre column 15, sole row 34), at 8× supersampling. Three passes are drawn with no lighting, tone mapping, shadows or antialiasing: the unlit material and vertex colour, the view-space normal and the depth.
+2. **Cel shade.** `scripts/sprite-render.ts` quantises each supersample to the nearest EGA colour, folds bright partners back to their base (r→R, g→G, b→B, m→M, so the model's lighter sleeves and bright shell do not decide the shade) and applies one light fixed on screen at the upper left, as the sprites are lit: skin, collar and soles darken W→L on the far side, the helmet and shirt gain g and r on surfaces facing the light. The result is saved as `flat-NNN.png` and `depth-NNN.png`.
+3. **Sprite proportions.** The realistic model is 3.6 heads tall; the saved sprites are 2.9. A piecewise-linear height map moves the model's helmet rim, eyes, chin, collar, belt and shoe top onto the sprite rows (rim on row 8, eyes on row 9, collar on row 14, belt on row 23, shoes from row 31), and a width map widens the helmet ×1.25, the shirt and arms ×1.2 and the shoes ×1.3. `--proportions model` skips the map.
+4. **Downsample.** Each pixel takes the majority colour of its 8 × 8 supersamples if at least half are covered. Small details win their pixel at a set share: eye dots on skin (12%), the mouth (25%), the chest emblem (20%), the helmet stripe (22%) and rim (25%) on the shell, the jeans seam (15%). Hair and foam glimpsed through the helmet vents become shell green; the ground row's grey sole underside stays white.
+5. **Ink and clean-up.** A pixel whose left or right neighbour is more than 1.6 units nearer gets ink, which separates an arm from the shirt and one shoe from the other; vertical overlaps stay uninked, as in the sprites. Filled pixels with no filled side neighbour are removed, lone depth-ink dots are dropped, and a lone shade pixel joins its base colour. A one-pixel black outline is then drawn outside the silhouette (ink, not extra volume), never below the ground row, and empty pinholes boxed in by ink close up.
+
+`references.json` holds the 24 converted grids, the head style, scale and conversion settings; `sprite-NNN.png` are the grids at native size and `contact-sheet.png` puts each saved `ben_turn*` stop above its render. In the pixel editor, **3D reference** draws the render for the selected standing-turn frame under the sprite (or over it with **On top**) at the chosen opacity. It is off by default, only paints the editing canvas, and leaves the frame, drafts, history and project saves unchanged.
+
+`scripts/turntable-render.test.ts` checks that every grid is reproduced exactly from its committed captures, uses only palette codes, fills the 32 × 44 canvas from row 2 to the sole row 34 on the centre column, has no colour pixel touching transparency except under the soles, mirrors between left and right turns outside the Stunner's hip rows, and keeps the Stunner on Ben's right hip. Synthetic captures check the outline, detail, speck and ink rules.
+
+### The 135° pilot
+
+`source/turntable-pilot-135.json` is a draft of the missing 135° key, cleaned by hand from `sprite-135.png`. It is not in `edits.json` and does not replace `ben_turn135`. `pilot-135-comparison.png` lays out the saved 0°, 45°, 90°, 135°, 180° and 315° frames, the renders at the same angles, and the pilot under the 135° column, at 8×.
+
+The render supplies what is visible at 135°: the back of the helmet and the stripe heading down it, brown hair at the nape on screen left, his right arm and right hip towards the viewer, the Stunner on that hip only, and the near right shoe overlapping the far left one, toes pointing away. The pilot keeps those and redraws them in the saved sprites' conventions: the 11-pixel helmet with g lit upper left and a grey rim across row 8, the stripe running diagonally from x16 on row 3 to x14 on row 6, the rim shadow and three rows of hair, a grey ear at x17, a one-row white collar on row 14 above an all-red shoulder row 15 (so it cannot read as a scarf), a shaded far arm and a lit near arm, the four-row holstered Stunner patch at x19–20, rows 24–27, two separated legs with cyan seams, and two shoes: the far one lifted a row with a grey sole, the near one with the yellow badge, two red highlights, a white toe cap and a full white sole.
+
+The automatic render is not close enough to use directly. 189 of the pilot's 336 drawn pixels (56%) differ from it, 52 of them in the silhouette, and the renders at the saved anchors differ from the saved frames by 148 (0°) to 274 (45°) pixels. At 135° the render gets these wrong:
+
+- The helmet stripe hugs the left silhouette (x13 on row 3 down to x10 on rows 6–8) and reads as a white outline; the 0.5-unit grey trim drops below the brim at the back, so row 8 has no grey rim; the crown's ink cap is four pixels (x13–16) against the saved six.
+- The face side has no ear, and a shell-edge green pixel sits at (11, 9) in the hair.
+- The collar row 14 is three white pixels with a red pixel at (13, 14) and doubled ink at x17–18; row 13 also ends in doubled ink.
+- The emblem wrapping round the side leaves a stray yellow pixel at (17, 18); the shoulders have no highlight.
+- The model's longer arms put the near hand on rows 23–25 beside the holster; the sprites end the hands on row 23.
+- The Stunner is one to two magenta pixels at x17, rows 23–25, between the hand and the jeans, rather than the sprite's 2 × 4 holster patch.
+- Both legs merge into one five-pixel block (x13–17, rows 24–30) with a single seam pixel at (17, 29).
+- Both shoes rest on the ground row, so the far shoe is not lifted; the near shoe has no badge and only one toe-cap pixel at (21, 33).
+
+Across the turn, the sprite-faithful head's flat eye dots vanish edge-on, so the true profiles at 90° and 270° have no eye and no nose; the crown's ink cap is three or four pixels at every angle against the saved five or six; at 0° each eye is two pixels wide (x13–14 and x16–17) against the sprite's single pixels at x13 and x17, the mouth is one pixel at (15, 11) against three, and the emblem becomes a seven-pixel yellow bar on row 17. The Standing pose differs from the saved quarter stands (feet side by side, arms straight down), which is most of the 45° and 315° difference. Lighting is fixed on screen, so left and right turns mirror in silhouette but not in shading.
+
+So the render is a reliable guide to visibility, occlusion and placement at angles that have no saved art, and the underlay makes that quick to trace, but each key still needs a pixel artist's redraw of about half its pixels. Posing the 3D Standing pose like the saved quarter stands (staggered feet, the quarter arm positions) and giving the head a profile eye would cut that work most before the remaining keys are drawn.

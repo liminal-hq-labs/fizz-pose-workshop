@@ -24,6 +24,11 @@ import {
   ladderRungs,
   type BenPose,
 } from "./poses.ts";
+import {
+  renderSpritePasses,
+  type SpriteFrame,
+  type SpritePasses,
+} from "./sprite-passes.ts";
 import skinSvg from "../../source/ben-3d-skins.svg?raw";
 import config from "../../source/ben-3d.json";
 import type { WorkshopData } from "../types.ts";
@@ -588,6 +593,37 @@ export function mountBen3D(data: WorkshopData): void {
       .putImageData(new ImageData(bytes, width, height), 0, 0);
     return canvas.toDataURL("image/png");
   };
+  // Unlit colour, normal and depth passes of a held pose, for converting the model into sprite pixels.
+  const renderSprite = (
+    angle: number,
+    frame: SpriteFrame,
+    scale: number,
+    spritePose: BenPose = "Standing",
+    spritePhase = 0,
+  ): SpritePasses => {
+    const oldFloor = floor.visible,
+      oldHelper = helper.visible,
+      oldPosition = model.root.position.clone();
+    applyBenPose(model, spritePose, spritePhase);
+    placeLadder(spritePose, spritePhase);
+    model.root.position.set(0, 0, 0);
+    model.root.rotation.y = THREE.MathUtils.degToRad(angle);
+    model.root.updateMatrixWorld(true);
+    model.skeleton.update();
+    floor.visible = false;
+    helper.visible = false;
+    try {
+      return renderSpritePasses(renderer, scene, model.meshes, frame, scale);
+    } finally {
+      floor.visible = oldFloor;
+      helper.visible = oldHelper;
+      model.root.position.copy(oldPosition);
+      applyBenPose(model, pose, phase);
+      placeLadder(pose, phase);
+      model.root.rotation.y = THREE.MathUtils.degToRad(yaw);
+      dirty = true;
+    }
+  };
   // Browser review automation uses the same live model and orthographic camera, without a second implementation.
   Object.assign(section, {
     modelReview: {
@@ -604,6 +640,7 @@ export function mountBen3D(data: WorkshopData): void {
       scene,
       camera: ortho,
       align,
+      renderSprite,
       setHeadStyle: (id: string) => {
         model.setHeadStyle(id);
         $<HTMLSelectElement>("#model-head").value = model.headStyle();

@@ -7,6 +7,7 @@ import stunnerStudy from '../source/fizz-stunner-study.json';
 import { rigCatalogue } from './rig/catalogue.ts';
 import { createHistory, setPixel, validateFrames } from './model.ts';
 import { normaliseFrames } from './palette.ts';
+import { loadTurntableReference, turntableAngle } from './reference-underlay.ts';
 
 import type { Frame, WorkshopData } from './types.ts';
 
@@ -27,6 +28,7 @@ export function initialiseEditor(data: WorkshopData): void {
     <div class="editor-layout">
       <div>
         <div class="controls"><label>Frame <select id="edit-frame"></select></label><label><input id="show-grid" type="checkbox" checked>Pixel grid</label></div>
+        <div class="controls reference-controls"><label title="Trace over the 3D model rendered at this standing-turn angle"><input id="show-reference" type="checkbox">3D reference</label><label>Opacity <input id="reference-opacity" type="range" min="10" max="100" step="5" value="45"></label><label><input id="reference-on-top" type="checkbox">On top</label><span id="reference-note" class="small"></span></div>
         <div class="editor-board"><canvas id="pixel-canvas" tabindex="0" role="img" aria-label="Sprite editing canvas. Draw with the pointer; use the palette and tool buttons to select a colour."></canvas></div>
         <p id="pixel-position">24 × 44 pixels · native orientation</p>
       </div>
@@ -100,6 +102,28 @@ export function initialiseEditor(data: WorkshopData): void {
       if (hex) { context.fillStyle = hex; context.fillRect(x * scale, y * scale, scale, scale); }
     }
   }
+  // The optional 3D reference: the model rendered at a standing-turn frame's angle, for tracing.
+  // It is drawn on the editing canvas only and never changes the frame, drafts or project saves.
+  let references: Map<number, string[]> | null = null, referenceError = '';
+  function referenceFor(frame: Frame): string[] | null {
+    const angle = turntableAngle(frameName), grid = angle === null ? undefined : references?.get(angle);
+    const shown = $<HTMLInputElement>('#show-reference').checked;
+    $('#reference-note').textContent = !shown ? '' : referenceError || (angle === null ? 'Available for the standing-turn frames.' : !references ? 'Loading the reference renders…' : grid ? `3D render at ${angle}°` : `No render at ${angle}°.`);
+    return shown && grid && grid.length === frame.height && grid.every(row => row.length === frame.width) ? grid : null;
+  }
+  function drawReference(context: CanvasRenderingContext2D, grid: string[], scale: number): void {
+    context.save(); context.globalAlpha = Number($<HTMLInputElement>('#reference-opacity').value) / 100;
+    grid.forEach((row, y) => [...row].forEach((code, x) => { const hex = data.palette[code]; if (hex) { context.fillStyle = hex; context.fillRect(x * scale, y * scale, scale, scale); } }));
+    context.restore();
+  }
+  $<HTMLInputElement>('#show-reference').onchange = () => {
+    if ($<HTMLInputElement>('#show-reference').checked && !references) {
+      referenceError = '';
+      loadTurntableReference().then(grids => { references = grids; render(); }).catch((error: unknown) => { referenceError = error instanceof Error ? error.message : 'Reference renders are unavailable.'; render(); });
+    }
+    render();
+  };
+  $<HTMLInputElement>('#reference-opacity').oninput = $<HTMLInputElement>('#reference-on-top').onchange = () => render();
   function render() {
     const frame = data.frames[frameName], scale = 12;
     canvas.width = frame.width * scale; canvas.height = frame.height * scale;
@@ -107,7 +131,10 @@ export function initialiseEditor(data: WorkshopData): void {
     for (let y = 0; y < frame.height; y++) for (let x = 0; x < frame.width; x++) {
       ctx.fillStyle = (x + y) % 2 ? '#334139' : '#29372f'; ctx.fillRect(x * scale, y * scale, scale, scale);
     }
+    const reference = referenceFor(frame), onTop = $<HTMLInputElement>('#reference-on-top').checked;
+    if (reference && !onTop) drawReference(ctx, reference, scale);
     drawFrame(ctx, frame, scale);
+    if (reference && onTop) drawReference(ctx, reference, scale);
     if ($<HTMLInputElement>('#show-grid').checked) {
       ctx.strokeStyle = '#ffffff24'; ctx.lineWidth = 1; ctx.beginPath();
       for (let x = 0; x <= frame.width; x++) { ctx.moveTo(x * scale + .5, 0); ctx.lineTo(x * scale + .5, canvas.height); }
