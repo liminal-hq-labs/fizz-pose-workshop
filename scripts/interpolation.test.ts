@@ -8,7 +8,7 @@ import { rigCatalogue } from '../src/rig/catalogue.ts';
 import { evaluateCurve, monotoneCurve } from '../src/rig/performance.ts';
 import { sampleIndex, sampleRig, sampleTime } from '../src/rig/sample.ts';
 import { distance } from '../src/rig/kinematics.ts';
-import { torsoPoint, type SideRig } from '../src/rig/run.ts';
+import { torsoPoint, validateRig, type SideRig } from '../src/rig/run.ts';
 import { skinRig } from './rig-skin.ts';
 import { exposedEdges, helmetCodes, loadSavedFrames } from './motion-metrics.ts';
 import skin from '../source/ben-side-skin.json';
@@ -95,20 +95,39 @@ test('rolled heads keep every helmet pixel inked at any tilt', () => {
   }
 });
 
-test('the fall is its own looping cycle: arms flung out to either side, legs dangling, never touching down', () => {
+test('the fall braces for impact: arms guarding the chest, knees bent and feet together, swaying without flailing', () => {
   const fall = rig('fall'), jump = rig('jump'), saved = loadSavedFrames();
   expect(fall.performance!.loop).toBe(true); expect(fall.mirrored).toBeFalsy();
   expect(sampleRig(fall, 0)).toEqual(sampleRig(fall, 1));
+  const guard: [number, number][][] = [[], []];
   for (let i = 0; i < fall.sampleCount; i++) {
-    const pose = sampleRig(fall, sampleTime(fall, i)), shoulder = torsoPoint(pose, [0, fall.torso.shoulderY]);
+    const pose = sampleRig(fall, sampleTime(fall, i)), shoulder = torsoPoint(pose, [0, fall.torso.shoulderY]), lean = pose.torsoAngle * 180 / Math.PI;
     expect(pose.contact).toBe('flight');
-    expect(pose.nearArm[2][0]).toBeGreaterThan(pose.neck[0] + 2); expect(pose.farArm[2][0]).toBeLessThan(pose.neck[0] - 2);
-    for (const arm of [pose.nearArm, pose.farArm]) expect(arm[2][1]).toBeLessThan(shoulder[1] + 2);
-    for (const leg of [pose.nearLeg, pose.farLeg]) expect(leg[2][1]).toBeGreaterThan(pose.root[1] + 6);
+    // A slight forward crouch that never tips back.
+    expect(lean).toBeGreaterThan(5); expect(lean).toBeLessThan(11);
+    // Both hands are drawn in front of the chest and face, between chin and belly height.
+    [pose.nearArm, pose.farArm].forEach((arm, side) => {
+      expect(arm[2][0]).toBeGreaterThan(pose.neck[0] + 2); expect(arm[2][1]).toBeGreaterThan(shoulder[1] - 4); expect(arm[2][1]).toBeLessThan(shoulder[1] + 3);
+      guard[side].push([arm[2][0] - shoulder[0], arm[2][1] - shoulder[1]]);
+    });
+    // Knees bent, ready to land, with the feet together or lightly staggered.
+    for (const leg of [pose.nearLeg, pose.farLeg]) expect(distance(leg[0], leg[2])).toBeLessThan(fall.legs.thighLength + fall.legs.shinLength - 1.5);
+    expect(Math.abs(pose.nearFoot.ankle[0] - pose.farFoot.ankle[0])).toBeLessThanOrEqual(4);
   }
+  // No flailing: each guarding hand stays within a pixel and a half of its place relative to the shoulder across the loop.
+  for (const hand of guard) for (const axis of [0, 1]) expect(Math.max(...hand.map(point => point[axis])) - Math.min(...hand.map(point => point[axis]))).toBeLessThanOrEqual(1.5);
+  // Clearly not the jump: the jump's apex spreads the feet sixteen pixels apart.
+  const apex = sampleRig(jump, jump.performance!.keys[2].phase); expect(apex.farFoot.ankle[0] - apex.nearFoot.ankle[0]).toBeGreaterThan(14);
+  // The left-facing fall turns round with the Stunner on the far (right) hip rather than mirroring it across.
+  const left = rig('fall-left'); expect(left.facing).toBe('left'); expect(left.performance).toBe(fall.performance);
+  for (let i = 1; i <= fall.sampleCount; i++) {
+    const a = saved[`ben_fallRig${i}`], b = saved[`ben_fallLeft${i}`];
+    expect(b.grid).not.toEqual(a.grid.map(row => [...row].reverse().join(''))); expect(b.grid.join('').split('M').length - 1).toBeLessThanOrEqual(2);
+  }
+
   // Distinct sprites: no fall frame repeats a jump frame, and none is a mirror of another Stunner-bearing frame.
   const fallFrames = Array.from({ length: fall.sampleCount }, (_, i) => saved[`ben_fallRig${i + 1}`]);
-  const others = Object.entries(saved).filter(([name]) => name.startsWith('ben_') && !name.startsWith('ben_fallRig')).map(([, frame]) => frame);
+  const others = Object.entries(saved).filter(([name]) => name.startsWith('ben_') && !name.startsWith('ben_fallRig') && !name.startsWith('ben_fallLeft')).map(([, frame]) => frame);
   for (const frame of fallFrames) {
     expect(frame.grid.join('')).toContain('M');
     for (let i = 0; i < jump.sampleCount; i++) expect(frame.grid).not.toEqual(saved[`ben_jumpRig${i + 1}`].grid);
@@ -124,6 +143,53 @@ test('pointed and tucked jump shoes keep their ink outline around the red upper 
     grid.forEach((row, y) => [...row].forEach((code, x) => {
       if (code === 'R' || code === 'r') for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) expect(grid[y + dy]?.[x + dx] ?? '.').not.toBe('.');
     }));
+  }
+});
+
+test('the left-facing jump turns Ben round with his Stunner on the far (right) hip instead of mirroring it across', () => {
+  const saved = loadSavedFrames(), right = rig('jump'), left = rig('jump-left');
+  expect(left.facing).toBe('left'); expect(left.mirrored).toBeFalsy(); expect(left.performance).toBe(right.performance);
+  expect(saved.ben_stand.grid.join('')).not.toContain('M');
+  for (let i = 1; i <= right.sampleCount; i++) {
+    const a = saved[`ben_jumpRig${i}`], b = saved[`ben_jumpLeft${i}`], mirror = a.grid.map(row => [...row].reverse().join(''));
+    expect(b.grid).not.toEqual(mirror);
+    // The visible near-hip holster of the right-facing frame is gone; at most a sliver of the far-side one peeks out.
+    const count = (grid: readonly string[], code: string): number => grid.join('').split(code).length - 1;
+    expect(count(a.grid, 'M')).toBeGreaterThanOrEqual(3); expect(count(b.grid, 'M')).toBeLessThanOrEqual(2);
+    mirror.forEach((row, y) => [...row].forEach((code, x) => { if (code === 'M' || code === 'm') expect(b.grid[y][x]).not.toBe(code); }));
+    // Everything else (face, collar, limbs, shoes and badge) is the turned-round right-facing pose.
+    let differing = 0; mirror.forEach((row, y) => [...row].forEach((code, x) => { if (b.grid[y][x] !== code) differing++; }));
+    expect(differing).toBeLessThan(25);
+  }
+  expect(() => validateRig({ ...left, mirrored: true })).toThrow();
+});
+
+test('shirt cloth moves only on the rigs that opt in, and only in its hem and sleeves', () => {
+  const clothed = ['fall', 'fall-left'];
+  for (const { animation, rig: clip } of rigCatalogue) {
+    if (clothed.includes(animation)) { expect(clip.clothing).toBeDefined(); continue; }
+    // The run, look loop, standing and every other rig keep their authored shirt.
+    expect(clip.clothing).toBeUndefined();
+    for (let i = 0; i < clip.sampleCount; i++) expect(sampleRig(clip, sampleTime(clip, i)).cloth).toBeUndefined();
+  }
+  for (const name of clothed) {
+    const clip = rig(name), plain = { ...clip, clothing: undefined }, states = new Set<string>();
+    for (let i = 0; i < clip.sampleCount; i++) {
+      const pose = sampleRig(clip, sampleTime(clip, i)), on = skinRig(clip, skin, pose), off = skinRig(plain, skin, sampleRig(plain, sampleTime(plain, i)));
+      states.add(JSON.stringify(pose.cloth));
+      // The outline stays closed, and the collar (rows down to the head anchor), emblem, belt and Stunner keep every pixel.
+      // A cuff riding up only uncovers the arm's own skin.
+      expect(exposedEdges(on)).toBe(exposedEdges(off));
+      const collar = pose.face.pixelAnchor[1];
+      on.grid.forEach((row, y) => [...row].forEach((code, x) => {
+        if (code === off.grid[y][x]) return;
+        for (const kept of 'DyMm') { expect(code).not.toBe(kept); expect(off.grid[y][x]).not.toBe(kept); }
+        expect(y).toBeGreaterThan(collar);
+      }));
+      let changed = 0; on.grid.forEach((row, y) => [...row].forEach((code, x) => { if (code !== off.grid[y][x]) changed++; })); expect(changed).toBeLessThanOrEqual(6);
+    }
+    // The hem and sleeves really move through the loop: at least three different cloth states.
+    expect(states.size).toBeGreaterThanOrEqual(3);
   }
 });
 

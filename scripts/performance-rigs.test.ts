@@ -74,13 +74,15 @@ test('rejects unordered or invalid performance goals before exporting',()=>{
  const rig=structuredClone(entries[0].rig);rig.performance!.keys[1].phase=0;expect(()=>validateRig(rig)).toThrow();
 });
 
-test('airborne jump points its toes at launch, tucks the trailing foot with the knee at the apex and reaches down to land on flat soles',()=>{
+test('airborne jump points its toes, folds the trailing foot back with its shin so the sole faces back and up, and lands on flat soles',()=>{
  const rig=entries.find(e=>e.rig.motion==='jump')!.rig,pose=(i:number)=>sampleRig(rig,keyPhase(rig,i)),[crouch,launch,apex,fall,land,recover]=[0,1,2,3,4,5].map(pose);
  expect(apex.farFoot.ankle[0]-apex.nearFoot.ankle[0]).toBeGreaterThan(14);
  // Positive pitch turns the toe down. Both feet leave the ground toes first and reach toes first for the landing.
  for(const p of [launch,fall])for(const foot of [p.nearFoot,p.farFoot])expect(foot.pitch).toBeGreaterThan(.4);
- // At the apex the trailing (near) foot stays pointed behind the folded knee while the leading foot levels out under its knee.
- expect(apex.nearFoot.pitch).toBeGreaterThan(.5);expect(Math.abs(apex.farFoot.pitch)).toBeLessThan(.15);
+ // The trailing (near) leg bends back in the air, so its foot follows the shin: toes point down and back and the white sole
+ // faces back and up (a pitch between 100° and 170°) at launch, apex and fall. The leading foot levels out under its knee at the apex.
+ for(const p of [launch,apex,fall]){const degrees=p.nearFoot.pitch*180/Math.PI;expect(degrees).toBeGreaterThan(100);expect(degrees).toBeLessThan(170);const sole=[-Math.sin(p.nearFoot.pitch),Math.cos(p.nearFoot.pitch)];expect(sole[0]).toBeLessThan(0);expect(sole[1]).toBeLessThan(0);}
+ expect(Math.abs(apex.farFoot.pitch)).toBeLessThan(.15);
  for(const p of [crouch,land,recover]){expect(p.nearFoot.pitch).toBe(0);expect(p.farFoot.pitch).toBe(0);}
  // The gallery and exports replay the jump straight away, as on its original six-frame loop.
  expect(rig.performance!.replay).toBe('continuous');

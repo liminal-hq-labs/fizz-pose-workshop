@@ -6,6 +6,7 @@
 import { add, radians, rotate, solveTwoBone, tiltPixel, wrap, type Vec2, type Chain } from './kinematics.ts';
 import { sampleFace, type FaceLandmark, type FacePose } from './face.ts';
 import { torsoPoint, type RigFoot, type RigPose, type SideRig } from './run.ts';
+import { clothPose, type ClothingSettings, type ClothPose } from './clothing.ts';
 
 export type Expression = 'normal' | 'startled' | 'grit' | 'tongue' | 'dizzy' | 'wince' | 'out' | 'whistle';
 export interface PerformanceKey {
@@ -87,6 +88,18 @@ export function evaluateCurve(curve: Curve, t: number): number {
 function foot(ankle: Vec2, supported: boolean, rig: SideRig, angle = 0): RigFoot {
   return {ankle, ball: add(ankle, rotate([rig.feet.ball[0], rig.feet.ball[1]], angle)), toe: add(ankle, rotate([rig.feet.toe[0], rig.feet.toe[1]], angle)), heel: add(ankle, rotate([rig.feet.heel[0], rig.feet.heel[1]], angle)), pitch: angle, toePitch: angle, compression: 0, stance: supported, progress: 0};
 }
+/**
+ * A pointed foot swinging back to flat on the way in to a landing must not dig its toe or heel through the ground. The
+ * shoe's outlined box (heel to toe, ankle collar to sole) is kept above the ground line by easing the pitch towards flat.
+ */
+function clearPitch(rig: SideRig, ankle: Vec2, pitch: number): number {
+  const lowest = (angle: number): number => Math.max(...[[rig.feet.heel[0] - 1.5, -1.5], [rig.feet.toe[0] + 1.5, -1.5], [rig.feet.heel[0] - 1.5, rig.feet.ball[1] + 1], [rig.feet.toe[0] + 1.5, rig.feet.ball[1] + 1]].map(corner => ankle[1] + rotate(corner as unknown as Vec2, angle)[1]));
+  const limit = rig.groundY + 1, flat = lowest(0);
+  if (pitch === 0 || lowest(pitch) <= Math.max(limit, flat)) return pitch;
+  let low = 0, high = 1;
+  for (let i = 0; i < 24; i++) { const mid = (low + high) / 2; if (lowest(pitch * mid) <= Math.max(limit, flat)) low = mid; else high = mid; }
+  return pitch * low;
+}
 interface Body { neck: Vec2; nearShoulder: Vec2; farShoulder: Vec2; nearHip: Vec2; farHip: Vec2; }
 function body(rig: SideRig, root: Vec2, torsoAngle: number): Body {
   const base = {root, torsoAngle};
@@ -155,6 +168,14 @@ function tiltedFace(face: FacePose, upright: FacePose, angle: number): FacePose 
   return { ...face, eye: landmark(face.eye, upright.eye), mouth: landmark(face.mouth, upright.mouth), ear: landmark(face.ear, upright.ear), nose: landmark(face.nose, upright.nose), noseTip: landmark(face.noseTip, upright.noseTip), cheek: landmark(face.cheek, upright.cheek), chin: landmark(face.chin, upright.chin), eyePixels: upright.eyePixels.map(pixel), mouthPixels: upright.mouthPixels.map(pixel) };
 }
 
+/** Lagged body and arm velocities (per cycle, from the same curves) feed the cloth's follow-through. */
+function clothAt(settings: ClothingSettings, clip: PerformanceSettings, curves: ClipCurves, t: number): ClothPose {
+  const time = (value: number): number => clip.loop ? wrap(value) : Math.max(0, Math.min(1, value)), h = 1e-3, then = t - settings.lag;
+  const rate = (curve: Curve): number => (evaluateCurve(curve, time(then + h)) - evaluateCurve(curve, time(then - h))) / (2 * h);
+  const degrees = 180 / Math.PI;
+  return clothPose(settings, t, [rate(curves.scalar.rootX), rate(curves.scalar.rootY)], [rate(curves.limbs.nearHand.angle) * degrees, rate(curves.limbs.farHand.angle) * degrees]);
+}
+
 export function samplePerformance(rig: SideRig, time: number): RigPose {
   const clip = rig.performance; if (!clip || !Number.isFinite(time)) throw new Error('Performance rig requires finite time and action goals.');
   const t = clip.loop ? wrap(time) : Math.max(0, Math.min(1, time));
@@ -179,12 +200,13 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const farArm = solve(joints.farShoulder, target('farHand'), rig.arms.upperLength, rig.arms.forearmLength, clip.view === 'side' ? -1 : 1);
   const nearLeg = solve(joints.nearHip, target('nearAnkle'), rig.legs.thighLength, rig.legs.shinLength, clip.view === 'side' ? 1 : -1);
   const farLeg = solve(joints.farHip, target('farAnkle'), rig.legs.thighLength, rig.legs.shinLength, 1);
-  const nearFoot = foot(nearLeg[2], a.nearSupport, rig, radians(at(curves.scalar.nearFoot))), farFoot = foot(farLeg[2], a.farSupport, rig, radians(at(curves.scalar.farFoot)));
+  const nearFoot = foot(nearLeg[2], a.nearSupport, rig, clearPitch(rig, nearLeg[2], radians(at(curves.scalar.nearFoot)))), farFoot = foot(farLeg[2], a.farSupport, rig, clearPitch(rig, farLeg[2], radians(at(curves.scalar.farFoot))));
   const phone: Vec2 | undefined = curves.phone && t >= curves.phone.from ? [evaluateCurve(curves.phone.x, t), evaluateCurve(curves.phone.y, t)] : undefined;
   const notes: Vec2[] | undefined = clip.notes ? [notePosition(clip.notes, t, 0), notePosition(clip.notes, t, 1)] : undefined;
   const face = tiltedFace(sampleFace(joints.neck, 0, rig.face, t, headAngle), sampleFace(joints.neck, 0, rig.face, t), headAngle);
   return { time: t, root, torsoAngle, torsoTurn: 0, headTurn: 0, headAngle, neck: joints.neck, face, nearArm, farArm, nearLeg, farLeg, nearFoot, farFoot,
     contact: a.nearSupport && a.farSupport ? 'both' : a.nearSupport ? 'near' : a.farSupport ? 'far' : 'flight',
+    cloth: rig.clothing ? clothAt(rig.clothing, clip, curves, t) : undefined,
     presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: clip.environment, cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink)},
   };
 }
