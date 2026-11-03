@@ -136,6 +136,8 @@ test('the reference cycles use their measured spacing as the benchmark', () => {
 
 // The run and look up/down cycles are the approved quality reference. Their saved grids and timing may only change
 // through a deliberate, reviewed redraw (for example the Stunner redesign); update the fixture in that same change.
+// The pinned run faces are the user's deliberate hand edits. The rig now reproduces them itself (see `face.test.ts`), and
+// `draw:run` keeps any override that differs from the previous redraw unless it is run with `--replace-edits`.
 test('run and look up/down cycles stay byte-for-byte identical to the pinned reference', () => {
   for (const [name, animation] of Object.entries(pinned.animations)) expect(savedAnimations[name]).toEqual(animation);
   for (const [name, frame] of Object.entries(pinned.frames)) expect(frames[name]).toEqual(frame);

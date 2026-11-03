@@ -93,7 +93,17 @@
       ]
     },
     "eyeTravelPixels": 2,
-    "mouthWidth": 2,
-    "mouthFront": 3
+    "turnLead": 0.05555555555555555,
+    "featureTurn": [
+      0.45,
+      0.8
+    ],
+    "mouthWidths": [
+      1,
+      2,
+      3
+    ],
+    "mouthFront": 3,
+    "farEye": 2
   }
 }

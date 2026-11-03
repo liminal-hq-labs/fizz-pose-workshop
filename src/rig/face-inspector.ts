@@ -38,7 +38,7 @@ export function mountFaceInspector(parent: HTMLElement, rig: SideRig, data: Work
         cache[i] = signature;
         const eye = facePixels(frame, colours.eye, anchor), mouth = facePixels(frame, colours.mouth, anchor);
         const ear = sample.face.ear.pixel, earMatches = frame.grid[ear[1]]?.[ear[0]] === colours.ear;
-        const landmarksMatch = earMatches && eye.length === 1 && coordinate(eye[0]) === coordinate(sample.face.eye.pixel) && JSON.stringify(mouth) === JSON.stringify(sample.face.mouthPixels);
+        const landmarksMatch = earMatches && JSON.stringify(eye) === JSON.stringify(sample.face.eyePixels) && JSON.stringify(mouth) === JSON.stringify(sample.face.mouthPixels);
         const canonical = (saved.frames as WorkshopData['frames'])[prefix + (i + 1)];
         const matches = sample.presentation ? !!canonical && frame.grid.slice(Math.max(0,anchor[1]-13),anchor[1]+1).join('') === canonical.grid.slice(Math.max(0,anchor[1]-13),anchor[1]+1).join('') : landmarksMatch;
         const label = sample.presentation?.view === 'back' ? 'Facing away' : sample.presentation && sample.presentation.expression !== 'normal' ? 'Expression: ' + sample.presentation.expression : 'Anchored';

@@ -104,7 +104,8 @@ export function sampleRunRig(rig: SideRig, time: number): RigPose {
   const root: Vec2 = [rig.root[0], rig.root[1] + rig.torso.bobAmplitude * Math.cos(2 * tau * (t - rig.torso.bobLag))];
   const torsoAngle = radians(rig.torso.leanDegrees + rig.torso.pitchSwayDegrees * Math.sin(theta));
   const armTheta = theta + rig.arms.phaseLead * tau;
-  const torsoTurn = -Math.cos(armTheta), headTurn = Math.sin(theta);
+  // `face.turnLead` (in cycles) lets the head turn run slightly ahead of the stride, so the camera-facing peak lands on one frame.
+  const torsoTurn = -Math.cos(armTheta), headTurn = Math.sin(theta + (rig.face.turnLead ?? 0) * tau);
   const base = { root, torsoAngle };
   const nearShoulder = torsoPoint(base, [-rig.torso.shoulderSpread + torsoTurn * rig.torso.shoulderTwist, rig.torso.shoulderY]);
   const farShoulder = torsoPoint(base, [rig.torso.shoulderSpread - torsoTurn * rig.torso.shoulderTwist, rig.torso.shoulderY]);

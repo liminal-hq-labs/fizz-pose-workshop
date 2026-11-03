@@ -17,10 +17,18 @@ if (import.meta.main) {
   const authored: Omit<WorkshopData, 'palette'> = JSON.parse(await readFile(root + 'source/poses.json', 'utf8'));
   const edits: Frames = JSON.parse(await readFile(root + 'edits.json', 'utf8'));
   const frames = drawRunCycle();
-  Object.assign(authored.frames, frames); Object.assign(edits, frames);
+  // An override that differs from the previously drawn grid is a manual edit, and it takes precedence over the redraw.
+  // Pass --replace-edits to discard those edits deliberately and adopt the rig's grids.
+  const replace = process.argv.includes('--replace-edits'), kept: string[] = [];
+  for (const [name, frame] of Object.entries(frames)) {
+    const manual = edits[name] && JSON.stringify(edits[name]) !== JSON.stringify(authored.frames[name]);
+    if (manual && !replace) kept.push(name); else edits[name] = frame;
+  }
+  Object.assign(authored.frames, frames);
   authored.animations['walk-run'] = { frames: Object.keys(frames), durationsMs: Object.keys(frames).map(() => rig.durationMs / rig.sampleCount) };
   await writeFile(root + 'source/poses.json', JSON.stringify(authored, null, 2) + '\n');
   await writeFile(root + 'edits.json', JSON.stringify(edits, null, 2) + '\n');
   await exportRig(rig, skin, root + 'rig/ben-running');
   console.log('Sampled six running sprites from the continuous right-side rig and saved the rig exports.');
+  if (kept.length) console.log(`Kept manual editor overrides for ${kept.join(', ')}; run with --replace-edits to replace them.`);
 }
