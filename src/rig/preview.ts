@@ -7,6 +7,7 @@ import skin from '../../source/ben-side-skin.json';
 import { mountFaceInspector } from './face-inspector.ts';
 import { rigCatalogue } from './catalogue.ts';
 import { sampleIndex, sampleRig, sampleTime } from './sample.ts';
+import { overlayShift } from './reflect.ts';
 import { type SideRig, type RigPose } from './run.ts';
 import type { Chain, Vec2 } from './kinematics.ts';
 import type { WorkshopData } from '../types.ts';
@@ -42,8 +43,8 @@ export function mountRigPreview(data: WorkshopData): void {
   slider.oninput = () => { playing = false; time = Number(slider.value) / 1000; updateButton(); };
   const step = (direction: number): void => { playing = false; time = sampleTime(rig, (currentIndex() + direction + rig.sampleCount) % rig.sampleCount); updateButton(); };
   $<HTMLButtonElement>('#rig-prev').onclick = () => step(-1); $<HTMLButtonElement>('#rig-next').onclick = () => step(1);
-  function skeleton(context: CanvasRenderingContext2D, pose: RigPose, translucent = false): void {
-    context.save(); context.scale(scale, scale); context.globalAlpha = translucent ? .8 : 1;
+  function skeleton(context: CanvasRenderingContext2D, pose: RigPose, translucent = false, shift = 0): void {
+    context.save(); context.scale(scale, scale); context.translate(shift, 0); context.globalAlpha = translucent ? .8 : 1;
     const line = (points: readonly Vec2[], colour: string, thickness = .22): void => {
       context.strokeStyle = colour; context.lineWidth = thickness; context.beginPath();
       points.forEach(([x, y], index) => index ? context.lineTo(x, y) : context.moveTo(x, y)); context.stroke();
@@ -77,7 +78,7 @@ export function mountRigPreview(data: WorkshopData): void {
       }
     } else {
       for (const [landmark, colour] of [[pose.face.eye, '#77c7ff'], [pose.face.mouth, '#ff9f87'], [pose.face.ear, '#d7b775']] as const) {
-        context.strokeStyle = colour; context.lineWidth = .12; context.strokeRect(landmark.pixel[0], landmark.pixel[1], 1, 1);
+        context.strokeStyle = colour; context.lineWidth = .12; context.strokeRect(landmark.pixel[0] - shift, landmark.pixel[1], 1, 1);
       }
     }
     context.restore();
@@ -97,7 +98,8 @@ export function mountRigPreview(data: WorkshopData): void {
     skeleton(context, pose);
     const frame = data.frames[action.prefix + (index + 1)];
     frame.grid.forEach((row, y) => [...row].forEach((code, x) => { const colour = data.palette[code]; if (colour) { pixel.fillStyle = colour; pixel.fillRect(x * scale, y * scale, scale, scale); } }));
-    if (overlay.checked) skeleton(pixel, sampleRig(rig, sample), true);
+    // Pixel landmarks are already mirrored pixel indices; only the continuous skeleton shifts for a turned-round rig.
+    if (overlay.checked) skeleton(pixel, sampleRig(rig, sample), true, overlayShift(rig));
     slider.value = String(Math.floor(time * 1000));
     $<HTMLOutputElement>('#rig-position').textContent = `${index + 1}/${rig.sampleCount} · ${action.labels[index]}${rig.lightingNote ? ' · Screen light: brighten face and hands dynamically' : ''}`;
     section.dataset.pose = String(index + 1);

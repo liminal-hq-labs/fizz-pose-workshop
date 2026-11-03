@@ -17,6 +17,9 @@ import whistleRight from '../../source/ben-whistle-right-rig.json';
 import phone from '../../source/ben-phone-rig.json';
 import type { SideRig } from './run.ts';
 
+// The left-facing run turns the pinned right-facing run round with the same continuous solver and keys, so its six sprites keep the
+// right run's timing, stride and hand-edited faces while the Stunner stays on Ben's right hip, which now faces away.
+const runLeft: SideRig = { ...(run as SideRig), name: 'Ben · left-facing running rig', facing: 'left' };
 // The left-facing jump turns the right-facing rig round, keeping the Stunner on Ben's right (far) hip, so both share one set of keys.
 const jumpLeft: SideRig = { ...(jump as SideRig), name: 'Ben · left-facing jump rig', facing: 'left' };
 const fallLeft: SideRig = { ...(fall as SideRig), name: 'Ben · left-facing brace-for-impact fall rig', facing: 'left' };
@@ -24,6 +27,7 @@ const fallLeft: SideRig = { ...(fall as SideRig), name: 'Ben · left-facing brac
 export interface RigEntry { rig: SideRig; prefix: string; animation: string; folder: string; title: string; labels: readonly string[]; }
 export const rigCatalogue: readonly RigEntry[] = [
  {rig:run as SideRig,prefix:'ben_walkRight',animation:'walk-run',folder:'ben-running',title:'Run',labels:['Near contact','Near push-off','Flight · far leg leads','Far contact','Far push-off','Flight · near leg leads']},
+ {rig:runLeft,prefix:'ben_walkLeft',animation:'walk-run-left',folder:'ben-running-left',title:'Run left',labels:['Near contact','Near push-off','Flight · far leg leads','Far contact','Far push-off','Flight · near leg leads']},
  {rig:pogo as SideRig,prefix:'ben_pogoRight',animation:'pogo',folder:'ben-pogo',title:'Pogo',labels:['Compress','Launch','Rise','Apex','Fall','Land']},
  {rig:fire as SideRig,prefix:'ben_fireRight',animation:'fizz-blaster',folder:'ben-firing',title:'Fizz Stunner',labels:['Aim','Discharge','Recoil','Recover','Settle','Ready']},
  {rig:ladder as SideRig,prefix:'ben_ladder',animation:'climb',folder:'ben-ladder',title:'Ladder climb',labels:['Left reach','Right hand rises','Right reach','Right support','Left hand rises','Left reach again']},
