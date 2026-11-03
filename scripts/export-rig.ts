@@ -8,7 +8,7 @@ import { sampleRig, sampleTime } from '../src/rig/sample.ts';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { type SideRig } from '../src/rig/run.ts';
-import { exportDurations, frameDurations } from '../src/rig/timing.ts';
+import { exportDurations, frameDurations, replaysContinuously } from '../src/rig/timing.ts';
 import { rigSvg } from '../src/rig/svg.ts';
 import { sampleRigSprites, type RigSkin } from './rig-skin.ts';
 import { gif, png, rects } from './images.ts';
@@ -29,7 +29,7 @@ export async function exportRig(rig: SideRig, skin: RigSkin, output: string): Pr
   await writeFile(output + '/face-sequence.svg', face.svg);
   await writeFile(output + '/rig.svg', rigSvg(rig));
   // The sprite GIF always loops; a one-shot rests on its final pose before replaying.
-  await writeFile(output + '/sprites.gif', gif(frames, exportDurations(frameDurations(rig), rig.performance?.loop ?? true), palette, true));
+  await writeFile(output + '/sprites.gif', gif(frames, exportDurations(frameDurations(rig), replaysContinuously(rig)), palette, true));
   for (const [i, frame] of frames.entries()) {
     const name = String(i + 1).padStart(2, '0');
     await writeFile(output + `/rig-${name}.svg`, rigSvg(rig, sampleTime(rig, i)));

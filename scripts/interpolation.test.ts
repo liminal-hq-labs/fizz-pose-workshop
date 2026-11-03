@@ -15,7 +15,7 @@ import skin from '../source/ben-side-skin.json';
 
 const rig = (animation: string): SideRig => rigCatalogue.find(entry => entry.animation === animation)!.rig;
 const performances = rigCatalogue.filter(entry => entry.rig.performance);
-const velocity = (f: (t: number) => number, t: number, side: -1 | 1, h = 1e-4): number => side * (f(t + side * h) - f(t)) / h;
+const velocity = (f: (t: number) => number, t: number, side: -1 | 1, h = 1e-6): number => side * (f(t + side * h) - f(t)) / h;
 
 test('monotone curves pass through every key, never overshoot and carry velocity through interior keys', () => {
   const phases = [0, .2, .5, .7, 1], values = [0, 3, 8, 8, 2];
@@ -79,8 +79,8 @@ test('sprite samples are placed independently of the keys and map back to their 
     times.forEach((time, i) => { expect(sampleIndex(clip, time)).toBe(i); if (i) expect(time).toBeGreaterThan(times[i - 1]); });
     if (clip.performance!.sampleTimes) for (let i = 0; i < times.length - 1; i++) expect(sampleIndex(clip, (times[i] + times[i + 1]) / 2)).toBe(i);
   }
-  // The jump, ledge pull, death and phone idle sample in-betweens between their keys.
-  for (const name of ['jump', 'mantle', 'death', 'phone-idle']) {
+  // The ledge pull, death and phone idle sample in-betweens between their keys.
+  for (const name of ['mantle', 'death', 'phone-idle']) {
     const clip = rig(name), phases = new Set(clip.performance!.keys.map(key => key.phase));
     expect(Array.from({ length: clip.sampleCount }, (_, i) => sampleTime(clip, i)).some(time => !phases.has(time))).toBe(true);
   }
@@ -114,6 +114,16 @@ test('the fall is its own looping cycle: arms flung out to either side, legs dan
     for (let i = 0; i < jump.sampleCount; i++) expect(frame.grid).not.toEqual(saved[`ben_jumpRig${i + 1}`].grid);
     const mirrored = frame.grid.map(row => [...row].reverse().join(''));
     for (const other of others) if (other.width === frame.width && other.height === frame.height) expect(other.grid).not.toEqual(mirrored);
+  }
+});
+
+test('pointed and tucked jump shoes keep their ink outline around the red upper at every angle', () => {
+  const saved = loadSavedFrames(), jump = rig('jump');
+  for (let i = 1; i <= jump.sampleCount; i++) {
+    const { grid } = saved[`ben_jumpRig${i}`];
+    grid.forEach((row, y) => [...row].forEach((code, x) => {
+      if (code === 'R' || code === 'r') for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) expect(grid[y + dy]?.[x + dx] ?? '.').not.toBe('.');
+    }));
   }
 });
 

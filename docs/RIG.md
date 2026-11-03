@@ -108,7 +108,7 @@ The holstered Stunner swings with the near thigh by at most 35° in performances
 | Rig | View and pose sequence | Playback |
 |---|---|---|
 | Ladder climb | Back view; opposite hands and feet alternate, with bent elbows and knees | Loop |
-| Jump | Eight sprites as one continuous bounce at an even 60–110 ms per frame: crouch (the bottom of the bounce, where the landing absorbs straight into the next takeoff), launch, rise, apex, tip over, fall, drop, touch down. The touch-down carries its downward speed into frame 1, so the landing and the wind-up are one motion. In the game, a single jump plays frames 1–8 and then ends on frame 1 as the landing | Loop |
+| Jump | Crouch, launch, apex, fall, land, recover at 180/80/130/100/110/120 ms. The feet follow the legs in the air: both toes point down at launch, the trailing foot stays pointed behind its folded knee at the apex while the leading foot levels out, both toes reach down for the landing, and the soles are flat only on the ground (crouch, land, recover). `replay: "continuous"` loops the saved animation straight from recover back to crouch | Hold final pose in the rig viewer; the gallery and exports loop |
 | Fall | Six sprites at 90 ms: arms flung out forward and back and flapping in opposition, legs dangling and paddling, a startled open mouth; never touches down | Loop |
 | Dramatic death | Seven sprites: startled take, then the head wobbles left, right, left, right on held beats (clutch, tongue out, dizzy eyes, wince) while the body sags one way, a topple in-between and a final comic collapse to the other side; both oversized soles face the camera | Hold final pose |
 | Ledge pull · left and right | Eleven sprites: hang (held), pull, haul, chest over edge, elbows lock, swing the knee, knee up, plant the foot, push to crouch, rise, stand; grips stay pinned through the pull | Hold final pose |
@@ -129,7 +129,7 @@ Left and right whistling rigs use complete patches of the current saved `ben_sta
 
 `src/rig/reflect.ts` reflects the complete skeleton, facial anchors, feet, environment guides and skin for left-facing actions. `source/ben-ledge-left-rig.json` sets `mirrored: true` over the shared right-facing goals. Both ledge directions have separate editable frames, previews and export folders.
 
-The jump’s airborne keys spread the ankles sixteen pixels apart at the apex and set independent `nearFootDegrees` and `farFootDegrees`. Shoes return flat before landing.
+The jump’s airborne keys spread the ankles sixteen pixels apart at the apex and set independent `nearFootDegrees` and `farFootDegrees`; positive angles turn the toe down. Launch uses 35° (near) and 40° (far), the apex 40° and −5°, and the fall 25° and 40°; the crouch, landing and recovery stay at 0°. Performance shoes at these angles are sealed like rotated patches, so the red upper keeps its ink outline.
 
 The death is comic and friendly rather than a realistic fall. Its wobble is authored as `beat` keys: each roll flip lands on a beat that is sampled as its own sprite and held for at least 160 ms, consecutive flips alternate sides, the roll stays within 12°, and the lean flips only once, at the final held collapse, with the head flopping the same way. `scripts/motion.test.ts` checks these rules in place of the generic roll-flip guard.
 

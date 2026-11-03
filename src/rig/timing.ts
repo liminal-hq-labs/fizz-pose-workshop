@@ -26,3 +26,5 @@ export const oneShotRestMs = 1200;
 export function exportDurations(durations: readonly number[], loop: boolean): number[] {
   return durations.map((duration, index) => !loop && index === durations.length - 1 ? duration + oneShotRestMs : duration);
 }
+/** Whether a rig's saved sprite animation and exports loop straight back to the first frame, with no rest on the final pose. */
+export function replaysContinuously(rig: SideRig): boolean { return !rig.performance || rig.performance.loop || rig.performance.replay === 'continuous'; }
