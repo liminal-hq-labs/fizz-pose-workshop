@@ -63,6 +63,8 @@ interface Finish {
   readonly flat?: boolean;
   /** Draws just in front of a surface it lies on, so thin layers such as hair never flicker through. */
   readonly inFront?: boolean;
+  /** How many layers forward an `inFront` surface draws: a decal on the shirt sits above the shirt. */
+  readonly layer?: number;
 }
 const finishes = {
   toy: { roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.15 },
@@ -126,8 +128,8 @@ export function createBenModel(
         vertexColors: finish.vertexColours ?? false,
         flatShading: finish.flat ?? false,
         polygonOffset: finish.inFront ?? false,
-        polygonOffsetFactor: finish.inFront ? -2 : 0,
-        polygonOffsetUnits: finish.inFront ? -2 : 0,
+        polygonOffsetFactor: finish.inFront ? -2 * (finish.layer ?? 1) : 0,
+        polygonOffsetUnits: finish.inFront ? -2 * (finish.layer ?? 1) : 0,
         side: THREE.DoubleSide,
       });
       materials.set(key, m);
@@ -665,8 +667,8 @@ export function createBenModel(
   // so the jaw and the back of the head both rest on it. It blends into the head bone below the jaw.
   // The neckline the collar is built around; the neck fills it so no gap shows inside the collar.
   const neckline = { z: -0.5, radius: 1.6, depth: 0.95 },
-    neckRings = 14,
-    neckSegments = 32,
+    neckRings = 26,
+    neckSegments = 72,
     neckPositions: number[] = [],
     neckIndices: number[] = [];
   for (let i = 0; i <= neckRings; i++) {
@@ -676,14 +678,14 @@ export function createBenModel(
       lean = THREE.MathUtils.smoothstep(y, 21.7, 24.2),
       // Below the collar the neck narrows inside the shoulders, so it cannot show through the shirt.
       base = THREE.MathUtils.lerp(
-        1.15,
+        1.3,
         1,
-        THREE.MathUtils.smoothstep(y, 19.0, 20.9),
+        THREE.MathUtils.smoothstep(y, 20.2, 21.0),
       ),
       cz = THREE.MathUtils.lerp(neckline.z, -0.95, lean),
-      rx = THREE.MathUtils.lerp((neckline.radius + 0.03) / base, 1.42, lean),
+      rx = THREE.MathUtils.lerp((neckline.radius + 0.08) / base, 1.42, lean),
       rz = THREE.MathUtils.lerp(
-        ((neckline.radius + 0.03) * neckline.depth) / base,
+        ((neckline.radius + 0.08) * neckline.depth) / base,
         1.55,
         lean,
       );
@@ -709,7 +711,7 @@ export function createBenModel(
   add("Neck", neck, "neck", skin);
   weightSurface(rig, neck, (p) => {
     const head = THREE.MathUtils.smoothstep(p.y, 22.0, 23.2),
-      seated = 1 - THREE.MathUtils.smoothstep(p.y, 20.6, 21.8);
+      seated = 1 - THREE.MathUtils.smoothstep(p.y, 21.7, 22.4);
     return { chest: seated, neck: (1 - seated) * (1 - head), head };
   });
 
@@ -732,7 +734,8 @@ export function createBenModel(
       radius = THREE.MathUtils.lerp(neckline.radius + 0.13, 2.05, flare);
     return smax(
       smax(Math.abs(neckRadial(x, z) - radius) - 0.13, y - top, 0.08),
-      bottom - 0.3 - y,
+      // The band carries well down into the shirt, so no slit opens under it from any angle.
+      bottom - 0.7 - y,
       0.08,
     );
   };
@@ -783,7 +786,8 @@ export function createBenModel(
     );
     d = smoothUnion(
       d,
-      ellipsoid(x, y, z, [0, 19.85, -0.75], [2.35, 1.2, 1.3]),
+      // The upper back stops just under the collar band, so the band sits on it rather than inside it.
+      ellipsoid(x, y, z, [0, 19.65, -0.75], [2.35, 1.2, 1.3]),
       0.8,
     );
     // The shirt fills the waist and tucks into the waistband, so the belt wraps the body.
@@ -925,17 +929,17 @@ export function createBenModel(
     "Collar_sewn_edge",
     Array.from({ length: 65 }, (_, i) => {
       const a = (i / 64) * Math.PI * 2 - Math.PI,
-        y = collarBottom(a) + 0.06,
-        r = 2.05 + 0.14;
+        y = collarBottom(a) + 0.05,
+        r = 2.05 + 0.08;
       return new THREE.Vector3(
         r * Math.sin(a),
         y,
         r * neckline.depth * Math.cos(a) + neckline.z,
       );
     }),
-    0.03,
+    0.1,
     "chest",
-    mat("L", finishes.cotton),
+    mat("W", finishes.cotton),
     true,
   );
   // Rolled hems give the cuffs and the collar top clean, round edges instead of the sculpted cut.
@@ -962,17 +966,17 @@ export function createBenModel(
       around = new THREE.Vector3().crossVectors(sleeve.axis, across),
       centre = sleeve.shoulder
         .clone()
-        .addScaledVector(sleeve.axis, sleeve.hem - 0.07);
+        .addScaledVector(sleeve.axis, sleeve.hem - 0.02);
     tube(
       "Sleeve_rolled_hem",
       Array.from({ length: 49 }, (_, i) => {
         const a = (i / 48) * Math.PI * 2;
         return centre
           .clone()
-          .addScaledVector(across, 1.07 * Math.cos(a))
-          .addScaledVector(around, 1.07 * Math.sin(a));
+          .addScaledVector(across, 1.1 * Math.cos(a))
+          .addScaledVector(around, 1.1 * Math.sin(a));
       }),
-      0.1,
+      0.13,
       sleeve.side + "UpperArm",
       mat("r", finishes.cotton),
       true,
@@ -989,7 +993,8 @@ export function createBenModel(
         const y = 17.6 - v;
         return new THREE.Vector3(u, y, frontSurface(shirtField, u, y) + offset);
       },
-      mat(colour, finishes.cotton),
+      // Drawn further forward than the shirt, which itself sits just in front of skin.
+      mat(colour, { ...finishes.cotton, inFront: true, layer: 3 }),
     );
     weightSurface(rig, meshes.at(-1)!.geometry, shirtWeights);
   }

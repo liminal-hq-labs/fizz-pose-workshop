@@ -458,6 +458,53 @@ export function mountBen3D(data: WorkshopData): void {
     model.root.rotation.y = THREE.MathUtils.degToRad(yaw);
     return { width, height, pixels: Array.from(pixels) };
   };
+  // A perspective view from any camera position, for close inspection from below, behind or the sides.
+  const captureView = (
+    eye: readonly number[],
+    look: readonly number[],
+    reviewPose: BenPose = "Standing",
+    reviewPhase = 0,
+    width = 640,
+    height = 640,
+    fov = 30,
+  ): string => {
+    const camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 300),
+      target = new THREE.WebGLRenderTarget(width, height, { samples: 4 }),
+      oldTarget = renderer.getRenderTarget(),
+      oldPosition = model.root.position.clone(),
+      oldYaw = model.root.rotation.y;
+    camera.position.set(eye[0], eye[1], eye[2]);
+    camera.lookAt(look[0], look[1], look[2]);
+    applyBenPose(model, reviewPose, reviewPhase);
+    placeLadder(reviewPose, reviewPhase);
+    model.root.position.set(0, 0, 0);
+    model.root.rotation.y = 0;
+    model.root.updateMatrixWorld(true);
+    model.skeleton.update();
+    renderer.setRenderTarget(target);
+    renderer.render(scene, camera);
+    const pixels = new Uint8Array(width * height * 4);
+    renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+    renderer.setRenderTarget(oldTarget);
+    target.dispose();
+    model.root.position.copy(oldPosition);
+    model.root.rotation.y = oldYaw;
+    applyBenPose(model, pose, phase);
+    dirty = true;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const bytes = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y++)
+      bytes.set(
+        pixels.subarray((height - 1 - y) * width * 4, (height - y) * width * 4),
+        y * width * 4,
+      );
+    canvas
+      .getContext("2d")!
+      .putImageData(new ImageData(bytes, width, height), 0, 0);
+    return canvas.toDataURL("image/png");
+  };
   const captureReview = (
     angle: number,
     width = 320,
@@ -495,6 +542,7 @@ export function mountBen3D(data: WorkshopData): void {
       },
       renderReview,
       captureReview,
+      captureView,
       setAngle: (value: number) => {
         yaw = value;
         rotation = false;

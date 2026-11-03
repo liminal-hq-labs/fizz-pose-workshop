@@ -99,11 +99,11 @@ The lab's sprite rigs also cover the ledge pull, pogo, death and phone/sitting p
 The shirt, hair and collar are built so skin cannot show through them in any pose.
 
 - **Sleeves:** each sleeve is skinned rigidly to its upper arm below the shoulder. The shirt's shoulder cap and the arm skin beneath it share one chest-to-arm blend, so the deltoid cannot rise through the fabric. The shirt draws a fraction in front of skin it lies against, so contact never flickers.
-- **Collar and neck:** the collar is built around a fixed neckline that the neck fills exactly, so no gap or dark interior shows inside it. The shirt's neck opening starts just inside the collar band at each angle, so the shirt back stays whole below it. The neck's base is skinned to the chest and narrows inside the shoulders, so it stays seated in the collar while the head turns and nods.
+- **Collar and neck:** the collar band wraps a fixed neckline, and the neck is slightly wider than the band's inner face, so they overlap rather than meet edge to edge. The band carries 0.7 units down into the shirt, so no slit opens beneath it even from below. The upper back stops just under the band, which sits on it rather than inside it. The shirt's neck opening starts just inside the band at each angle, so the shirt back stays whole below the collar. The neck is skinned to the chest up to above the collar and narrows inside the shoulders below it, so it stays seated through the run twist and head turns. Rolled edges finish the collar's top and bottom.
 - **Hair:** the cap keeps every head triangle that reaches the hair region, so it has no holes. Its thickness and colour fade into the skin across the hairline.
-- **Edges:** rolled hems finish the sleeve cuffs and the collar top, and the helmet is lined with grey foam.
+- **Edges:** rolled hems finish the sleeve cuffs, the helmet is lined with grey foam, and the chest emblem draws in front of the shirt, so it stays crisp from below and up close.
 
-A test casts rays from outside at sampled sleeve-covered arm skin, the scalp and the neck inside the collar, in eight poses (standing, two run phases, climb, fall, jump, firing and phone). It checks that fabric or hair is met first.
+A test casts rays from outside in eight poses (standing, two run phases, climb, fall, jump, firing and phone). It aims at sleeve-covered arm skin (from straight out and from below), the scalp, and 64 points round the neck inside the collar, swept from 50° below to 25° above. Fabric, its rolled edges or hair must be met first. The review API's `captureView(eye, look, pose, phase)` renders a perspective view from any camera position for close inspection from below, behind or the sides.
 
 ## Hands and the phone
 
