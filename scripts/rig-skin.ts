@@ -32,24 +32,36 @@ export interface StandingIdleLayers {
   toeUp: PixelRow[];
 }
 export interface Patch { anchor: number[]; rows: PixelRow[]; towards?: PixelRow[]; away?: PixelRow[]; }
+/** A front-view holster patch: `anchor` is its belt clip, placed at the root plus the standing or seated offset. */
+export interface HolsterPatch extends Patch { standingOffset: number[]; seatedOffset: number[]; }
 export interface RigSkin {
   name: string; head: Patch; torso: Patch;
-  standingLeft: Patch; standingRight: Patch; standingIdle: { left: StandingIdleLayers; right: StandingIdleLayers }; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
+  standingLeft: Patch; standingRight: Patch; standingIdle: { left: StandingIdleLayers; right: StandingIdleLayers }; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch;
+  /** The holstered Stunner seen from behind, in the back torso's coordinates, on Ben's right hip (the viewer's right). */
+  stunnerBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
+  /** Seated front view: replacement shirt rows (bunched hem), the seat behind the crossed legs and the right-hip holster. */
+  torsoFrontSeated: { rows: PixelRow[] }; seatFront: Patch; holsterFront: HolsterPatch;
   face: { eye: string; mouth: string; ear: string };
   shoe: { badge?: {point:number[];colour:string}; anchor: number[]; toe: number[]; ball: number[]; flexX: number; rows: PixelRow[]; farRows: PixelRow[] };
   weapon: { anchor: number[]; pixels: string[] };
   stunner: { anchor: number[]; pixels: string[]; hipOffset: number[] };
   palette: { outline: string; shirt: string; shirtShadow: string; skin: string; skinShadow: string; denim: string; denimSeam: string; shoe: string; shoeHighlight: string; sole: string; farSole: string };
 }
+/** Body parts a painted pixel can belong to, so data layered over the sprite (a light mask) knows what it touches. */
+export type BodyPart = '' | 'head' | 'face' | 'shirt' | 'arm' | 'hand' | 'leg' | 'shoe' | 'prop';
 export class Pixels {
   readonly rows: string[][];
-  constructor(readonly width: number, readonly height: number) { this.rows = Array.from({ length: height }, () => Array<string>(width).fill('.')); }
+  /** The body part that last painted each pixel; the sprite itself never reads it. */
+  readonly parts: BodyPart[][];
+  /** The part recorded for pixels painted from now on. */
+  part: BodyPart = '';
+  constructor(readonly width: number, readonly height: number) { this.rows = Array.from({ length: height }, () => Array<string>(width).fill('.')); this.parts = Array.from({ length: height }, () => Array<BodyPart>(width).fill('')); }
   pixel(x: number, y: number, code: string): void {
     if (code === '.') return;
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) throw new Error(`Rig skin clips at ${x},${y}.`);
-    this.rows[y][x] = code;
+    this.rows[y][x] = code; this.parts[y][x] = this.part;
   }
-  erase(x: number, y: number): void { if (x >= 0 && y >= 0 && x < this.width && y < this.height) this.rows[y][x] = '.'; }
+  erase(x: number, y: number): void { if (x >= 0 && y >= 0 && x < this.width && y < this.height) { this.rows[y][x] = '.'; this.parts[y][x] = ''; } }
   segment(points: readonly Vec2[], width: number, code: string, outline?: string): void {
     for (const [thickness, fill] of (outline ? [[width + 2, outline], [width, code]] : [[width, code]]) as [number, string][]) {
       for (let i = 1; i < points.length; i++) {
@@ -199,19 +211,22 @@ function paintStunner(out: Pixels, pose: RigPose, skin: RigSkin, leg: Chain = po
   // Local y points down the thigh, so the sprite patch rotates by the negative leg angle.
   out.patch({ anchor: skin.stunner.anchor, rows }, anchor, -angle);
 }
-export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner = false): Frame {
+export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner = false): Frame { return paintRig(rig, skin, pose, farStunner).frame(); }
+/** The painted sprite with its per-pixel body parts; `skinRig` keeps only the palette grid. */
+export function paintRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner = false): Pixels {
   if (rig.mirrored || rig.facing === 'left') {
     // A plain mirror copies the Stunner to the other hip. A left-facing rig keeps it on Ben's right hip, which faces away
     // from the camera, so the right-facing render hangs it on the far hip behind the body before the whole sprite turns.
-    const frame = skinRig({...rig,mirrored:false,facing:'right'},skin,reflectPose(pose,rig.width),rig.facing === 'left');
-    return {...frame,grid:frame.grid.map(row=>[...row].reverse().join(''))};
+    const out = paintRig({...rig,mirrored:false,facing:'right'},skin,reflectPose(pose,rig.width),rig.facing === 'left');
+    for (const rows of [out.rows, out.parts] as unknown[][][]) rows.forEach(row => row.reverse());
+    return out;
   }
   const out = new Pixels(rig.width, rig.height), colours = skin.palette;
   // Performance rigs roll the head and lean the torso well past the run's few degrees, so their rotated patches keep their ink.
   out.sealRotations = Boolean(pose.presentation);
-  if (pose.presentation?.standing) {paintStandingIdle(out, rig, skin, pose); return out.frame();}
+  if (pose.presentation?.standing) {paintStandingIdle(out, rig, skin, pose); return out;}
   if (pose.presentation && pose.presentation.view !== 'side') {
-    paintFacingBody(out, rig, skin, pose); out.closeNotches(pose.face.pixelAnchor[1], pose.face.pixelAnchor[1] + 4); return out.frame();
+    paintFacingBody(out, rig, skin, pose); out.closeNotches(pose.face.pixelAnchor[1], pose.face.pixelAnchor[1] + 4); return out;
   }
   if (pose.pogo) {
     const p = pose.pogo;
@@ -231,12 +246,15 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner =
   out.segment(pose.nearLeg, 1, colours.denimSeam);
   paintFoot(out, pose.nearFoot, skin, true);
   out.patch(clothedTorso(rig, skin, pose), pose.root, pose.torsoAngle, pose.torsoTurn);
-  // A performance knee raised above the hip (climbing onto a ledge, tucking in a fall) passes in front of the shirt.
-  if (pose.presentation && pose.nearLeg[1][1] < pose.nearLeg[0][1] + 2) {
-    out.segment(pose.nearLeg, 2, colours.denim, colours.outline); out.segment(pose.nearLeg, 1, colours.denimSeam); paintFoot(out, pose.nearFoot, skin, true);
-  }
+  // A performance knee raised above the hip (climbing onto a ledge, tucking in a fall) passes in front of the shirt, and in
+  // front of the near arm too: on a ledge the knee comes up between the planted hands.
+  const kneeUp = Boolean(pose.presentation) && pose.nearLeg[1][1] < pose.nearLeg[0][1] + 2;
+  const raisedLeg = (): void => { out.segment(pose.nearLeg, 2, colours.denim, colours.outline); out.segment(pose.nearLeg, 1, colours.denimSeam); paintFoot(out, pose.nearFoot, skin, true); };
+  if (kneeUp) raisedLeg();
   if (!pose.weapon && !farStunner) paintStunner(out, pose, skin);
   paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
+  // The holster hangs from the back of the belt, so it stays over the thigh as the knee swings up.
+  if (kneeUp && pose.presentation?.view === 'side' && pose.presentation.environment?.kind === 'ledge') { raisedLeg(); if (!pose.weapon && !farStunner) paintStunner(out, pose, skin); }
   if (pose.weapon) {
     out.patch({ anchor: skin.weapon.anchor, rows: skin.weapon.pixels.map((pixels, y) => ({x: 0, y, pixels})) }, pose.weapon.grip, pose.weapon.angle);
     if (pose.weapon.flash) {
@@ -251,9 +269,12 @@ export function skinRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner =
   for (const point of pose.face.mouthPixels) out.pixel(point[0], point[1], skin.face.mouth);
   // A startled side-view face drops its jaw: the mouth opens one pixel downwards.
   if (pose.presentation?.expression === 'startled') for (const point of pose.face.mouthPixels) out.pixel(point[0], point[1] + 1, skin.face.mouth);
+  // Ben's head stands taller than his arms can reach, so a near hand raised above the neck (gripping a ledge) crosses in
+  // front of the face; drawn under the head it would vanish and read as reaching behind his back.
+  if (pose.presentation && pose.nearArm[2][1] < pose.neck[1]) paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
   paintIdleProps(out, skin, pose);
   if (pose.presentation) out.closeNotches(pose.face.pixelAnchor[1], pose.face.pixelAnchor[1] + 4);
-  return out.frame();
+  return out;
 }
 export function sampleRigSprites(rig: SideRig, skin: RigSkin, prefix = 'ben_walkRight'): Frames {
   validateRig(rig);
