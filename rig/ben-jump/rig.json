@@ -5,6 +5,14 @@
   "groundY": 46,
   "durationMs": 720,
   "sampleCount": 6,
+  "frameDurationsMs": [
+    180,
+    80,
+    130,
+    100,
+    110,
+    120
+  ],
   "root": [
     13,
     38

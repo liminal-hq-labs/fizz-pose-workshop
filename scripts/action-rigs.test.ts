@@ -53,11 +53,13 @@ test('pogo compresses on the ground, launches and raises the entire device at th
   expect(apex.contact).toBe('flight'); expect(compressed.contact).toBe('pogo');
   expect(apex.root[1]).toBeLessThan(compressed.root[1] - 8);
 });
-test('Stunner discharge precedes recovery and returns to the same ready position', () => {
+test('Stunner flash leads the recoil peak and the kick eases back to the ready position', () => {
   const rig = actionRigs[1].rig, aim = sampleRig(rig, 0), fire = sampleRig(rig, 1 / 6), recoil = sampleRig(rig, 2 / 6), ready = sampleRig(rig, 5 / 6);
   expect(aim.weapon!.flash).toBe(false); expect(fire.weapon!.flash).toBe(true); expect(recoil.weapon!.flash).toBe(false);
   expect(fire.weapon!.grip[0]).toBeLessThan(aim.weapon!.grip[0]); expect(fire.weapon!.angle).toBeLessThan(aim.weapon!.angle);
-  expect(ready.weapon).toEqual(aim.weapon);
+  expect(recoil.weapon!.grip[0]).toBeLessThan(fire.weapon!.grip[0]); expect(recoil.weapon!.angle).toBeLessThan(fire.weapon!.angle);
+  expect(ready.weapon!.flash).toBe(false); expect(aim.weapon!.grip[0] - ready.weapon!.grip[0]).toBeLessThan(.25);
+  expect(sampleRig(rig, 1).weapon).toEqual(aim.weapon);
 });
 test('invalid spring and recoil settings cannot produce exports', () => {
   const pogo = structuredClone(actionRigs[0].rig); pogo.pogo!.compressedLength = -1;
