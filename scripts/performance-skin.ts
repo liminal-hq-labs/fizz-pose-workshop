@@ -21,8 +21,10 @@ export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: 
       out.segment(chain, 2, skin.palette.denim, 'k'); out.segment(chain, 1, 'c');
     }
     out.part = 'shoe';
-    const shoe = presentation.cameraShoes ? skin.cameraShoe : skin.backShoe;
-    for (const foot of [pose.farFoot, pose.nearFoot]) out.patch(shoe, foot.ankle, 0);
+    // Facing the camera Ben wears the saved front stand's high-tops, the white toe cap on each outer corner; from behind, the
+    // heel patch; the comic death shows its soles.
+    const feet = [pose.farFoot, pose.nearFoot], leftmost = Math.min(...feet.map(foot => foot.ankle[0]));
+    for (const foot of feet) out.patch(presentation.cameraShoes ? skin.cameraShoe : back ? skin.backShoe : foot.ankle[0] === leftmost ? skin.frontShoe.left : skin.frontShoe.right, foot.ankle, 0);
   }
   // From behind, Ben's right hip is on the viewer's right: the holstered Stunner hangs there from the belt, beside the thigh.
   if (back) { out.part = 'prop'; out.patch(skin.stunnerBack, pose.root, pose.torsoAngle); }

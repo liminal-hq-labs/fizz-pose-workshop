@@ -572,6 +572,39 @@
       }
     ]
   },
+  "stunnerBack": {
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 15,
+        "y": 23,
+        "pixels": "kDDk"
+      },
+      {
+        "x": 15,
+        "y": 24,
+        "pixels": "kMMk"
+      },
+      {
+        "x": 15,
+        "y": 25,
+        "pixels": "kmMk"
+      },
+      {
+        "x": 16,
+        "y": 26,
+        "pixels": "kMk"
+      },
+      {
+        "x": 17,
+        "y": 27,
+        "pixels": "k"
+      }
+    ]
+  },
   "cameraShoe": {
     "anchor": [
       3,
@@ -618,7 +651,7 @@
   "backShoe": {
     "anchor": [
       2,
-      2
+      3
     ],
     "rows": [
       {
@@ -634,19 +667,93 @@
       {
         "x": 0,
         "y": 2,
-        "pixels": "kRrRk"
+        "pixels": "kRRRk"
       },
       {
         "x": 0,
         "y": 3,
-        "pixels": "kWWWk"
+        "pixels": "kRLRk"
       },
       {
         "x": 0,
         "y": 4,
+        "pixels": "kWWWk"
+      },
+      {
+        "x": 0,
+        "y": 5,
         "pixels": ".kkk."
       }
     ]
+  },
+  "frontShoe": {
+    "notes": "Standing high-tops seen from the front, from the saved ben_standFront: a red upper widening over three rows, the white toe cap on the outer corner and a full white sole. Each anchor sits under its trouser leg seam; the bottom ink row matches the other rig shoes.",
+    "left": {
+      "anchor": [
+        4,
+        2
+      ],
+      "rows": [
+        {
+          "x": 0,
+          "y": 0,
+          "pixels": "..kRRk"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "pixels": ".kRRRk"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "pixels": "kWRRRk"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "pixels": "kWWWWk"
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "pixels": ".kkkk."
+        }
+      ]
+    },
+    "right": {
+      "anchor": [
+        2,
+        2
+      ],
+      "rows": [
+        {
+          "x": 0,
+          "y": 0,
+          "pixels": "kRRk.."
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "pixels": "kRRRk."
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "pixels": "kRRRWk"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "pixels": "kWWWWk"
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "pixels": ".kkkk."
+        }
+      ]
+    }
   },
   "standingLeft": {
     "anchor": [
@@ -1269,6 +1376,92 @@
         "y": 6,
         "pixels": ".kkk."
       }
+    ]
+  },
+  "torsoFrontSeated": {
+    "notes": "Rows that replace the front shirt patch while seated: the hem bunches one pixel out over the belt on each side as the seat presses down.",
+    "rows": [
+      {
+        "x": 6,
+        "y": 22,
+        "pixels": "kRRRRRRRRRk"
+      },
+      {
+        "x": 6,
+        "y": 23,
+        "pixels": "kkDDDyDDDkk"
+      }
+    ]
+  },
+  "seatFront": {
+    "notes": "The seat resting on the ground, drawn behind the crossed legs in the shirt patch coordinates (the root is local 11,24). Its bottom ink row is the ground contact.",
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 5,
+        "y": 24,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 25,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 26,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 27,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 6,
+        "y": 28,
+        "pixels": "kkkkkkkkkkk"
+      }
+    ]
+  },
+  "holsterFront": {
+    "notes": "The holstered Fizz Stunner seen from the front on Ben's right hip (the camera's left), from the saved front stand. Offsets run from the root to the anchor pixel (the belt clip).",
+    "anchor": [
+      1,
+      0
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": "kDk"
+      },
+      {
+        "x": -1,
+        "y": 1,
+        "pixels": "kMmk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kMk"
+      },
+      {
+        "x": 1,
+        "y": 3,
+        "pixels": "kk"
+      }
+    ],
+    "standingOffset": [
+      -4,
+      0
+    ],
+    "seatedOffset": [
+      -6,
+      -1
     ]
   }
 }

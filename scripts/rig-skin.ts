@@ -40,6 +40,8 @@ export interface RigSkin {
   standingLeft: Patch; standingRight: Patch; standingIdle: { left: StandingIdleLayers; right: StandingIdleLayers }; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch;
   /** The holstered Stunner seen from behind, in the back torso's coordinates, on Ben's right hip (the viewer's right). */
   stunnerBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
+  /** Standing shoes seen from the front, one patch per side so each white toe cap sits on its outer corner. */
+  frontShoe: { left: Patch; right: Patch };
   /** Seated front view: replacement shirt rows (bunched hem), the seat behind the crossed legs and the right-hip holster. */
   torsoFrontSeated: { rows: PixelRow[] }; seatFront: Patch; holsterFront: HolsterPatch;
   face: { eye: string; mouth: string; ear: string };

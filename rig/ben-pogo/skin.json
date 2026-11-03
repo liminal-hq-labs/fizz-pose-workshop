@@ -651,7 +651,7 @@
   "backShoe": {
     "anchor": [
       2,
-      2
+      3
     ],
     "rows": [
       {
@@ -667,19 +667,93 @@
       {
         "x": 0,
         "y": 2,
-        "pixels": "kRrRk"
+        "pixels": "kRRRk"
       },
       {
         "x": 0,
         "y": 3,
-        "pixels": "kWWWk"
+        "pixels": "kRLRk"
       },
       {
         "x": 0,
         "y": 4,
+        "pixels": "kWWWk"
+      },
+      {
+        "x": 0,
+        "y": 5,
         "pixels": ".kkk."
       }
     ]
+  },
+  "frontShoe": {
+    "notes": "Standing high-tops seen from the front, from the saved ben_standFront: a red upper widening over three rows, the white toe cap on the outer corner and a full white sole. Each anchor sits under its trouser leg seam; the bottom ink row matches the other rig shoes.",
+    "left": {
+      "anchor": [
+        4,
+        2
+      ],
+      "rows": [
+        {
+          "x": 0,
+          "y": 0,
+          "pixels": "..kRRk"
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "pixels": ".kRRRk"
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "pixels": "kWRRRk"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "pixels": "kWWWWk"
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "pixels": ".kkkk."
+        }
+      ]
+    },
+    "right": {
+      "anchor": [
+        2,
+        2
+      ],
+      "rows": [
+        {
+          "x": 0,
+          "y": 0,
+          "pixels": "kRRk.."
+        },
+        {
+          "x": 0,
+          "y": 1,
+          "pixels": "kRRRk."
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "pixels": "kRRRWk"
+        },
+        {
+          "x": 0,
+          "y": 3,
+          "pixels": "kWWWWk"
+        },
+        {
+          "x": 0,
+          "y": 4,
+          "pixels": ".kkkk."
+        }
+      ]
+    }
   },
   "standingLeft": {
     "anchor": [
