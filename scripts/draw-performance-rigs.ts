@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { rigCatalogue } from '../src/rig/catalogue.ts';
 import skin from '../source/ben-side-skin.json';
 import { sampleRigSprites } from './rig-skin.ts';
-import { frameDurations } from '../src/rig/timing.ts';
+import { frameDurations, replaysContinuously } from '../src/rig/timing.ts';
 import { exportRig } from './export-rig.ts';
 import type { Frames, WorkshopData } from '../src/types.ts';
 
@@ -33,7 +33,7 @@ if (import.meta.main) {
   for (const name of Object.keys(authored.frames)) { const match = stale.exec(name); if (match && Number(match[1]) > entry.rig.sampleCount) { delete authored.frames[name]; delete edits[name]; } }
   Object.assign(authored.frames,frames);
   // One-shot performances are saved as one-shots, so the review gallery holds their final pose instead of snapping back.
-  authored.animations[entry.animation] = {frames:Object.keys(frames),durationsMs:frameDurations(entry.rig),loop:entry.rig.performance!.loop};
+  authored.animations[entry.animation] = {frames:Object.keys(frames),durationsMs:frameDurations(entry.rig),loop:replaysContinuously(entry.rig)};
   await exportRig(entry.rig,skin,fileURLToPath(new URL('rig/'+entry.folder,root)));
  }
  await writeFile(new URL('source/poses.json',root),JSON.stringify(authored,null,2)+'\n');

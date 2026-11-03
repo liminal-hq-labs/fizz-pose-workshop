@@ -29,6 +29,8 @@ const knownFailures: readonly KnownFailure[] = [
   { check: 'feature-pop', subject: 'standing-360', at: '3:+b', fixedBy: 'Phase 5: turntable rebuild with gradual feature fades' },
   { check: 'feature-pop', subject: 'standing-360', at: '21:+b', fixedBy: 'Phase 5: turntable rebuild with gradual feature fades' },
   ...['4', '5', '6', '7', '8', '16', '17', '18', '19'].map(at => ({ check: 'helmet-rim' as const, subject: 'standing-360', at, fixedBy: 'Phase 5: turntable rebuild' })),
+  // The jump keeps its approved six-frame timing, which drops the head 8 pixels from the fall pose to the landing in one step.
+  { check: 'head-travel', subject: 'jump', at: '3>4', fixedBy: 'kept by request: the original six-frame jump timing' },
   // Intended effects rather than faults: the Stunner's muzzle flash lasts one frame, and the study splits its long side-view
   // hold across the loop seam. Keep these while the effect stays deliberate.
   { check: 'feature-pop', subject: 'fizz-blaster', at: '1:+C', fixedBy: 'intended: one-frame muzzle flash' },

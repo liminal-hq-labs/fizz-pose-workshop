@@ -129,15 +129,30 @@ export function paintFoot(out: Pixels, foot: RigFoot, skin: RigSkin, near: boole
   const rows = new Map((near ? skin.shoe.rows : skin.shoe.farRows).map(row => [row.y, row]));
   const heightScale = 1 - foot.compression;
   const read = (x: number, y: number): string => { const row = rows.get(y); return row && x >= row.x && x < row.x + row.pixels.length ? row.pixels[x - row.x] : '.'; };
+  // A pointed or tucked performance foot rotates far enough to skip outline pixels, so it is sealed like a rotated patch.
+  const seal = out.sealRotations && (foot.pitch !== 0 || foot.toePitch !== 0), drawn = new Set<number>(), enclosed: number[] = [];
+  const draw = (x: number, y: number, sx: number, sy: number): void => {
+    const code = read(sx, sy); if (code === '.') return;
+    out.pixel(x, y, code);
+    if (!seal) return;
+    drawn.add(y * out.width + x);
+    if (code !== 'k' && read(sx - 1, sy) !== '.' && read(sx + 1, sy) !== '.' && read(sx, sy - 1) !== '.' && read(sx, sy + 1) !== '.') enclosed.push(y * out.width + x);
+  };
   for (let y = 0; y < out.height; y++) for (let x = 0; x < out.width; x++) {
     const local = rotate([x - foot.ankle[0], y - foot.ankle[1]], -foot.pitch);
     const sx = Math.round(local[0] + skin.shoe.anchor[0]);
     const sy = Math.round(skin.shoe.ball[1] + (local[1] + skin.shoe.anchor[1] - skin.shoe.ball[1]) / heightScale);
-    if (sx < skin.shoe.flexX) out.pixel(x, y, read(sx, sy));
+    if (sx < skin.shoe.flexX) draw(x, y, sx, sy);
     const front = rotate([x - foot.ball[0], y - foot.ball[1]], -foot.toePitch);
     const tx = Math.round(front[0] + skin.shoe.ball[0]);
     const ty = Math.round(skin.shoe.ball[1] + front[1] / heightScale);
-    if (tx >= skin.shoe.flexX) out.pixel(x, y, read(tx, ty));
+    if (tx >= skin.shoe.flexX) draw(x, y, tx, ty);
+  }
+  for (const index of enclosed) {
+    const x = index % out.width, y = (index - x) / out.width;
+    for (const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
+      if (nx >= 0 && ny >= 0 && nx < out.width && ny < out.height && !drawn.has(ny * out.width + nx) && out.rows[ny][nx] === '.') out.rows[ny][nx] = 'k';
+    }
   }
   if(near&&skin.shoe.badge){
     const centre=shoeBadgePoint(foot,skin),candidates:{x:number;y:number;distance:number}[]=[];

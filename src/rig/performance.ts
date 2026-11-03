@@ -30,6 +30,11 @@ export interface PerformanceKey {
 export interface NoteSettings { emitPhase: number; path: number[][]; }
 export interface PerformanceSettings {
   view: 'side' | 'back' | 'front'; standing?: 'left' | 'right'; loop: boolean; keys: PerformanceKey[];
+  /**
+   * How a one-shot's saved sprite animation replays in the gallery and exports: `rest` (the default) holds the final pose
+   * before replaying; `continuous` replays straight away, as a loop whose final pose leads back into the first (the jump).
+   */
+  replay?: 'rest' | 'continuous';
   /** Phases of the saved sprite samples. Keys need not sit on them; omitted means evenly spaced samples. */
   sampleTimes?: number[];
   environment?: { kind: 'ladder' | 'ledge'; x: number; y: number; width: number; spacing: number };

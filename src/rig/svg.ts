@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { sampleRig } from './sample.ts';
-import { oneShotRestMs } from './timing.ts';
+import { oneShotRestMs, replaysContinuously } from './timing.ts';
 
 import { type RigPose, type SideRig } from './run.ts';
 import type { Vec2 } from './kinematics.ts';
@@ -46,7 +46,7 @@ export function rigSvg(rig: SideRig, time?: number): string {
   if (time !== undefined) return envelope(rigDrawing(sampleRig(rig, time), rig.groundY, rig.width));
   const count = 60, loop = rig.performance?.loop ?? true;
   // The animation always loops; a one-shot rests on its final pose for `oneShotRestMs` before replaying.
-  const total = rig.durationMs + (loop ? 0 : oneShotRestMs), span = rig.durationMs / total, last = (i: number): boolean => !loop && i === count - 1;
+  const total = rig.durationMs + (replaysContinuously(rig) ? 0 : oneShotRestMs), span = rig.durationMs / total, last = (i: number): boolean => !loop && i === count - 1;
   const css = Array.from({ length: count }, (_, i) => `.f${i}{animation:r${i} ${total}ms steps(1,end) infinite}@keyframes r${i}{0%{visibility:${i === 0 ? 'visible' : 'hidden'}}${(i / count * span * 100).toFixed(6)}%{visibility:visible}${last(i) ? '' : `${((i + 1) / count * span * 100).toFixed(6)}%{visibility:hidden}`}100%{visibility:${last(i) ? 'visible' : 'hidden'}}}`).join('')
     + '@media(prefers-reduced-motion:reduce){.f{animation:none!important;visibility:hidden!important}.f0{visibility:visible!important}}';
   return envelope(`<style>${css}</style>` + Array.from({ length: count }, (_, i) => `<g class="f f${i}" visibility="hidden">${rigDrawing(sampleRig(rig, i / (loop ? count : count - 1)), rig.groundY, rig.width)}</g>`).join(''));
