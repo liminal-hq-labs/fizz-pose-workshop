@@ -8,7 +8,7 @@ The left and right front-quarter stands have 13-pixel-wide helmets with a projec
 
 The running poses provide true side-view helmet, face, nose and brim shapes. Their shoes have separate heel/upper and forefoot patches, white near soles and grey far soles, with black outlines defining the ankle and toe. Running lean, leg swing, shoe flex and body bob do not belong in the neutral turntable pose. The climbing reference supplies the helmet back, grey rim and brown nape/hair; its raised arms and bent climbing legs do not define a standing rear view.
 
-## Existing in-between frames and their problems
+## Problems in the earlier generated turn
 
 | Angles | Existing detail | Required treatment |
 |---|---|---|
@@ -21,25 +21,31 @@ The running poses provide true side-view helmet, face, nose and brim shapes. The
 
 The shoe blocks are a generation error, rather than a feature of the reference artwork: a rectangular shoe volume was ray-cast and then whole-row contour interpolation merged the feet. The height change also came from the generator’s alignment choice. The source drawings remain unchanged.
 
-## Refinement constraints
+## The rebuilt turn
 
-The front-quarter anchors retain their source pixels. The front turntable copy retains the source head, torso, arms and upper trousers; one duplicated denim row extends the lower leg before the shoes. Every stop keeps the crown on row 2 and the lowest sole on row 34. Shoes use small directional pixel patches with distinct uppers, ankle openings, soles and toe/heel silhouettes. The far shoe is drawn first, with a small perspective lift and a grey sole when exposed side-on; front and rear soles remain white. The near shoe masks its hidden pixels. Cyan trouser seams and the holstered Stunner are separate body-bound details, rather than stretched row colours.
+The earlier turn copied one key's colours until halfway and then the other's, mixed ray-cast and hand-drawn keys, swapped its leg renderer at every key and toggled the eyes, lips and hair at fixed angles. The profiles drew a white collar row and a second white row below it, so the collar read as a scarf at 75°–105° and 285°, and 135° and 225° had no key.
+
+The rebuild ([method](RIG.md#standing-360-model-sheet-study)) puts a key every 45°. The saved 0°, 45° and 315° stands are reproduced exactly; the front now uses the current saved front stand, whose white toe caps the old snapshot predated. 90° and 180° were redrawn on the running and climbing heads, the 135° pilot became the key, and 225° and 270° mirror 135° and 90° without the Stunner. Each in-between slides the keys' colour runs and was then cleaned by hand, and the second half mirrors the first with the holster redrawn for the right hip. The hybrid 3D model's renders at every 15° (`bun run turntable:render -- --out …`) were the guide for occlusion: which arm and leg is in front, where the holster sits on the hip and when it goes behind the body.
+
+Per angle, as reviewed frame by frame at 4× and in the gallery's playback:
+
+| Angles | What reads |
+|---|---|
+| 0°–45° | The stripe and face slide towards the brim side, the far arm tucks behind the torso, the near hand comes in front of the belt and the far shoe rises a row into the quarter stance. |
+| 60°–90° | The far eye slides to the face's front edge and is gone at 75°, the ear arrives, the emblem leaves the chest front and the near arm reaches the middle of the side. The profile body keeps one white collar row. |
+| 105°–135° | The near eye leaves the front edge, hair grows in at the nape, the stripe turns down the back and the near arm moves to the right edge as the far arm appears at the back. The holster stays on the near hip. |
+| 150°–180° | The rear head fills with hair, the stripe centres and both arms hang at the sides. The holster sits at the right edge. 165° and 180° are close (16 pixels), as a back view changes little. |
+| 195°–345° | Mirrors of 165°–15°: the holster shows as a sliver at 195°, is hidden from 210° to 330° and shows a pixel at 345°, on Ben's right hip each time. |
+
+Remaining weaknesses: in-between arms and legs are simplified relative to the saved quarter stands, so 15°→30° and 30°→45° are the largest front-half steps; the profile and rear-quarter bodies are new drawings rather than saved artwork; and the profile helmets keep the running head's open brim tip.
 
 ## Fizz Stunner reference
 
 The existing held side profile is eight pixels wide by six pixels high: a black silhouette, dark-grey top/barrel, purple and bright-magenta body, a short grip below the rear housing and a squared muzzle. The holstered patch is four by five pixels, with a dark belt clip, purple body and a tapered lower end. These exact patches are the source views for a standalone study. Opposite side views are mirrored; front, rear and quarter views are labelled interpretations because those details are not fully specified by the tiny on-character sprites. A firing view reuses the existing cyan/white/yellow discharge colours.
 
-## Shoe and rear-head continuity
+## Running shoe badge
 
-The first shoe refinement still mixed four-row front/rear patches with five-row quarter/profile patches. Keeping the sole fixed therefore moved the top of the shoe up and down when the template changed. All five directional patches now use five rows: an ankle opening, three upper/toe/heel rows and one sole row. Horizontal foreshortening remains six to ten pixels, while the collar and sole heights stay consistent. The far shoe retains the same structure before perspective lift and occlusion.
-
-The rear transition previously selected one complete head texture before the halfway point and another afterwards. At 135°, ten brown pixels appeared at once. The brown-blond hair is part of the character and is retained as a separate eight-pixel rear patch. Its visible area follows the turning surface: the counts at 90°, 105°, 120°, 135°, 150°, 165° and 180° are 0, 1, 2, 4, 6, 7 and 8, reversing towards the other profile. Rear shading reveals from the trailing edge, while the helmet stripe follows one interpolated attachment rather than switching textures.
-
-Profile/rear head registration is also unified. The model post is centred on x=15; the asymmetrical side patch anchors at x=16 for the right profile and x=14 for the mirrored left profile. The rear patch anchors at x=15. Through the rear half, helmet dome rows 4–6 retain bounds x=10–20 while the brim, hair and shading turn. Contour changes are spread between the expanding rear side and receding facial side to keep the head rounded. The original front and quarter references remain intact.
-
-The running shoe skin omitted the yellow side detail. It is now a one-pixel badge bound to local shoe point (0, 0), behind the forefoot hinge. The binding follows the shoe’s pitch and compression and chooses the nearest red upper pixel so it does not paint the sole or outline. Each of the six saved running frames changes by exactly one yellow pixel; running pose, head, face, shoe outline and animation timing stay unchanged.
-
-`scripts/sprite-continuity.test.ts` verifies fixed shoe structure, registered head contours, the gradual hair reveal and the rig-bound badge. `rig/ben-turntable/continuity-review.json` records the generated crown/sole rows, rear hair counts and dome bounds.
+The running shoe skin's one-pixel yellow badge is bound to local shoe point (0, 0), behind the forefoot hinge. The binding follows the shoe's pitch and compression and chooses the nearest red upper pixel so it does not paint the sole or outline. `scripts/sprite-continuity.test.ts` checks it.
 
 ## 3D reference renders
 
@@ -69,7 +75,7 @@ The command starts its own Vite server on a free port (or uses `TURNTABLE_RENDER
 
 ### The 135° pilot
 
-`source/turntable-pilot-135.json` is a draft of the missing 135° key, cleaned by hand from `sprite-135.png`. It is not in `edits.json` and does not replace `ben_turn135`. `pilot-135-comparison.png` lays out the saved 0°, 45°, 90°, 135°, 180° and 315° frames, the renders at the same angles, and the pilot under the 135° column, at 8×.
+`source/turntable-pilot-135.json` was the first draft of the missing 135° key, cleaned by hand from `sprite-135.png`; it became the 135° key unchanged. `pilot-135-comparison.png` lays out the saved 0°, 45°, 90°, 135°, 180° and 315° frames, the renders at the same angles, and the pilot under the 135° column, at 8×.
 
 The render supplies what is visible at 135°: the back of the helmet and the stripe heading down it, brown hair at the nape on screen left, his right arm and right hip towards the viewer, the Stunner on that hip only, and the near right shoe overlapping the far left one, toes pointing away. The pilot keeps those and redraws them in the saved sprites' conventions: the 11-pixel helmet with g lit upper left and a grey rim across row 8, the stripe running diagonally from x16 on row 3 to x14 on row 6, the rim shadow and three rows of hair, a grey ear at x17, a one-row white collar on row 14 above an all-red shoulder row 15 (so it cannot read as a scarf), a shaded far arm and a lit near arm, the four-row holstered Stunner patch at x19–20, rows 24–27, two separated legs with cyan seams, and two shoes: the far one lifted a row with a grey sole, the near one with the yellow badge, two red highlights, a white toe cap and a full white sole.
 

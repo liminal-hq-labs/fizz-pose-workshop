@@ -262,40 +262,42 @@ The front-facing **Look up & down** loop reuses the saved standing, look-up, hal
 
 ## Standing 360° model-sheet study
 
-`source/ben-turntable-rig.json` stores a fixed standing post in three dimensions: pelvis, neck, head, shoulders, elbows, wrists, hips, knees, ankles, toes, facial landmarks and the anatomical right-hip Stunner. Positive yaw turns Ben towards screen right. `src/rig/turntable.ts` rotates and projects these joints without changing their model-space positions or bone lengths. The turntable has its own preview section and playback controls; it is separate from the action rig selector.
+`source/ben-turntable-rig.json` stores a fixed standing post in three dimensions: pelvis, neck, head, shoulders, elbows, wrists, hips, knees, ankles, toes, facial landmarks and the anatomical right-hip Stunner. Positive yaw turns Ben towards screen right. `src/rig/turntable.ts` rotates and projects these joints without changing their model-space positions or bone lengths; the projected Stunner joint decides where the holster may show. The turntable has its own preview section and playback controls, separate from the action rig selector.
 
-`source/ben-turntable-skin.json` snapshots the current front and three-quarter standing sprites, all six right-running frames, the ladder reference and the shared side/rear head patches. These stable snapshots make regeneration reproducible without replacing the source artwork. The front quarters are preserved pixel for pixel with four pixels of horizontal padding. The front copy retains its original head, torso and upper trousers; a duplicated denim row at row 30 moves only the shoes down one pixel. Every turn now keeps its crown on row 2 and lowest sole on row 34. The original source sprites are unchanged.
+The turn is 24 stops, 15° apart, at 120 ms each (a 2.88 s loop), built from a key every 45° and two in-betweens per gap.
 
-| Yaw | Source and treatment |
+| Yaw | Key |
 |---|---|
-| 0° | Saved front-facing stand with one added lower-leg row |
-| 45° | Saved right-facing three-quarter stand |
-| 90° | True right profile from the running head, over a neutral standing body |
-| 180° | Climbing rear head over a neutral standing body |
-| 270° | Mirrored running side head, with hip equipment handled separately |
-| 315° | Saved left-facing three-quarter stand |
+| 0° | Saved `ben_standFront` with one denim row inserted above the shoes |
+| 45° | Saved `ben_standRight`, padded only |
+| 90° | Right profile: the running head (`ben_walkRight1`) over a standing body, the near arm hanging at the side, the holster over the near hip, the far foot a step ahead |
+| 135° | Right rear quarter, hand-cleaned from the 3D reference render (the former pilot) |
+| 180° | Rear: the climbing rear head over a standing body |
+| 225° | The 135° key mirrored about column 15, with the Stunner removed |
+| 270° | The 90° key mirrored about column 15, with the Stunner removed |
+| 315° | Saved `ben_stand`, padded only |
 
-The remaining 15° stops interpolate the upper-body contours between these keys. Legs, shoes and equipment are separate detailed layers driven by the standing rig. Eyes and lips are hidden behind the profile. The hip equipment is projected from its own body landmark so it does not swap sides around the back. Standing side and rear bodies are inferred using the rig volumes in `scripts/turntable-skin.ts`; `scripts/turntable-reference.ts` preserves the authored keys and constructs the transitions. This is a reference-guided pixel-art turntable, not a uniquely reconstructed textured 3D mesh. The guide skeleton provides a stable geometric post while the preserved sprites retain their view-specific poses.
+`source/ben-turntable-skin.json` snapshots the three saved standing sprites, and a test fails if a snapshot drifts from the saved artwork. `source/ben-turntable-keys.json` holds the five authored keys and the sixteen in-betweens. `scripts/turntable-reference.ts` assembles them:
 
-Run `bun run draw:turntable` followed by `bun run generate`. This overwrites only `ben_turn000` through `ben_turn345` and their saved editor overrides. The existing standing, climbing and running sprites remain unchanged. `rig/ben-turntable/` contains the rig, reference skin, 24 projected joint samples, 24 skeleton SVGs, 24 PNG/SVG frames, a sprite GIF and `reference-audit.json`. The regular animation exports are `animations/standing-360.gif` and `animations/standing-360.svg`.
+- **Morph draft.** `morphRow` in `src/rig/turntable-morph.ts` splits a row of each neighbouring key into colour runs, pairs them with an order-keeping minimum-cost alignment (colour, travel and width), and slides each paired run from its place in one key to its place in the other. A run found in only one key grows from, or shrinks to, zero width beside its neighbours, so an eye, the hair, an ear or a seam fades in by width instead of appearing whole. Light and shade of one material (`W`/`L`, `g`/`G`, `R`/`r`) may pair.
+- **Hand cleaning.** Each in-between from 15° to 165° lists the rows a pixel artist replaced on its morph draft (2 to 30 rows; `cleanedRows` in `rig/ben-turntable/continuity-review.json`). The draft gets silhouettes and feature travel right, but it reads each row alone, so arms crossing the torso, legs and shoes need redrawing.
+- **Mirrored half.** Each in-between from 195° to 345° is the mirror of its partner (360° minus its yaw) about the axis of the keys around it (column 15, or 15.5 next to the saved 315° stand), with the holster rows redrawn for Ben's right hip. The front and quarter stands light Ben from his facing side, so mirrored lighting matches them.
 
-### What the turn reveals
+Rows run the same way at every stop: crown on row 2, helmet rim row 8, collar row 14, shirt from row 15 with the arms, belt row 23, legs to row 30 and shoes on rows 30–34 with the near sole on row 34. Every stop fits inside x4–27, so it crops to a 24 × 44 frame.
 
-The front helmet is 11 pixels wide, while the two front-quarter helmets are 13 pixels wide. The broader quarter view is a defining part of Ben’s rounded helmet and forward brim, rather than a feature that can be obtained by simply narrowing the front image. The white stripe, grey rim, blue eyes, red shirt emblem and red high-tops provide the main landmarks around the turn. The rear head introduces the brown hair/nape and omits the facial features.
+What the turn shows, in order: the helmet stripe slides from the centre to the brim side and down the back of the helmet; the eyes move with the face (x9/13, 10/13, 10/14, 11/14 in the crop from 0° to 45°), the far eye slides to the front edge and is gone by 75°, and the near eye leaves the front edge between 105° and 120°; the ear arrives at 75°; the hair reveals 1, 3, 5, 7, 6 and 8 pixels from 105° to 180°; the emblem slides off the chest front by 90°; the near arm moves from the left side to the middle at 90° and on to the right edge by 135°, while the far arm appears at the back from 105°. The collar is always one white row on an all-red shoulder row, so it never reads as a scarf.
 
-The original front stand is 32 occupied pixels tall, compared with 33 for both front quarters. Aligning their soles exposes a one-pixel difference at the crown. Arm/hand placement and the staggered side shoes also vary between the drawings. The turntable copy compensates for the height difference at the lower leg. These source sprites are strong individual poses but do not yet specify one perfectly rigid neutral model. A future model sheet can standardise crown height, shoulder/hand positions and shoe spacing while retaining the original drawings as references. The audit records the source bounds so these decisions can be made deliberately.
+The Fizz Stunner shows only while the projected right hip is at most 1.7 pixels behind the body's centre plane: fully from 0° to 180°, as a one- or two-pixel sliver at 195° and 345°, and hidden from 210° to 330°. It is always on that hip's side of the body, and no Stunner-bearing stop is a mirror of another stop.
 
-The Stunner is an asymmetric design landmark. Its attachment belongs to Ben’s anatomical right hip; visibility changes with yaw, but its body-side identity stays fixed. A whole-sprite mirror alone is therefore insufficient for future left/right poses with visible equipment.
+Run `bun run draw:turntable` followed by `bun run generate`. This overwrites only `ben_turn000` through `ben_turn345` and their saved editor overrides; back up `edits.json` first if any of them were edited by hand. The existing standing, climbing and running sprites remain unchanged. `rig/ben-turntable/` contains the rig, the skin snapshot, `keys.json`, 24 projected joint samples, 24 skeleton SVGs, 24 PNG/SVG frames, a sprite GIF and `continuity-review.json` (crown and sole rows, occupied columns, Stunner pixels, pixels changed from the previous stop and cleaned rows). The regular animation exports are `animations/standing-360.gif` and `animations/standing-360.svg`.
 
-### Detail refinement
+### Motion checks
 
-[The source and in-between review](TURNTABLE_REVIEW.md) describes each reference and angle range before refinement. `scripts/turntable-details.ts` replaces the generated lower-body silhouette with independently layered legs, cyan seams, shoes and the hip Stunner. `source/ben-turntable-shoes.json` stores front, quarter, side, rear-quarter and rear patches. Shoe width changes gradually from six pixels at front/rear to ten at full quarter/profile. The ankle opening stays bound to the leg, with heel and toe landmarks tracked separately; the far foot is drawn first, raised slightly and shaded grey. The red upper no longer comes from a cuboid shoe volume. The source quarter anchors retain their detailed original feet.
+`scripts/turntable.test.ts` checks that the three saved stands are reproduced exactly; that the saved frames are the turntable redrawn; the canvas rows, the 24-pixel crop and the palette; that at most five colour pixels per stop touch transparency (the saved stands have up to three); that no step changes more than 234 pixels (the twelve-frame run's largest step) and no row edge moves more than three pixels; that eye, mouth, hair and stripe counts change by a pixel or two per step; that the eyes are gone from 120° to 240° and both show within 60° of the front; that the collar never bleeds into row 15; the shoes and soles; the Stunner visibility and side; and the morph rules. The largest steps are 15°→30° (185 pixels), 30°→45° (179), 105°→120° (215) and 285°→300° (204). The motion suite's feature-pop and helmet-rim guards now pass for the turntable except at the four profile stops, which keep the running head's open brim tip.
 
-`rig/ben-turntable/shoes.json` saves the directional shoe design with the rig exports. Tests enforce fixed crown/sole rows, front upper-body preservation, full quarter/profile sole length, separate heel detail and palette limits.
+At one byte per pixel a 24 × 44 crop costs 1,056 bytes and at four bits 528 bytes, so the 24 stops are 25,344 bytes (24.8 KB) or 12,672 bytes (12.4 KB). On the full 32 × 44 canvas they are 33,792 bytes (33 KB) or 16,896 bytes (16.5 KB). Flipping the first half at blit time cannot stand in for the second: every mirrored stop differs from its partner's flip in the holster rows, and the stops next to 315° also shift by the saved quarter stands' half-pixel offset, so the turn is stored in full.
 
-### Rear-head and shoe continuity
-
-All turntable shoe templates have five rows, so changing direction does not change the shoe’s height. Their upper colours, ankle opening and sole remain distinct while the projected length foreshortens. The rear-head renderer reveals surface shading gradually, keeps one helmet-stripe cluster and registers both profiles and the rear around the same skull post. Brown-blond hair remains in the rear design; its eight-pixel patch is revealed by the visible rear surface instead of appearing as a complete texture swap. The [continuity review](TURNTABLE_REVIEW.md#shoe-and-rear-head-continuity) records the source of the earlier jumps and their corrections.
+### Shoe badge
 
 `source/ben-side-skin.json` defines `shoe.badge`, including its local point and yellow palette code. `shoeBadgePoint` in `scripts/rig-skin.ts` applies the shoe pitch and compression; the pixel renderer binds the badge to the nearest visible red upper pixel on the near shoe. The six running exports include the restored badge. Other saved action artwork is preserved; explicitly redrawing those rigs uses the shared skin’s badge rule.
 
