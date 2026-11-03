@@ -17,9 +17,14 @@ export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: 
   }
   const shoe = pose.presentation!.cameraShoes ? skin.cameraShoe : skin.backShoe;
   for (const foot of [pose.farFoot, pose.nearFoot]) out.patch(shoe, foot.ankle, 0);
-  paintArm(out, pose.farArm, skin, false);
+  // From behind, Ben's right hip is on the viewer's right: the holstered Stunner hangs there from the belt, beside the thigh.
+  if (back) out.patch(skin.stunnerBack, pose.root, pose.torsoAngle);
+  // Climbing arms reach up beside the helmet, so from behind both come out over the shirt in the same light; facing the
+  // camera, the far arm is shaded and passes behind it.
+  if (!back) paintArm(out, pose.farArm, skin, false, pose.cloth?.farSleeve);
   out.patch(back ? skin.torsoBack : skin.torsoFront, pose.root, pose.torsoAngle);
-  paintArm(out, pose.nearArm, skin, true);
+  if (back) paintArm(out, pose.farArm, skin, true, pose.cloth?.farSleeve);
+  paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
   // Hands remain in front of the belly or phone instead of being hidden by the shirt.
   if (!back) for (const hand of [pose.farArm[2], pose.nearArm[2]]) out.segment([hand, add(hand, [.6,0])], 1, 'W', 'k');
   out.tiltPatch(back ? skin.headBack : skin.headFront, pose.face.pixelAnchor, pose.headAngle ?? 0);

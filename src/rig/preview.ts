@@ -6,7 +6,7 @@
 import skin from '../../source/ben-side-skin.json';
 import { mountFaceInspector } from './face-inspector.ts';
 import { rigCatalogue } from './catalogue.ts';
-import { sampleIndex, sampleRig, sampleTime } from './sample.ts';
+import { playbackElapsed, rigPlayback, sampleRig, sampleTime } from './sample.ts';
 import { type SideRig, type RigPose } from './run.ts';
 import type { Chain, Vec2 } from './kinematics.ts';
 import type { WorkshopData } from '../types.ts';
@@ -26,21 +26,23 @@ export function mountRigPreview(data: WorkshopData): void {
   const bones = $<HTMLCanvasElement>('#rig-bones'), avatar = $<HTMLCanvasElement>('#rig-avatar');
   const slider = $<HTMLInputElement>('#rig-time'), play = $<HTMLButtonElement>('#rig-play'), overlay = $<HTMLInputElement>('#rig-overlay');
   const speedSelect = $<HTMLSelectElement>('#rig-speed'), mode = $<HTMLSelectElement>('#rig-mode');
-  let time = 0, last = performance.now(), speed = .5, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Playback runs on elapsed milliseconds through the saved frame holds, so it wraps like the gallery and the exports: a
+  // one-shot rests on its final pose, then replays.
+  let elapsed = 0, time = 0, last = performance.now(), speed = .5, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scale = 10;
   function resize(): void { for (const c of [bones, avatar]) { c.width = rig.width * scale; c.height = rig.height * scale; } }
   resize();
   $<HTMLSelectElement>('#rig-action').onchange = event => {
-    action = actions[Number((event.target as HTMLSelectElement).value)]; rig = action.rig; time = 0; resize();
+    action = actions[Number((event.target as HTMLSelectElement).value)]; rig = action.rig; elapsed = 0; time = 0; resize();
     section.querySelector('#face-sequence')?.remove();
     updateFace = mountFaceInspector(section, rig, data, skin.face, action.prefix, action.folder);
     section.querySelectorAll<HTMLAnchorElement>('a[href^="rig/"]').forEach(link => { link.setAttribute('href', link.getAttribute('href')!.replace(/rig\/ben-[^/]+\//, 'rig/' + action.folder + '/'));  });
   };
   function updateButton(): void { play.textContent = playing ? 'Pause rig' : 'Play rig'; play.setAttribute('aria-pressed', String(playing)); }
-  updateButton(); play.onclick = () => { if (time >= 1) time = 0; playing = !playing; updateButton(); };
+  updateButton(); play.onclick = () => { playing = !playing; updateButton(); };
   speedSelect.onchange = () => { speed = Number(speedSelect.value); };
-  slider.oninput = () => { playing = false; time = Number(slider.value) / 1000; updateButton(); };
-  const step = (direction: number): void => { playing = false; time = sampleTime(rig, (currentIndex() + direction + rig.sampleCount) % rig.sampleCount); updateButton(); };
+  slider.oninput = () => { playing = false; time = Number(slider.value) / 1000; elapsed = playbackElapsed(rig, time); updateButton(); };
+  const step = (direction: number): void => { playing = false; time = sampleTime(rig, (currentIndex() + direction + rig.sampleCount) % rig.sampleCount); elapsed = playbackElapsed(rig, time); updateButton(); };
   $<HTMLButtonElement>('#rig-prev').onclick = () => step(-1); $<HTMLButtonElement>('#rig-next').onclick = () => step(1);
   function skeleton(context: CanvasRenderingContext2D, pose: RigPose, translucent = false): void {
     context.save(); context.scale(scale, scale); context.globalAlpha = translucent ? .8 : 1;
@@ -82,13 +84,9 @@ export function mountRigPreview(data: WorkshopData): void {
     }
     context.restore();
   }
-  function currentIndex(): number { return sampleIndex(rig, time); }
+  function currentIndex(): number { return rigPlayback(rig, elapsed).index; }
   function tick(now: number): void {
-    if (playing) {
-      const next = time + Math.max(0, Math.min(now - last, 100)) * speed / rig.durationMs;
-      time = rig.performance && !rig.performance.loop ? Math.min(1, next) : next % 1;
-      if (time === 1) {playing = false; updateButton();}
-    }
+    if (playing) { elapsed += Math.max(0, Math.min(now - last, 100)) * speed; time = rigPlayback(rig, elapsed).time; }
     last = now;
     const index = currentIndex();
     const sample = sampleTime(rig, index), pose = sampleRig(rig, mode.value === 'samples' ? sample : time);
