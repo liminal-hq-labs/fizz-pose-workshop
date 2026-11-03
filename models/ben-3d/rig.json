@@ -61,13 +61,13 @@
       0
     ],
     "size": [
-      7,
+      5.5,
       9.6,
-      5.1
+      4.2
     ]
   },
   "shoes": {
-    "width": 2.886,
+    "width": 2.526,
     "length": 6.786,
     "height": 2.572,
     "toeZ": 4.836,
@@ -138,10 +138,15 @@
       "max": 2,
       "reason": "The sculpted face is 6 units wide, narrower than the helmet and shoulders, where the sprite face band is about 8 pixels; the model is intentionally up to four pixels narrower."
     },
+    "torsoWidth": {
+      "min": -4,
+      "max": 2,
+      "reason": "Ben is built as a skinny kid: a narrow 4.9-unit ribcage and shoulders set 3.4 units from the centre, so the shirt-and-arms band is intentionally up to four pixels narrower than the sprite, most at the quarter views."
+    },
     "shoeWidth": {
       "min": -5,
       "max": 2,
-      "reason": "Running shoes are 6.8 units long and 2.9 wide (about 22% of height) instead of the sprite-sized 8.7 by 3.6 (28%); combined shoe widths are intentionally up to five pixels narrower, most in profile."
+      "reason": "Running shoes are 6.8 units long and 2.5 wide (about 22% of height) on slim legs set 1.45 from the centre, instead of the sprite-sized 8.7 by 3.6 (28%); combined shoe widths are intentionally up to five pixels narrower, most in profile."
     },
     "shoeHeight": {
       "min": -3,
@@ -156,7 +161,7 @@
     "strideHalfLength": 2.6,
     "recoveryLift": 1.9
   },
-  "meshCount": 76,
+  "meshCount": 91,
   "animations": [
     {
       "name": "Run",
@@ -164,15 +169,19 @@
     },
     {
       "name": "Jump",
-      "duration": 1
+      "duration": 1.1
+    },
+    {
+      "name": "Fall",
+      "duration": 1.2
     },
     {
       "name": "Climb",
-      "duration": 1
+      "duration": 1.4
     },
     {
       "name": "Firing",
-      "duration": 1.6
+      "duration": 2.6
     },
     {
       "name": "Whistle",

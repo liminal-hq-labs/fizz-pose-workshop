@@ -194,7 +194,7 @@ export interface ShoeSection {
  * Running-shoe scale against the authored sprite-sized profile below. A real running shoe is
  * about 15% of body height; Ben keeps a chunkier cartoon shoe at about 22% (6.8 units).
  */
-export const shoeScale = { x: 0.8, y: 0.85, z: 0.78 } as const;
+export const shoeScale = { x: 0.7, y: 0.85, z: 0.78 } as const;
 /** Model-space height of an authored shoe height, scaled up from the sole at −0.5. */
 export const shoeY = (y: number): number => (y + 0.5) * shoeScale.y - 0.5;
 /** The forefoot blends into the toe bone across this span ahead of the ankle. */
@@ -260,6 +260,14 @@ export function runnerTop(x: number, z: number): number {
       Math.max(0, 1 - (x / Math.max(0.001, p.width)) ** 2) ** 0.375
   );
 }
+/** Material groups of each running shoe, matching the sprite: red upper, white toe cap and sole, grey underside. */
+export const shoeSlots = ["upper", "capAndSole", "underside"] as const;
+/** The white rubber toe cap covers the front of the upper up to this height above the sole seam. */
+export const toeCap = {
+  fromZ: 4.55 * shoeScale.z,
+  tipZ: 5.75 * shoeScale.z,
+  segments: 5,
+};
 export function runningShoe(
   centreX: number,
   centreZ: number,
@@ -269,7 +277,8 @@ export function runningShoe(
     sole = 20,
     segments = upper + sole,
     positions: number[] = [],
-    groups = [[] as number[], [] as number[]];
+    groups = shoeSlots.map(() => [] as number[]),
+    depths: number[] = [];
   for (let i = 0; i <= rows; i++) {
     const p = runnerProfile(
       THREE.MathUtils.lerp(
@@ -278,6 +287,7 @@ export function runningShoe(
         i / rows,
       ),
     );
+    depths.push(p.z);
     for (let j = 0; j < segments; j++) {
       const isUpper = j < upper,
         a = isUpper
@@ -294,19 +304,46 @@ export function runningShoe(
       positions.push(centreX + x, y, centreZ + p.z);
     }
   }
+  const faceDown = (a: number, b: number, c: number): boolean => {
+    const ax = positions[a * 3],
+      ay = positions[a * 3 + 1],
+      az = positions[a * 3 + 2],
+      ux = positions[c * 3] - ax,
+      uy = positions[c * 3 + 1] - ay,
+      uz = positions[c * 3 + 2] - az,
+      vx = positions[b * 3] - ax,
+      vy = positions[b * 3 + 1] - ay,
+      vz = positions[b * 3 + 2] - az,
+      nx = uy * vz - uz * vy,
+      ny = uz * vx - ux * vz,
+      nz = ux * vy - uy * vx;
+    return ny / Math.max(1e-9, Math.hypot(nx, ny, nz)) < -0.6;
+  };
   for (let i = 0; i < rows; i++)
     for (let j = 0; j < segments; j++) {
       const a = i * segments + j,
         b = a + segments,
         c = i * segments + ((j + 1) % segments),
         d = c + segments;
-      groups[j < upper ? 0 : 1].push(a, c, b, b, c, d);
+      // The cap follows mesh lines, a fixed band of upper segments above the sole, for a straight edge.
+      const cap =
+          j < upper &&
+          depths[i] >= toeCap.fromZ &&
+          (j < toeCap.segments ||
+            j >= upper - toeCap.segments ||
+            depths[i] >= toeCap.tipZ),
+        // Sole faces that point at the ground form the grey underside.
+        underside = j >= upper && faceDown(a, b, c);
+      groups[underside ? 2 : j >= upper || cap ? 1 : 0].push(a, c, b, b, c, d);
     }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   g.setIndex(groups.flat());
-  g.addGroup(0, groups[0].length, 0);
-  g.addGroup(groups[0].length, groups[1].length, 1);
+  let offset = 0;
+  groups.forEach((indices, material) => {
+    g.addGroup(offset, indices.length, material);
+    offset += indices.length;
+  });
   const welded = mergeVertices(g, 1e-5);
   welded.computeVertexNormals();
   g.dispose();

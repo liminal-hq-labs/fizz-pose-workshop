@@ -32,11 +32,13 @@ import {
 import {
   eyeCentres,
   eyeRadius,
+  eyelids,
   facePoint,
   hairCap,
   headField,
 } from "./head.ts";
 import palette from "../../source/game-palette.json";
+import { holsterTurn, stunnerParts, stunnerTip } from "./stunner.ts";
 import { createBenRig, bindGeometry, type BenRig } from "./rig.ts";
 import { parseSkinLayers, projectSkinLayer } from "./svg-skin.ts";
 
@@ -357,14 +359,14 @@ export function createBenModel(svg: string): BenModel {
     orb(
       "Blue_eye",
       [ex, ey, front - 0.1],
-      [0.32, 0.34, 0.14],
+      [0.29, 0.3, 0.13],
       "head",
       mat("B", finishes.eye),
     );
     orb(
       "Pupil",
       [ex, ey, front - 0.02],
-      [0.14, 0.15, 0.07],
+      [0.13, 0.14, 0.07],
       "head",
       mat("k", finishes.eye),
     );
@@ -375,24 +377,44 @@ export function createBenModel(svg: string): BenModel {
       "head",
       eyeWhite,
     );
-    for (const [name, elevation, r] of [
-      ["Upper_eyelid", 0.7, 0.06],
-      ["Lower_eyelid", -0.75, 0.035],
-    ] as const)
-      tube(
+    // Skin lids cover the top and bottom of each eyeball, so less white shows without a squint.
+    // The upper lid edge rests just over the top of the iris; a thin lash line defines it.
+    const lidRadius = eyeRadius + 0.035;
+    for (const [name, edge, upper] of [
+      ["Upper_eyelid", eyelids.upper, true],
+      ["Lower_eyelid", eyelids.lower, false],
+    ] as const) {
+      const sweep = Math.PI / 2 - Math.abs(edge);
+      add(
         name,
-        [-0.95, -0.45, 0, 0.45, 0.95].map(
-          (a) =>
-            new THREE.Vector3(
-              ex + (eyeRadius + 0.02) * Math.sin(a) * Math.cos(elevation),
-              ey + (eyeRadius + 0.02) * Math.sin(elevation),
-              ez + (eyeRadius + 0.02) * Math.cos(a) * Math.cos(elevation),
-            ),
+        new THREE.SphereGeometry(
+          lidRadius,
+          28,
+          10,
+          0,
+          Math.PI,
+          upper ? 0 : Math.PI - sweep,
+          sweep,
         ),
-        r,
         "head",
         skin,
+        new THREE.Vector3(ex, ey, ez),
       );
+      tube(
+        upper ? "Upper_lash_line" : "Lower_lid_edge",
+        [-1.2, -0.6, 0, 0.6, 1.2].map(
+          (a) =>
+            new THREE.Vector3(
+              ex + lidRadius * Math.sin(a) * Math.cos(edge),
+              ey + lidRadius * Math.sin(edge),
+              ez + lidRadius * Math.cos(a) * Math.cos(edge),
+            ),
+        ),
+        upper ? 0.032 : 0.022,
+        "head",
+        upper ? mat("D", finishes.lips) : skin,
+      );
+    }
     tube(
       "Eyebrow",
       [-0.6, -0.2, 0.2, 0.6].map((dx) =>
@@ -416,15 +438,30 @@ export function createBenModel(svg: string): BenModel {
     "head",
     mat("R", finishes.lips),
   );
-  // A visible neck rises from the collar and blends into the head for nods and tilts.
-  const neck = new THREE.CapsuleGeometry(1.22, 3.3, 8, 24);
-  neck.applyMatrix4(new THREE.Matrix4().makeRotationX(-0.06));
+  // A slender neck rises from the collar, flaring slightly into the shoulders so no gap shows inside the
+  // neckline, and blends into the head bone below the jaw for nods and tilts.
+  const neck = new THREE.LatheGeometry(
+    [
+      [1.38, 18.8],
+      [1.38, 20.3],
+      [1.32, 20.95],
+      [1.18, 21.7],
+      [1.08, 22.6],
+      [1.06, 23.6],
+      [0.6, 24.2],
+      [0, 24.3],
+    ].map(([r, y]) => new THREE.Vector2(r, y)),
+    32,
+  );
+  // Slightly deeper than wide at the jaw, shallower at the base so it stays inside the collar.
+  neck.scale(1, 1, 0.88);
+  neck.rotateX(-0.05);
   add(
     "Neck",
     neck,
     "neck",
     skin,
-    new THREE.Vector3(0, 21.35, -0.32),
+    new THREE.Vector3(0, 0, -0.2),
     undefined,
     undefined,
     {
@@ -433,110 +470,174 @@ export function createBenModel(svg: string): BenModel {
     },
   );
 
-  // The shirt, shoulders, sleeves and turned collar band are one cotton surface.
+  // The shirt, shoulder caps, sleeves and turned collar band are one cotton surface.
+  // Sleeves are tubes around each upper-arm bone, hemmed square to the arm and skinned to it, so the
+  // openings sit on the arm in every pose; a small gap under the arm keeps sleeve and torso separate.
   const neckAngle = (x: number, z: number): number => Math.atan2(x, z + 0.2),
     collarTop = (a: number): number => 21.05 + 0.3 * ((1 - Math.cos(a)) / 2),
     collarBottom = (a: number): number => 20.15 + 0.4 * ((1 - Math.cos(a)) / 2),
     neckRadial = (x: number, z: number): number =>
-      Math.hypot(x, (z + 0.2) / 0.92);
+      Math.hypot(x, (z + 0.2) / 0.92),
+    smax = (a: number, b: number, k: number): number => -smoothUnion(-a, -b, k);
   const collarField = (x: number, y: number, z: number): number => {
     const a = neckAngle(x, z),
       top = collarTop(a),
       bottom = collarBottom(a),
       flare = THREE.MathUtils.clamp((top - y) / (top - bottom), 0, 1),
-      radius = THREE.MathUtils.lerp(1.6, 1.98, flare);
-    return Math.max(
-      Math.abs(neckRadial(x, z) - radius) - 0.13,
-      y - top,
+      radius = THREE.MathUtils.lerp(1.6, 1.92, flare);
+    return smax(
+      smax(Math.abs(neckRadial(x, z) - radius) - 0.13, y - top, 0.08),
       bottom - 0.3 - y,
+      0.08,
     );
   };
-  const shirtField = (x: number, y: number, z: number): number => {
+  const sleeves = (["right", "left"] as const).map((side) => {
+    const shoulder = rig.rest[side + "UpperArm"],
+      elbow = rig.rest[side + "Forearm"],
+      axis = elbow.clone().sub(shoulder),
+      length = axis.length();
+    axis.normalize();
+    return { side, shoulder, axis, length, hem: 0.6 * length };
+  });
+  const sleeveFrame = (
+    sleeve: (typeof sleeves)[number],
+    x: number,
+    y: number,
+    z: number,
+  ): { along: number; radial: number } => {
+    const dx = x - sleeve.shoulder.x,
+      dy = y - sleeve.shoulder.y,
+      dz = z - sleeve.shoulder.z,
+      along = dx * sleeve.axis.x + dy * sleeve.axis.y + dz * sleeve.axis.z;
+    return {
+      along,
+      radial: Math.sqrt(
+        Math.max(0, dx * dx + dy * dy + dz * dz - along * along),
+      ),
+    };
+  };
+  const sleeveField = (
+    sleeve: (typeof sleeves)[number],
+    x: number,
+    y: number,
+    z: number,
+  ): number => {
+    const { along, radial } = sleeveFrame(sleeve, x, y, z),
+      t = THREE.MathUtils.clamp(along / sleeve.hem, 0, 1),
+      tube =
+        along < 0
+          ? Math.hypot(radial, along) - 1.14
+          : radial - THREE.MathUtils.lerp(1.14, 1.06, t);
+    return smax(tube, along - sleeve.hem, 0.08);
+  };
+  const torsoField = (x: number, y: number, z: number): number => {
     let d = smoothUnion(
-      ellipsoid(x, y, z, [0, 16.7, 0.05], [3.5, 3.9, 2.55]),
-      ellipsoid(x, y, z, [0, 13.3, 0.1], [3.15, 3.25, 2.3]),
+      ellipsoid(x, y, z, [0, 16.8, 0.05], [2.45, 3.8, 1.95]),
+      ellipsoid(x, y, z, [0, 13.4, 0.1], [2.25, 3.2, 1.8]),
       1.2,
     );
     d = smoothUnion(
       d,
-      ellipsoid(x, y, z, [0, 19.55, -0.85], [2.6, 1.2, 1.45]),
+      ellipsoid(x, y, z, [0, 19.55, -0.7], [2.2, 1.15, 1.2]),
       0.8,
     );
-    for (const sign of [-1, 1]) {
+    for (const sign of [-1, 1])
       d = smoothUnion(
         d,
         capsuleDistance(
           x,
           y,
           z,
-          [sign * 0.8, 19.85, -0.25],
-          [sign * 3.55, 19.1, -0.05],
-          0.95,
+          [sign * 0.75, 19.85, -0.2],
+          [sign * 2.75, 19.25, -0.05],
+          0.85,
         ),
-        0.9,
+        0.8,
       );
+    return d;
+  };
+  const shirtField = (x: number, y: number, z: number): number => {
+    let d = torsoField(x, y, z);
+    // The sleeve blends into the shoulder seam but stays separate from the torso below the armpit.
+    for (const sleeve of sleeves) {
+      const { along } = sleeveFrame(sleeve, x, y, z);
       d = smoothUnion(
         d,
-        ellipsoid(x, y, z, [sign * 3.95, 18.45, 0.05], [1.22, 1.4, 1.3]),
-        0.6,
-      );
-      d = smoothUnion(
-        d,
-        Math.max(
-          taperedCapsule(
-            x,
-            y,
-            z,
-            [sign * 4.05, 18.3, 0.05],
-            [sign * 4.32, 15.2, 0.08],
-            1.12,
-            1.0,
-          ),
-          15.6 - y,
+        sleeveField(sleeve, x, y, z),
+        THREE.MathUtils.lerp(
+          0.3,
+          0.03,
+          THREE.MathUtils.smoothstep(along, 0.2, 1.1),
         ),
-        0.4,
       );
     }
-    d = Math.max(smoothUnion(d, collarField(x, y, z), 0.12), 10.95 - y);
+    d = Math.max(smoothUnion(d, collarField(x, y, z), 0.1), 10.95 - y);
     // The open neckline is cut after the collar joins, leaving one clean inner wall.
-    return Math.max(d, -Math.max(neckRadial(x, z) - 1.46, 19.4 - y));
+    return smax(d, -Math.max(neckRadial(x, z) - 1.46, 19.4 - y), 0.06);
   };
   const shirtWeights: Influences = (p) => {
-    const side = p.x < 0 ? "right" : "left",
-      arm =
-        THREE.MathUtils.smoothstep(Math.abs(p.x), 3.1, 4.7) *
-        THREE.MathUtils.smoothstep(p.y, 15.4, 17.6),
-      chest = THREE.MathUtils.smoothstep(p.y, 13.4, 18.4),
-      waist = THREE.MathUtils.smoothstep(p.y, 11.2, 14.2);
-    return {
-      pelvis: (1 - arm) * (1 - waist),
-      spine: (1 - arm) * waist * (1 - chest),
-      chest: (1 - arm) * waist * chest,
-      [side + "UpperArm"]: arm,
-    };
+    const chest = THREE.MathUtils.smoothstep(p.y, 13.4, 18.4),
+      waist = THREE.MathUtils.smoothstep(p.y, 11.2, 14.2),
+      torso = torsoField(p.x, p.y, p.z),
+      w: Record<string, number> = {};
+    let arms = 0;
+    for (const sleeve of sleeves) {
+      const { along } = sleeveFrame(sleeve, p.x, p.y, p.z),
+        // Sleeve fabric (nearer the sleeve tube than the torso) follows the upper arm; the shoulder
+        // cap blends from the chest above the joint into the arm just below it.
+        nearer = THREE.MathUtils.smoothstep(
+          torso - sleeveField(sleeve, p.x, p.y, p.z),
+          -0.08,
+          0.12,
+        ),
+        share = nearer * THREE.MathUtils.smoothstep(along, -0.55, 0.25);
+      w[sleeve.side + "UpperArm"] = share;
+      arms += share;
+    }
+    const body = Math.max(0, 1 - arms);
+    w.pelvis = body * (1 - waist);
+    w.spine = body * waist * (1 - chest);
+    w.chest = body * waist * chest;
+    return w;
   };
   const garment = sculptSurface(
       shirtField,
-      [-5.7, 10.6, -3.1],
-      [5.7, 21.6, 3.2],
-      58,
+      [-5.6, 10.6, -2.8],
+      [5.6, 21.6, 2.9],
+      62,
       120000,
     ),
     darkRed = new THREE.Color(palette.R),
     lightRed = new THREE.Color(palette.r);
+  // Colour follows smooth functions of position, so the white collar meets the red shirt in a clean line.
   shade(
     garment,
     shirtField,
-    (p) =>
-      collarField(p.x, p.y, p.z) < 0.05
-        ? white
-        : darkRed
-            .clone()
-            .lerp(
-              lightRed,
-              THREE.MathUtils.smoothstep(Math.abs(p.x), 3.2, 4.8) * 0.75 +
-                THREE.MathUtils.smoothstep(p.y, 18.4, 20.2) * 0.25,
-            ),
+    (p) => {
+      const collar =
+        THREE.MathUtils.smoothstep(
+          p.y - collarBottom(neckAngle(p.x, p.z)),
+          0.0,
+          0.06,
+        ) *
+        (1 - THREE.MathUtils.smoothstep(neckRadial(p.x, p.z), 2.25, 2.35));
+      const sleeve = Math.max(
+        ...sleeves.map((s) =>
+          THREE.MathUtils.smoothstep(
+            sleeveFrame(s, p.x, p.y, p.z).along,
+            -0.4,
+            0.4,
+          ),
+        ),
+      );
+      return darkRed
+        .clone()
+        .lerp(
+          lightRed,
+          sleeve * 0.7 + THREE.MathUtils.smoothstep(p.y, 18.6, 20.2) * 0.25,
+        )
+        .lerp(white, collar);
+    },
     "k",
     0.4,
   );
@@ -552,7 +653,7 @@ export function createBenModel(svg: string): BenModel {
     Array.from({ length: 65 }, (_, i) => {
       const a = (i / 64) * Math.PI * 2 - Math.PI,
         y = collarBottom(a) + 0.06,
-        r = 1.98 + 0.14;
+        r = 1.92 + 0.14;
       return new THREE.Vector3(
         r * Math.sin(a),
         y,
@@ -580,7 +681,7 @@ export function createBenModel(svg: string): BenModel {
     weightSurface(rig, meshes.at(-1)!.geometry, shirtWeights);
   }
 
-  // One continuous pair of straight jeans joins the pelvis, seat, thighs, knees and cuffs.
+  // One continuous pair of slim straight jeans joins the pelvis, seat, thighs, knees and cuffs.
   const hipY = rig.rest.rightThigh.y,
     kneeY = rig.rest.rightShin.y,
     ankleY = rig.rest.rightFoot.y,
@@ -589,8 +690,8 @@ export function createBenModel(svg: string): BenModel {
   const legRadii = (y: number): { rx: number; rz: number } => {
     const t = THREE.MathUtils.smoothstep(y, kneeY - 0.4, hipY);
     return {
-      rx: THREE.MathUtils.lerp(1.2, 1.6, t),
-      rz: THREE.MathUtils.lerp(1.32, 1.72, t),
+      rx: THREE.MathUtils.lerp(0.95, 1.3, t),
+      rz: THREE.MathUtils.lerp(1.05, 1.4, t),
     };
   };
   const pantsField = (x: number, y: number, z: number): number => {
@@ -598,12 +699,12 @@ export function createBenModel(svg: string): BenModel {
     const waist = 10.4;
     let d =
       y >= waist
-        ? Math.max((Math.hypot(x / 3.25, z / 2.2) - 1) * 2.2, y - 11.55)
-        : ellipsoid(x, y, z, [0, waist, 0], [3.25, 2.6, 2.2]);
+        ? Math.max((Math.hypot(x / 2.55, z / 1.85) - 1) * 1.85, y - 11.55)
+        : ellipsoid(x, y, z, [0, waist, 0], [2.55, 2.6, 1.85]);
     for (const sign of [-1, 1]) {
       d = smoothUnion(
         d,
-        ellipsoid(x, y, z, [sign * 1.3, 9.35, -0.75], [1.65, 1.6, 1.5]),
+        ellipsoid(x, y, z, [sign * 1.05, 9.35, -0.6], [1.3, 1.35, 1.2]),
         0.5,
       );
       const cy = THREE.MathUtils.clamp(y, hemY, hipY + 0.5),
@@ -616,7 +717,7 @@ export function createBenModel(svg: string): BenModel {
       d = smoothUnion(d, leg, 0.45);
       d = smoothUnion(
         d,
-        ellipsoid(x, y, z, [sign * legX, kneeY, 0.95], [0.8, 0.65, 0.5]),
+        ellipsoid(x, y, z, [sign * legX, kneeY, 0.72], [0.62, 0.52, 0.42]),
         0.35,
       );
     }
@@ -643,8 +744,8 @@ export function createBenModel(svg: string): BenModel {
   };
   const pants = sculptSurface(
     pantsField,
-    [-4.0, hemY - 0.3, -2.6],
-    [4.0, 11.9, 2.9],
+    [-3.4, hemY - 0.3, -2.2],
+    [3.4, 11.9, 2.4],
     56,
     120000,
   );
@@ -659,20 +760,20 @@ export function createBenModel(svg: string): BenModel {
   // The belt sits on the jeans waistband.
   const belt = new THREE.TorusGeometry(1, 0.09, 8, 72);
   belt.rotateX(Math.PI / 2);
-  belt.scale(3.24, 4.4, 2.24);
+  belt.scale(2.57, 4.4, 1.88);
   belt.translate(0, 11.1, 0);
   add("Belt", belt, "pelvis", mat("D", finishes.leather));
   box(
     "Belt_buckle",
-    [0, 11.1, 2.42],
-    [1.2, 0.82, 0.24],
+    [0, 11.1, 2.06],
+    [1.1, 0.78, 0.22],
     "pelvis",
     mat("y", finishes.metal),
     0.1,
   );
   box(
     "Belt_buckle_inset",
-    [0, 11.1, 2.57],
+    [0, 11.1, 2.2],
     [0.62, 0.4, 0.08],
     "pelvis",
     mat("N", finishes.leather),
@@ -804,12 +905,16 @@ export function createBenModel(svg: string): BenModel {
         weight: (p: THREE.Vector3) =>
           THREE.MathUtils.smoothstep(p.z, z + toeFlex.start, z + toeFlex.end),
       };
-    // Upper and sole are material regions on the same connected shoe surface.
+    // Red upper, white toe cap and sole, and grey underside share one connected shoe surface.
     add(
       side + "_shoe",
       runningShoe(ankle.x, z),
       foot,
-      [mat("R", finishes.mesh), mat("W", finishes.rubber)],
+      [
+        mat("R", finishes.mesh),
+        mat("W", finishes.rubber),
+        mat("L", finishes.rubber),
+      ],
       undefined,
       undefined,
       undefined,
@@ -838,7 +943,7 @@ export function createBenModel(svg: string): BenModel {
             z + depth,
           ),
       );
-      tube(side + "_lace", points, 0.045, foot, mat("W", finishes.webbing));
+      tube(side + "_lace", points, 0.045, foot, mat("r", finishes.webbing));
     }
     const sideSeam = Array.from({ length: 16 }, (_, i) => {
       const depth = (-1.85 + (i / 15) * 3.1) * sz,
@@ -880,88 +985,58 @@ export function createBenModel(svg: string): BenModel {
       new THREE.Vector3(sign, 0, 0),
     );
   }
-  // A complete volumetric Stunner is attached to a dedicated bone on the anatomical right hip only.
+  // The ray-gun Stunner rides on its own bone, holstered on the anatomical right hip only.
+  // Its parts are authored in the gun frame and turned into the holstered pose at rest.
   const gunOrigin = rig.rest.stunner,
-    gunQ = new THREE.Quaternion().setFromAxisAngle(
-      new THREE.Vector3(1, 0, 0),
-      Math.PI / 2,
-    );
-  const gunBox = (
-    name: string,
-    p: THREE.Vector3,
-    size: readonly number[],
-    colour: Colour,
-  ): void => {
-    const g = new RoundedBoxGeometry(size[0], size[1], size[2], 2, 0.12);
-    g.applyQuaternion(gunQ);
+    glow = mat("c").clone();
+  glow.emissive.set("#55ffff");
+  glow.emissiveIntensity = 1.2;
+  materials.set("stunnerGlow", glow);
+  for (const part of stunnerParts()) {
+    part.geometry.applyQuaternion(holsterTurn);
     add(
-      name,
-      g,
+      part.name,
+      part.geometry,
       "stunner",
-      mat(colour, finishes.plastic),
-      p.applyQuaternion(gunQ).add(gunOrigin),
+      part.glow ? glow : mat(part.colour, finishes.plastic),
+      gunOrigin.clone(),
     );
-  };
-  gunBox(
-    "Stunner_purple_body",
-    new THREE.Vector3(0, 0, 0.3),
-    [1.65, 1.65, 3.25],
-    "M",
-  );
-  gunBox(
-    "Stunner_dark_top",
-    new THREE.Vector3(0, 0.85, 0.3),
-    [1.75, 0.35, 3.6],
-    "D",
-  );
-  gunBox(
-    "Stunner_grip",
-    new THREE.Vector3(0, -1.1, -0.6),
-    [1.0, 1.7, 0.9],
-    "M",
-  );
-  gunBox(
-    "Stunner_energy_panel",
-    new THREE.Vector3(0.86, 0, 0.2),
-    [0.12, 0.9, 1.5],
-    "m",
-  );
-  for (let j = 0; j < 3; j++)
-    gunBox(
-      "Stunner_panel_rib",
-      new THREE.Vector3(0.95, 0, -0.3 + j * 0.4),
-      [0.05, 1, 0.08],
-      "D",
-    );
-  const muzzle = new THREE.CylinderGeometry(0.66, 0.66, 0.35, 16);
-  muzzle.rotateX(Math.PI / 2);
-  muzzle.applyQuaternion(gunQ);
+  }
+  // A dark holster band hugs the barrel below the body and clips to the belt; it stays on the hip when drawn.
+  const holster = new THREE.CylinderGeometry(0.5, 0.46, 0.75, 20, 1, true);
+  holster.rotateX(Math.PI / 2);
+  holster.translate(0, 0, 1.4);
+  holster.applyQuaternion(holsterTurn);
   add(
-    "Stunner_muzzle",
-    muzzle,
-    "stunner",
-    mat("k", finishes.plastic),
-    new THREE.Vector3(0, 0.15, 2.02).applyQuaternion(gunQ).add(gunOrigin),
-  );
-  orb(
-    "Stunner_belt_clip",
-    [gunOrigin.x + 0.35, 11.0, gunOrigin.z + 0.25],
-    [0.7, 0.35, 0.65],
+    "Holster_band",
+    holster,
     "pelvis",
     mat("D", finishes.leather),
+    gunOrigin.clone(),
   );
-  const glow = mat("c").clone();
-  glow.emissive.set("#55ffff");
-  glow.emissiveIntensity = 2;
-  materials.set("muzzleGlow", glow);
+  const holsterStrap = new THREE.BoxGeometry(0.35, 1.0, 0.12);
   add(
-    "Stunner_muzzle_flash",
-    new THREE.SphereGeometry(1, 12, 8),
-    "muzzleFlash",
-    glow,
-    new THREE.Vector3(gunOrigin.x, gunOrigin.y - 2.8, gunOrigin.z + 0.15),
-    new THREE.Vector3(0.42, 0.8, 0.42),
+    "Holster_strap",
+    holsterStrap,
+    "pelvis",
+    mat("D", finishes.leather),
+    new THREE.Vector3(gunOrigin.x + 0.35, 10.5, gunOrigin.z + 0.35),
+    undefined,
+    new THREE.Euler(0, -0.9, 0),
   );
+  const flashAt = stunnerTip
+    .clone()
+    .applyQuaternion(holsterTurn)
+    .add(gunOrigin);
+  const flash = mat("c").clone();
+  flash.emissive.set("#55ffff");
+  flash.emissiveIntensity = 2;
+  materials.set("muzzleGlow", flash);
+  const burst = new THREE.SphereGeometry(1, 14, 10);
+  burst.scale(0.7, 0.7, 1.6);
+  burst.translate(0, 0, 1.3);
+  burst.applyQuaternion(holsterTurn);
+  add("Stunner_muzzle_flash", burst, "muzzleFlash", flash, flashAt);
   rig.bones.muzzleFlash.scale.setScalar(0);
   const phoneCentre = rig.rest.phone;
   phoneMeshes.push(

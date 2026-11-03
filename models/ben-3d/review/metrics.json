@@ -6,10 +6,15 @@
       "max": 2,
       "reason": "The sculpted face is 6 units wide, narrower than the helmet and shoulders, where the sprite face band is about 8 pixels; the model is intentionally up to four pixels narrower."
     },
+    "torsoWidth": {
+      "min": -4,
+      "max": 2,
+      "reason": "Ben is built as a skinny kid: a narrow 4.9-unit ribcage and shoulders set 3.4 units from the centre, so the shirt-and-arms band is intentionally up to four pixels narrower than the sprite, most at the quarter views."
+    },
     "shoeWidth": {
       "min": -5,
       "max": 2,
-      "reason": "Running shoes are 6.8 units long and 2.9 wide (about 22% of height) instead of the sprite-sized 8.7 by 3.6 (28%); combined shoe widths are intentionally up to five pixels narrower, most in profile."
+      "reason": "Running shoes are 6.8 units long and 2.5 wide (about 22% of height) on slim legs set 1.45 from the centre, instead of the sprite-sized 8.7 by 3.6 (28%); combined shoe widths are intentionally up to five pixels narrower, most in profile."
     },
     "shoeHeight": {
       "min": -3,
@@ -29,18 +34,59 @@
     {
       "pose": "Firing",
       "file": "firing-cycle.png",
+      "angle": 60,
+      "phases": [
+        0.14,
+        0.26,
+        0.42,
+        0.5,
+        0.56,
+        0.86
+      ]
+    },
+    {
+      "pose": "Jump",
+      "file": "jump-cycle.png",
+      "angle": 60,
+      "phases": [
+        0.12,
+        0.24,
+        0.4,
+        0.53,
+        0.72,
+        0.88
+      ]
+    },
+    {
+      "pose": "Fall",
+      "file": "fall-cycle.png",
+      "angle": 40,
       "phases": [
         0,
-        0.2,
-        0.34,
-        0.44,
-        0.56,
-        0.85
+        0.17,
+        0.33,
+        0.5,
+        0.67,
+        0.83
+      ]
+    },
+    {
+      "pose": "Climb",
+      "file": "climb-cycle.png",
+      "angle": 30,
+      "phases": [
+        0,
+        0.17,
+        0.33,
+        0.5,
+        0.67,
+        0.83
       ]
     },
     {
       "pose": "Look up",
       "file": "look-up-cycle.png",
+      "angle": 0,
       "phases": [
         0,
         0.18,
@@ -53,6 +99,7 @@
     {
       "pose": "Look down",
       "file": "look-down-cycle.png",
+      "angle": 0,
       "phases": [
         0,
         0.18,
@@ -82,7 +129,7 @@
         "bottom": 34
       },
       "actual": {
-        "width": 11,
+        "width": 9,
         "height": 32,
         "top": 3,
         "bottom": 34
@@ -106,7 +153,7 @@
         "bottom": 34
       },
       "shoes": {
-        "width": 7,
+        "width": 5,
         "height": 3,
         "top": 32,
         "bottom": 34
@@ -114,9 +161,9 @@
       "differences": {
         "height": -1,
         "headWidth": -2,
-        "torsoWidth": 0,
+        "torsoWidth": -2,
         "helmetWidth": 0,
-        "shoeWidth": -2,
+        "shoeWidth": -4,
         "shoeHeight": -2
       },
       "withinTolerance": true
@@ -163,7 +210,7 @@
       "differences": {
         "height": -1,
         "headWidth": -3,
-        "torsoWidth": -1,
+        "torsoWidth": -3,
         "helmetWidth": -1,
         "shoeWidth": -3,
         "shoeHeight": -2
@@ -229,7 +276,7 @@
         "bottom": 34
       },
       "actual": {
-        "width": 11,
+        "width": 9,
         "height": 32,
         "top": 3,
         "bottom": 34
@@ -253,7 +300,7 @@
         "bottom": 34
       },
       "shoes": {
-        "width": 7,
+        "width": 5,
         "height": 3,
         "top": 32,
         "bottom": 34
@@ -261,9 +308,9 @@
       "differences": {
         "height": -1,
         "headWidth": -2,
-        "torsoWidth": 0,
+        "torsoWidth": -2,
         "helmetWidth": 0,
-        "shoeWidth": -1,
+        "shoeWidth": -3,
         "shoeHeight": -2
       },
       "withinTolerance": true
@@ -327,7 +374,7 @@
         "bottom": 34
       },
       "actual": {
-        "width": 11,
+        "width": 10,
         "height": 32,
         "top": 3,
         "bottom": 34
@@ -351,7 +398,7 @@
         "bottom": 34
       },
       "shoes": {
-        "width": 8,
+        "width": 7,
         "height": 3,
         "top": 32,
         "bottom": 34
@@ -359,9 +406,9 @@
       "differences": {
         "height": -1,
         "headWidth": -3,
-        "torsoWidth": -1,
+        "torsoWidth": -3,
         "helmetWidth": -1,
-        "shoeWidth": -2,
+        "shoeWidth": -3,
         "shoeHeight": -2
       },
       "withinTolerance": true
@@ -371,6 +418,7 @@
     "Standing",
     "Run",
     "Jump",
+    "Fall",
     "Climb",
     "Firing",
     "Whistle",

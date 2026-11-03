@@ -12,6 +12,8 @@ import {
   poseDuration,
   syncLegJoints,
   serialisePose,
+  ladder,
+  ladderRungs,
   type BenPose,
 } from "./poses.ts";
 import skinSvg from "../../source/ben-3d-skins.svg?raw";
@@ -92,6 +94,44 @@ export function mountBen3D(data: WorkshopData): void {
   floor.position.y = -0.72;
   floor.receiveShadow = true;
   scene.add(floor);
+  // A ladder prop for the climb; it follows Ben's turn and scrolls down as he climbs in place.
+  const ladderProp = new THREE.Group(),
+    rail = new THREE.BoxGeometry(0.35, 34, 0.35),
+    rung = new THREE.CylinderGeometry(
+      0.17,
+      0.17,
+      ladder.halfWidth * 2,
+      10,
+    ).rotateZ(Math.PI / 2),
+    wood = new THREE.MeshStandardMaterial({
+      color: data.palette.N ?? "#aa5500",
+      roughness: 0.8,
+    });
+  for (const side of [-1, 1]) {
+    const mesh = new THREE.Mesh(rail, wood);
+    mesh.position.set(side * ladder.halfWidth, 14, ladder.z + 0.2);
+    ladderProp.add(mesh);
+  }
+  const rungs = ladderRungs(0).map(() => {
+    const mesh = new THREE.Mesh(rung, wood);
+    ladderProp.add(mesh);
+    return mesh;
+  });
+  ladderProp.visible = false;
+  model.root.add(ladderProp);
+  const placeLadder = (shown: BenPose, at: number): void => {
+    ladderProp.visible = shown === "Climb";
+    if (!ladderProp.visible) return;
+    const r = ladder.rungSpacing,
+      shift = (((-2 * r * at) % r) + r) % r;
+    rungs.forEach((mesh, k) =>
+      mesh.position.set(
+        0,
+        ladder.top - r * 10 + shift + k * r - 0.17,
+        ladder.z,
+      ),
+    );
+  };
   const helper = new THREE.SkeletonHelper(model.root);
   helper.visible = false;
   (Array.isArray(helper.material)
@@ -286,6 +326,9 @@ export function mountBen3D(data: WorkshopData): void {
     (helper.material as THREE.Material).dispose();
     floor.geometry.dispose();
     (floor.material as THREE.Material).dispose();
+    rail.dispose();
+    rung.dispose();
+    wood.dispose();
     model.dispose();
     renderer.dispose();
   };
@@ -305,6 +348,7 @@ export function mountBen3D(data: WorkshopData): void {
       if (animate && poseDuration(pose) !== null)
         phase = (phase + dt / (poseDuration(pose) ?? 1)) % 1;
       applyBenPose(model, pose, phase);
+      placeLadder(pose, phase);
       for (const [name, e] of overrides) model.bones[name].rotation.copy(e);
       syncLegJoints(model);
       model.root.rotation.y = THREE.MathUtils.degToRad(yaw);
@@ -351,6 +395,7 @@ export function mountBen3D(data: WorkshopData): void {
     const oldVisibility = model.meshes.map((m) => m.visible),
       oldPosition = model.root.position.clone();
     applyBenPose(model, reviewPose, reviewPhase);
+    placeLadder(reviewPose, reviewPhase);
     model.root.position.set(0, 0, 0);
     model.root.rotation.y = THREE.MathUtils.degToRad(angle);
     model.root.updateMatrixWorld(true);
@@ -402,6 +447,7 @@ export function mountBen3D(data: WorkshopData): void {
     rotation = oldRotation;
     yaw = oldYaw;
     applyBenPose(model, pose, phase);
+    placeLadder(pose, phase);
     model.root.rotation.y = THREE.MathUtils.degToRad(yaw);
     return { width, height, pixels: Array.from(pixels) };
   };

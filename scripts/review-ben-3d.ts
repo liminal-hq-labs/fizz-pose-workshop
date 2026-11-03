@@ -290,18 +290,40 @@ try {
   await writeFile(new URL("run-cycle.png", output), PNG.sync.write(runPlate));
   const actions = [
     {
+      // Reach for the hip, draw, aim, fire with the flash, recoil and reholster.
       pose: "Firing",
       file: "firing-cycle.png",
-      phases: [0, 0.2, 0.34, 0.44, 0.56, 0.85],
+      angle: 60,
+      phases: [0.14, 0.26, 0.42, 0.5, 0.56, 0.86],
+    },
+    {
+      pose: "Jump",
+      file: "jump-cycle.png",
+      angle: 60,
+      phases: [0.12, 0.24, 0.4, 0.53, 0.72, 0.88],
+    },
+    {
+      pose: "Fall",
+      file: "fall-cycle.png",
+      angle: 40,
+      phases: [0, 0.17, 0.33, 0.5, 0.67, 0.83],
+    },
+    {
+      pose: "Climb",
+      file: "climb-cycle.png",
+      angle: 30,
+      phases: [0, 0.17, 0.33, 0.5, 0.67, 0.83],
     },
     {
       pose: "Look up",
       file: "look-up-cycle.png",
+      angle: 0,
       phases: [0, 0.18, 0.4, 0.6, 0.8, 0.98],
     },
     {
       pose: "Look down",
       file: "look-down-cycle.png",
+      angle: 0,
       phases: [0, 0.18, 0.4, 0.6, 0.8, 0.98],
     },
   ];
@@ -322,14 +344,7 @@ try {
         }
       ).modelReview;
       return action.phases.map((phase) =>
-        api.captureReview(
-          action.pose === "Firing" ? 60 : 0,
-          320,
-          440,
-          "all",
-          action.pose,
-          phase,
-        ),
+        api.captureReview(action.angle, 320, 440, "all", action.pose, phase),
       );
     }, action);
     const plate = new PNG({ width: 1920, height: 440 });

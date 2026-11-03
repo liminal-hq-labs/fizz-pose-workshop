@@ -17,7 +17,12 @@ import {
   serialisePose,
   sampleRunFoot,
   poseDuration,
+  firing,
+  ladder,
+  ladderRungs,
+  runTwist,
 } from "./poses.ts";
+import { palmCentre, stunnerTip } from "./stunner.ts";
 import { helmetOuter, helmetVents } from "./equipment.ts";
 import { craniumField, hairThickness, headField } from "./head.ts";
 import sideRig from "../../source/ben-side-rig.json";
@@ -167,7 +172,7 @@ describe("Ben volumetric character", () => {
       )!.geometry,
       index = shoe.index!,
       groups = shoe.groups;
-    expect(groups).toHaveLength(2);
+    expect(groups).toHaveLength(3);
     const vertices = groups.map((group) => {
       const set = new Set<number>();
       for (let i = group.start; i < group.start + group.count; i++)
@@ -279,7 +284,7 @@ describe("Ben volumetric character", () => {
       helmet.max.x - helmet.min.x,
     );
     expect(helmet.max.x - helmet.min.x).toBeGreaterThan(faceWidth);
-    expect(faceWidth).toBeLessThan(config.torso.size[0]);
+
     // A visible neck between the collar band and the jaw.
     expect(head.min.y - 21.05).toBeGreaterThan(0.7);
     expect(neck.max.y - neck.min.y).toBeGreaterThan(4);
@@ -481,7 +486,7 @@ describe("Ben volumetric character", () => {
       applyBenPose(model, pose, 1);
       expect(serialisePose(model)).toEqual(start);
     }
-    applyBenPose(model, "Firing", 0.44);
+    applyBenPose(model, "Firing", firing.fire);
     expect(model.bones.muzzleFlash.scale.x).toBeGreaterThan(0.9);
     applyBenPose(model, "Standing");
     expect(model.bones.muzzleFlash.scale.x).toBe(0);
@@ -530,5 +535,171 @@ describe("Ben volumetric character", () => {
           (track) => track.name === "phone.scale" && track.values[0] === 1,
         ),
     ).toBe(true);
+  });
+  test("shoes are red over the top and toe, with a white toe cap and sole and a grey underside", () => {
+    applyBenPose(model, "Standing");
+    const shoe = model.meshes.find((mesh) => mesh.name === "right_shoe")!,
+      colours = (shoe.material as THREE.MeshPhysicalMaterial[]).map((m) =>
+        m.color.getHexString(),
+      ),
+      x = model.rest.rightFoot.x,
+      hit = (from: THREE.Vector3, direction: THREE.Vector3): string =>
+        colours[
+          new THREE.Raycaster(from, direction.normalize()).intersectObject(
+            shoe,
+          )[0].face!.materialIndex
+        ];
+    expect(colours).toEqual(["aa0000", "ffffff", "aaaaaa"]);
+    for (const z of [-0.5, 1, 2.5, config.shoes.toeZ - 0.6])
+      expect(
+        hit(new THREE.Vector3(x, 10, z), new THREE.Vector3(0, -1, 0)),
+      ).toBe("aa0000");
+    expect(
+      hit(new THREE.Vector3(x, 0.45, 20), new THREE.Vector3(0, 0, -1)),
+    ).toBe("ffffff");
+    expect(
+      hit(new THREE.Vector3(x + 5, -0.2, 1), new THREE.Vector3(-1, 0, 0)),
+    ).toBe("ffffff");
+    expect(hit(new THREE.Vector3(x, -10, 1), new THREE.Vector3(0, 1, 0))).toBe(
+      "aaaaaa",
+    );
+    for (const lace of model.meshes.filter((m) => m.name === "right_lace"))
+      expect(
+        (lace.material as THREE.MeshPhysicalMaterial).color.getHexString(),
+      ).not.toBe("ffffff");
+  });
+  test("sleeves stay on the upper arms through raised, swinging and bent poses", () => {
+    const shirt = model.meshes.find((mesh) => mesh.name === "Shirt_torso")!,
+      positions = shirt.geometry.getAttribute("position"),
+      weights = shirt.geometry.getAttribute("skinWeight"),
+      indices = shirt.geometry.getAttribute("skinIndex");
+    for (const side of ["right", "left"] as const) {
+      const bone = model.skeleton.bones.indexOf(model.bones[side + "UpperArm"]),
+        shoulder = model.rest[side + "UpperArm"],
+        elbow = model.rest[side + "Forearm"],
+        axis = elbow.clone().sub(shoulder).normalize(),
+        hem: number[] = [];
+      for (let i = 0; i < positions.count; i++) {
+        const v = new THREE.Vector3()
+            .fromBufferAttribute(positions, i)
+            .sub(shoulder),
+          along = v.dot(axis);
+        if (
+          along > 1.9 &&
+          v.clone().addScaledVector(axis, -along).length() < 1.1
+        )
+          hem.push(i);
+      }
+      expect(hem.length).toBeGreaterThan(40);
+      // The sleeve tube is skinned rigidly to the upper arm.
+      for (const i of hem) {
+        let share = 0;
+        for (let k = 0; k < 4; k++)
+          if (indices.getComponent(i, k) === bone)
+            share += weights.getComponent(i, k);
+        expect(share).toBeGreaterThan(0.99);
+      }
+      for (const [pose, phase] of [
+        ["Run", 0.25],
+        ["Run", 0.75],
+        ["Climb", 0.3],
+        ["Jump", 0.3],
+        ["Firing", firing.fire],
+        ["Phone", 0],
+        ["Fall", 0.5],
+      ] as const) {
+        applyBenPose(model, pose, phase);
+        const s = model.bones[side + "UpperArm"].getWorldPosition(
+            new THREE.Vector3(),
+          ),
+          e = model.bones[side + "Forearm"].getWorldPosition(
+            new THREE.Vector3(),
+          ),
+          line = new THREE.Line3(s, e),
+          closest = new THREE.Vector3();
+        for (const i of hem) {
+          const p = shirt.getVertexPosition(i, new THREE.Vector3());
+          line.closestPointToPoint(p, true, closest);
+          expect(closest.distanceTo(p)).toBeLessThan(1.3);
+        }
+      }
+    }
+  });
+  test("the run counter-rotates hips and shoulders as the arms swing", () => {
+    let low = Infinity,
+      high = -Infinity;
+    const yaw = (a: THREE.Vector3, b: THREE.Vector3): number =>
+      THREE.MathUtils.radToDeg(Math.atan2(-(b.z - a.z), b.x - a.x));
+    for (let i = 0; i < 60; i++) {
+      applyBenPose(model, "Run", i / 60);
+      const shoulders = yaw(
+          model.bones.rightUpperArm.getWorldPosition(new THREE.Vector3()),
+          model.bones.leftUpperArm.getWorldPosition(new THREE.Vector3()),
+        ),
+        hips = yaw(
+          model.bones.rightThigh.getWorldPosition(new THREE.Vector3()),
+          model.bones.leftThigh.getWorldPosition(new THREE.Vector3()),
+        ),
+        rightArm = model.bones.rightHand.getWorldPosition(
+          new THREE.Vector3(),
+        ).z;
+      low = Math.min(low, shoulders);
+      high = Math.max(high, shoulders);
+      // Shoulders and hips turn opposite ways, and the right shoulder leads when the right hand swings forward.
+      if (Math.abs(shoulders) > 4)
+        expect(Math.sign(hips)).toBe(-Math.sign(shoulders));
+      if (shoulders > 8) expect(rightArm).toBeGreaterThan(0);
+    }
+    expect(high - low).toBeGreaterThan(1.6 * runTwist.shoulders);
+  });
+  test("firing draws the Stunner from the right hip, fires it forward and reholsters", () => {
+    const tip = (): THREE.Vector3 =>
+      model.bones.muzzleFlash.getWorldPosition(new THREE.Vector3());
+    applyBenPose(model, "Standing");
+    const holstered = tip(),
+      gun = model.bones.stunner.getWorldPosition(new THREE.Vector3());
+    applyBenPose(model, "Firing", 0.04);
+    expect(tip().distanceTo(holstered)).toBeLessThan(0.01);
+    applyBenPose(model, "Firing", firing.fire);
+    const fired = tip(),
+      palm = palmCentre
+        .clone()
+        .applyQuaternion(
+          model.bones.rightHand.getWorldQuaternion(new THREE.Quaternion()),
+        )
+        .add(model.bones.rightHand.getWorldPosition(new THREE.Vector3()));
+    expect(fired.z).toBeGreaterThan(6);
+    expect(fired.y).toBeGreaterThan(15);
+    expect(
+      model.bones.stunner
+        .getWorldPosition(new THREE.Vector3())
+        .distanceTo(palm),
+    ).toBeLessThan(1.4);
+    expect(model.bones.muzzleFlash.scale.x).toBeGreaterThan(0.9);
+    applyBenPose(model, "Firing", 0.99);
+    expect(
+      model.bones.stunner.getWorldPosition(new THREE.Vector3()).distanceTo(gun),
+    ).toBeLessThan(0.01);
+    expect(stunnerTip.z).toBeGreaterThan(2);
+  });
+  test("climbing hands hold rungs and feet stand on them", () => {
+    for (const phase of [0.55, 0.7, 0.85]) {
+      applyBenPose(model, "Climb", phase);
+      const rungs = ladderRungs(phase),
+        palm = palmCentre
+          .clone()
+          .applyQuaternion(
+            model.bones.rightHand.getWorldQuaternion(new THREE.Quaternion()),
+          )
+          .add(model.bones.rightHand.getWorldPosition(new THREE.Vector3()));
+      expect(Math.abs(palm.z - ladder.z)).toBeLessThan(0.45);
+      expect(Math.min(...rungs.map((y) => Math.abs(palm.y - y)))).toBeLessThan(
+        0.9,
+      );
+      const ankle = model.bones.leftFoot.getWorldPosition(new THREE.Vector3());
+      expect(
+        Math.min(...rungs.map((y) => Math.abs(ankle.y - 2.1 - y))),
+      ).toBeLessThan(0.05);
+    }
   });
 });

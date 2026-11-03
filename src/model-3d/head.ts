@@ -22,6 +22,8 @@ export const eyeCentres: readonly (readonly [number, number, number])[] = [
   [1.15, 26.1, 2.72],
 ];
 export const eyeRadius = 0.6;
+/** Lid edges as elevations (radians) on the eyeball: a relaxed, open gaze rather than a stare. */
+export const eyelids = { upper: 0.36, lower: -0.56 };
 
 /** The rounded braincase alone, used by the hair cap and the fitted helmet liner. */
 export function craniumField(x: number, y: number, z: number): number {
@@ -98,7 +100,10 @@ export function headField(x: number, y: number, z: number): number {
 export function hairline(x: number, z: number): number {
   const a = Math.atan2(x, z - cranium[2]);
   return (
-    26.4 + 1.8 * Math.cos(a) - 0.2 * Math.cos(2 * a) + 0.1 * Math.sin(9 * a)
+    26.175 +
+    2.25 * Math.cos(a) -
+    0.425 * Math.cos(2 * a) +
+    0.1 * Math.sin(9 * a)
   );
 }
 
