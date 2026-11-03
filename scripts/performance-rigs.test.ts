@@ -8,6 +8,7 @@ import {rigCatalogue} from '../src/rig/catalogue.ts';
 import {sampleRig,sampleTime} from '../src/rig/sample.ts';
 import {validateRig,type SideRig} from '../src/rig/run.ts';
 import {distance,type Chain} from '../src/rig/kinematics.ts';
+import {keysKnees} from '../src/rig/performance.ts';
 import {skinRig,sampleRigSprites} from './rig-skin.ts';
 import {standingIdleLandmarks} from './performance-skin.ts';
 import skin from '../source/ben-side-skin.json';
@@ -19,8 +20,13 @@ for(const entry of entries) {const {rig,prefix}=entry; test(`${rig.motion} prese
  validateRig(rig);
  for(let i=0;i<=120;i++){
   const pose=sampleRig(rig,i/120);
-  for(const [chain,upper,lower] of [[pose.nearArm,rig.arms.upperLength,rig.arms.forearmLength],[pose.farArm,rig.arms.upperLength,rig.arms.forearmLength],[pose.nearLeg,rig.legs.thighLength,rig.legs.shinLength],[pose.farLeg,rig.legs.thighLength,rig.legs.shinLength]] as [Chain,number,number][]){
+  for(const [chain,upper,lower] of [[pose.nearArm,rig.arms.upperLength,rig.arms.forearmLength],[pose.farArm,rig.arms.upperLength,rig.arms.forearmLength]] as [Chain,number,number][]){
    expect(distance(chain[0],chain[1])).toBeCloseTo(upper,7);expect(distance(chain[1],chain[2])).toBeCloseTo(lower,7);
+  }
+  // Keyed knees foreshorten a leg pointing towards the camera, but a projected bone never stretches past its length.
+  for(const chain of [pose.nearLeg,pose.farLeg]){
+   if(keysKnees(rig.performance!)){expect(distance(chain[0],chain[1])).toBeLessThanOrEqual(rig.legs.thighLength+1e-6);expect(distance(chain[1],chain[2])).toBeLessThanOrEqual(rig.legs.shinLength+1e-6);}
+   else{expect(distance(chain[0],chain[1])).toBeCloseTo(rig.legs.thighLength,7);expect(distance(chain[1],chain[2])).toBeCloseTo(rig.legs.shinLength,7);}
   }
   const frame=skinRig(rig,skin,pose);
   expect(frame.grid.every(row=>row.length===rig.width&&[...row].every(code=>Object.hasOwn(palette,code)))).toBe(true);

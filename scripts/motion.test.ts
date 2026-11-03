@@ -31,6 +31,9 @@ const knownFailures: readonly KnownFailure[] = [
   ...['4', '5', '6', '7', '8', '16', '17', '18', '19'].map(at => ({ check: 'helmet-rim' as const, subject: 'standing-360', at, fixedBy: 'Phase 5: turntable rebuild' })),
   // The jump keeps its approved six-frame timing, which drops the head 8 pixels from the fall pose to the landing in one step.
   ...['jump', 'jump-left'].map(subject => ({ check: 'head-travel' as const, subject, at: '3>4', fixedBy: 'kept by request: the original six-frame jump timing' })),
+  // The seated phone idle sits down onto the ground: the whole body drops eight rows over three 120 ms frames, while the
+  // seated reading that follows only moves the hands, phone, thumb and head, so the sit-down steps dwarf the cycle median.
+  ...['0>1', '1>2', '2>3'].map(at => ({ check: 'spike' as const, subject: 'phone-idle', at, fixedBy: 'intended: sitting down drops the whole body to the ground' })),
   // Intended effects rather than faults: the Stunner's muzzle flash lasts one frame, and the study splits its long side-view
   // hold across the loop seam. Keep these while the effect stays deliberate.
   { check: 'feature-pop', subject: 'fizz-blaster', at: '1:+C', fixedBy: 'intended: one-frame muzzle flash' },

@@ -36,7 +36,9 @@ export interface RigPose {
   face: FacePose;
   headAngle?: number;
   cloth?: ClothPose;
-  presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; pucker?: number; blink?: number; environment?: PerformanceSettings['environment'] };
+  presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; pucker?: number; blink?: number; environment?: PerformanceSettings['environment'];
+    /** Seated, crossed-leg and phone-screen state for front-facing idles; see `PerformanceKey`. */
+    seated?: boolean; shinOver?: 'near' | 'far'; frontHolster?: boolean; screen?: number; scroll?: number };
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
   contact: 'near' | 'far' | 'flight' | 'pogo' | 'both';
@@ -94,7 +96,8 @@ export function validateRig(rig: SideRig): void {
     if (!clip || clip.keys.length < 2 || clip.keys[0].phase !== 0 || clip.keys.at(-1)!.phase !== 1) throw new Error("Performance goals must cover phases zero through one.");
     for (let i = 0; i < clip.keys.length; i++) {
       const key = clip.keys[i];
-      if (!Number.isFinite(key.phase) || (i > 0 && key.phase <= clip.keys[i-1].phase) || ![key.lean,key.headRoll,...key.root,...key.nearHand,...key.farHand,...key.nearAnkle,...key.farAnkle,...(key.phone ?? [])].every(Number.isFinite)) throw new Error("Performance goals must be finite and strictly ordered.");
+      if (!Number.isFinite(key.phase) || (i > 0 && key.phase <= clip.keys[i-1].phase) || ![key.lean,key.headRoll,...key.root,...key.nearHand,...key.farHand,...key.nearAnkle,...key.farAnkle,...(key.phone ?? []),...(key.nearKnee ?? []),...(key.farKnee ?? [])].every(Number.isFinite)) throw new Error("Performance goals must be finite and strictly ordered.");
+      if (Boolean(key.nearKnee) !== Boolean(clip.keys[0].nearKnee) || Boolean(key.farKnee) !== Boolean(clip.keys[0].nearKnee)) throw new Error("Keyed knees must be given for both legs on every key, or on none.");
     }
     const times = clip.sampleTimes;
     if (times && (times.length !== rig.sampleCount || times.some((time, i) => !Number.isFinite(time) || time < 0 || time > 1 || (i > 0 && time <= times[i - 1])) || times[0] !== 0 || (clip.loop ? times.at(-1)! >= 1 : times.at(-1) !== 1))) throw new Error("Sample times must be one ordered phase per sprite, starting at zero and ending at one for a one-shot or before one for a loop.");

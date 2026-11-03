@@ -1104,6 +1104,130 @@
       }
     ]
   },
+  "standingIdle": {
+    "left": {
+      "neckRow": 14,
+      "chestRow": 17,
+      "kneeRow": 28,
+      "mouth": [
+        [
+          11,
+          11
+        ],
+        [
+          10,
+          11
+        ]
+      ],
+      "pucker": [
+        [
+          9,
+          11
+        ],
+        [
+          8,
+          11
+        ]
+      ],
+      "lip": [
+        9,
+        12
+      ],
+      "eyes": [
+        [
+          12,
+          9
+        ],
+        [
+          9,
+          9
+        ]
+      ],
+      "toeUp": [
+        {
+          "x": 3,
+          "y": 31,
+          "pixels": "kWWkkkRRRRRk"
+        },
+        {
+          "x": 3,
+          "y": 32,
+          "pixels": "kWkWWWRRRyRk"
+        },
+        {
+          "x": 5,
+          "y": 33,
+          "pixels": "kWWWWRRRRk"
+        },
+        {
+          "x": 9,
+          "y": 34,
+          "pixels": "kWWWWk"
+        }
+      ]
+    },
+    "right": {
+      "neckRow": 14,
+      "chestRow": 17,
+      "kneeRow": 28,
+      "mouth": [
+        [
+          12,
+          11
+        ],
+        [
+          13,
+          11
+        ]
+      ],
+      "pucker": [
+        [
+          14,
+          11
+        ],
+        [
+          15,
+          11
+        ]
+      ],
+      "lip": [
+        14,
+        12
+      ],
+      "eyes": [
+        [
+          11,
+          9
+        ],
+        [
+          14,
+          9
+        ]
+      ],
+      "toeUp": [
+        {
+          "x": 9,
+          "y": 31,
+          "pixels": "kRRRRRkkkWWk"
+        },
+        {
+          "x": 9,
+          "y": 32,
+          "pixels": "kRyRRRWWWkWk"
+        },
+        {
+          "x": 9,
+          "y": 33,
+          "pixels": "kRRRRWWWWk"
+        },
+        {
+          "x": 9,
+          "y": 34,
+          "pixels": "kWWWWk"
+        }
+      ]
+    }
+  },
   "phoneBack": {
     "anchor": [
       2,
@@ -1145,6 +1269,92 @@
         "y": 6,
         "pixels": ".kkk."
       }
+    ]
+  },
+  "torsoFrontSeated": {
+    "notes": "Rows that replace the front shirt patch while seated: the hem bunches one pixel out over the belt on each side as the seat presses down.",
+    "rows": [
+      {
+        "x": 6,
+        "y": 22,
+        "pixels": "kRRRRRRRRRk"
+      },
+      {
+        "x": 6,
+        "y": 23,
+        "pixels": "kkDDDyDDDkk"
+      }
+    ]
+  },
+  "seatFront": {
+    "notes": "The seat resting on the ground, drawn behind the crossed legs in the shirt patch coordinates (the root is local 11,24). Its bottom ink row is the ground contact.",
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 5,
+        "y": 24,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 25,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 26,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 5,
+        "y": 27,
+        "pixels": "kBBBBBBBBBBBk"
+      },
+      {
+        "x": 6,
+        "y": 28,
+        "pixels": "kkkkkkkkkkk"
+      }
+    ]
+  },
+  "holsterFront": {
+    "notes": "The holstered Fizz Stunner seen from the front on Ben's right hip (the camera's left), from the saved front stand. Offsets run from the root to the anchor pixel (the belt clip).",
+    "anchor": [
+      1,
+      0
+    ],
+    "rows": [
+      {
+        "x": 0,
+        "y": 0,
+        "pixels": "kDk"
+      },
+      {
+        "x": -1,
+        "y": 1,
+        "pixels": "kMmk"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "pixels": "kMk"
+      },
+      {
+        "x": 1,
+        "y": 3,
+        "pixels": "kk"
+      }
+    ],
+    "standingOffset": [
+      -4,
+      0
+    ],
+    "seatedOffset": [
+      -6,
+      -1
     ]
   }
 }
