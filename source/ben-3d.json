@@ -4,27 +4,42 @@
   "floorY": -0.5,
   "crownY": 31,
   "helmet": {
-    "width": 9.4,
-    "depth": 10.8,
-    "rimY": 25.1,
-    "frontZ": 5.5,
-    "rearZ": -5.3,
-    "thickness": 0.28
+    "centre": [0, 26.6, -0.4],
+    "radii": [4, 4.4, 4.7],
+    "tail": {
+      "centre": [0, 27.4, -3],
+      "radii": [3, 2.6, 2.55]
+    },
+    "rim": {
+      "front": 27.4,
+      "side": 26.5,
+      "back": 25.95
+    },
+    "linerGap": 0.12,
+    "trim": 0.5,
+    "ventFloor": 28.4,
+    "brim": {
+      "fromZ": 1.2,
+      "proud": 0.38,
+      "height": 0.42
+    },
+    "strapRadius": 0.15
   },
   "head": {
-    "centre": [0, 23.2, 0.2],
-    "radii": [4.15, 3.3, 3.65]
+    "centre": [0, 26.5, -0.35],
+    "radii": [3, 3.45, 3.7],
+    "chinY": 22
   },
   "torso": {
-    "centre": [0, 15, 0],
-    "size": [6.9, 8.5, 5.1]
+    "centre": [0, 15.6, 0],
+    "size": [5.5, 9.6, 4.2]
   },
   "shoes": {
-    "width": 3.608,
-    "length": 8.7,
-    "height": 3.0256,
-    "toeZ": 6.2,
-    "heelZ": -2.5
+    "width": 2.526,
+    "length": 6.09,
+    "height": 2.572,
+    "toeZ": 4.34,
+    "heelZ": -1.75
   },
   "bones": [
     {
@@ -35,97 +50,97 @@
     {
       "name": "spine",
       "parent": "pelvis",
-      "position": [0, 13, 0]
+      "position": [0, 13.2, 0]
     },
     {
       "name": "chest",
       "parent": "spine",
-      "position": [0, 16, 0]
+      "position": [0, 16.4, 0]
     },
     {
       "name": "neck",
       "parent": "chest",
-      "position": [0, 20, 0]
+      "position": [0, 20.6, -0.2]
     },
     {
       "name": "head",
       "parent": "neck",
-      "position": [0, 21, 0]
+      "position": [0, 22.8, -0.3]
     },
     {
       "name": "rightUpperArm",
       "parent": "chest",
-      "position": [-4, 18, 0.1]
+      "position": [-3.4, 18.8, 0]
     },
     {
       "name": "rightForearm",
       "parent": "rightUpperArm",
-      "position": [-4.4, 14.3, 0.35]
+      "position": [-3.95, 14.65, 0.05]
     },
     {
       "name": "rightHand",
       "parent": "rightForearm",
-      "position": [-4.4, 11.5, 0.9]
+      "position": [-4.1, 11.05, 0.4]
     },
     {
       "name": "leftUpperArm",
       "parent": "chest",
-      "position": [4, 18, 0.1]
+      "position": [3.4, 18.8, 0]
     },
     {
       "name": "leftForearm",
       "parent": "leftUpperArm",
-      "position": [4.4, 14.3, 0.35]
+      "position": [3.95, 14.65, 0.05]
     },
     {
       "name": "leftHand",
       "parent": "leftForearm",
-      "position": [4.4, 11.5, 0.9]
+      "position": [4.1, 11.05, 0.4]
     },
     {
       "name": "rightThigh",
       "parent": "pelvis",
-      "position": [-2.05, 10, 0]
+      "position": [-1.45, 9.7, 0]
     },
     {
       "name": "rightShin",
       "parent": "rightThigh",
-      "position": [-2.05, 6.7, 0.1]
+      "position": [-1.45, 5.5, 0.12]
     },
     {
       "name": "rightFoot",
       "parent": "rightShin",
-      "position": [-2.05, 3.2, 0]
+      "position": [-1.45, 1.6, 0]
     },
     {
       "name": "rightToe",
       "parent": "rightFoot",
-      "position": [-2.05, 0.9, 2.2]
+      "position": [-1.45, 0.69, 1.716]
     },
     {
       "name": "leftThigh",
       "parent": "pelvis",
-      "position": [2.05, 10, 0]
+      "position": [1.45, 9.7, 0]
     },
     {
       "name": "leftShin",
       "parent": "leftThigh",
-      "position": [2.05, 6.7, 0.1]
+      "position": [1.45, 5.5, 0.12]
     },
     {
       "name": "leftFoot",
       "parent": "leftShin",
-      "position": [2.05, 3.2, 0]
+      "position": [1.45, 1.6, 0]
     },
     {
       "name": "leftToe",
       "parent": "leftFoot",
-      "position": [2.05, 0.9, 2.2]
+      "position": [1.45, 0.69, 1.716]
     },
     {
       "name": "stunner",
       "parent": "pelvis",
-      "position": [-3.8, 9.8, 0.35]
+      "position": [-3.35, 9.5, -1]
     },
     {
       "name": "phone",
@@ -135,17 +150,27 @@
     {
       "name": "rightKnee",
       "parent": "rightThigh",
-      "position": [-2.05, 6.7, 0.1]
+      "position": [-1.45, 5.5, 0.12]
     },
     {
       "name": "leftKnee",
       "parent": "leftThigh",
-      "position": [2.05, 6.7, 0.1]
+      "position": [1.45, 5.5, 0.12]
     },
     {
       "name": "muzzleFlash",
       "parent": "stunner",
-      "position": [-3.8, 7.780000000000001, 0.5]
+      "position": [-3.35, 7.037, -1.66]
+    },
+    {
+      "name": "rightThumb",
+      "parent": "rightHand",
+      "position": [-3.95, 10.65, 0.95]
+    },
+    {
+      "name": "leftThumb",
+      "parent": "leftHand",
+      "position": [3.95, 10.65, 0.95]
     }
   ],
   "references": [
@@ -181,11 +206,33 @@
     }
   ],
   "reviewTolerancePixels": 2,
+  "reviewChecks": {
+    "headWidth": {
+      "min": -4,
+      "max": 2,
+      "reason": "The sculpted face is 6 units wide, narrower than the helmet and shoulders, where the sprite face band is about 8 pixels; the model is intentionally up to four pixels narrower."
+    },
+    "torsoWidth": {
+      "min": -4,
+      "max": 2,
+      "reason": "Ben is built as a skinny kid: a narrow 4.9-unit ribcage and shoulders set 3.4 units from the centre, so the shirt-and-arms band is intentionally up to four pixels narrower than the sprite, most at the quarter views."
+    },
+    "shoeWidth": {
+      "min": -5,
+      "max": 2,
+      "reason": "Running shoes are 6.8 units long and 2.5 wide (about 22% of height) on slim legs set 1.45 from the centre, instead of the sprite-sized 8.7 by 3.6 (28%); combined shoe widths are intentionally up to five pixels narrower, most in profile."
+    },
+    "shoeHeight": {
+      "min": -3,
+      "max": 2,
+      "reason": "The shorter shoe has a proportionally lower 2.6-unit ankle collar than the sprite toe-cap rows."
+    }
+  },
   "jarReference": "https://github.com/liminal-hq/jar/tree/527c5c34f62a8467e133249615a19fe7ca45040e/apps/jar/src/render/models",
   "notes": "Full volumetric geometry with a reusable skinned skeleton. SVG layers are projected only onto surfaces; body depth is not an SVG extrusion. The asymmetrical holster stays on Ben's right hip. Helmet dimensions describe the coloured shell inside the sprite outline.",
   "run": {
     "pelvisOffset": -0.55,
-    "strideHalfLength": 2.45,
+    "strideHalfLength": 2.6,
     "recoveryLift": 1.9
   }
 }

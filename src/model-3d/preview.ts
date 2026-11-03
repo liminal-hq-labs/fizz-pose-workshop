@@ -6,12 +6,15 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createBenModel } from "./model.ts";
+import { headStyles } from "./head.ts";
 import {
   applyBenPose,
   poseNames,
   poseDuration,
   syncLegJoints,
   serialisePose,
+  ladder,
+  ladderRungs,
   type BenPose,
 } from "./poses.ts";
 import skinSvg from "../../source/ben-3d-skins.svg?raw";
@@ -22,7 +25,7 @@ export function mountBen3D(data: WorkshopData): void {
   const mount = document.querySelector<HTMLElement>("#ben-3d");
   if (!mount) return;
   const section: HTMLElement = mount;
-  section.innerHTML = `<h2>Ben in three dimensions</h2><p>A lean, rigged character with a vented bicycle helmet, brown-blond hair, a white-collared shirt, tapered jeans, red running shoes with white soles and a holstered Fizz Stunner. The SVG artwork is bound to the curved surfaces.</p><div class="controls"><button id="model-play">Pause rotation</button><label>Pose <select id="model-pose">${poseNames.map((name) => `<option>${name}</option>`).join("")}</select></label><label>View <select id="model-camera"><option value="studio">Studio · orbit freely</option><option value="sprite">Sprite orthographic</option></select></label><label><input id="model-rig" type="checkbox">Show skeleton</label><label><input id="model-animate" type="checkbox" checked>Animate pose</label><button id="model-reset">Reset model</button></div><label class="rig-scrubber">Turn <input id="model-yaw" type="range" min="0" max="360" value="25"><output id="model-angle">25°</output></label><div class="model-comparison"><div class="model-stage"><canvas id="model-canvas" aria-label="Rigged three-dimensional Ben character" role="img"></canvas><p id="model-status" class="small" role="status"></p></div><article class="model-reference"><h3>Calibrated sprite reference</h3><label>Reference <select id="model-reference">${config.references.map((ref, i) => `<option value="${i}">${ref.label}</option>`).join("")}</select></label><canvas id="model-sprite" width="320" height="440" role="img" aria-label="Calibrated sprite for model proportion review"></canvas><div class="controls"><button id="model-align">Match reference view</button><label><input id="model-overlay" type="checkbox">Overlay reference</label></div><p class="small">Orthographic view uses the same 32 × 44 frame and one world unit per source pixel. Compare the standing pose for proportions; the quarter sprites have different hand and foot poses.</p></article></div><details class="model-rig-controls"><summary>Pose the rig and move Ben</summary><div class="controls"><label>Bone <select id="model-bone">${config.bones
+  section.innerHTML = `<h2>Ben in three dimensions</h2><p>A lean, rigged character with a vented bicycle helmet, brown-blond hair, a white-collared shirt, tapered jeans, red running shoes with white soles and a holstered Fizz Stunner. The SVG artwork is bound to the curved surfaces.</p><div class="controls"><button id="model-play">Pause rotation</button><label>Pose <select id="model-pose">${poseNames.map((name) => `<option>${name}</option>`).join("")}</select></label><label>Head style <select id="model-head">${headStyles.map((style) => `<option value="${style.id}" title="${style.summary}">${style.label}</option>`).join("")}</select></label><label>View <select id="model-camera"><option value="studio">Studio · orbit freely</option><option value="sprite">Sprite orthographic</option></select></label><label><input id="model-rig" type="checkbox">Show skeleton</label><label><input id="model-animate" type="checkbox" checked>Animate pose</label><button id="model-reset">Reset model</button></div><label class="rig-scrubber">Turn <input id="model-yaw" type="range" min="0" max="360" value="25"><output id="model-angle">25°</output></label><div class="model-comparison"><div class="model-stage"><canvas id="model-canvas" aria-label="Rigged three-dimensional Ben character" role="img"></canvas><p id="model-status" class="small" role="status"></p></div><article class="model-reference"><h3>Calibrated sprite reference</h3><label>Reference <select id="model-reference">${config.references.map((ref, i) => `<option value="${i}">${ref.label}</option>`).join("")}</select></label><canvas id="model-sprite" width="320" height="440" role="img" aria-label="Calibrated sprite for model proportion review"></canvas><div class="controls"><button id="model-align">Match reference view</button><label><input id="model-overlay" type="checkbox">Overlay reference</label></div><p class="small">Orthographic view uses the same 32 × 44 frame and one world unit per source pixel. Compare the standing pose for proportions; the quarter sprites have different hand and foot poses.</p></article></div><details class="model-rig-controls"><summary>Pose the rig and move Ben</summary><div class="controls"><label>Bone <select id="model-bone">${config.bones
     .filter((b) => !b.name.endsWith("Knee") && b.name !== "muzzleFlash")
     .map((b) => `<option>${b.name}</option>`)
     .join(
@@ -79,7 +82,8 @@ export function mountBen3D(data: WorkshopData): void {
   key.shadow.camera.right = 25;
   key.shadow.camera.top = 38;
   key.shadow.camera.bottom = -10;
-  key.shadow.normalBias = 0.04;
+  key.shadow.normalBias = 0.12;
+  key.shadow.bias = -0.0005;
   scene.add(key);
   const fill = new THREE.DirectionalLight("#b9d7ff", 1.2);
   fill.position.set(30, 22, -25);
@@ -91,6 +95,44 @@ export function mountBen3D(data: WorkshopData): void {
   floor.position.y = -0.72;
   floor.receiveShadow = true;
   scene.add(floor);
+  // A ladder prop for the climb; it follows Ben's turn and scrolls down as he climbs in place.
+  const ladderProp = new THREE.Group(),
+    rail = new THREE.BoxGeometry(0.35, 34, 0.35),
+    rung = new THREE.CylinderGeometry(
+      0.17,
+      0.17,
+      ladder.halfWidth * 2,
+      10,
+    ).rotateZ(Math.PI / 2),
+    wood = new THREE.MeshStandardMaterial({
+      color: data.palette.N ?? "#aa5500",
+      roughness: 0.8,
+    });
+  for (const side of [-1, 1]) {
+    const mesh = new THREE.Mesh(rail, wood);
+    mesh.position.set(side * ladder.halfWidth, 14, ladder.z + 0.2);
+    ladderProp.add(mesh);
+  }
+  const rungs = ladderRungs(0).map(() => {
+    const mesh = new THREE.Mesh(rung, wood);
+    ladderProp.add(mesh);
+    return mesh;
+  });
+  ladderProp.visible = false;
+  model.root.add(ladderProp);
+  const placeLadder = (shown: BenPose, at: number): void => {
+    ladderProp.visible = shown === "Climb";
+    if (!ladderProp.visible) return;
+    const r = ladder.rungSpacing,
+      shift = (((-2 * r * at) % r) + r) % r;
+    rungs.forEach((mesh, k) =>
+      mesh.position.set(
+        0,
+        ladder.top - r * 10 + shift + k * r - 0.17,
+        ladder.z,
+      ),
+    );
+  };
   const helper = new THREE.SkeletonHelper(model.root);
   helper.visible = false;
   (Array.isArray(helper.material)
@@ -150,6 +192,12 @@ export function mountBen3D(data: WorkshopData): void {
     overrides.clear();
     phase = 0;
     applyBenPose(model, pose);
+  };
+  // Rebuilding a head style takes a moment; the rest of the model and the pose are kept.
+  $<HTMLSelectElement>("#model-head").onchange = (e) => {
+    model.setHeadStyle((e.target as HTMLSelectElement).value);
+    section.dataset.headStyle = model.headStyle();
+    dirty = true;
   };
   $<HTMLInputElement>("#model-rig").onchange = (e) => {
     helper.visible = (e.target as HTMLInputElement).checked;
@@ -285,6 +333,9 @@ export function mountBen3D(data: WorkshopData): void {
     (helper.material as THREE.Material).dispose();
     floor.geometry.dispose();
     (floor.material as THREE.Material).dispose();
+    rail.dispose();
+    rung.dispose();
+    wood.dispose();
     model.dispose();
     renderer.dispose();
   };
@@ -304,6 +355,7 @@ export function mountBen3D(data: WorkshopData): void {
       if (animate && poseDuration(pose) !== null)
         phase = (phase + dt / (poseDuration(pose) ?? 1)) % 1;
       applyBenPose(model, pose, phase);
+      placeLadder(pose, phase);
       for (const [name, e] of overrides) model.bones[name].rotation.copy(e);
       syncLegJoints(model);
       model.root.rotation.y = THREE.MathUtils.degToRad(yaw);
@@ -350,6 +402,7 @@ export function mountBen3D(data: WorkshopData): void {
     const oldVisibility = model.meshes.map((m) => m.visible),
       oldPosition = model.root.position.clone();
     applyBenPose(model, reviewPose, reviewPhase);
+    placeLadder(reviewPose, reviewPhase);
     model.root.position.set(0, 0, 0);
     model.root.rotation.y = THREE.MathUtils.degToRad(angle);
     model.root.updateMatrixWorld(true);
@@ -401,8 +454,57 @@ export function mountBen3D(data: WorkshopData): void {
     rotation = oldRotation;
     yaw = oldYaw;
     applyBenPose(model, pose, phase);
+    placeLadder(pose, phase);
     model.root.rotation.y = THREE.MathUtils.degToRad(yaw);
     return { width, height, pixels: Array.from(pixels) };
+  };
+  // A perspective view from any camera position, for close inspection from below, behind or the sides.
+  const captureView = (
+    eye: readonly number[],
+    look: readonly number[],
+    reviewPose: BenPose = "Standing",
+    reviewPhase = 0,
+    width = 640,
+    height = 640,
+    fov = 30,
+    turn = 0,
+  ): string => {
+    const camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 300),
+      target = new THREE.WebGLRenderTarget(width, height, { samples: 4 }),
+      oldTarget = renderer.getRenderTarget(),
+      oldPosition = model.root.position.clone(),
+      oldYaw = model.root.rotation.y;
+    camera.position.set(eye[0], eye[1], eye[2]);
+    camera.lookAt(look[0], look[1], look[2]);
+    applyBenPose(model, reviewPose, reviewPhase);
+    placeLadder(reviewPose, reviewPhase);
+    model.root.position.set(0, 0, 0);
+    model.root.rotation.y = THREE.MathUtils.degToRad(turn);
+    model.root.updateMatrixWorld(true);
+    model.skeleton.update();
+    renderer.setRenderTarget(target);
+    renderer.render(scene, camera);
+    const pixels = new Uint8Array(width * height * 4);
+    renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+    renderer.setRenderTarget(oldTarget);
+    target.dispose();
+    model.root.position.copy(oldPosition);
+    model.root.rotation.y = oldYaw;
+    applyBenPose(model, pose, phase);
+    dirty = true;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const bytes = new Uint8ClampedArray(width * height * 4);
+    for (let y = 0; y < height; y++)
+      bytes.set(
+        pixels.subarray((height - 1 - y) * width * 4, (height - y) * width * 4),
+        y * width * 4,
+      );
+    canvas
+      .getContext("2d")!
+      .putImageData(new ImageData(bytes, width, height), 0, 0);
+    return canvas.toDataURL("image/png");
   };
   const captureReview = (
     angle: number,
@@ -434,8 +536,14 @@ export function mountBen3D(data: WorkshopData): void {
       scene,
       camera: ortho,
       align,
+      setHeadStyle: (id: string) => {
+        model.setHeadStyle(id);
+        $<HTMLSelectElement>("#model-head").value = model.headStyle();
+        section.dataset.headStyle = model.headStyle();
+      },
       renderReview,
       captureReview,
+      captureView,
       setAngle: (value: number) => {
         yaw = value;
         rotation = false;

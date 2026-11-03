@@ -5,140 +5,181 @@
 
 import * as THREE from "three";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
+import config from "../../source/ben-3d.json";
+import palette from "../../source/game-palette.json";
+import { craniumField, hairThickness } from "./head.ts";
+import { ellipsoid, sculptSurface, smoothUnion } from "./sculpt.ts";
 
-export const helmetShape = {
-  width: 9.4,
-  depth: 10.8,
-  centreY: 25.1,
-  crownY: 31.0,
-  thickness: 0.28,
-};
-const shellStations = [
-  { z: -5.3, width: 0, top: 25.9, bottom: 25.9 },
-  { z: -4.7, width: 2.65, top: 28.15, bottom: 24.95 },
-  { z: -3.4, width: 4.15, top: 30.15, bottom: 24.9 },
-  { z: -1.6, width: 4.7, top: 31.0, bottom: 25.05 },
-  { z: 1.0, width: 4.6, top: 31.0, bottom: 25.25 },
-  { z: 3.3, width: 4.0, top: 29.9, bottom: 25.45 },
-  { z: 4.8, width: 2.45, top: 27.7, bottom: 25.65 },
-  { z: 5.5, width: 0, top: 26.35, bottom: 26.35 },
-] as const;
-export function cycleProfile(z: number): {
-  width: number;
-  top: number;
-  bottom: number;
-} {
-  const depth = THREE.MathUtils.clamp(z, -5.3, 5.5);
-  let i = 0;
-  while (i < shellStations.length - 2 && shellStations[i + 1].z < depth) i++;
-  const a = shellStations[i],
-    b = shellStations[i + 1],
-    t = (depth - a.z) / (b.z - a.z),
-    result = { width: 0, top: 0, bottom: 0 };
-  for (const key of ["width", "top", "bottom"] as const) {
-    const slope = (b[key] - a[key]) / (b.z - a.z),
-      previous = shellStations[Math.max(0, i - 1)],
-      next = shellStations[Math.min(shellStations.length - 1, i + 2)],
-      before = i === 0 ? slope : (a[key] - previous[key]) / (a.z - previous.z),
-      after =
-        i + 2 >= shellStations.length
-          ? slope
-          : (next[key] - b[key]) / (next.z - b.z),
-      ma = before * slope <= 0 ? 0 : (2 * before * slope) / (before + slope),
-      mb = after * slope <= 0 ? 0 : (2 * after * slope) / (after + slope);
-    result[key] =
-      (2 * t ** 3 - 3 * t * t + 1) * a[key] +
-      (t ** 3 - 2 * t * t + t) * (b.z - a.z) * ma +
-      (-2 * t ** 3 + 3 * t * t) * b[key] +
-      (t ** 3 - t * t) * (b.z - a.z) * mb;
-  }
-  return result;
+const helmet = config.helmet;
+/** Material slots of the helmet mesh, in group order. */
+export const helmetSlots = ["shell", "liner", "vent", "rim"] as const;
+/** Roof channels on each side of the solid central rib, interrupted by a bridge across the crown. */
+export const helmetVents: readonly {
+  x: number;
+  halfWidth: number;
+  front: number;
+  back: number;
+}[] = [
+  { x: -2.25, halfWidth: 0.26, front: 1.5, back: 0.05 },
+  { x: -2.25, halfWidth: 0.26, front: -1.0, back: -2.5 },
+  { x: -1.05, halfWidth: 0.28, front: 2.2, back: 0.1 },
+  { x: -1.05, halfWidth: 0.28, front: -0.95, back: -3.0 },
+  { x: 1.05, halfWidth: 0.28, front: 2.2, back: 0.1 },
+  { x: 1.05, halfWidth: 0.28, front: -0.95, back: -3.0 },
+  { x: 2.25, halfWidth: 0.26, front: 1.5, back: 0.05 },
+  { x: 2.25, halfWidth: 0.26, front: -1.0, back: -2.5 },
+];
+const slot2d = (
+  x: number,
+  z: number,
+  vent: (typeof helmetVents)[number],
+): number =>
+  Math.hypot(x - vent.x, z - THREE.MathUtils.clamp(z, vent.back, vent.front)) -
+  vent.halfWidth;
+/** The lower edge of the shell: just above the brow, above the ears and over the occiput. */
+export function helmetRim(x: number, z: number): number {
+  const a = Math.atan2(x, z - helmet.centre[2]),
+    { front, side, back } = helmet.rim,
+    a0 = ((front + back) / 2 + side) / 2,
+    a2 = ((front + back) / 2 - side) / 2;
+  return a0 + ((front - back) / 2) * Math.cos(a) + a2 * Math.cos(2 * a);
 }
-export function helmetHeight(x: number, z: number): number {
-  const p = cycleProfile(z),
-    side = THREE.MathUtils.clamp(Math.abs(x) / Math.max(0.001, p.width), 0, 1);
-  return (
-    p.bottom +
-    0.22 * side ** 4 +
-    (p.top - p.bottom) * Math.max(0, 1 - side * side) ** 0.225
+/** The smooth outer shell surface without vents, used for the stripe and fit checks. */
+export function helmetOuter(x: number, y: number, z: number): number {
+  return smoothUnion(
+    ellipsoid(x, y, z, helmet.centre, helmet.radii),
+    ellipsoid(x, y, z, helmet.tail.centre, helmet.tail.radii),
+    0.9,
   );
 }
-export function cycleHelmet(): THREE.BufferGeometry {
-  const columns = 64,
-    rows = 80,
-    positions: number[] = [],
-    groups = [[] as number[], [] as number[], [] as number[]],
-    kept: boolean[][] = [];
-  const stride = (rows + 1) * (columns + 1);
-  for (const inner of [false, true])
-    for (let i = 0; i <= rows; i++) {
-      const z = THREE.MathUtils.lerp(-5.3, 5.5, i / rows),
-        p = cycleProfile(z);
-      for (let j = 0; j <= columns; j++) {
-        const a = -Math.PI / 2 + (j / columns) * Math.PI,
-          x = p.width * Math.sin(a),
-          y = helmetHeight(x, z);
-        positions.push(
-          x *
-            (inner
-              ? Math.max(0, p.width - 0.28) / Math.max(0.001, p.width)
-              : 1),
-          y - (inner ? 0.28 : 0),
-          z,
-        );
-      }
-    }
-  for (let i = 0; i < rows; i++) {
-    kept[i] = [];
-    for (let j = 0; j < columns; j++) {
-      const z = THREE.MathUtils.lerp(-5.3, 5.5, (i + 0.5) / rows),
-        a = -Math.PI / 2 + ((j + 0.5) / columns) * Math.PI,
-        roofSlot =
-          (Math.abs(Math.abs(a) - 0.32) < 0.075 ||
-            Math.abs(Math.abs(a) - 0.73) < 0.095) &&
-          z > -3.7 &&
-          z < 3.4 &&
-          Math.abs(z - 0.1) > 0.35,
-        sideSlot =
-          Math.abs(a) > 1.02 && Math.abs(a) < 1.24 && z > -3.8 && z < 2.65;
-      kept[i][j] = !roofSlot && !sideSlot;
-    }
+/** The liner surface sits a small gap outside Ben's hair. */
+export function helmetInner(x: number, y: number, z: number): number {
+  return craniumField(x, y, z) - hairThickness - helmet.linerGap;
+}
+// Shell edges are rounded fillets, so the sculpted surface stays smooth where cuts meet the shell.
+const smax = (a: number, b: number, k = 0.14): number =>
+  -smoothUnion(-a, -b, k);
+// A rounded grey lip that stands proud of the lower front edge and fades out towards the temples.
+function brimField(x: number, y: number, z: number): number {
+  const rim = helmetRim(x, z),
+    front = THREE.MathUtils.smoothstep(
+      z,
+      helmet.brim.fromZ,
+      helmet.brim.fromZ + 1.6,
+    );
+  return smax(
+    smax(
+      helmetOuter(x, y, z) - helmet.brim.proud * front,
+      Math.abs(y - rim - helmet.brim.height / 2) - helmet.brim.height / 2,
+    ),
+    Math.max(-helmetInner(x, y, z), helmet.brim.fromZ - z),
+  );
+}
+export function helmetField(x: number, y: number, z: number): number {
+  let d = smax(
+    smax(helmetOuter(x, y, z), -helmetInner(x, y, z)),
+    helmetRim(x, z) - y,
+  );
+  for (const vent of helmetVents)
+    d = smax(d, -Math.max(slot2d(x, z, vent), helmet.ventFloor - y), 0.12);
+  // Side vents pass through the shell above each temple.
+  for (const sign of [-1, 1]) {
+    const side = Math.max(
+      Math.hypot(
+        y - THREE.MathUtils.lerp(28.35, 28.75, (z + 2.4) / 3.8),
+        z - THREE.MathUtils.clamp(z, -2.4, 1.4),
+      ) - 0.3,
+      2.6 - sign * x,
+    );
+    d = smax(d, -side, 0.1);
   }
-  const wall = (a: number, b: number): void => {
-    groups[2].push(a, b, a + stride, b, b + stride, a + stride);
-  };
-  for (let i = 0; i < rows; i++)
-    for (let j = 0; j < columns; j++)
-      if (kept[i][j]) {
-        const a = i * (columns + 1) + j,
-          b = a + columns + 1,
-          c = a + 1,
-          d = b + 1;
-        groups[0].push(a, b, c, b, d, c);
-        groups[1].push(
-          a + stride,
-          c + stride,
-          b + stride,
-          b + stride,
-          c + stride,
-          d + stride,
-        );
-        if (i === 0 || !kept[i - 1][j]) wall(c, a);
-        if (i === rows - 1 || !kept[i + 1][j]) wall(b, d);
-        if (j === 0 || !kept[i][j - 1]) wall(a, b);
-        if (j === columns - 1 || !kept[i][j + 1]) wall(d, c);
-      }
+  return smoothUnion(d, brimField(x, y, z), 0.1);
+}
+/** Finds the outer shell along a ray from the shell centre, `offset` units proud of it. */
+export function helmetSurfacePoint(
+  x: number,
+  angle: number,
+  offset = 0,
+): THREE.Vector3 {
+  const c = helmet.centre,
+    dy = Math.cos(angle),
+    dz = Math.sin(angle);
+  let low = 0,
+    high = 8;
+  for (let i = 0; i < 30; i++) {
+    const t = (low + high) / 2;
+    if (helmetOuter(x, c[1] + dy * t, c[2] + dz * t) < 0) low = t;
+    else high = t;
+  }
+  const t = (low + high) / 2 + offset;
+  return new THREE.Vector3(x, c[1] + dy * t, c[2] + dz * t);
+}
+// One closed, ventilated shell with foam thickness, built as a sculpted solid and split into material groups.
+// The glossy outer shell is green above a grey trim band and front lip, blended per vertex for a clean edge.
+export function cycleHelmet(): THREE.BufferGeometry {
+  const sculpted = sculptSurface(
+      helmetField,
+      [-4.6, 25.2, -6.4],
+      [4.6, 31.25, 5.6],
+      66,
+      150000,
+    ),
+    positions = sculpted.getAttribute("position"),
+    index = sculpted.index!,
+    groups = helmetSlots.map(() => [] as number[]),
+    colours = new Float32Array(positions.count * 3),
+    green = new THREE.Color(palette.g ?? "#55ff55"),
+    grey = new THREE.Color(palette.L ?? "#aaaaaa"),
+    c = new THREE.Vector3(),
+    p = new THREE.Vector3(),
+    colour = new THREE.Color();
+  for (let i = 0; i < positions.count; i++) {
+    p.fromBufferAttribute(positions, i);
+    const trim =
+      1 -
+      THREE.MathUtils.smoothstep(
+        p.y - helmetRim(p.x, p.z),
+        helmet.trim - 0.04,
+        helmet.trim + 0.04,
+      );
+    colour
+      .copy(green)
+      .lerp(grey, trim)
+      .toArray(colours, i * 3);
+  }
+  for (let i = 0; i < index.count; i += 3) {
+    c.set(0, 0, 0);
+    for (let k = 0; k < 3; k++)
+      c.add(p.fromBufferAttribute(positions, index.getX(i + k)));
+    c.divideScalar(3);
+    const outer = helmetOuter(c.x, c.y, c.z),
+      inner = Math.abs(helmetInner(c.x, c.y, c.z)),
+      rim = Math.abs(c.y - helmetRim(c.x, c.z));
+    const slot =
+      outer > -0.1 || brimField(c.x, c.y, c.z) > -0.1
+        ? rim < 0.06 && outer < -0.1
+          ? 3
+          : 0
+        : inner < 0.1
+          ? 1
+          : rim < 0.1
+            ? 3
+            : 2;
+    groups[slot].push(index.getX(i), index.getX(i + 1), index.getX(i + 2));
+  }
   const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  g.setAttribute("position", positions);
+  g.setAttribute("normal", sculpted.getAttribute("normal"));
+  g.setAttribute("color", new THREE.BufferAttribute(colours, 3));
   g.setIndex(groups.flat());
   let offset = 0;
   groups.forEach((indices, material) => {
     g.addGroup(offset, indices.length, material);
     offset += indices.length;
   });
-  const welded = mergeVertices(g, 1e-5);
-  welded.computeVertexNormals();
+  const welded = mergeVertices(g, 1e-6);
   g.dispose();
+  sculpted.dispose();
   return welded;
 }
 
@@ -149,7 +190,16 @@ export interface ShoeSection {
   bottom: number;
   seam: number;
 }
-export const runnerSections: readonly ShoeSection[] = [
+/**
+ * Running-shoe scale against the authored sprite-sized profile below. A real running shoe is
+ * about 15% of body height; Ben keeps a chunkier cartoon shoe at about 19% (6.1 units).
+ */
+export const shoeScale = { x: 0.7, y: 0.85, z: 0.7 } as const;
+/** Model-space height of an authored shoe height, scaled up from the sole at −0.5. */
+export const shoeY = (y: number): number => (y + 0.5) * shoeScale.y - 0.5;
+/** The forefoot blends into the toe bone across this span ahead of the ankle. */
+export const toeFlex = { start: 1.7 * shoeScale.z, end: 3.0 * shoeScale.z };
+const authoredSections: readonly ShoeSection[] = [
   { z: -2.5, width: 0, top: 0.05, bottom: 0.05, seam: 0.05 },
   { z: -2.15, width: 0.697, top: 1.54, bottom: -0.32, seam: 0.176 },
   { z: -1.4, width: 0.943, top: 2.2976, bottom: -0.5, seam: 0.124 },
@@ -159,6 +209,15 @@ export const runnerSections: readonly ShoeSection[] = [
   { z: 5.6, width: 1.066, top: 1, bottom: -0.12, seam: 0.296 },
   { z: 6.2, width: 0, top: 0.4, bottom: 0.4, seam: 0.4 },
 ];
+export const runnerSections: readonly ShoeSection[] = authoredSections.map(
+  (s) => ({
+    z: s.z * shoeScale.z,
+    width: s.width * shoeScale.x,
+    top: shoeY(s.top),
+    bottom: shoeY(s.bottom),
+    seam: shoeY(s.seam),
+  }),
+);
 export function runnerProfile(z: number): ShoeSection {
   const depth = THREE.MathUtils.clamp(
     z,
@@ -201,6 +260,15 @@ export function runnerTop(x: number, z: number): number {
       Math.max(0, 1 - (x / Math.max(0.001, p.width)) ** 2) ** 0.375
   );
 }
+/** Material groups of each running shoe, matching the sprite: red upper, white toe cap and sole, grey underside. */
+export const shoeSlots = ["upper", "capAndSole", "underside"] as const;
+/** The white rubber toe cap covers the front of the upper up to this height above the sole seam. */
+export const toeCap = {
+  fromZ: 4.1 * shoeScale.z,
+  // From here forward the white rubber also wraps over the top of the toe.
+  tipZ: 4.85 * shoeScale.z,
+  segments: 5,
+};
 export function runningShoe(
   centreX: number,
   centreZ: number,
@@ -210,7 +278,8 @@ export function runningShoe(
     sole = 20,
     segments = upper + sole,
     positions: number[] = [],
-    groups = [[] as number[], [] as number[]];
+    groups = shoeSlots.map(() => [] as number[]),
+    depths: number[] = [];
   for (let i = 0; i <= rows; i++) {
     const p = runnerProfile(
       THREE.MathUtils.lerp(
@@ -219,6 +288,7 @@ export function runningShoe(
         i / rows,
       ),
     );
+    depths.push(p.z);
     for (let j = 0; j < segments; j++) {
       const isUpper = j < upper,
         a = isUpper
@@ -235,19 +305,46 @@ export function runningShoe(
       positions.push(centreX + x, y, centreZ + p.z);
     }
   }
+  const faceDown = (a: number, b: number, c: number): boolean => {
+    const ax = positions[a * 3],
+      ay = positions[a * 3 + 1],
+      az = positions[a * 3 + 2],
+      ux = positions[c * 3] - ax,
+      uy = positions[c * 3 + 1] - ay,
+      uz = positions[c * 3 + 2] - az,
+      vx = positions[b * 3] - ax,
+      vy = positions[b * 3 + 1] - ay,
+      vz = positions[b * 3 + 2] - az,
+      nx = uy * vz - uz * vy,
+      ny = uz * vx - ux * vz,
+      nz = ux * vy - uy * vx;
+    return ny / Math.max(1e-9, Math.hypot(nx, ny, nz)) < -0.6;
+  };
   for (let i = 0; i < rows; i++)
     for (let j = 0; j < segments; j++) {
       const a = i * segments + j,
         b = a + segments,
         c = i * segments + ((j + 1) % segments),
         d = c + segments;
-      groups[j < upper ? 0 : 1].push(a, c, b, b, c, d);
+      // The cap follows mesh lines, a fixed band of upper segments above the sole, for a straight edge.
+      const cap =
+          j < upper &&
+          depths[i] >= toeCap.fromZ &&
+          (j < toeCap.segments ||
+            j >= upper - toeCap.segments ||
+            depths[i] >= toeCap.tipZ),
+        // Sole faces that point at the ground form the grey underside.
+        underside = j >= upper && faceDown(a, b, c);
+      groups[underside ? 2 : j >= upper || cap ? 1 : 0].push(a, c, b, b, c, d);
     }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   g.setIndex(groups.flat());
-  g.addGroup(0, groups[0].length, 0);
-  g.addGroup(groups[0].length, groups[1].length, 1);
+  let offset = 0;
+  groups.forEach((indices, material) => {
+    g.addGroup(offset, indices.length, material);
+    offset += indices.length;
+  });
   const welded = mergeVertices(g, 1e-5);
   welded.computeVertexNormals();
   g.dispose();
