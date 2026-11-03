@@ -78,3 +78,17 @@ test('shoe articulation cushions landing and bends at the forefoot during push-o
   expect(distance(last.toe, landing.toe)).toBeLessThan(.001);
   expect(Math.abs(last.compression - landing.compression)).toBeLessThan(.001);
 });
+
+// The forward swing stays low over the ground while the back foot still kicks its heel up behind the body.
+test('the recovering foot clears the ground low, with a heel kick behind the body', () => {
+  for (let i = 0; i <= 240; i++) {
+    const pose = sampleRunRig(rig, i / 240);
+    for (const foot of [pose.nearFoot, pose.farFoot]) {
+      expect(rig.groundY - foot.heel[1]).toBeLessThanOrEqual(4);
+      expect(rig.groundY - foot.toe[1]).toBeLessThanOrEqual(4.5);
+    }
+  }
+  const kick = sampleRunRig(rig, 0).farFoot;
+  expect(rig.groundY - kick.heel[1]).toBeGreaterThanOrEqual(3);
+  expect(kick.heel[0]).toBeLessThan(sampleRunRig(rig, 0).root[0]);
+});

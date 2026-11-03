@@ -21,7 +21,7 @@ export interface SideRig {
   feet: { toe: number[]; heel: number[]; ball: number[]; landingToeDegrees: number; landingCompression: number };
   arms: { upperLength: number; forearmLength: number; swingDegrees: number; elbowDegrees: number; elbowFlexDegrees: number; phaseLead: number; biasDegrees: number };
   legs: { thighLength: number; shinLength: number; hipSpread: number };
-  stride: { stanceFraction: number; frontX: number; backX: number; lift: number; toeOffDegrees: number; recoveryToeDegrees: number };
+  stride: { stanceFraction: number; frontX: number; backX: number; lift: number; reachLift?: number; toeOffDegrees: number; recoveryToeDegrees: number };
 }
 export interface RigFoot { ankle: Vec2; ball: Vec2; toe: Vec2; heel: Vec2; pitch: number; toePitch: number; compression: number; stance: boolean; progress: number; }
 export interface RigPose {
@@ -57,7 +57,8 @@ function footTarget(rig: SideRig, cycle: number): RigFoot {
     progress = (phase - stride.stanceFraction) / (1 - stride.stanceFraction);
     const tangent = -stanceTravel(rig) / stride.stanceFraction * (1 - stride.stanceFraction) / 5;
     // Quintic controls preserve the stance velocity at lift-off and landing while lifting the heel.
-    const relative = bezier([start, [start[0] + tangent, start[1]], [stride.backX - 3, rig.groundY - stride.lift * 1.8], [stride.frontX + 3, rig.groundY - stride.lift * 1.8], [end[0] - tangent, end[1]], end], progress);
+    // `lift` shapes the heel kick behind the body; the optional `reachLift` keeps the forward swing lower to the ground.
+    const relative = bezier([start, [start[0] + tangent, start[1]], [stride.backX - 3, rig.groundY - stride.lift * 1.8], [stride.frontX + 3, rig.groundY - (stride.reachLift ?? stride.lift) * 1.8], [end[0] - tangent, end[1]], end], progress);
     ankle = [rig.root[0] + relative[0], relative[1]];
     const recovery = radians(stride.recoveryToeDegrees);
     pitch = progress < .6 ? lerp(toeOff, recovery, smoothstep(progress / .6)) : lerp(recovery, 0, smoothstep((progress - .6) / .4));
