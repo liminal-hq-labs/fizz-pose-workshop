@@ -6,7 +6,7 @@
 import { add, radians, rotate, type Vec2 } from './kinematics.ts';
 import type { Frame } from '../types.ts';
 
-export interface FaceSettings { yawDegrees: number; eye: number[]; mouth: number[]; ear: number[]; shiftAmplitude: number; shiftLimits?: number[]; eyeTravelPixels?: number; profile: { nose: number[]; cheek: number[]; chin: number[] }; }
+export interface FaceSettings { yawDegrees: number; eye: number[]; mouth: number[]; ear: number[]; shiftAmplitude: number; shiftLimits?: number[]; eyeTravelPixels?: number; mouthWidth?: number; mouthFront?: number; profile: { nose: number[]; cheek: number[]; chin: number[] }; }
 export interface FaceLandmark { local: Vec2; world: Vec2; pixel: Vec2; }
 export interface FacePose { anchor: Vec2; pixelAnchor: Vec2; yaw: number; shift: number; pixelShift: number; eye: FaceLandmark; mouth: FaceLandmark; mouthPixels: Vec2[]; ear: FaceLandmark; nose: FaceLandmark; noseTip: FaceLandmark; noseVisible: boolean; cheek: FaceLandmark; chin: FaceLandmark; }
 // `snappedAnchor` lets a rig seat the head on its own quantised body instead of rounding the continuous neck.
@@ -36,7 +36,11 @@ export function sampleFace(anchor: Vec2, turn: number, settings: FaceSettings, t
   const noseTip = project(settings.profile.nose, false);
   const nose = project([settings.profile.nose[0] - (noseVisible ? 0 : 1), settings.profile.nose[1], settings.profile.nose[2]], false);
   const mouth = project(settings.mouth);
-  const mouthPixels = turn < -.45 ? [project([settings.mouth[0] - 1, settings.mouth[1], settings.mouth[2]]).pixel, mouth.pixel] : [mouth.pixel];
+  // A fixed-width mouth starts under the eye and slides back only where the head-local profile edge (`mouthFront`) stops it.
+  // Without `mouthWidth`, the mouth is one pixel and widens backwards on the camera-facing turn.
+  const width = settings.mouthWidth, front = width ? Math.min(mouth.pixel[0] + width - 1, pixelAnchor[0] + (settings.mouthFront ?? Infinity)) : 0;
+  const mouthPixels: Vec2[] = width ? Array.from({ length: width }, (_, i): Vec2 => [front - width + 1 + i, mouth.pixel[1]])
+    : turn < -.45 ? [project([settings.mouth[0] - 1, settings.mouth[1], settings.mouth[2]]).pixel, mouth.pixel] : [mouth.pixel];
   return { anchor, pixelAnchor, yaw, shift, pixelShift, eye: project(settings.eye), mouth, mouthPixels, ear: project(settings.ear, false), nose, noseTip, noseVisible, cheek: project(settings.profile.cheek, false), chin: project(settings.profile.chin, false) };
 }
 export function facePixels(frame: Frame, colour: string, anchor: Vec2): Vec2[] {

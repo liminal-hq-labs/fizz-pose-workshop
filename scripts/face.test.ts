@@ -62,8 +62,22 @@ test('nose silhouette tucks into the head at either turn while the ear and jaw s
   expect(face.noseVisible).toBe(i===0||i===3);
  }
 });
-test('the camera-facing turn reveals a wider mouth while the profile stays narrow', () => {
- expect(Array.from({length:6},(_,i)=>sampleRunRig(rig,i/6).face.mouthPixels.length)).toEqual([1,1,1,1,2,2]);
+test('the two-pixel mouth starts under the eye, stays inside the profile and moves at most one pixel from the base', () => {
+ const faces=Array.from({length:6},(_,i)=>sampleRunRig(rig,i/6).face);
+ const base=faces[0].mouthPixels.map(p=>p[0]-faces[0].pixelAnchor[0]);
+ // The base mouth runs from under the eye to the front edge of the face, like the saved standing profiles.
+ expect(base).toEqual([2,3]);
+ for(const f of faces){
+  const xs=f.mouthPixels.map(p=>p[0]-f.pixelAnchor[0]);
+  expect(xs.length).toBe(2); expect(xs[1]-xs[0]).toBe(1);
+  expect(xs[1]).toBeLessThanOrEqual(rig.face.mouthFront);
+  expect(Math.abs(xs[0]-base[0])).toBeLessThanOrEqual(1);
+  // The mouth follows the eye unless the profile edge stops it on the away turn.
+  expect(xs[0]).toBe(Math.min(f.eye.pixel[0]-f.pixelAnchor[0],rig.face.mouthFront-1));
+ }
+ expect(faces.map(f=>f.mouthPixels.map(p=>p[0]))).toEqual([[17,18],[17,18],[17,18],[17,18],[16,17],[16,17]]);
+ const xs=faces.flatMap(f=>[f.eye.pixel[0],...f.mouthPixels.map(p=>p[0])]);
+ expect(Math.max(...xs)-Math.min(...xs)).toBeLessThanOrEqual(2);
 });
 
 test('eye anchor travels at most two canvas pixels including the body bob, with the mouth following',()=>{

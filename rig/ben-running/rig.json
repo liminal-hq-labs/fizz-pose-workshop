@@ -92,6 +92,8 @@
         1.5
       ]
     },
-    "eyeTravelPixels": 2
+    "eyeTravelPixels": 2,
+    "mouthWidth": 2,
+    "mouthFront": 3
   }
 }
