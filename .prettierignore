@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.vite/
+frames/
+sheets/
+rig/
+models/
+assets/
+bun.lock
+edits.json
+assets.json
