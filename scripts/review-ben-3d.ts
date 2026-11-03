@@ -110,6 +110,20 @@ const actions = [
     phases: [0, 0.17, 0.33, 0.5, 0.67, 0.83],
   },
   {
+    // Touchdown, the deepest squash, the drive, lift-off, the apex tuck and the reach down, in both profiles: the
+    // posing reference for the right- and left-facing pogo sprites.
+    pose: "Pogo",
+    file: "pogo-cycle-right.png",
+    angle: 90,
+    phases: [0, 0.11, 0.24, 0.38, 0.58, 0.8],
+  },
+  {
+    pose: "Pogo",
+    file: "pogo-cycle-left.png",
+    angle: 270,
+    phases: [0, 0.11, 0.24, 0.38, 0.58, 0.8],
+  },
+  {
     pose: "Look up",
     file: "look-up-cycle.png",
     angle: 0,

@@ -11,12 +11,14 @@ import { runnerProfile, toeFlex } from "./equipment.ts";
 import { resetRig } from "./rig.ts";
 import { handGrip, holsterTurn, palmCentre, stunnerGrip } from "./stunner.ts";
 import type { BenModel } from "./model.ts";
+import { barHeight, pegHeight, pogoState, pogoStick, pogoTiming } from "./pogo.ts";
 export const poseNames = [
   "Standing",
   "Run",
   "Jump",
   "Fall",
   "Climb",
+  "Pogo",
   "Firing",
   "Whistle",
   "Phone",
@@ -31,6 +33,7 @@ const durations: Readonly<Partial<Record<BenPose, number>>> = {
   Jump: 1.1,
   Fall: 1.2,
   Climb: 1.4,
+  Pogo: 0.8,
   Whistle: 2,
   Firing: 2.6,
   "Look up": 2.8,
@@ -816,9 +819,108 @@ export function applyBenPose(model: BenModel, pose: BenPose, time = 0): void {
     );
   }
   if (pose === "Firing") fireStunner(model, phase);
+  if (pose === "Pogo") ridePogo(model, phase);
   syncLegJoints(model);
   model.root.updateMatrixWorld(true);
   model.skeleton.update();
+}
+/**
+ * Ben's body through one pogo bounce, keyed against the stick's own timing (`pogoTiming`): touchdown at 0, the deepest
+ * compression, the drive up to lift-off, a tuck at the apex as he pulls the stick up under him, and the reach down for the
+ * next touchdown. Heights are the pelvis above the footpegs; the lean is the spine's forward pitch in degrees; `rock` turns
+ * each foot about its peg (positive lifts the heel and points the toe down) on top of the shaft's own lean.
+ */
+export const pogoRide = (() => {
+  const { deepest, liftOff } = pogoTiming,
+    apex = (liftOff + 1) / 2;
+  return {
+    pelvis: [
+      [0, 9.3],
+      [deepest, 7.3],
+      [liftOff - 0.06, 10],
+      [liftOff, 10.05],
+      [apex, 8.5],
+      [0.86, 9.6],
+      [1, 9.3],
+    ],
+    back: [
+      [0, 1.7],
+      [deepest, 2.25],
+      [liftOff, 1.35],
+      [apex, 1.75],
+      [1, 1.7],
+    ],
+    lean: [
+      [0, 10],
+      [deepest, 21],
+      [liftOff - 0.04, 5],
+      [apex, 12],
+      [0.86, 8],
+      [1, 10],
+    ],
+    rock: [
+      [0, 0],
+      [deepest, -7],
+      [liftOff - 0.04, 16],
+      [liftOff + 0.06, 14],
+      [apex, 6],
+      [0.86, 1],
+      [1, 0],
+    ],
+  } as const satisfies Record<string, readonly (readonly [number, number])[]>;
+})();
+/** Feet stand this far either side of the shaft, with the middle of the sole on the peg. */
+const pogoFootX = 1.85,
+  archZ = 1.1;
+const pogoFrame = new THREE.Matrix4(),
+  pogoTurn = new THREE.Quaternion();
+/** A point in the stick's frame (tip at the origin, shaft up +y) carried into the model frame for `phase`. */
+export function pogoPoint(phase: number, local: THREE.Vector3): THREE.Vector3 {
+  const state = pogoState(phase);
+  pogoTurn.setFromAxisAngle(axisX, rad(state.lean));
+  pogoFrame.compose(
+    new THREE.Vector3(0, config.floorY + state.lift, pogoStick.z),
+    pogoTurn,
+    new THREE.Vector3(1, 1, 1),
+  );
+  return local.clone().applyMatrix4(pogoFrame);
+}
+function ridePogo(model: BenModel, phase: number): void {
+  const b = model.bones,
+    state = pogoState(phase),
+    peg = pegHeight(state.springLength),
+    bar = barHeight(state.springLength),
+    lean = track(pogoRide.lean, phase);
+  const pegCentre = pogoPoint(phase, new THREE.Vector3(0, peg, 0));
+  b.pelvis.position.set(
+    0,
+    pegCentre.y + track(pogoRide.pelvis, phase),
+    pegCentre.z - track(pogoRide.back, phase),
+  );
+  b.spine.rotation.set(rad(lean * 0.6), 0, 0);
+  b.chest.rotation.set(rad(lean * 0.4), 0, 0);
+  // The head holds its line of sight over the handlebar while the body pitches.
+  b.neck.rotation.set(rad(-lean * 0.35), 0, 0);
+  b.head.rotation.set(rad(-lean * 0.45), 0, 0);
+  model.root.updateMatrixWorld(true);
+  const pitch = state.lean + track(pogoRide.rock, phase),
+    sole = ankleRestY - runnerProfile(archZ).bottom,
+    turn = new THREE.Quaternion().setFromAxisAngle(axisX, rad(pitch));
+  for (const side of ["right", "left"] as const) {
+    const sign = side === "right" ? -1 : 1;
+    // The middle of the sole rests on the peg's top face; the foot turns about that contact, so the ankle follows it.
+    const contact = pogoPoint(phase, new THREE.Vector3(sign * pogoFootX, peg, 0)),
+      ankle = contact.add(new THREE.Vector3(0, sole, -archZ).applyQuaternion(turn));
+    legTo(model, side, ankle, new THREE.Vector3(sign * 3.4, ankle.y + 4, 10));
+    plantFoot(model, side, sign * -4, pitch);
+    // Overhand grip: the palm rests on top of the grip with the fingers over the front of the bar.
+    const grip = pogoPoint(phase, new THREE.Vector3(sign * 2.65, bar, 0)),
+      hold = handFrame(side, new THREE.Vector3(sign * -0.1, -0.45, 1), new THREE.Vector3(0, -1, -0.4)),
+      palm = grip.add(new THREE.Vector3(0, pogoStick.gripRadius + 0.3, -0.15)),
+      wrist = palm.sub(palmCentre.clone().applyQuaternion(hold));
+    aimArm(model, side, wrist, new THREE.Vector3(sign * 7, wrist.y - 1, -5));
+    orientInModel(model, b[side + "Hand"], hold);
+  }
 }
 /** Pelvis height through the jump: crouch, ballistic arc and landing absorption. */
 export function jumpHeight(phase: number): number {
