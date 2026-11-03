@@ -24,7 +24,13 @@ import {
 } from "./poses.ts";
 import { palmCentre, stunnerTip } from "./stunner.ts";
 import { helmetOuter, helmetVents } from "./equipment.ts";
-import { craniumField, hairThickness, headField } from "./head.ts";
+import {
+  craniumField,
+  defaultHeadStyle,
+  hairThickness,
+  headStyles,
+} from "./head.ts";
+const headField = defaultHeadStyle.field;
 import sideRig from "../../source/ben-side-rig.json";
 import { sampleRunRig } from "../rig/run.ts";
 import config from "../../source/ben-3d.json";
@@ -702,4 +708,82 @@ describe("Ben volumetric character", () => {
       ).toBeLessThan(0.05);
     }
   });
+  test("the neck is short and sturdy, and the skull and jaw rest on it", () => {
+    applyBenPose(model, "Standing");
+    const neck = model.meshes.find((mesh) => mesh.name === "Neck")!.geometry,
+      positions = neck.getAttribute("position");
+    let width = 0;
+    for (let i = 0; i < positions.count; i++) {
+      const x = positions.getX(i),
+        y = positions.getY(i),
+        z = positions.getZ(i);
+      if (Math.abs(y - 21.2) < 0.3) width = Math.max(width, 2 * Math.abs(x));
+      // The top of the neck is buried in the head, at the jaw and behind it under the skull.
+      if (y > 23.6) expect(headField(x, y, z)).toBeLessThan(0);
+    }
+    expect(width).toBeGreaterThan(2.8);
+  });
+  test("the belt wraps the waistband with no gap at any angle", () => {
+    applyBenPose(model, "Standing");
+    const belt = model.meshes.find((mesh) => mesh.name === "Belt")!,
+      jeans = model.meshes.find((mesh) => mesh.name === "Jeans_continuous")!;
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2,
+        inward = new THREE.Vector3(-Math.sin(a), 0, -Math.cos(a)),
+        from = inward.clone().multiplyScalar(-10).setY(11.25),
+        ray = new THREE.Raycaster(from, inward),
+        beltHits = ray.intersectObject(belt),
+        jeansHit = ray.intersectObject(jeans)[0];
+      expect(beltHits.length).toBeGreaterThan(0);
+      // The belt's outer face stands one belt thickness off the waistband: it lies on it, with no daylight.
+      const outer = beltHits[0].distance,
+        standOff = jeansHit.distance - outer;
+      expect(standOff).toBeGreaterThan(0.08);
+      expect(standOff).toBeLessThan(0.22);
+    }
+  });
+  test("every head style builds, fits the helmet and swaps without leaking geometry", () => {
+    const spare = createBenModel(
+      readFileSync(
+        new URL("../../source/ben-3d-skins.svg", import.meta.url),
+        "utf8",
+      ),
+    );
+    try {
+      applyBenPose(spare, "Standing");
+      const count = spare.meshes.length,
+        helmet = spare.meshes.find((mesh) => mesh.name === "Helmet_dome")!,
+        isHeadPart = (mesh: THREE.SkinnedMesh): boolean =>
+          mesh.userData.bone === "head" &&
+          mesh.name !== "Helmet_dome" &&
+          !mesh.name.startsWith("helmet-");
+      helmet.geometry.computeBoundingBox();
+      const helmetWidth =
+        helmet.geometry.boundingBox!.max.x - helmet.geometry.boundingBox!.min.x;
+      for (const style of [...headStyles.slice(1), headStyles[0]]) {
+        const old = spare.meshes.filter(isHeadPart),
+          released = new Set<object>();
+        for (const mesh of old)
+          mesh.geometry.addEventListener("dispose", () => released.add(mesh));
+        spare.setHeadStyle(style.id);
+        expect(spare.headStyle()).toBe(style.id);
+        expect(released.size).toBe(old.length);
+        const head = spare.meshes.find((mesh) => mesh.name === "Head")!;
+        head.geometry.computeBoundingBox();
+        const box = head.geometry.boundingBox!;
+        expect(box.min.y).toBeGreaterThan(21.6);
+        expect(box.min.y).toBeLessThan(22.7);
+        expect(box.max.x - box.min.x).toBeLessThan(helmetWidth);
+        // The skull stays under the fitted helmet in every style.
+        expect(box.max.y).toBeLessThan(config.crownY - 0.85);
+        expect(
+          spare.meshes.filter((mesh) => mesh.name === "Helmet_front_strap"),
+        ).toHaveLength(2);
+      }
+      expect(spare.headStyle()).toBe(defaultHeadStyle.id);
+      expect(spare.meshes.length).toBe(count);
+    } finally {
+      spare.dispose();
+    }
+  }, 120_000);
 });

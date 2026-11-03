@@ -6,6 +6,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createBenModel } from "./model.ts";
+import { headStyles } from "./head.ts";
 import {
   applyBenPose,
   poseNames,
@@ -24,7 +25,7 @@ export function mountBen3D(data: WorkshopData): void {
   const mount = document.querySelector<HTMLElement>("#ben-3d");
   if (!mount) return;
   const section: HTMLElement = mount;
-  section.innerHTML = `<h2>Ben in three dimensions</h2><p>A lean, rigged character with a vented bicycle helmet, brown-blond hair, a white-collared shirt, tapered jeans, red running shoes with white soles and a holstered Fizz Stunner. The SVG artwork is bound to the curved surfaces.</p><div class="controls"><button id="model-play">Pause rotation</button><label>Pose <select id="model-pose">${poseNames.map((name) => `<option>${name}</option>`).join("")}</select></label><label>View <select id="model-camera"><option value="studio">Studio · orbit freely</option><option value="sprite">Sprite orthographic</option></select></label><label><input id="model-rig" type="checkbox">Show skeleton</label><label><input id="model-animate" type="checkbox" checked>Animate pose</label><button id="model-reset">Reset model</button></div><label class="rig-scrubber">Turn <input id="model-yaw" type="range" min="0" max="360" value="25"><output id="model-angle">25°</output></label><div class="model-comparison"><div class="model-stage"><canvas id="model-canvas" aria-label="Rigged three-dimensional Ben character" role="img"></canvas><p id="model-status" class="small" role="status"></p></div><article class="model-reference"><h3>Calibrated sprite reference</h3><label>Reference <select id="model-reference">${config.references.map((ref, i) => `<option value="${i}">${ref.label}</option>`).join("")}</select></label><canvas id="model-sprite" width="320" height="440" role="img" aria-label="Calibrated sprite for model proportion review"></canvas><div class="controls"><button id="model-align">Match reference view</button><label><input id="model-overlay" type="checkbox">Overlay reference</label></div><p class="small">Orthographic view uses the same 32 × 44 frame and one world unit per source pixel. Compare the standing pose for proportions; the quarter sprites have different hand and foot poses.</p></article></div><details class="model-rig-controls"><summary>Pose the rig and move Ben</summary><div class="controls"><label>Bone <select id="model-bone">${config.bones
+  section.innerHTML = `<h2>Ben in three dimensions</h2><p>A lean, rigged character with a vented bicycle helmet, brown-blond hair, a white-collared shirt, tapered jeans, red running shoes with white soles and a holstered Fizz Stunner. The SVG artwork is bound to the curved surfaces.</p><div class="controls"><button id="model-play">Pause rotation</button><label>Pose <select id="model-pose">${poseNames.map((name) => `<option>${name}</option>`).join("")}</select></label><label>Head style <select id="model-head">${headStyles.map((style) => `<option value="${style.id}" title="${style.summary}">${style.label}</option>`).join("")}</select></label><label>View <select id="model-camera"><option value="studio">Studio · orbit freely</option><option value="sprite">Sprite orthographic</option></select></label><label><input id="model-rig" type="checkbox">Show skeleton</label><label><input id="model-animate" type="checkbox" checked>Animate pose</label><button id="model-reset">Reset model</button></div><label class="rig-scrubber">Turn <input id="model-yaw" type="range" min="0" max="360" value="25"><output id="model-angle">25°</output></label><div class="model-comparison"><div class="model-stage"><canvas id="model-canvas" aria-label="Rigged three-dimensional Ben character" role="img"></canvas><p id="model-status" class="small" role="status"></p></div><article class="model-reference"><h3>Calibrated sprite reference</h3><label>Reference <select id="model-reference">${config.references.map((ref, i) => `<option value="${i}">${ref.label}</option>`).join("")}</select></label><canvas id="model-sprite" width="320" height="440" role="img" aria-label="Calibrated sprite for model proportion review"></canvas><div class="controls"><button id="model-align">Match reference view</button><label><input id="model-overlay" type="checkbox">Overlay reference</label></div><p class="small">Orthographic view uses the same 32 × 44 frame and one world unit per source pixel. Compare the standing pose for proportions; the quarter sprites have different hand and foot poses.</p></article></div><details class="model-rig-controls"><summary>Pose the rig and move Ben</summary><div class="controls"><label>Bone <select id="model-bone">${config.bones
     .filter((b) => !b.name.endsWith("Knee") && b.name !== "muzzleFlash")
     .map((b) => `<option>${b.name}</option>`)
     .join(
@@ -191,6 +192,12 @@ export function mountBen3D(data: WorkshopData): void {
     overrides.clear();
     phase = 0;
     applyBenPose(model, pose);
+  };
+  // Rebuilding a head style takes a moment; the rest of the model and the pose are kept.
+  $<HTMLSelectElement>("#model-head").onchange = (e) => {
+    model.setHeadStyle((e.target as HTMLSelectElement).value);
+    section.dataset.headStyle = model.headStyle();
+    dirty = true;
   };
   $<HTMLInputElement>("#model-rig").onchange = (e) => {
     helper.visible = (e.target as HTMLInputElement).checked;
@@ -481,6 +488,11 @@ export function mountBen3D(data: WorkshopData): void {
       scene,
       camera: ortho,
       align,
+      setHeadStyle: (id: string) => {
+        model.setHeadStyle(id);
+        $<HTMLSelectElement>("#model-head").value = model.headStyle();
+        section.dataset.headStyle = model.headStyle();
+      },
       renderReview,
       captureReview,
       setAngle: (value: number) => {

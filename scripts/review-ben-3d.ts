@@ -9,6 +9,7 @@ import { PNG } from "pngjs";
 import config from "../source/ben-3d.json";
 import type { WorkshopData } from "../src/types.ts";
 import { poseNames } from "../src/model-3d/poses.ts";
+import { defaultHeadStyle, headStyles } from "../src/model-3d/head.ts";
 
 type Render = { width: number; height: number; pixels: number[] };
 type View = {
@@ -352,6 +353,55 @@ try {
     await writeFile(new URL(action.file, output), PNG.sync.write(plate));
   }
   console.log("Saved rig poses and timed action cycles.");
+  // One plate per head style: front, three-quarter and right profile, framed on the head and shoulders.
+  for (const style of headStyles) {
+    const images = await page.evaluate((id) => {
+      const api = (
+        document.querySelector("#ben-3d") as HTMLElement & {
+          modelReview: {
+            setHeadStyle: (id: string) => void;
+            captureReview: (
+              angle: number,
+              width: number,
+              height: number,
+              part?: string,
+              pose?: string,
+              time?: number,
+            ) => string;
+          };
+        }
+      ).modelReview;
+      api.setHeadStyle(id);
+      return [0, 35, 90].map((angle) => api.captureReview(angle, 960, 1320));
+    }, style.id);
+    // At three times the plate scale (30 pixels per unit), crop to the head, neck and collar.
+    const crop = { x: 285, y: 60, width: 360, height: 420 },
+      plate = new PNG({ width: crop.width * 3, height: crop.height });
+    images.forEach((capture, i) => {
+      const render = decodeCapture(capture);
+      for (let y = 0; y < crop.height; y++)
+        for (let x = 0; x < crop.width; x++) {
+          const from =
+              ((render.height - 1 - (crop.y + y)) * render.width + crop.x + x) *
+              4,
+            to = (y * plate.width + i * crop.width + x) * 4;
+          for (let c = 0; c < 4; c++)
+            plate.data[to + c] = render.pixels[from + c];
+        }
+    });
+    await writeFile(
+      new URL(`head-style-${style.id}.png`, output),
+      PNG.sync.write(plate),
+    );
+  }
+  await page.evaluate((id) => {
+    (
+      document.querySelector("#ben-3d") as HTMLElement & {
+        modelReview: { setHeadStyle: (id: string) => void };
+      }
+    ).modelReview.setHeadStyle(id);
+  }, defaultHeadStyle.id);
+  console.log("Saved head-style plates.");
   await page.locator("#model-animate").evaluate((element: HTMLInputElement) => {
     element.checked = true;
     element.dispatchEvent(new Event("change", { bubbles: true }));

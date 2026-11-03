@@ -161,7 +161,7 @@
     "strideHalfLength": 2.6,
     "recoveryLift": 1.9
   },
-  "meshCount": 91,
+  "meshCount": 85,
   "animations": [
     {
       "name": "Run",

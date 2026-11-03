@@ -30,12 +30,11 @@ import {
   toeFlex,
 } from "./equipment.ts";
 import {
-  eyeCentres,
-  eyeRadius,
-  eyelids,
+  defaultHeadStyle,
   facePoint,
   hairCap,
-  headField,
+  headStyle,
+  type HeadStyle,
 } from "./head.ts";
 import palette from "../../source/game-palette.json";
 import { holsterTurn, stunnerParts, stunnerTip } from "./stunner.ts";
@@ -45,6 +44,9 @@ import { parseSkinLayers, projectSkinLayer } from "./svg-skin.ts";
 export interface BenModel extends BenRig {
   meshes: THREE.SkinnedMesh[];
   phoneMeshes: THREE.SkinnedMesh[];
+  /** Rebuilds the head, face, hair and straps in another style; see `headStyles`. */
+  setHeadStyle: (id: string) => void;
+  headStyle: () => string;
   dispose: () => void;
 }
 type Colour = keyof typeof palette;
@@ -58,8 +60,10 @@ interface Finish {
   readonly sheenRoughness?: number;
   readonly sheenColour?: Colour;
   readonly vertexColours?: boolean;
+  readonly flat?: boolean;
 }
 const finishes = {
+  toy: { roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.15 },
   skin: { roughness: 0.52, sheen: 0.2, sheenRoughness: 0.55, sheenColour: "W" },
   cotton: {
     roughness: 0.88,
@@ -92,7 +96,10 @@ const finishes = {
 } as const satisfies Record<string, Finish>;
 const vector = (a: readonly number[]): THREE.Vector3 =>
   new THREE.Vector3(a[0], a[1], a[2]);
-export function createBenModel(svg: string): BenModel {
+export function createBenModel(
+  svg: string,
+  initialStyle: HeadStyle = defaultHeadStyle,
+): BenModel {
   const rig = createBenRig(),
     meshes: THREE.SkinnedMesh[] = [],
     phoneMeshes: THREE.SkinnedMesh[] = [],
@@ -115,6 +122,7 @@ export function createBenModel(svg: string): BenModel {
         sheenRoughness: finish.sheenRoughness ?? 1,
         sheenColor: palette[finish.sheenColour ?? "k"] ?? "#000000",
         vertexColors: finish.vertexColours ?? false,
+        flatShading: finish.flat ?? false,
         side: THREE.DoubleSide,
       });
       materials.set(key, m);
@@ -254,237 +262,417 @@ export function createBenModel(svg: string): BenModel {
     mat("W", finishes.shell),
     new THREE.Vector3(0, 1, 0),
   );
-  // Webbing straps meet at a divider below each ear and close with a buckle beneath the chin.
-  const webbing = mat("D", finishes.webbing),
-    strap = config.helmet.strapRadius,
-    onHead = (x: number, y: number, z: number): THREE.Vector3 =>
-      onSurface(headField, new THREE.Vector3(x, y, z), strap + 0.04);
-  for (const sign of [-1, 1]) {
-    const divider = onHead(sign * 2.55, 24.0, 0.55);
-    tube(
-      "Helmet_front_strap",
-      [
-        onHead(sign * 2.75, 26.75, 1.55),
-        onHead(sign * 2.7, 25.4, 1.05),
-        divider,
-        onHead(sign * 1.9, 22.75, 1.05),
-        onHead(sign * 0.85, 22.0, 1.45),
-        onHead(sign * 0.2, 21.85, 1.6),
-      ],
-      strap,
-      "head",
-      webbing,
-    );
-    tube(
-      "Helmet_rear_strap",
-      [
-        onHead(sign * 2.55, 26.25, -2.4),
-        onHead(sign * 2.75, 25.1, -1.35),
-        divider,
-      ],
-      strap,
-      "head",
-      webbing,
-    );
-    box(
-      "Helmet_strap_divider",
-      divider.toArray(),
-      [0.22, 0.55, 0.42],
-      "head",
-      mat("L", finishes.plastic),
-      0.08,
-      new THREE.Euler(0, 0, sign * 0.25),
-    );
-  }
-  const buckle = onHead(0, 21.85, 1.55);
-  box(
-    "Helmet_chin_buckle",
-    buckle.toArray(),
-    [0.72, 0.3, 0.42],
-    "head",
-    mat("D", finishes.plastic),
-    0.1,
-  );
-  box(
-    "Helmet_chin_buckle_release",
-    [buckle.x, buckle.y - 0.12, buckle.z + 0.05],
-    [0.34, 0.12, 0.3],
-    "head",
-    mat("L", finishes.plastic),
-    0.04,
-  );
-
-  // A sculpted head: jaw, chin, cheekbones, brow ridge, eye sockets, nose and lip line.
-  const head = sculptSurface(
-    headField,
-    [-3.5, 21.4, -4.4],
-    [3.5, 30.3, 4.6],
-    70,
-    120000,
-  );
-  shade(head, headField, () => white, "L", 0.35, 0.3);
-  add("Head", head, "head", shadedSkin);
-  for (const sign of [-1, 1]) {
-    const tilt = new THREE.Euler(-0.18, 0, sign * 0.12);
-    orb(
-      "Ear",
-      [sign * 2.95, 25.45, -0.5],
-      [0.32, 0.82, 0.56],
-      "head",
-      skin,
-      tilt,
-    );
-    orb(
-      "Ear_inner",
-      [sign * 3.14, 25.45, -0.44],
-      [0.09, 0.5, 0.3],
-      "head",
-      mat("L", finishes.skin),
-      tilt,
-    );
-  }
-  // Close-cropped brown-blond hair shows below the helmet at the temples and nape.
-  add("Brown_blond_hair", hairCap(head), "head", mat("N", finishes.hair));
-  // Eyes sit in their sockets, with lids, irises and the sprite's blue colour.
-  const eyeWhite = mat("W", finishes.eye);
-  for (const [ex, ey, ez] of eyeCentres) {
-    orb(
-      "Eye_white",
-      [ex, ey, ez],
-      [eyeRadius, eyeRadius, eyeRadius],
-      "head",
-      eyeWhite,
-    );
-    const front = ez + eyeRadius;
-    orb(
-      "Blue_eye",
-      [ex, ey, front - 0.1],
-      [0.29, 0.3, 0.13],
-      "head",
-      mat("B", finishes.eye),
-    );
-    orb(
-      "Pupil",
-      [ex, ey, front - 0.02],
-      [0.13, 0.14, 0.07],
-      "head",
-      mat("k", finishes.eye),
-    );
-    orb(
-      "Eye_glint",
-      [ex - 0.1, ey + 0.12, front + 0.03],
-      [0.06, 0.07, 0.03],
-      "head",
-      eyeWhite,
-    );
-    // Skin lids cover the top and bottom of each eyeball, so less white shows without a squint.
-    // The upper lid edge rests just over the top of the iris; a thin lash line defines it.
-    const lidRadius = eyeRadius + 0.035;
-    for (const [name, edge, upper] of [
-      ["Upper_eyelid", eyelids.upper, true],
-      ["Lower_eyelid", eyelids.lower, false],
-    ] as const) {
-      const sweep = Math.PI / 2 - Math.abs(edge);
-      add(
-        name,
-        new THREE.SphereGeometry(
-          lidRadius,
-          28,
-          10,
-          0,
-          Math.PI,
-          upper ? 0 : Math.PI - sweep,
-          sweep,
-        ),
+  // The head, face, ears, hair and helmet straps come from the selected head style, and can be rebuilt live.
+  // Every style shares the cranium, so the helmet, hair line and neck fit all of them.
+  const headParts = (style: HeadStyle): THREE.SkinnedMesh[] => {
+    const start = meshes.length,
+      field = style.field,
+      surface = style.finish === "toy" ? finishes.toy : finishes.skin,
+      plain = mat("W", { ...surface, flat: style.flat }),
+      grey = mat("L", { ...surface, flat: style.flat }),
+      shaded = mat("W", { ...surface, vertexColours: true, flat: style.flat }),
+      at = (x: number, y: number, offset = 0.04): THREE.Vector3 =>
+        facePoint(field, x, y, offset);
+    // Webbing straps meet at a divider below each ear, rest along the jaw and close under the chin.
+    const webbing = mat("D", finishes.webbing),
+      strap = config.helmet.strapRadius,
+      onHead = (x: number, y: number, z: number): THREE.Vector3 =>
+        onSurface(field, new THREE.Vector3(x, y, z), strap + 0.02);
+    for (const sign of [-1, 1]) {
+      const divider = onHead(sign * 2.55, 24.0, 0.55);
+      tube(
+        "Helmet_front_strap",
+        [
+          onHead(sign * 2.75, 26.75, 1.55),
+          onHead(sign * 2.7, 25.4, 1.05),
+          divider,
+          onHead(sign * 2.0, 23.1, 0.95),
+          onHead(sign * 1.1, 22.3, 1.3),
+          onHead(sign * 0.25, 22.0, 1.5),
+        ],
+        strap,
         "head",
-        skin,
-        new THREE.Vector3(ex, ey, ez),
+        webbing,
       );
       tube(
-        upper ? "Upper_lash_line" : "Lower_lid_edge",
-        [-1.2, -0.6, 0, 0.6, 1.2].map(
-          (a) =>
-            new THREE.Vector3(
-              ex + lidRadius * Math.sin(a) * Math.cos(edge),
-              ey + lidRadius * Math.sin(edge),
-              ez + lidRadius * Math.cos(a) * Math.cos(edge),
-            ),
-        ),
-        upper ? 0.032 : 0.022,
+        "Helmet_rear_strap",
+        [
+          onHead(sign * 2.55, 26.25, -2.4),
+          onHead(sign * 2.75, 25.1, -1.35),
+          divider,
+        ],
+        strap,
         "head",
-        upper ? mat("D", finishes.lips) : skin,
+        webbing,
+      );
+      box(
+        "Helmet_strap_divider",
+        divider.toArray(),
+        [0.22, 0.55, 0.42],
+        "head",
+        mat("L", finishes.plastic),
+        0.08,
+        new THREE.Euler(0, 0, sign * 0.25),
       );
     }
-    tube(
-      "Eyebrow",
-      [-0.6, -0.2, 0.2, 0.6].map((dx) =>
-        facePoint(
-          ex + dx,
-          27.12 + 0.08 * Math.cos(dx * 2) - 0.06 * Math.sign(ex) * dx,
-          0.06,
-        ),
-      ),
-      0.085,
+    const buckle = onHead(0, 21.95, 1.45);
+    box(
+      "Helmet_chin_buckle",
+      buckle.toArray(),
+      [0.72, 0.3, 0.42],
       "head",
-      mat("N", finishes.hair),
+      mat("D", finishes.plastic),
+      0.1,
     );
+    box(
+      "Helmet_chin_buckle_release",
+      [buckle.x, buckle.y - 0.12, buckle.z + 0.05],
+      [0.34, 0.12, 0.3],
+      "head",
+      mat("L", finishes.plastic),
+      0.04,
+    );
+    const head = sculptSurface(
+      field,
+      [-3.5, 21.4, -4.4],
+      [3.5, 30.3, 4.6],
+      style.resolution,
+      120000,
+    );
+    const blushColour = new THREE.Color(palette.r ?? "#ff5555"),
+      greyColour = new THREE.Color(palette.L ?? "#aaaaaa");
+    shade(
+      head,
+      field,
+      (p) => {
+        const c = white.clone();
+        if (style.underChin !== undefined)
+          c.lerp(
+            greyColour,
+            0.55 *
+              (1 -
+                THREE.MathUtils.smoothstep(
+                  p.y,
+                  style.underChin - 0.2,
+                  style.underChin + 0.2,
+                )),
+          );
+        if (style.blush) {
+          const b = style.blush,
+            d = Math.hypot(
+              Math.abs(p.x) - b.centre[0],
+              p.y - b.centre[1],
+              p.z - b.centre[2],
+            );
+          c.lerp(
+            blushColour,
+            b.amount *
+              (1 - THREE.MathUtils.smoothstep(d, b.radius * 0.3, b.radius)),
+          );
+        }
+        return c;
+      },
+      "L",
+      style.cavity,
+      0.3,
+    );
+    add("Head", head, "head", shaded);
+    add(
+      "Brown_blond_hair",
+      hairCap(head),
+      "head",
+      mat("N", { ...finishes.hair, flat: style.flat }),
+    );
+    for (const sign of [-1, 1]) {
+      const [ex, ey, ez] = style.ears.centre,
+        [rx, ry, rz] = style.ears.radii,
+        tilt = new THREE.Euler(-0.18, 0, sign * 0.12);
+      if (style.ears.box) {
+        box(
+          "Ear",
+          [sign * ex, ey, ez],
+          [rx * 2, ry * 2, rz * 2],
+          "head",
+          plain,
+          0.2,
+          tilt,
+        );
+        box(
+          "Ear_inner",
+          [sign * (ex + rx * 0.7), ey, ez + 0.05],
+          [0.12, ry * 1.1, rz * 1.0],
+          "head",
+          grey,
+          0.05,
+          tilt,
+        );
+      } else {
+        orb("Ear", [sign * ex, ey, ez], [rx, ry, rz], "head", plain, tilt);
+        orb(
+          "Ear_inner",
+          [sign * (ex + rx * 0.6), ey, ez + 0.06],
+          [rx * 0.3, ry * 0.62, rz * 0.55],
+          "head",
+          grey,
+          tilt,
+        );
+      }
+    }
+    const eyeWhite = mat("W", finishes.eye),
+      iris = mat("B", { ...finishes.eye, flat: style.flat }),
+      pupil = mat("k", finishes.eye),
+      e = style.eyes;
+    for (const sign of [-1, 1]) {
+      const x = sign * e.x,
+        s = e.size;
+      if (e.kind === "ball") {
+        // A round eyeball set into a shallow socket, with skin lids and a thin lash line.
+        const radius = 0.55 * s,
+          centre = at(x, e.y, -radius * 0.95),
+          front = centre.z + radius;
+        orb(
+          "Eye_white",
+          centre.toArray(),
+          [radius, radius, radius],
+          "head",
+          eyeWhite,
+        );
+        orb(
+          "Blue_eye",
+          [x, e.y, front - 0.09],
+          [0.27 * s, 0.28 * s, 0.12],
+          "head",
+          iris,
+        );
+        orb(
+          "Pupil",
+          [x, e.y, front - 0.02],
+          [0.12 * s, 0.13 * s, 0.06],
+          "head",
+          pupil,
+        );
+        orb(
+          "Eye_glint",
+          [x - 0.09, e.y + 0.11, front + 0.03],
+          [0.055, 0.065, 0.03],
+          "head",
+          eyeWhite,
+        );
+        const lid = radius + 0.035;
+        for (const [name, edge, upper] of [
+          ["Upper_eyelid", 0.36, true],
+          ["Lower_eyelid", -0.56, false],
+        ] as const) {
+          const sweep = Math.PI / 2 - Math.abs(edge);
+          add(
+            name,
+            new THREE.SphereGeometry(
+              lid,
+              28,
+              10,
+              0,
+              Math.PI,
+              upper ? 0 : Math.PI - sweep,
+              sweep,
+            ),
+            "head",
+            plain,
+            centre.clone(),
+          );
+          if (upper)
+            tube(
+              "Upper_lash_line",
+              [-1.2, -0.6, 0, 0.6, 1.2].map(
+                (a) =>
+                  new THREE.Vector3(
+                    x + lid * Math.sin(a) * Math.cos(edge),
+                    e.y + lid * Math.sin(edge),
+                    centre.z + lid * Math.cos(a) * Math.cos(edge),
+                  ),
+              ),
+              0.03,
+              "head",
+              mat("D", finishes.lips),
+            );
+        }
+      } else if (e.kind === "cartoon") {
+        // Big simple eyes on the surface: white, a large blue iris, a small pupil and a tiny highlight.
+        const c = at(x, e.y, -0.1 * s),
+          whiteRadii = [0.5 * s, 0.62 * s, 0.28];
+        orb("Eye_white", c.toArray(), whiteRadii, "head", eyeWhite);
+        orb(
+          "Blue_eye",
+          [x, e.y - 0.04, c.z + 0.17],
+          [0.31 * s, 0.38 * s, 0.13],
+          "head",
+          iris,
+        );
+        orb(
+          "Pupil",
+          [x, e.y - 0.04, c.z + 0.25],
+          [0.13 * s, 0.17 * s, 0.06],
+          "head",
+          pupil,
+        );
+        orb(
+          "Eye_glint",
+          [x - 0.1, e.y + 0.12, c.z + 0.29],
+          [0.07, 0.08, 0.03],
+          "head",
+          eyeWhite,
+        );
+        // A subtle skin lid over the top quarter of the eye.
+        add(
+          "Upper_eyelid",
+          new THREE.SphereGeometry(1, 24, 8, 0, Math.PI, 0, 0.78),
+          "head",
+          plain,
+          c.clone(),
+          new THREE.Vector3(
+            whiteRadii[0] * 1.06,
+            whiteRadii[1] * 1.04,
+            whiteRadii[2] * 1.12,
+          ),
+        );
+      } else if (e.kind === "pixel") {
+        // Flat blue dots, as in the sprite, with no whites or pupils.
+        box(
+          "Blue_eye",
+          at(x, e.y, 0.02).toArray(),
+          [0.44 * s, 0.56 * s, 0.12],
+          "head",
+          iris,
+          0.05,
+        );
+      } else {
+        // Painted on: a glossy blue oval with a white glint.
+        const c = at(x, e.y, -0.12);
+        orb("Blue_eye", c.toArray(), [0.27 * s, 0.37 * s, 0.2], "head", iris);
+        orb(
+          "Eye_glint",
+          [x - 0.08, e.y + 0.14, c.z + 0.21],
+          [0.06, 0.07, 0.02],
+          "head",
+          eyeWhite,
+        );
+      }
+    }
+    if (style.nose === "block")
+      // The sprite's bumpy nose: a small grey block standing off the flat face.
+      box(
+        "Nose_bump",
+        at(0, 25.05, 0.12).toArray(),
+        [0.55, 0.62, 0.42],
+        "head",
+        grey,
+        0.12,
+      );
+    const m = style.mouth,
+      lips = mat("R", { ...finishes.lips, flat: style.flat });
+    if (m.kind === "bar")
+      box(
+        "Mouth",
+        at(0, m.y, 0.03).toArray(),
+        [m.width, m.radius * 2, 0.14],
+        "head",
+        lips,
+        0.08,
+      );
+    else
+      tube(
+        "Mouth_smile",
+        [-1, -0.5, 0, 0.5, 1].map((t) =>
+          at(t * m.width, m.y + m.curve * t * t, 0.02),
+        ),
+        m.radius,
+        "head",
+        lips,
+      );
+    if (style.brows) {
+      const b = style.brows;
+      for (const sign of [-1, 1])
+        tube(
+          "Eyebrow",
+          [-1, -0.33, 0.33, 1].map((t) =>
+            at(sign * (e.x + t * b.width), b.y + 0.08 * (1 - t * t), 0.05),
+          ),
+          b.radius,
+          "head",
+          mat(b.colour, finishes.hair),
+        );
+    }
+    return meshes.slice(start);
+  };
+  let currentStyle = initialStyle,
+    headMeshes = headParts(currentStyle);
+  const setHeadStyle = (id: string): void => {
+    const next = headStyle(id);
+    if (next.id === currentStyle.id) return;
+    for (const mesh of headMeshes) {
+      rig.root.remove(mesh);
+      mesh.geometry.dispose();
+      meshes.splice(meshes.indexOf(mesh), 1);
+    }
+    currentStyle = next;
+    headMeshes = headParts(next);
+    rig.root.updateMatrixWorld(true);
+    rig.skeleton.update();
+  };
+  // A short, sturdy neck: wide where it enters the shoulders, leaning back into the base of the skull
+  // so the jaw and the back of the head both rest on it. It blends into the head bone below the jaw.
+  const neckRings = 10,
+    neckSegments = 32,
+    neckPositions: number[] = [],
+    neckIndices: number[] = [];
+  for (let i = 0; i <= neckRings; i++) {
+    const t = i / neckRings,
+      y = THREE.MathUtils.lerp(19.0, 24.2, t),
+      cz = THREE.MathUtils.lerp(-0.4, -0.95, t),
+      rx = THREE.MathUtils.lerp(
+        1.6,
+        1.42,
+        THREE.MathUtils.smoothstep(t, 0, 0.6),
+      ),
+      rz = THREE.MathUtils.lerp(1.42, 1.55, t);
+    for (let j = 0; j <= neckSegments; j++) {
+      const a = (j / neckSegments) * Math.PI * 2;
+      neckPositions.push(rx * Math.sin(a), y, cz + rz * Math.cos(a));
+    }
   }
-  tube(
-    "Mouth_smile",
-    [-0.85, -0.45, 0, 0.45, 0.85].map((x) =>
-      facePoint(x, 23.88 + 0.16 * (x / 0.85) ** 2, 0.02),
-    ),
-    0.12,
-    "head",
-    mat("R", finishes.lips),
+  for (let i = 0; i < neckRings; i++)
+    for (let j = 0; j < neckSegments; j++) {
+      const a = i * (neckSegments + 1) + j,
+        b = a + neckSegments + 1;
+      neckIndices.push(a, a + 1, b, b, a + 1, b + 1);
+    }
+  const neck = new THREE.BufferGeometry();
+  neck.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(neckPositions, 3),
   );
-  // A slender neck rises from the collar, flaring slightly into the shoulders so no gap shows inside the
-  // neckline, and blends into the head bone below the jaw for nods and tilts.
-  const neck = new THREE.LatheGeometry(
-    [
-      [1.38, 18.8],
-      [1.38, 20.3],
-      [1.32, 20.95],
-      [1.18, 21.7],
-      [1.08, 22.6],
-      [1.06, 23.6],
-      [0.6, 24.2],
-      [0, 24.3],
-    ].map(([r, y]) => new THREE.Vector2(r, y)),
-    32,
-  );
-  // Slightly deeper than wide at the jaw, shallower at the base so it stays inside the collar.
-  neck.scale(1, 1, 0.88);
-  neck.rotateX(-0.05);
-  add(
-    "Neck",
-    neck,
-    "neck",
-    skin,
-    new THREE.Vector3(0, 0, -0.2),
-    undefined,
-    undefined,
-    {
-      bone: "head",
-      weight: (p) => THREE.MathUtils.smoothstep(p.y, 22.0, 23.2),
-    },
-  );
+  neck.setIndex(neckIndices);
+  neck.computeVertexNormals();
+  add("Neck", neck, "neck", skin, undefined, undefined, undefined, {
+    bone: "head",
+    weight: (p) => THREE.MathUtils.smoothstep(p.y, 22.0, 23.2),
+  });
 
   // The shirt, shoulder caps, sleeves and turned collar band are one cotton surface.
   // Sleeves are tubes around each upper-arm bone, hemmed square to the arm and skinned to it, so the
   // openings sit on the arm in every pose; a small gap under the arm keeps sleeve and torso separate.
-  const neckAngle = (x: number, z: number): number => Math.atan2(x, z + 0.2),
-    collarTop = (a: number): number => 21.05 + 0.3 * ((1 - Math.cos(a)) / 2),
-    collarBottom = (a: number): number => 20.15 + 0.4 * ((1 - Math.cos(a)) / 2),
+  // The collar wraps the neck base and climbs at the back, where it sits on the shoulders.
+  const neckAngle = (x: number, z: number): number => Math.atan2(x, z + 0.35),
+    collarTop = (a: number): number => 21.05 + 0.6 * ((1 - Math.cos(a)) / 2),
+    collarBottom = (a: number): number => 20.15 + 0.6 * ((1 - Math.cos(a)) / 2),
     neckRadial = (x: number, z: number): number =>
-      Math.hypot(x, (z + 0.2) / 0.92),
+      Math.hypot(x, (z + 0.35) / 0.92),
     smax = (a: number, b: number, k: number): number => -smoothUnion(-a, -b, k);
   const collarField = (x: number, y: number, z: number): number => {
     const a = neckAngle(x, z),
       top = collarTop(a),
       bottom = collarBottom(a),
       flare = THREE.MathUtils.clamp((top - y) / (top - bottom), 0, 1),
-      radius = THREE.MathUtils.lerp(1.6, 1.92, flare);
+      radius = THREE.MathUtils.lerp(1.86, 2.15, flare);
     return smax(
       smax(Math.abs(neckRadial(x, z) - radius) - 0.13, y - top, 0.08),
       bottom - 0.3 - y,
@@ -538,8 +726,14 @@ export function createBenModel(svg: string): BenModel {
     );
     d = smoothUnion(
       d,
-      ellipsoid(x, y, z, [0, 19.55, -0.7], [2.2, 1.15, 1.2]),
+      ellipsoid(x, y, z, [0, 19.85, -0.75], [2.35, 1.2, 1.3]),
       0.8,
+    );
+    // The shirt fills the waist and tucks into the waistband, so the belt wraps the body.
+    d = smoothUnion(
+      d,
+      ellipsoid(x, y, z, [0, 11.8, 0.05], [2.32, 1.35, 1.7]),
+      0.9,
     );
     for (const sign of [-1, 1])
       d = smoothUnion(
@@ -573,7 +767,7 @@ export function createBenModel(svg: string): BenModel {
     }
     d = Math.max(smoothUnion(d, collarField(x, y, z), 0.1), 10.95 - y);
     // The open neckline is cut after the collar joins, leaving one clean inner wall.
-    return smax(d, -Math.max(neckRadial(x, z) - 1.46, 19.4 - y), 0.06);
+    return smax(d, -Math.max(neckRadial(x, z) - 1.72, 19.4 - y), 0.06);
   };
   const shirtWeights: Influences = (p) => {
     const chest = THREE.MathUtils.smoothstep(p.y, 13.4, 18.4),
@@ -620,7 +814,7 @@ export function createBenModel(svg: string): BenModel {
           0.0,
           0.06,
         ) *
-        (1 - THREE.MathUtils.smoothstep(neckRadial(p.x, p.z), 2.25, 2.35));
+        (1 - THREE.MathUtils.smoothstep(neckRadial(p.x, p.z), 2.48, 2.58));
       const sleeve = Math.max(
         ...sleeves.map((s) =>
           THREE.MathUtils.smoothstep(
@@ -653,11 +847,11 @@ export function createBenModel(svg: string): BenModel {
     Array.from({ length: 65 }, (_, i) => {
       const a = (i / 64) * Math.PI * 2 - Math.PI,
         y = collarBottom(a) + 0.06,
-        r = 1.92 + 0.14;
+        r = 2.15 + 0.14;
       return new THREE.Vector3(
         r * Math.sin(a),
         y,
-        r * 0.92 * Math.cos(a) - 0.2,
+        r * 0.92 * Math.cos(a) - 0.35,
       );
     }),
     0.03,
@@ -699,8 +893,8 @@ export function createBenModel(svg: string): BenModel {
     const waist = 10.4;
     let d =
       y >= waist
-        ? Math.max((Math.hypot(x / 2.55, z / 1.85) - 1) * 1.85, y - 11.55)
-        : ellipsoid(x, y, z, [0, waist, 0], [2.55, 2.6, 1.85]);
+        ? Math.max((Math.hypot(x / 2.42, z / 1.78) - 1) * 1.78, y - 11.75)
+        : ellipsoid(x, y, z, [0, waist, 0], [2.42, 2.6, 1.78]);
     for (const sign of [-1, 1]) {
       d = smoothUnion(
         d,
@@ -757,23 +951,71 @@ export function createBenModel(svg: string): BenModel {
     mat("W", { ...finishes.denim, vertexColours: true }),
   );
   weightSurface(rig, pants, pantsWeights);
-  // The belt sits on the jeans waistband.
-  const belt = new THREE.TorusGeometry(1, 0.09, 8, 72);
-  belt.rotateX(Math.PI / 2);
-  belt.scale(2.57, 4.4, 1.88);
-  belt.translate(0, 11.1, 0);
+  // The belt is a leather band traced around the jeans waistband, so it wraps the body with no gap.
+  const beltY = 11.25,
+    beltHeight = 0.66,
+    beltThickness = 0.16,
+    waistAt = (angle: number): number => {
+      let low = 0,
+        high = 4;
+      for (let i = 0; i < 30; i++) {
+        const r = (low + high) / 2;
+        if (pantsField(r * Math.sin(angle), beltY, r * Math.cos(angle)) < 0)
+          low = r;
+        else high = r;
+      }
+      return (low + high) / 2;
+    };
+  const beltProfile = [
+      [-0.03, -0.5],
+      [0.6, -0.5],
+      [1, -0.32],
+      [1, 0.32],
+      [0.6, 0.5],
+      [-0.03, 0.5],
+    ],
+    beltPositions: number[] = [],
+    beltIndices: number[] = [],
+    beltSegments = 96;
+  for (let i = 0; i <= beltSegments; i++) {
+    const a = (i / beltSegments) * Math.PI * 2,
+      r = waistAt(a);
+    for (const [out, up] of beltProfile) {
+      const radius = r + out * beltThickness;
+      beltPositions.push(
+        radius * Math.sin(a),
+        beltY + up * beltHeight,
+        radius * Math.cos(a),
+      );
+    }
+  }
+  const ring = beltProfile.length;
+  for (let i = 0; i < beltSegments; i++)
+    for (let j = 0; j < ring - 1; j++) {
+      const a = i * ring + j,
+        b = a + ring;
+      beltIndices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  const belt = new THREE.BufferGeometry();
+  belt.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(beltPositions, 3),
+  );
+  belt.setIndex(beltIndices);
+  belt.computeVertexNormals();
   add("Belt", belt, "pelvis", mat("D", finishes.leather));
+  const buckleZ = waistAt(0) + beltThickness;
   box(
     "Belt_buckle",
-    [0, 11.1, 2.06],
-    [1.1, 0.78, 0.22],
+    [0, beltY, buckleZ + 0.08],
+    [1.1, 0.78, 0.2],
     "pelvis",
     mat("y", finishes.metal),
     0.1,
   );
   box(
     "Belt_buckle_inset",
-    [0, 11.1, 2.2],
+    [0, beltY, buckleZ + 0.2],
     [0.62, 0.4, 0.08],
     "pelvis",
     mat("N", finishes.leather),
@@ -1014,15 +1256,31 @@ export function createBenModel(svg: string): BenModel {
     mat("D", finishes.leather),
     gunOrigin.clone(),
   );
-  const holsterStrap = new THREE.BoxGeometry(0.35, 1.0, 0.12);
+  // The holster hangs from the belt by a short strap on the right hip.
+  const strapAngle = Math.atan2(gunOrigin.x, gunOrigin.z),
+    strapTop = new THREE.Vector3(
+      Math.sin(strapAngle),
+      0,
+      Math.cos(strapAngle),
+    ).multiplyScalar(waistAt(strapAngle) + beltThickness + 0.04),
+    strapBottom = new THREE.Vector3(0.0, 0.5, 1.2)
+      .applyQuaternion(holsterTurn)
+      .add(gunOrigin);
+  strapTop.y = beltY - 0.1;
+  const strapLength = strapTop.distanceTo(strapBottom),
+    holsterStrap = new THREE.BoxGeometry(0.36, strapLength, 0.1);
+  holsterStrap.applyQuaternion(
+    new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      strapTop.clone().sub(strapBottom).normalize(),
+    ),
+  );
   add(
     "Holster_strap",
     holsterStrap,
     "pelvis",
     mat("D", finishes.leather),
-    new THREE.Vector3(gunOrigin.x + 0.35, 10.5, gunOrigin.z + 0.35),
-    undefined,
-    new THREE.Euler(0, -0.9, 0),
+    strapTop.clone().add(strapBottom).multiplyScalar(0.5),
   );
   const flashAt = stunnerTip
     .clone()
@@ -1097,6 +1355,8 @@ export function createBenModel(svg: string): BenModel {
     ...rig,
     meshes,
     phoneMeshes,
+    setHeadStyle,
+    headStyle: () => currentStyle.id,
     dispose: () => {
       const geometries = new Set(meshes.map((mesh) => mesh.geometry));
       geometries.forEach((g) => g.dispose());
