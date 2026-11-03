@@ -108,7 +108,7 @@ The holstered Stunner swings with the near thigh by at most 35° in performances
 | Rig | View and pose sequence | Playback |
 |---|---|---|
 | Ladder climb | Back view; opposite hands and feet alternate, with bent elbows and knees | Loop |
-| Jump | Nine sprites: crouch (held), launch, rise, apex (held), tip over, fall, drop, land, recover | Hold final pose |
+| Jump | Nine sprites as a continuous bounce: crouch (held), launch, rise, apex (held), tip over, fall, drop, land, then a gather with the arms swinging back that leads straight into the next crouch. In the game, a single jump plays frames 1–8 and ends on the landing | Loop |
 | Fall | Six sprites at 90 ms: arms flung out forward and back and flapping in opposition, legs dangling and paddling, a startled open mouth; never touches down | Loop |
 | Dramatic death | Seven sprites: startled take, then the head wobbles left, right, left, right on held beats (clutch, tongue out, dizzy eyes, wince) while the body sags one way, a topple in-between and a final comic collapse to the other side; both oversized soles face the camera | Hold final pose |
 | Ledge pull · left and right | Eleven sprites: hang (held), pull, haul, chest over edge, elbows lock, swing the knee, knee up, plant the foot, push to crouch, rise, stand; grips stay pinned through the pull | Hold final pose |

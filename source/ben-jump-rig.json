@@ -3,18 +3,18 @@
   "width": 32,
   "height": 52,
   "groundY": 46,
-  "durationMs": 900,
+  "durationMs": 810,
   "sampleCount": 9,
   "frameDurationsMs": [
-    160,
+    140,
     60,
     80,
     140,
     80,
     70,
     60,
-    120,
-    130
+    100,
+    80
   ],
   "root": [
     13,
@@ -107,7 +107,7 @@
   "motion": "jump",
   "performance": {
     "view": "side",
-    "loop": false,
+    "loop": true,
     "keys": [
       {
         "phase": 0,
@@ -261,17 +261,17 @@
         "phase": 1,
         "root": [
           13,
+          38
+        ],
+        "lean": 10,
+        "headRoll": 2,
+        "nearHand": [
+          11,
           36
         ],
-        "lean": 3,
-        "headRoll": 0,
-        "nearHand": [
-          16,
-          33
-        ],
         "farHand": [
-          15,
-          32
+          10,
+          35
         ],
         "nearAnkle": [
           10,
@@ -283,7 +283,8 @@
         ],
         "expression": "normal",
         "nearSupport": true,
-        "farSupport": true
+        "farSupport": true,
+        "hold": true
       }
     ],
     "sampleTimes": [
@@ -295,7 +296,7 @@
       0.62,
       0.71,
       0.8,
-      1
+      0.9
     ]
   }
 }
