@@ -43,11 +43,11 @@ export function initialiseEditor(data: WorkshopData): void {
   const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => section.querySelector<T>(selector)!;
   const canvas = $<HTMLCanvasElement>('#pixel-canvas'), native = $<HTMLCanvasElement>('#native-preview');
   const select = $<HTMLSelectElement>('#edit-frame');
-  const standing = ["ben_stand","ben_standRight","ben_standFront","ben_walkRight1","ben_walkRight2","ben_walkRight3","ben_walkRight4","ben_walkRight5","ben_walkRight6","ben_frontLookUp","ben_frontBendHalf","ben_frontBendFull"].filter(name => Object.hasOwn(data.frames, name));
+  const standing = ["ben_stand","ben_standRight","ben_standFront","ben_frontLookUp","ben_frontBendHalf","ben_frontBendFull"].filter(name => Object.hasOwn(data.frames, name));
   const actionFrames = rigCatalogue.flatMap(entry => Array.from({length:entry.rig.sampleCount}, (_, i) => entry.prefix + (i+1)));
   standing.push(...actionFrames.filter(name => Object.hasOwn(data.frames, name)));
   const frameNames = [...standing, ...Object.keys(data.frames).filter(name => !standing.includes(name))];
-  const labels: Record<string, string> = { ben_walkRight1: "ben_walkRight1 — 1. Near contact", ben_walkRight2: "ben_walkRight2 — 2. Near push-off", ben_walkRight3: "ben_walkRight3 — 3. Flight · far leg leads", ben_walkRight4: "ben_walkRight4 — 4. Far contact", ben_walkRight5: "ben_walkRight5 — 5. Far push-off", ben_walkRight6: "ben_walkRight6 — 6. Flight · near leg leads",  ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner", ben_standFront: "ben_standFront — Stand front · camera-facing", ben_frontLookUp: "ben_frontLookUp — Look up · camera-facing", ben_frontBendHalf: "ben_frontBendHalf — Bend forward · halfway", ben_frontBendFull: "ben_frontBendFull — Bend forward · helmet crown" };
+  const labels: Record<string, string> = {  ben_stand: "ben_stand — Stand left", ben_standRight: "ben_standRight — Stand right · belt stunner", ben_standFront: "ben_standFront — Stand front · camera-facing", ben_frontLookUp: "ben_frontLookUp — Look up · camera-facing", ben_frontBendHalf: "ben_frontBendHalf — Bend forward · halfway", ben_frontBendFull: "ben_frontBendFull — Bend forward · helmet crown" };
   for (const entry of rigCatalogue) entry.labels.forEach((phase,i) => {labels[entry.prefix + (i+1)] = entry.prefix + (i+1) + ' — ' + entry.title + ' · ' + phase;});
   for (const name of frameNames.filter(name=>name.startsWith('ben_turn'))) labels[name]=name+' — Standing turn '+Number(name.slice(8))+'°';
   for (const view of stunnerStudy.views) labels[view.name]=view.label;
