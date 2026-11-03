@@ -7,7 +7,7 @@ import stunnerStudy from '../source/fizz-stunner-study.json';
 import { rigCatalogue } from './rig/catalogue.ts';
 import type { WorkshopData } from './types.ts';
 
-const oneShotRestMs = 1200;
+import { oneShotRestMs } from './rig/timing.ts';
 export function mountGallery(data: WorkshopData): void {
   const $ = <T extends HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
   const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · six spring phases', climb: 'Ladder climb · six phases', mantle: 'Ledge pull right · hang to stand', 'mantle-left': 'Ledge pull left · hang to stand', 'fizz-blaster': 'Fizz Stunner · six firing phases', 'look-up-down': 'Look up & down · front-facing', jump: 'Jump · crouch to landing', fall: 'Fall · arms flailing', death: 'Dramatic death', 'whistle-left': 'Whistle left · standing idle', 'whistle-right': 'Whistle right · standing idle', 'phone-idle': 'Seated phone idle · camera-facing' };

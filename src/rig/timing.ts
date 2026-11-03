@@ -16,3 +16,13 @@ export function frameDurations(rig: TimedRig): number[] {
   }
   return [...holds];
 }
+
+/** How long a one-shot rests on its final pose before the gallery and every exported GIF/SVG replay it. */
+export const oneShotRestMs = 1200;
+/**
+ * Playback durations for an exported animation. Every export loops so any viewer keeps it moving; a one-shot folds a rest
+ * into its final frame, so it still reads as a finished action that holds before replaying.
+ */
+export function exportDurations(durations: readonly number[], loop: boolean): number[] {
+  return durations.map((duration, index) => !loop && index === durations.length - 1 ? duration + oneShotRestMs : duration);
+}
