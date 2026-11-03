@@ -572,6 +572,39 @@
       }
     ]
   },
+  "stunnerBack": {
+    "anchor": [
+      11,
+      24
+    ],
+    "rows": [
+      {
+        "x": 15,
+        "y": 23,
+        "pixels": "kDDk"
+      },
+      {
+        "x": 15,
+        "y": 24,
+        "pixels": "kMMk"
+      },
+      {
+        "x": 15,
+        "y": 25,
+        "pixels": "kmMk"
+      },
+      {
+        "x": 16,
+        "y": 26,
+        "pixels": "kMk"
+      },
+      {
+        "x": 17,
+        "y": 27,
+        "pixels": "k"
+      }
+    ]
+  },
   "cameraShoe": {
     "anchor": [
       3,

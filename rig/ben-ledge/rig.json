@@ -107,6 +107,18 @@
     }
   },
   "motion": "ledge",
+  "clothing": {
+    "lag": 0.06,
+    "hem": {
+      "row": 22,
+      "threshold": 12,
+      "flutter": 2
+    },
+    "sleeves": {
+      "slide": 1,
+      "threshold": 400
+    }
+  },
   "performance": {
     "view": "side",
     "loop": false,

@@ -257,6 +257,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": false,
+        "hemFront": false,
+        "nearSleeve": 0,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -267,7 +273,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -511,6 +519,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": false,
+        "hemFront": false,
+        "nearSleeve": 0,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -521,7 +535,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -765,6 +781,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": false,
+        "nearSleeve": -1,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -775,7 +797,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -1019,6 +1043,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": false,
+        "hemFront": true,
+        "nearSleeve": 0,
+        "farSleeve": -1
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -1029,7 +1059,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -1273,6 +1305,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": false,
+        "hemFront": true,
+        "nearSleeve": 1,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -1283,7 +1321,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -1527,6 +1567,12 @@
         "progress": 0
       },
       "contact": "flight",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": true,
+        "nearSleeve": 1,
+        "farSleeve": 1
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -1537,7 +1583,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -1781,6 +1829,12 @@
         "progress": 0
       },
       "contact": "near",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": false,
+        "nearSleeve": 0,
+        "farSleeve": 1
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -1791,7 +1845,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -2035,6 +2091,12 @@
         "progress": 0
       },
       "contact": "near",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": false,
+        "nearSleeve": 0,
+        "farSleeve": 1
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -2045,7 +2107,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -2289,6 +2353,12 @@
         "progress": 0
       },
       "contact": "near",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": true,
+        "nearSleeve": 1,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -2299,7 +2369,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -2543,6 +2615,12 @@
         "progress": 0
       },
       "contact": "near",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": true,
+        "nearSleeve": 1,
+        "farSleeve": -1
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -2553,7 +2631,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     },
     {
@@ -2797,6 +2877,12 @@
         "progress": 0
       },
       "contact": "both",
+      "cloth": {
+        "hemBack": true,
+        "hemFront": true,
+        "nearSleeve": 0,
+        "farSleeve": 0
+      },
       "presentation": {
         "view": "side",
         "expression": "normal",
@@ -2807,7 +2893,9 @@
           "width": 15,
           "spacing": 0
         },
-        "cameraShoes": false
+        "cameraShoes": false,
+        "pucker": 0,
+        "blink": 0
       }
     }
   ]

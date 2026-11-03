@@ -10,6 +10,7 @@ import {validateRig,type SideRig} from '../src/rig/run.ts';
 import {distance,type Chain} from '../src/rig/kinematics.ts';
 import {skinRig,sampleRigSprites} from './rig-skin.ts';
 import {standingIdleLandmarks} from './performance-skin.ts';
+import type {TimedRig} from '../src/rig/timing.ts';
 import skin from '../source/ben-side-skin.json';
 import palette from '../source/game-palette.json';
 
@@ -150,13 +151,63 @@ test('whistling notes float clear of Ben instead of overlapping or touching his 
  }
 });
 
-test('left ledge mirrors the complete right rig and every exported sprite pixel',()=>{
- const right=entries.find(e=>e.rig.motion==='ledge'&&!e.rig.mirrored)!.rig;
- const left=entries.find(e=>e.rig.motion==='ledge'&&e.rig.mirrored)!.rig;
- for(let i=0;i<right.sampleCount;i++){
-  const t=sampleTime(right,i),a=sampleRig(right,t),b=sampleRig(left,t);
-  expect(b.root[0]).toBeCloseTo(right.width-1-a.root[0],8);
-  for(const key of ['nearArm','farArm','nearLeg','farLeg']as const)for(let j=0;j<3;j++){expect(b[key][j][0]).toBeCloseTo(right.width-1-a[key][j][0],8);expect(b[key][j][1]).toBe(a[key][j][1]);}
-  expect(skinRig(left,skin,b).grid).toEqual(skinRig(right,skin,a).grid.map(row=>[...row].reverse().join('')));
+test('left ledge turns the right rig round with the Stunner kept on his right (far) hip, so the two sets are not mirror images',async()=>{
+ const saved=await Bun.file(new URL('../edits.json',import.meta.url)).json();
+ const right=entries.find(e=>e.animation==='mantle')!,left=entries.find(e=>e.animation==='mantle-left')!;
+ expect(left.rig.facing).toBe('left');expect(left.rig.mirrored).toBeFalsy();expect(left.rig.performance).toBe(right.rig.performance);
+ for(let i=0;i<right.rig.sampleCount;i++){
+  // The skeleton is the turned-round right-facing pose: the grips, limbs and feet reflect across the canvas.
+  const t=sampleTime(right.rig,i),a=sampleRig(right.rig,t),b=sampleRig(left.rig,t);
+  for(const key of ['nearArm','farArm','nearLeg','farLeg']as const)for(let j=0;j<3;j++){expect(b[key][j][0]).toBeCloseTo(right.rig.width-1-a[key][j][0],8);expect(b[key][j][1]).toBe(a[key][j][1]);}
+  // The saved sprites differ from a flip: the right view shows the near-hip holster and the left view hides it behind the body.
+  const r=saved[`${right.prefix}${i+1}`].grid as string[],l=saved[`${left.prefix}${i+1}`].grid as string[],flip=r.map(row=>[...row].reverse().join(''));
+  expect(l).not.toEqual(flip);
+  expect(count(r,'M')).toBeGreaterThanOrEqual(3);expect(count(l,'M')).toBeLessThanOrEqual(2);
+  flip.forEach((row,y)=>[...row].forEach((code,x)=>{if(code==='M'||code==='m')expect(l[y][x]).not.toBe(code);}));
+ }
+});
+
+const ladder=entries.find(e=>e.animation==='climb')!;
+const world=(p:readonly number[],t:number):[number,number]=>{const travel=ladder.rig.performance!.travel!;return [p[0]+travel[0]*t,p[1]+travel[1]*t];};
+test('ladder grips and footholds stay pinned on their rungs while gripped as the body rises hand over hand',()=>{
+ const rig=ladder.rig,clip=rig.performance!,keys=clip.keys,spacing=clip.environment!.spacing;
+ expect(clip.loop).toBe(true);expect(clip.travel).toEqual([0,-2*spacing]);
+ // Each hand and foot is gripped on a run of keys at one world point, and that point is a rung.
+ for(const [limb,chain] of [['nearHand','nearArm'],['farHand','farArm'],['nearAnkle','nearLeg'],['farAnkle','farLeg']] as const){
+  let gripped=0;
+  for(let i=0;i<keys.length-1;i++){
+   const [a,b]=[keys[i][limb],keys[i+1][limb]];if(a[0]!==b[0]||a[1]!==b[1])continue;
+   gripped+=keys[i+1].phase-keys[i].phase;
+   if(limb.endsWith('Hand'))expect((a[1]-clip.environment!.y)%spacing).toBe(0);
+   for(let s=0;s<=20;s++){
+    const t=keys[i].phase+(keys[i+1].phase-keys[i].phase)*s/20,pose=sampleRig(rig,t),at=world(pose[chain][2],t);
+    expect(Math.hypot(at[0]-a[0],at[1]-a[1])).toBeLessThanOrEqual(1);
+   }
+  }
+  // Every limb holds on for over half the cycle and moves once, two rungs up.
+  expect(gripped).toBeGreaterThan(.5);expect(keys.at(-1)![limb][1]-keys[0][limb][1]).toBe(-2*spacing);
+ }
+ // The body really climbs: it surges up while pulling and pauses while the other hand reaches, so in place it bobs.
+ const bob=Array.from({length:61},(_,i)=>sampleRig(rig,i/60).root[1]);
+ expect(Math.max(...bob)-Math.min(...bob)).toBeGreaterThan(1.5);
+ // Hands alternate: the near hand grips high at the start, the far hand at the half-way catch.
+ const [start,half]=[sampleRig(rig,0),sampleRig(rig,.5)];
+ expect(start.nearArm[2][1]).toBeLessThan(start.farArm[2][1]-3);expect(half.farArm[2][1]).toBeLessThan(half.nearArm[2][1]-3);
+ // The grip catches hold longest.
+ const holds=(rig as TimedRig).frameDurationsMs!;expect(holds[0]).toBe(Math.max(...holds));expect(holds[rig.sampleCount/2]).toBe(holds[0]);
+});
+
+test('ladder keeps the approved climbing head and the Stunner on his right hip (the viewer\'s right) in every frame',async()=>{
+ const saved=await Bun.file(new URL('../edits.json',import.meta.url)).json();
+ const head=skin.headBack.rows.map(row=>row.pixels).join('|');
+ const frames=[...Array.from({length:ladder.rig.sampleCount},(_,i)=>saved[`${ladder.prefix}${i+1}`]),saved.ben_climb1,saved.ben_climb2];
+ for(const frame of frames){
+  const grid=frame.grid as string[],top=grid.findIndex(row=>row.includes('k')),crown=skin.headBack.rows[0];
+  // The rear head patch appears whole and unchanged, row by row from the crown.
+  const dx=grid[top].indexOf('k')-crown.x,dy=top-crown.y;
+  expect(skin.headBack.rows.map(row=>grid[row.y+dy].slice(row.x+dx,row.x+dx+row.pixels.length)).join('|')).toBe(head);
+  // The holster sits right of the spine and never on the left.
+  const spine=frame.width/2,holster=grid.flatMap((row,y)=>[...row].flatMap((code,cx)=>code==='M'||code==='m'?[[cx,y]]:[]));
+  expect(holster.length).toBeGreaterThanOrEqual(4);for(const [cx] of holster)expect(cx).toBeGreaterThan(spine);
  }
 });
