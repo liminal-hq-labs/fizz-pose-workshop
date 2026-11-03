@@ -12,6 +12,7 @@ The running motion is defined as a continuous skeleton, then sampled into six sp
 - `scripts/rig-skin.ts`: `skinRig(rig, skin, pose)` and `sampleRigSprites(rig, skin, prefix)` turn a skeleton into palette-indexed grids.
 - `scripts/export-rig.ts`: saves the rig, skin, joint samples, animated skeleton SVG, individual skeleton SVGs, individual sprite PNG/SVG files and a sprite GIF.
 - `src/rig/preview.ts`: the live continuous-versus-six-samples viewer, with a scrubber, slow playback, stepping and skeleton overlay.
+- `src/rig/lighting.ts` and `scripts/rig-lighting.ts`: a rig's prop light (the phone screen) as per-frame data beside the unlit sprites; see [Phone-screen lighting](#phone-screen-lighting).
 - `rig/ben-running/`: saved exports of Ben’s current rig and six sampled poses.
 
 ## Draw and export
@@ -140,7 +141,7 @@ A cross-legged sit seen from the front cannot be projected by a flat two-bone so
 
 The phone is keyed in canvas space but carried by the far hand: its offset from that grip interpolates, so it never drifts out of the hand between keys. The screen faces Ben, so each thumb rests on the screen side and shows only as a skin tip over the phone's top edge; the `scroll` channel (from 0.5) presses the near thumb down behind the case. A finger wraps each side of the case, and nothing of the hands covers the back.
 
-`scripts/phone-rig.test.ts` checks that the seat rests on the ground line and never lifts once seated, that the hips only move down, that the feet never leave the ground, that the knees splay with thighs within 25° of level, that the shins overlap by at least twelve pixels with the near shin on top, the thumb and finger placement, the one-hip holster, and that every sampled joint of the overlay (shoulders, elbows, wrists, hips, knees, ankles and phone) sits within a pixel of the painted limb it belongs to. The painter records which body part drew each pixel (`Pixels.parts`), which the overlay test uses; the sprite itself never reads it.
+`scripts/phone-rig.test.ts` checks that the seat rests on the ground line and never lifts once seated, that the hips only move down, that the feet never leave the ground, that the knees splay with thighs within 25° of level, that the shins overlap by at least twelve pixels with the near shin on top, the thumb and finger placement, the one-hip holster, and that every sampled joint of the overlay (shoulders, elbows, wrists, hips, knees, ankles and phone) sits within a pixel of the painted limb it belongs to. The painter records which body part drew each pixel (`Pixels.parts`), which the overlay test and the light mask use; the sprite itself never reads it.
 
 Ladder and ledge geometry appears only as a guide in the skeleton preview and skeleton SVGs. Sprite exports stay transparent and contain the character and personal equipment. These are in-place art studies; the game simulation will supply world movement.
 
@@ -148,7 +149,30 @@ One-shot performances include both endpoint poses, using their `sampleTimes` or,
 
 ### Phone-screen lighting
 
-The phone idle faces the camera. Its screen faces Ben while the dark back case faces the player. The hidden screen should act as a small dynamic light in the game, brightening Ben’s face and hands once the phone is raised. Fade or modulate that light with screen visibility, and move it with the phone grip. Keep the lighting separate from the sixteen-colour sprite pixels. `lightingNote` in `source/ben-phone-rig.json` and its saved rig/sample exports preserves this integration note. The keyed `screen` channel (0–1, counted only while the phone is held) records how lit the screen is. The workshop displays the palette-only artwork; it does not implement engine lighting.
+The phone idle faces the camera. Its screen faces Ben while the dark back case faces the player. The hidden screen acts as a small dynamic light in the game, brightening Ben’s face and hands once the phone is raised. The sprites stay unlit in the sixteen game colours; the light is exported as data beside them, so a game can apply it at run time. `lightingNote` in `source/ben-phone-rig.json` keeps the integration note.
+
+A rig opts in with `lighting` in its JSON (`src/rig/lighting.ts`):
+
+- `source: "phone"` follows the held phone; `offset` moves the light from the phone's anchor to the centre of its screen.
+- `colour` is an EGA code and hex value (`c`, `#55ffff`: a cool light cyan) for renderers that tint.
+- `radius` (14 pixels) and `falloff` (`linear` or `smooth`) set how influence falls from 1 at the source to 0 at the radius; `levels` (3) sets the mask levels.
+- `parts` and `skin` choose what is fully lit: skin colours (`W`, `L`) painted as the face, arms or hands. `spill` adds a faint light on other parts (the shirt front), capped at `maxLevel` 1. Outlines are never lit.
+- The keyed `screen` channel (0–1) is the frame intensity. It only counts while the phone is held: 0 as it comes out of the pocket, 0.7 as it rises, 1 to read, 0.85 on the scroll beat.
+
+`bun run draw:performances phone-idle` saves `rig/ben-phone/lighting.json`:
+
+```json
+{
+ "version": 1, "rig": "…", "note": "…",
+ "colour": { "code": "c", "hex": "#55ffff" }, "radius": 14, "falloff": "linear", "levels": 3,
+ "litVariants": { "k": ["D", "L", "W"], "R": ["r", "r", "r"], "W": ["W", "W", "W"], "…": [] },
+ "frames": [{ "sprite": "sprite-08.png", "intensity": 1, "source": [20.5, 40], "mask": ["0000…", "…"] }]
+}
+```
+
+Each frame lists its sprite file, its `intensity`, the light `source` in sprite pixels (or `null` with no phone) and `mask`: one string per sprite row with one digit per pixel, the light's influence level 0–3 at full intensity. A game applies `round(mask × intensity)` per pixel. A DOS renderer looks the pixel's palette code up in `litVariants` at that level (each level is one step brighter along the EGA dim/bright pairs: black to dark grey to light grey to white, each dim colour to its bright partner, brown to yellow; bright colours and white stay, so hues never change and no new art is needed). A renderer with per-pixel colour can instead blend towards `colour` by `level / levels`. The mask is drawn from the same painted sprite as the export, so it lines up with the saved PNGs; a hand edit to a phone sprite needs the light redrawn with it. Tests check that the mask only touches lit skin or capped spill, that the intensity follows the phone, that the saved data matches the rig, that zero intensity changes nothing and that every EGA colour has a valid, never darker lit variant.
+
+The rig viewer shows **Screen light preview** for a lit action. It reads the exported `lighting.json` and draws a third panel beside the unlit sprite: the EGA lookup (what DOS gets) or a colour tint (web), an intensity slider (0–150% of each frame's value), the optional light-mask overlay (yellow dots, larger for higher levels) and the light's radius at the current intensity. The plain sprite panel, saved frames and every export stay unlit.
 
 Left and right whistling rigs use complete patches of the current saved `ben_stand` and `ben_standRight` artwork. Their transparent canvas has four pixels of horizontal padding around the original 24 × 44 frame. Neither is a mirror of the other: the right view shows the Fizz Stunner on Ben's right hip and the left view keeps it hidden on the far side.
 

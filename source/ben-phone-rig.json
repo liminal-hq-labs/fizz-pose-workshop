@@ -482,5 +482,34 @@
     ],
     "frontHolster": true
   },
-  "lightingNote": "The back case faces the player; the screen faces Ben. Use the hidden screen as a small dynamic light that brightens his face and hands once raised. Keep that glow separate from the sixteen-colour sprite pixels until engine lighting is added."
+  "lightingNote": "The back case faces the player; the screen faces Ben. Use the hidden screen as a small dynamic light that brightens his face and hands once raised. Keep that glow separate from the sixteen-colour sprite pixels: lighting.json beside the sprite exports carries the light source, intensity and per-pixel mask for each frame.",
+  "lighting": {
+    "source": "phone",
+    "offset": [
+      0.5,
+      0
+    ],
+    "colour": {
+      "code": "c",
+      "hex": "#55ffff"
+    },
+    "radius": 14,
+    "falloff": "linear",
+    "levels": 3,
+    "parts": [
+      "face",
+      "hand",
+      "arm"
+    ],
+    "skin": [
+      "W",
+      "L"
+    ],
+    "spill": {
+      "parts": [
+        "shirt"
+      ],
+      "maxLevel": 1
+    }
+  }
 }

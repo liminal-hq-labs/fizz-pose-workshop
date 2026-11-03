@@ -1,7 +1,7 @@
 {
   "durationMs": 1440,
   "loop": false,
-  "lightingNote": "The back case faces the player; the screen faces Ben. Use the hidden screen as a small dynamic light that brightens his face and hands once raised. Keep that glow separate from the sixteen-colour sprite pixels until engine lighting is added.",
+  "lightingNote": "The back case faces the player; the screen faces Ben. Use the hidden screen as a small dynamic light that brightens his face and hands once raised. Keep that glow separate from the sixteen-colour sprite pixels: lighting.json beside the sprite exports carries the light source, intensity and per-pixel mask for each frame.",
   "frameDurationMs": 160,
   "frameDurationsMs": [
     240,

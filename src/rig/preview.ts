@@ -10,6 +10,9 @@ import { sampleIndex, sampleRig, sampleTime } from './sample.ts';
 import { type SideRig, type RigPose } from './run.ts';
 import type { Chain, Vec2 } from './kinematics.ts';
 import type { WorkshopData } from '../types.ts';
+import { appliedLevel, lightGrid, type LightingData } from './lighting.ts';
+
+const hexRgb = (hex: string): number[] => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
 
 export function mountRigPreview(data: WorkshopData): void {
   const mount = document.querySelector<HTMLElement>('#rig-preview'); if (!mount) return;
@@ -18,8 +21,9 @@ export function mountRigPreview(data: WorkshopData): void {
   let action = actions[0], rig = action.rig;
   section.innerHTML = `<h2>Rig first, sprites second.</h2><p>The cyan limbs face the camera; purple limbs are behind. Yellow feet are supported by the ground or pogo pegs. Watch the continuous rig, switch to the sampled sprite poses, or pause and step through each pose. Both views use the same rig time.</p>
     <div class="controls"><label>Action <select id="rig-action">${actions.map((entry,i) => `<option value="${i}">${entry.title}</option>`).join('')}</select></label><button id="rig-play">Pause rig</button><label>Rig speed <select id="rig-speed"><option value="0.25">Quarter speed</option><option value="0.5" selected>Half speed</option><option value="1">Normal speed</option></select></label><label>Rig display <select id="rig-mode"><option value="smooth">Continuous</option><option value="samples">Sprite samples</option></select></label><label><input id="rig-overlay" type="checkbox">Overlay sampled rig on sprite</label><button id="rig-prev">Previous pose</button><button id="rig-next">Next pose</button></div>
+    <div class="controls" id="rig-light-controls" hidden><label><input id="rig-light" type="checkbox">Screen light preview</label><label>Light render <select id="rig-light-mode"><option value="lookup">EGA lookup (DOS)</option><option value="tint">Colour tint (web)</option></select></label><label>Light intensity <input id="rig-light-gain" type="range" min="0" max="150" value="100"><output id="rig-light-value">100%</output></label><label><input id="rig-light-mask" type="checkbox">Overlay light mask</label></div>
     <label class="rig-scrubber">Cycle position <input id="rig-time" type="range" min="0" max="1000" value="0"><output id="rig-position"></output></label>
-    <div class="rig-comparison"><article><h3>Continuous rig</h3><div class="rig-stage"><canvas id="rig-bones" role="img" aria-label="Animated character skeleton with fixed-length arms and legs"></canvas></div></article><article><h3>Sprite samples</h3><div class="rig-stage"><canvas id="rig-avatar" role="img" aria-label="The sprite sample corresponding to the rig phase"></canvas></div></article></div>
+    <div class="rig-comparison"><article><h3>Continuous rig</h3><div class="rig-stage"><canvas id="rig-bones" role="img" aria-label="Animated character skeleton with fixed-length arms and legs"></canvas></div></article><article><h3>Sprite samples</h3><div class="rig-stage"><canvas id="rig-avatar" role="img" aria-label="The sprite sample corresponding to the rig phase"></canvas></div></article><article id="rig-light-panel" hidden><h3>Screen light</h3><div class="rig-stage"><canvas id="rig-lit" role="img" aria-label="The same sprite sample lit by the phone screen from its exported light data"></canvas></div></article></div>
     <p class="small"><a href="rig/ben-running/rig.svg" target="_blank">Animated rig SVG</a> · <a href="rig/ben-running/samples.json">Joint samples</a> · <a href="rig/ben-running/rig.json">Rig settings</a> · <a href="rig/ben-running/skin.json">Sprite skin</a> · <a href="rig/ben-running/sprites.gif" target="_blank">Sprite GIF</a></p>`;
   let updateFace = mountFaceInspector(section, rig, data, skin.face, action.prefix, action.folder);
   const $ = <T extends HTMLElement>(query: string): T => section.querySelector<T>(query)!;
@@ -28,14 +32,44 @@ export function mountRigPreview(data: WorkshopData): void {
   const speedSelect = $<HTMLSelectElement>('#rig-speed'), mode = $<HTMLSelectElement>('#rig-mode');
   let time = 0, last = performance.now(), speed = .5, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scale = 10;
-  function resize(): void { for (const c of [bones, avatar]) { c.width = rig.width * scale; c.height = rig.height * scale; } }
-  resize();
+  const lit = $<HTMLCanvasElement>('#rig-lit'), lightToggle = $<HTMLInputElement>('#rig-light'), lightMode = $<HTMLSelectElement>('#rig-light-mode');
+  const lightGain = $<HTMLInputElement>('#rig-light-gain'), lightMaskToggle = $<HTMLInputElement>('#rig-light-mask');
+  // The preview reads the exported light data, so it shows exactly what a game receives. The sprite samples stay unlit.
+  let lighting: LightingData | null = null;
+  function loadLighting(): void {
+    lighting = null; lightToggle.checked = false; showLight();
+    $<HTMLElement>('#rig-light-controls').hidden = !rig.lighting;
+    if (!rig.lighting) return;
+    const wanted = action.folder;
+    fetch(`rig/${wanted}/lighting.json`).then(response => response.ok ? response.json() as Promise<LightingData> : null).then(found => { if (action.folder === wanted) lighting = found; }).catch(() => { lighting = null; });
+  }
+  function showLight(): void { $<HTMLElement>('#rig-light-panel').hidden = !lightToggle.checked; section.querySelector('.rig-comparison')!.classList.toggle('lit', lightToggle.checked); }
+  lightToggle.onchange = showLight;
+  lightGain.oninput = () => { $<HTMLOutputElement>('#rig-light-value').textContent = lightGain.value + '%'; };
+  function resize(): void { for (const c of [bones, avatar, lit]) { c.width = rig.width * scale; c.height = rig.height * scale; } }
+  resize(); loadLighting();
   $<HTMLSelectElement>('#rig-action').onchange = event => {
     action = actions[Number((event.target as HTMLSelectElement).value)]; rig = action.rig; time = 0; resize();
     section.querySelector('#face-sequence')?.remove();
     updateFace = mountFaceInspector(section, rig, data, skin.face, action.prefix, action.folder);
     section.querySelectorAll<HTMLAnchorElement>('a[href^="rig/"]').forEach(link => { link.setAttribute('href', link.getAttribute('href')!.replace(/rig\/ben-[^/]+\//, 'rig/' + action.folder + '/'));  });
+    loadLighting();
   };
+  /** Draws the saved sprite lit by its exported frame light: the EGA lookup a DOS renderer uses, or a colour tint. */
+  function paintLit(context: CanvasRenderingContext2D, grid: readonly string[], index: number): void {
+    const frame = lighting?.frames[index]; if (!lighting || !frame) return;
+    const intensity = frame.intensity * Number(lightGain.value) / 100, tint = lightMode.value === 'tint';
+    const lookup = lightGrid(grid, frame.mask, intensity, lighting.litVariants), light = hexRgb(lighting.colour.hex);
+    grid.forEach((row, y) => [...row].forEach((code, x) => {
+      const base = data.palette[code]; if (!base) return;
+      const level = appliedLevel(Number(frame.mask[y][x]), intensity);
+      let colour = tint ? base : data.palette[lookup[y][x]] ?? base;
+      if (tint && level > 0) { const rgb = hexRgb(base), amount = Math.min(1, level / lighting!.levels) * .55; colour = `rgb(${rgb.map((value, i) => Math.round(value + (light[i] - value) * amount)).join(',')})`; }
+      context.fillStyle = colour; context.fillRect(x * scale, y * scale, scale, scale);
+      if (lightMaskToggle.checked && frame.mask[y][x] !== '0') { context.fillStyle = `rgba(255,255,80,${.15 + .2 * Number(frame.mask[y][x])})`; context.fillRect(x * scale + scale * .3, y * scale + scale * .3, scale * .4, scale * .4); }
+    }));
+    if (frame.source) { context.strokeStyle = lighting.colour.hex; context.lineWidth = 2; context.beginPath(); context.arc(frame.source[0] * scale, frame.source[1] * scale, lighting.radius * scale * Math.max(.05, intensity), 0, Math.PI * 2); context.stroke(); }
+  }
   function updateButton(): void { play.textContent = playing ? 'Pause rig' : 'Play rig'; play.setAttribute('aria-pressed', String(playing)); }
   updateButton(); play.onclick = () => { if (time >= 1) time = 0; playing = !playing; updateButton(); };
   speedSelect.onchange = () => { speed = Number(speedSelect.value); };
@@ -98,8 +132,9 @@ export function mountRigPreview(data: WorkshopData): void {
     const frame = data.frames[action.prefix + (index + 1)];
     frame.grid.forEach((row, y) => [...row].forEach((code, x) => { const colour = data.palette[code]; if (colour) { pixel.fillStyle = colour; pixel.fillRect(x * scale, y * scale, scale, scale); } }));
     if (overlay.checked) skeleton(pixel, sampleRig(rig, sample), true);
+    if (lightToggle.checked) { const litContext = lit.getContext('2d')!; litContext.clearRect(0, 0, lit.width, lit.height); paintLit(litContext, frame.grid, index); if (overlay.checked) skeleton(litContext, sampleRig(rig, sample), true); }
     slider.value = String(Math.floor(time * 1000));
-    $<HTMLOutputElement>('#rig-position').textContent = `${index + 1}/${rig.sampleCount} · ${action.labels[index]}${rig.lightingNote ? ' · Screen light: brighten face and hands dynamically' : ''}`;
+    $<HTMLOutputElement>('#rig-position').textContent = `${index + 1}/${rig.sampleCount} · ${action.labels[index]}${!rig.lightingNote ? '' : lighting ? ` · Screen light ${Math.round((lighting.frames[index]?.intensity ?? 0) * 100)}%` : ' · Screen light: brighten face and hands dynamically'}`;
     section.dataset.pose = String(index + 1);
     updateFace(index, mode.value === 'samples' ? sampleRig(rig, sample) : pose);
     requestAnimationFrame(tick);

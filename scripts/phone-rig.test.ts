@@ -1,17 +1,21 @@
 // Checks the seated phone idle: a real seat on the ground, crossed shins that read in the sprite, the grip, the holster,
-// and the rig-to-sprite overlay.
+// the rig-to-sprite overlay and the exported screen light.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { test, expect } from 'bun:test';
+import { readFileSync } from 'node:fs';
 import { rigCatalogue } from '../src/rig/catalogue.ts';
 import { sampleRig, sampleTime } from '../src/rig/sample.ts';
 import type { Vec2 } from '../src/rig/kinematics.ts';
 import type { RigPose } from '../src/rig/run.ts';
+import { egaBrighter, lightGrid, litVariants, type LightingData } from '../src/rig/lighting.ts';
 import { paintRig, sampleRigSprites, Pixels, type BodyPart } from './rig-skin.ts';
+import { rigLighting } from './rig-lighting.ts';
 import { loadSavedFrames } from './motion-metrics.ts';
 import skin from '../source/ben-side-skin.json';
+import palette from '../source/game-palette.json';
 
 const entry = rigCatalogue.find(item => item.animation === 'phone-idle')!, rig = entry.rig, clip = rig.performance!;
 const samples = Array.from({ length: rig.sampleCount }, (_, i) => sampleRig(rig, sampleTime(rig, i)));
@@ -135,7 +139,50 @@ test('the sampled rig overlay sits on the matching limbs of every sprite within 
   });
 });
 
-test('the saved phone sprites are the rig\u2019s own drawing', () => {
-  const saved = loadSavedFrames();
-  for (const [name, frame] of Object.entries(sampleRigSprites(rig, skin, entry.prefix))) expect(saved[name].grid).toEqual(frame.grid);
+test('the screen light follows the phone: off until it is out, ramping up as it rises, dimming on the scroll beat', () => {
+  const light = rigLighting(rig, skin), intensity = light.frames.map(frame => frame.intensity);
+  samples.forEach((pose, i) => { if (!pose.presentation!.phone) { expect(intensity[i]).toBe(0); expect(light.frames[i].source).toBeNull(); } });
+  const raised = samples.findIndex(pose => pose.presentation?.phone && pose.presentation.phone[0] < pose.root[0] + 2);
+  expect(intensity[raised]).toBeGreaterThan(0);
+  expect(Math.max(...intensity)).toBe(1);
+  expect(intensity.at(-1)).toBeLessThan(1); expect(intensity.at(-1)).toBeGreaterThan(.5);
+  for (let i = raised; i < intensity.indexOf(1); i++) expect(intensity[i + 1]).toBeGreaterThanOrEqual(intensity[i]);
+});
+
+test('the light mask touches only skin on the face, arms and hands, plus a faint spill', () => {
+  const settings = rig.lighting!, light = rigLighting(rig, skin);
+  light.frames.forEach((frame, i) => {
+    const { rows, parts } = painted[i];
+    frame.mask.forEach((row, y) => [...row].forEach((level, x) => {
+      if (level === '0') return;
+      const part = parts[y][x], skinPixel = settings.parts.includes(part) && settings.skin.includes(rows[y][x]);
+      expect(skinPixel || (settings.spill!.parts.includes(part) && Number(level) <= settings.spill!.maxLevel)).toBe(true);
+      expect(rows[y][x]).not.toBe('k');
+    }));
+  });
+  // Once the phone is up the face and both hands are lit, and the face brighter than the spill.
+  const read = light.frames.findIndex(frame => frame.intensity === 1), { parts } = painted[read];
+  const levels = (part: BodyPart): number[] => light.frames[read].mask.flatMap((row, y) => [...row].map(Number).filter((_, x) => parts[y][x] === part));
+  expect(Math.max(...levels('face'))).toBeGreaterThanOrEqual(2); expect(Math.max(...levels('hand'))).toBe(3);
+});
+
+test('sprite exports stay unlit and the saved light data matches the rig', () => {
+  const saved = loadSavedFrames(), drawn = sampleRigSprites(rig, skin, entry.prefix);
+  for (const [name, frame] of Object.entries(drawn)) expect(saved[name].grid).toEqual(frame.grid);
+  const exported: LightingData = JSON.parse(readFileSync(new URL('../rig/ben-phone/lighting.json', import.meta.url), 'utf8'));
+  expect(exported).toEqual(rigLighting(rig, skin));
+  // Lighting a frame at zero intensity changes nothing.
+  for (const frame of exported.frames) expect(lightGrid(saved[entry.prefix + frame.sprite.match(/\d+/)![0].replace(/^0/, '')].grid, frame.mask, 0, exported.litVariants)).toEqual(saved[entry.prefix + frame.sprite.match(/\d+/)![0].replace(/^0/, '')].grid);
+});
+
+test('the lit-colour lookup gives every EGA colour a valid, never darker variant', () => {
+  const variants = litVariants(3), codes = Object.keys(palette).filter(code => code !== '.');
+  const luma = (code: string): number => { const hex = (palette as Record<string, string | null>)[code]!; const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return .299 * r + .587 * g + .114 * b; };
+  expect(Object.keys(variants).sort()).toEqual(codes.sort());
+  for (const code of codes) {
+    expect(variants[code]).toHaveLength(3);
+    let previous = code;
+    for (const lit of variants[code]) { expect(codes).toContain(lit); expect(luma(lit)).toBeGreaterThanOrEqual(luma(previous)); expect(lit).toBe(egaBrighter[previous]); previous = lit; }
+  }
+  expect(variants.W).toEqual(['W', 'W', 'W']); expect(variants.R[0]).toBe('r'); expect(variants.L[0]).toBe('W'); expect(variants.D[0]).toBe('L');
 });

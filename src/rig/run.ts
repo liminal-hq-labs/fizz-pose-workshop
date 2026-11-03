@@ -5,12 +5,15 @@
 
 import type { PerformanceSettings, Expression } from './performance.ts';
 import type { ClothingSettings, ClothPose } from './clothing.ts';
+import type { LightingSettings } from './lighting.ts';
 import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
 export interface SideRig {
   motion?: 'run' | 'pogo' | 'fire' | 'ladder' | 'jump' | 'fall' | 'death' | 'ledge' | 'whistle' | 'phone';
   lightingNote?: string;
+  /** A dynamic prop light exported as data beside the unlit sprites; see `src/rig/lighting.ts`. */
+  lighting?: LightingSettings;
   performance?: PerformanceSettings;
   mirrored?: boolean;
   /**

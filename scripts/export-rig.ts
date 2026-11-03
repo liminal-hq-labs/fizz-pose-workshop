@@ -13,6 +13,7 @@ import { rigSvg } from '../src/rig/svg.ts';
 import { sampleRigSprites, type RigSkin } from './rig-skin.ts';
 import { gif, png, rects } from './images.ts';
 import { faceSequence } from './face-sequence.ts';
+import { rigLighting } from './rig-lighting.ts';
 import { validateFrames } from '../src/model.ts';
 import palette from '../source/game-palette.json';
 
@@ -28,6 +29,8 @@ export async function exportRig(rig: SideRig, skin: RigSkin, output: string): Pr
   await writeFile(output + '/face-sequence.json', face.json);
   await writeFile(output + '/face-sequence.svg', face.svg);
   await writeFile(output + '/rig.svg', rigSvg(rig));
+  // A lit prop saves its light as data beside the sprites; the sprites themselves stay unlit.
+  if (rig.lighting) await writeFile(output + '/lighting.json', JSON.stringify(rigLighting(rig, skin), null, 1) + '\n');
   // The sprite GIF always loops; a one-shot rests on its final pose before replaying.
   await writeFile(output + '/sprites.gif', gif(frames, exportDurations(frameDurations(rig), replaysContinuously(rig)), palette, true));
   for (const [i, frame] of frames.entries()) {
