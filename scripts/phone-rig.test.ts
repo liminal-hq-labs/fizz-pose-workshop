@@ -1,14 +1,15 @@
 // Checks the seated phone idle and its typing loop: a real seat on the ground, crossed shins that read in the sprite, the
-// grip and thumbs, the holster, the rig-to-sprite overlay, the screen light and the looping exports.
+// grip and thumbs, the holster, the rig-to-sprite overlay, the screen light and the hand-over into typing. Playback and
+// export looping for the phone animations are covered with every other animation in `scripts/playback.test.ts`.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { test, expect } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { rigCatalogue, type RigEntry } from '../src/rig/catalogue.ts';
+import { rigCatalogue } from '../src/rig/catalogue.ts';
 import { sampleRig, sampleTime } from '../src/rig/sample.ts';
-import { exportDurations, frameDurations } from '../src/rig/timing.ts';
+import { frameDurations } from '../src/rig/timing.ts';
 import type { Vec2 } from '../src/rig/kinematics.ts';
 import type { RigPose } from '../src/rig/run.ts';
 import { egaBrighter, lightGrid, litVariants, type LightingData } from '../src/rig/lighting.ts';
@@ -262,33 +263,4 @@ test('the sit-down hands over to the typing loop, saved as its own loop and as t
   const typed = loop.frames.map(name => saved[name]), steps = typed.map((frame, i) => changedPixels(frame, typed[(i + 1) % typed.length]));
   const handover = changedPixels(saved[lead.frames.at(-1)!], typed[0]);
   expect(handover).toBeGreaterThan(0); expect(handover).toBeLessThanOrEqual(2 * median(steps));
-});
-
-/** The loop count in a GIF's NETSCAPE2.0 extension: 0 repeats forever, undefined means it plays once. */
-function gifLoops(bytes: Uint8Array): number | undefined {
-  const marker = new TextEncoder().encode('NETSCAPE2.0');
-  for (let i = 0; i < bytes.length - marker.length - 4; i++) if (marker.every((byte, j) => bytes[i + j] === byte)) return bytes[i + marker.length + 2] | (bytes[i + marker.length + 3] << 8);
-  return undefined;
-}
-/** Each frame delay in a GIF, in milliseconds. */
-function gifDelays(bytes: Uint8Array): number[] {
-  const delays: number[] = [];
-  for (let i = 0; i < bytes.length - 5; i++) if (bytes[i] === 0x21 && bytes[i + 1] === 0xf9 && bytes[i + 2] === 4) delays.push((bytes[i + 4] | (bytes[i + 5] << 8)) * 10);
-  return delays;
-}
-
-test('the phone GIF and SVG exports loop forever with their saved timing', () => {
-  for (const name of ['phone-idle', 'phone-typing', typing.entry.sequence!.name]) {
-    const animation = savedAnimations[name], durations = exportDurations(animation.durationsMs, animation.loop !== false), cycle = durations.reduce((a, b) => a + b, 0);
-    const gif = new Uint8Array(readFileSync(new URL(`animations/${name}.gif`, root)));
-    expect(gifLoops(gif)).toBe(0); expect(gifDelays(gif)).toEqual(durations);
-    const rules = [...readFileSync(new URL(`animations/${name}.svg`, root), 'utf8').matchAll(/animation:a\d+ (\d+)ms steps\(1,end\) (\w+)/g)];
-    expect(rules).toHaveLength(animation.frames.length);
-    for (const [, ms, repeat] of rules) { expect(Number(ms)).toBe(cycle); expect(repeat).toBe('infinite'); }
-  }
-  for (const { entry, rig } of phones as { entry: RigEntry; rig: typeof idle.rig }[]) {
-    const gif = new Uint8Array(readFileSync(new URL(`rig/${entry.folder}/sprites.gif`, root)));
-    expect(gifLoops(gif)).toBe(0); expect(gifDelays(gif)).toEqual(exportDurations(frameDurations(rig), rig.performance!.loop));
-    expect(readFileSync(new URL(`rig/${entry.folder}/rig.svg`, root), 'utf8')).toContain('infinite');
-  }
 });

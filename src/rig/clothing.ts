@@ -26,6 +26,8 @@ export interface ClothingSettings {
     /** Upper-arm swing speed, in degrees per cycle, at which the cuff lags by its full slide. */
     threshold: number;
   };
+  /** Pixels a cuff rides up its upper arm, towards the shoulder, while that elbow is raised above the shoulder (climbing). */
+  raisedSleeves?: number;
 }
 
 /** The cloth state for one pose: one-pixel hem flares at the back and front, and each cuff's slide along its upper arm. */

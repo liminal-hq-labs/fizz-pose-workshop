@@ -158,6 +158,30 @@ test('run and look up/down cycles stay byte-for-byte identical to the pinned ref
   for (const [name, frame] of Object.entries(pinned.frames)) expect(frames[name]).toEqual(frame);
 });
 
+// The Fizz Stunner hangs on Ben's right hip only, so a Ben frame that shows it can never be a plain flip of another saved
+// frame: a flip would carry the holster across to his left hip. (The standalone Stunner study's opposite views are mirrors
+// of the prop on its own, so only Ben's frames are checked.)
+test('no Stunner-bearing Ben frame is an exact mirror of any other saved frame', () => {
+  const ben = Object.entries(frames).filter(([name]) => name.startsWith('ben_')), mirrors: string[] = [];
+  for (const [name, frame] of ben) {
+    if (!frame.grid.some(row => /[Mm]/.test(row))) continue;
+    const flip = JSON.stringify(frame.grid.map(row => [...row].reverse().join('')));
+    for (const [other, candidate] of Object.entries(frames)) if (candidate.width === frame.width && candidate.height === frame.height && JSON.stringify(candidate.grid) === flip) mirrors.push(`${name} ~ ${other}`);
+  }
+  expect(mirrors).toEqual([]);
+});
+
+// The ladder climb loops hand over hand: every step moves, none jolts, the wrap reads like any other step and no two frames
+// repeat, so neither half of the loop is the other half held still.
+test('the ladder climb loops without duplicate frames or spikes and needs no known-failure entries', () => {
+  const animation = savedAnimations.climb, sequence = animation.frames.map(frame => frames[frame]);
+  expect(animation.loop).not.toBe(false); expect(sequence.length).toBe(8);
+  expect(new Set(sequence.map(frame => frame.grid.join('|'))).size).toBe(sequence.length);
+  const changes = cycleSteps(sequence.length).map(({ from, to }) => changedPixels(sequence[from], sequence[to]));
+  expect(Math.min(...changes)).toBeGreaterThan(0); expect(Math.max(...changes)).toBeLessThanOrEqual(spikeRatio * median(changes));
+  expect(knownFailures.some(failure => failure.subject === 'climb')).toBe(false);
+});
+
 // The whistling idles move every frame (bob, sway, nod, toe tap, lip pulse, blink and floating notes) and loop without a
 // hold: every step, including the wrap from frame 6 to frame 1, changes pixels and none jolts. The blink and lip frames are
 // intended differences, so they need no known-failure entries.

@@ -5,12 +5,27 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { rigCatalogue } from '../src/rig/catalogue.ts';
+import { rigCatalogue, type RigStills } from '../src/rig/catalogue.ts';
 import skin from '../source/ben-side-skin.json';
-import { sampleRigSprites } from './rig-skin.ts';
+import { sampleRigSprites, skinRig } from './rig-skin.ts';
+import { sampleRig } from '../src/rig/sample.ts';
+import type { SideRig } from '../src/rig/run.ts';
 import { frameDurations, replaysContinuously } from '../src/rig/timing.ts';
 import { exportRig } from './export-rig.ts';
 import type { Frames, WorkshopData } from '../src/types.ts';
+
+/** Renders a rig's extra stills on its own canvas and crops them, refusing a crop that would cut any of Ben off. */
+export function rigStills(rig: SideRig, stills: RigStills): Frames {
+ return Object.fromEntries(stills.times.map((time, i) => {
+  const {grid} = skinRig(rig,skin,sampleRig(rig,time)), [dx, dy] = stills.offset;
+  grid.forEach((row, y) => [...row].forEach((code, x) => {
+   if (code !== '.' && (x < dx || y < dy || x >= dx + stills.width || y >= dy + stills.height)) throw new Error(`${stills.prefix}${i + 1} crop cuts off a pixel at ${x},${y}.`);
+  }));
+  // The crop may run past the rig canvas; that part is transparent.
+  const crop = Array.from({length: stills.height}, (_, y) => (grid[dy + y] ?? '').slice(dx, dx + stills.width).padEnd(stills.width, '.'));
+  return [stills.prefix + (i + 1), {width: stills.width, height: stills.height, grid: crop}];
+ }));
+}
 
 if (import.meta.main) {
  const root = new URL('../', import.meta.url);
@@ -22,12 +37,14 @@ if (import.meta.main) {
  const args = process.argv.slice(2), replace = args.includes('--replace-edits'), only = args.filter(arg => !arg.startsWith('--')), kept: string[] = [];
  for (const entry of rigCatalogue.filter(entry => entry.rig.performance && (!only.length || only.includes(entry.animation)))) {
   const frames = sampleRigSprites(entry.rig,skin,entry.prefix);
+  const stills = entry.stills ? rigStills(entry.rig,entry.stills) : {};
   // An override that differs from the previously drawn grid is a manual edit, and it takes precedence over the redraw.
   // Pass --replace-edits to discard those edits deliberately and adopt the rig's grids.
-  for (const [name, frame] of Object.entries(frames)) {
+  for (const [name, frame] of Object.entries({...frames,...stills})) {
    const manual = edits[name] && authored.frames[name] && JSON.stringify(edits[name]) !== JSON.stringify(authored.frames[name]);
    if (manual && !replace) kept.push(name); else edits[name] = frame;
   }
+  Object.assign(authored.frames,stills);
   // A rig that now samples fewer poses drops its old trailing frames.
   const stale = new RegExp(`^${entry.prefix}(\\d+)$`);
   for (const name of Object.keys(authored.frames)) { const match = stale.exec(name); if (match && Number(match[1]) > entry.rig.sampleCount) { delete authored.frames[name]; delete edits[name]; } }

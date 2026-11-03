@@ -36,7 +36,9 @@ export interface Patch { anchor: number[]; rows: PixelRow[]; towards?: PixelRow[
 export interface HolsterPatch extends Patch { standingOffset: number[]; seatedOffset: number[]; }
 export interface RigSkin {
   name: string; head: Patch; torso: Patch;
-  standingLeft: Patch; standingRight: Patch; standingIdle: { left: StandingIdleLayers; right: StandingIdleLayers }; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
+  standingLeft: Patch; standingRight: Patch; standingIdle: { left: StandingIdleLayers; right: StandingIdleLayers }; headFront: Patch; headBack: Patch; torsoFront: Patch; torsoBack: Patch;
+  /** The holstered Stunner seen from behind, in the back torso's coordinates, on Ben's right hip (the viewer's right). */
+  stunnerBack: Patch; cameraShoe: Patch; backShoe: Patch; phoneBack: Patch;
   /** Seated front view: replacement shirt rows (bunched hem), the seat behind the crossed legs and the right-hip holster. */
   torsoFrontSeated: { rows: PixelRow[] }; seatFront: Patch; holsterFront: HolsterPatch;
   face: { eye: string; mouth: string; ear: string };
@@ -244,12 +246,15 @@ export function paintRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner 
   out.segment(pose.nearLeg, 1, colours.denimSeam);
   paintFoot(out, pose.nearFoot, skin, true);
   out.patch(clothedTorso(rig, skin, pose), pose.root, pose.torsoAngle, pose.torsoTurn);
-  // A performance knee raised above the hip (climbing onto a ledge, tucking in a fall) passes in front of the shirt.
-  if (pose.presentation && pose.nearLeg[1][1] < pose.nearLeg[0][1] + 2) {
-    out.segment(pose.nearLeg, 2, colours.denim, colours.outline); out.segment(pose.nearLeg, 1, colours.denimSeam); paintFoot(out, pose.nearFoot, skin, true);
-  }
+  // A performance knee raised above the hip (climbing onto a ledge, tucking in a fall) passes in front of the shirt, and in
+  // front of the near arm too: on a ledge the knee comes up between the planted hands.
+  const kneeUp = Boolean(pose.presentation) && pose.nearLeg[1][1] < pose.nearLeg[0][1] + 2;
+  const raisedLeg = (): void => { out.segment(pose.nearLeg, 2, colours.denim, colours.outline); out.segment(pose.nearLeg, 1, colours.denimSeam); paintFoot(out, pose.nearFoot, skin, true); };
+  if (kneeUp) raisedLeg();
   if (!pose.weapon && !farStunner) paintStunner(out, pose, skin);
   paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
+  // The holster hangs from the back of the belt, so it stays over the thigh as the knee swings up.
+  if (kneeUp && pose.presentation?.view === 'side' && pose.presentation.environment?.kind === 'ledge') { raisedLeg(); if (!pose.weapon && !farStunner) paintStunner(out, pose, skin); }
   if (pose.weapon) {
     out.patch({ anchor: skin.weapon.anchor, rows: skin.weapon.pixels.map((pixels, y) => ({x: 0, y, pixels})) }, pose.weapon.grip, pose.weapon.angle);
     if (pose.weapon.flash) {
@@ -264,6 +269,9 @@ export function paintRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner 
   for (const point of pose.face.mouthPixels) out.pixel(point[0], point[1], skin.face.mouth);
   // A startled side-view face drops its jaw: the mouth opens one pixel downwards.
   if (pose.presentation?.expression === 'startled') for (const point of pose.face.mouthPixels) out.pixel(point[0], point[1] + 1, skin.face.mouth);
+  // Ben's head stands taller than his arms can reach, so a near hand raised above the neck (gripping a ledge) crosses in
+  // front of the face; drawn under the head it would vanish and read as reaching behind his back.
+  if (pose.presentation && pose.nearArm[2][1] < pose.neck[1]) paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
   paintIdleProps(out, skin, pose);
   if (pose.presentation) out.closeNotches(pose.face.pixelAnchor[1], pose.face.pixelAnchor[1] + 4);
   return out;

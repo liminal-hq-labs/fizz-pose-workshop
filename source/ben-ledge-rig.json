@@ -33,8 +33,8 @@
     "neckHeight": 10
   },
   "arms": {
-    "upperLength": 3.5,
-    "forearmLength": 3.2,
+    "upperLength": 4.2,
+    "forearmLength": 4,
     "swingDegrees": 55,
     "elbowDegrees": 90,
     "elbowFlexDegrees": 4,
@@ -107,6 +107,14 @@
     }
   },
   "motion": "ledge",
+  "clothing": {
+    "lag": 0.06,
+    "sleeves": {
+      "slide": 1,
+      "threshold": 400
+    },
+    "raisedSleeves": 1
+  },
   "performance": {
     "view": "side",
     "loop": false,
@@ -115,25 +123,25 @@
         "phase": 0,
         "root": [
           22,
-          51
+          52
         ],
-        "lean": 10,
+        "lean": 8,
         "headRoll": 0,
         "nearHand": [
-          25,
-          38
-        ],
-        "farHand": [
           26,
           38
         ],
+        "farHand": [
+          27,
+          38
+        ],
         "nearAnkle": [
-          18,
-          60
+          19,
+          61
         ],
         "farAnkle": [
-          25,
-          60
+          24,
+          61
         ],
         "expression": "normal",
         "nearSupport": false,
@@ -143,26 +151,26 @@
       {
         "phase": 0.2,
         "root": [
-          21,
-          49
+          21.5,
+          47.5
         ],
-        "lean": 20,
+        "lean": 18,
         "headRoll": -3,
         "nearHand": [
-          25,
-          38
-        ],
-        "farHand": [
           26,
           38
         ],
+        "farHand": [
+          27,
+          38
+        ],
         "nearAnkle": [
-          18,
-          57
+          19,
+          56
         ],
         "farAnkle": [
-          24,
-          57
+          23,
+          56
         ],
         "expression": "normal",
         "nearSupport": false,
@@ -171,26 +179,26 @@
       {
         "phase": 0.4,
         "root": [
-          22,
-          46
+          23.5,
+          38.5
         ],
-        "lean": 30,
-        "headRoll": -3,
+        "lean": 22,
+        "headRoll": -2,
         "nearHand": [
-          25,
-          38
-        ],
-        "farHand": [
           26,
           38
         ],
+        "farHand": [
+          27,
+          38
+        ],
         "nearAnkle": [
-          19,
-          54
+          21,
+          47
         ],
         "farAnkle": [
           23,
-          52
+          48
         ],
         "expression": "normal",
         "nearSupport": false,
@@ -199,26 +207,26 @@
       {
         "phase": 0.6,
         "root": [
-          24,
-          43
+          25,
+          36
         ],
-        "lean": 38,
+        "lean": 42,
         "headRoll": 0,
         "nearHand": [
-          25,
+          31.5,
           38
         ],
         "farHand": [
-          26,
+          32.5,
           38
         ],
         "nearAnkle": [
-          29,
+          31,
           36
         ],
         "farAnkle": [
-          22,
-          50
+          23,
+          45
         ],
         "expression": "normal",
         "nearSupport": true,
@@ -227,30 +235,30 @@
       {
         "phase": 0.8,
         "root": [
-          28,
-          34.5
+          29,
+          31
         ],
-        "lean": 18,
+        "lean": 20,
         "headRoll": 0,
         "nearHand": [
-          30,
-          33
+          32.5,
+          31.5
         ],
         "farHand": [
-          32,
-          33
+          33.5,
+          31
         ],
         "nearAnkle": [
           31,
           36
         ],
         "farAnkle": [
-          24,
-          43
+          34,
+          36
         ],
         "expression": "normal",
         "nearSupport": true,
-        "farSupport": false
+        "farSupport": true
       },
       {
         "phase": 1,
@@ -261,15 +269,15 @@
         "lean": 0,
         "headRoll": 0,
         "nearHand": [
-          34,
-          25
+          33,
+          27
         ],
         "farHand": [
-          33,
-          24
+          34,
+          27.5
         ],
         "nearAnkle": [
-          28,
+          31,
           36
         ],
         "farAnkle": [

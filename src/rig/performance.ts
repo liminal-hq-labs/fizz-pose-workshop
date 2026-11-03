@@ -56,6 +56,12 @@ export interface PerformanceSettings {
   replay?: 'rest' | 'continuous';
   /** Phases of the saved sprite samples. Keys need not sit on them; omitted means evenly spaced samples. */
   sampleTimes?: number[];
+  /**
+   * World travel per cycle, in pixels, that the game supplies for an in-place loop (a ladder climb rises: `[0, -8]`). Keys are
+   * then authored in world (ladder) coordinates, so a grip or foothold keyed at the same point stays on its rung, and the final
+   * key is the first key moved by `travel`. The sampler subtracts the travel so far, which keeps the sprite in place.
+   */
+  travel?: number[];
   environment?: { kind: 'ladder' | 'ledge'; x: number; y: number; width: number; spacing: number };
   notes?: NoteSettings;
   /** Draw the holstered Fizz Stunner on Ben's right hip in a front view (the camera's left). */
@@ -206,6 +212,18 @@ function clothAt(settings: ClothingSettings, clip: PerformanceSettings, curves: 
   return clothPose(settings, t, [rate(curves.scalar.rootX), rate(curves.scalar.rootY)], [rate(curves.limbs.nearHand!.angle) * degrees, rate(curves.limbs.farHand!.angle) * degrees]);
 }
 
+/**
+ * The environment guide in sprite coordinates. With `travel`, a ladder's rungs scroll past the in-place sprite, so a pinned
+ * grip stays on its rung; the guide starts up to one rung higher so it still covers the canvas top.
+ */
+function scrolledEnvironment(clip: PerformanceSettings, shift: Vec2): PerformanceSettings['environment'] {
+  const environment = clip.environment;
+  if (!environment || !clip.travel) return environment;
+  const step = environment.kind === 'ladder' ? environment.spacing : 0;
+  const y = step ? environment.y - step + ((-shift[1] % step) + step) % step : environment.y - shift[1];
+  return { ...environment, x: environment.x - shift[0], y };
+}
+
 export function samplePerformance(rig: SideRig, time: number): RigPose {
   const clip = rig.performance; if (!clip || !Number.isFinite(time)) throw new Error('Performance rig requires finite time and action goals.');
   const t = clip.loop ? wrap(time) : Math.max(0, Math.min(1, time));
@@ -213,21 +231,26 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const index = Math.min(keys.length - 2, Math.max(0, keys.findLastIndex(key => key.phase <= t)));
   // Discrete choices (expression, support) switch on the key that starts the segment; the final key owns phase 1.
   const a = t >= keys[keys.length - 1].phase ? keys[keys.length - 1] : keys[index];
-  const root: Vec2 = [at(curves.scalar.rootX), at(curves.scalar.rootY)], torsoAngle = radians(at(curves.scalar.lean)), headAngle = radians(at(curves.scalar.headRoll));
-  const breath = at(curves.scalar.breath), joints = body(rig, root, torsoAngle, breath);
+  // Goals are solved in world coordinates, then the travel so far is taken off so the sprite stays in place.
+  const shift: Vec2 = [(clip.travel?.[0] ?? 0) * t, (clip.travel?.[1] ?? 0) * t];
+  const worldRoot: Vec2 = [at(curves.scalar.rootX), at(curves.scalar.rootY)], torsoAngle = radians(at(curves.scalar.lean)), headAngle = radians(at(curves.scalar.headRoll));
+  const root: Vec2 = [worldRoot[0] - shift[0], worldRoot[1] - shift[1]];
+  const breath = at(curves.scalar.breath), world = body(rig, worldRoot, torsoAngle, breath), joints = body(rig, root, torsoAngle, breath);
   const target = (name: Limb): Vec2 => {
     const limb = curves.limbs[name]!;
-    if (limb.grounded[index]) return [at(limb.x), at(limb.y)];
-    const origin = joints[origins[name]], angle = at(limb.angle), reach = at(limb.reach);
-    return [origin[0] + Math.cos(angle) * reach, origin[1] + Math.sin(angle) * reach];
+    if (limb.grounded[index]) return [at(limb.x) - shift[0], at(limb.y) - shift[1]];
+    const origin = world[origins[name]], angle = at(limb.angle), reach = at(limb.reach);
+    return [origin[0] + Math.cos(angle) * reach - shift[0], origin[1] + Math.sin(angle) * reach - shift[1]];
   };
   const solve = (origin: Vec2, goal: Vec2, upper: number, lower: number, pole: number): Chain => {
     const chain = solveTwoBone(origin, goal, upper, lower, pole);
     if (Math.hypot(chain[2][0] - goal[0], chain[2][1] - goal[1]) > 1e-5) throw new Error(`${rig.motion} goal exceeds reach at phase ${t.toFixed(3)}: ${origin} → ${goal}.`);
     return chain;
   };
-  const nearArm = solve(joints.nearShoulder, target('nearHand'), rig.arms.upperLength, rig.arms.forearmLength, -1);
-  const farArm = solve(joints.farShoulder, target('farHand'), rig.arms.upperLength, rig.arms.forearmLength, clip.view === 'side' ? -1 : 1);
+  // Climbing from behind, the elbows hang down and out beneath the gripping hands rather than winging up past them.
+  const back = clip.view === 'back';
+  const nearArm = solve(joints.nearShoulder, target('nearHand'), rig.arms.upperLength, rig.arms.forearmLength, back ? 1 : -1);
+  const farArm = solve(joints.farShoulder, target('farHand'), rig.arms.upperLength, rig.arms.forearmLength, clip.view === 'side' || back ? -1 : 1);
   // Keyed knees foreshorten the legs instead of solving them flat: neither projected bone may exceed its length.
   const through = (hip: Vec2, knee: Vec2, ankle: Vec2): Chain => {
     if (Math.hypot(knee[0] - hip[0], knee[1] - hip[1]) > rig.legs.thighLength + 1e-6 || Math.hypot(ankle[0] - knee[0], ankle[1] - knee[1]) > rig.legs.shinLength + 1e-6) throw new Error(`${rig.motion} keyed knee stretches a leg at phase ${t.toFixed(3)}.`);
@@ -240,10 +263,17 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
   const farGrip = farArm[2], phone: Vec2 | undefined = curves.phone && t >= curves.phone.from ? [farGrip[0] + evaluateCurve(curves.phone.x, t), farGrip[1] + evaluateCurve(curves.phone.y, t)] : undefined;
   const notes: Vec2[] | undefined = clip.notes ? [notePosition(clip.notes, t, 0), notePosition(clip.notes, t, 1)] : undefined;
   const face = tiltedFace(sampleFace(joints.neck, 0, rig.face, t, headAngle), sampleFace(joints.neck, 0, rig.face, t), headAngle);
+  let cloth = rig.clothing ? clothAt(rig.clothing, clip, curves, t) : undefined;
+  // A raised arm draws its sleeve up: the cuff rides towards the shoulder while the elbow is above it.
+  const ride = rig.clothing?.raisedSleeves ?? 0;
+  if (cloth && ride) {
+    const raised = (arm: Chain): number => arm[1][1] < arm[0][1] - .5 ? ride : 0;
+    cloth = { ...cloth, nearSleeve: cloth.nearSleeve - raised(nearArm), farSleeve: cloth.farSleeve - raised(farArm) };
+  }
   return { time: t, root, torsoAngle, torsoTurn: 0, headTurn: 0, headAngle, neck: joints.neck, face, nearArm, farArm, nearLeg, farLeg, nearFoot, farFoot,
     contact: a.nearSupport && a.farSupport ? 'both' : a.nearSupport ? 'near' : a.farSupport ? 'far' : 'flight',
-    cloth: rig.clothing ? clothAt(rig.clothing, clip, curves, t) : undefined,
-    presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: clip.environment, cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink),
+    cloth,
+    presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: scrolledEnvironment(clip, shift), cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink),
       ...(a.seated ? { seated: true } : {}), ...(a.shinOver ? { shinOver: a.shinOver } : {}), ...(clip.frontHolster ? { frontHolster: true } : {}),
       gaze: at(curves.scalar.gaze), breath,
       ...(phone ? { screen: Math.max(0, Math.min(1, at(curves.scalar.screen))), taps: [at(curves.scalar.nearTap), at(curves.scalar.farTap)] } : {})},

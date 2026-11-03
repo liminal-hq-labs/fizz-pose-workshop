@@ -105,6 +105,12 @@ export function validateRig(rig: SideRig): void {
     const times = clip.sampleTimes;
     if (times && (times.length !== rig.sampleCount || times.some((time, i) => !Number.isFinite(time) || time < 0 || time > 1 || (i > 0 && time <= times[i - 1])) || times[0] !== 0 || (clip.loop ? times.at(-1)! >= 1 : times.at(-1) !== 1))) throw new Error("Sample times must be one ordered phase per sprite, starting at zero and ending at one for a one-shot or before one for a loop.");
     if (clip.environment?.kind === "ladder" && !(clip.environment.spacing > 0)) throw new Error("Ladder rung spacing must be positive.");
+    if (clip.travel) {
+      // A travelling loop closes in world coordinates: its last key is its first key moved by one cycle's travel.
+      const [first, last] = [clip.keys[0], clip.keys.at(-1)!], [dx, dy] = clip.travel;
+      const moved = (a: readonly number[], b: readonly number[]): boolean => b[0] === a[0] + dx && b[1] === a[1] + dy;
+      if (!clip.loop || clip.travel.length !== 2 || !clip.travel.every(Number.isFinite) || !(["root", "nearHand", "farHand", "nearAnkle", "farAnkle"] as const).every(name => moved(first[name], last[name])) || first.lean !== last.lean || first.headRoll !== last.headRoll) throw new Error("A travelling loop must end on its first key moved by the travel.");
+    }
   }
   const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.face.ear, ...Object.values(rig.face.profile).flat(), rig.face.shiftAmplitude, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];
   if (numeric.some(value => !Number.isFinite(value)) || rig.root.length !== 2 || rig.face.eye.length !== 3 || rig.face.mouth.length !== 3 || rig.face.ear.length !== 3 || rig.feet.toe.length !== 2 || rig.feet.heel.length !== 2 || rig.feet.ball.length !== 2 || rig.feet.landingCompression < 0 || rig.feet.landingCompression >= .6) throw new Error('Rig coordinates and motion settings must be finite.');

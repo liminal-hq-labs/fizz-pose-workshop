@@ -7,10 +7,10 @@ import stunnerStudy from '../source/fizz-stunner-study.json';
 import { rigCatalogue } from './rig/catalogue.ts';
 import type { WorkshopData } from './types.ts';
 
-import { oneShotRestMs } from './rig/timing.ts';
+import { playbackFrame } from './rig/timing.ts';
 export function mountGallery(data: WorkshopData): void {
   const $ = <T extends HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
-  const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · six spring phases', climb: 'Ladder climb · six phases', mantle: 'Ledge pull right · hang to stand', 'mantle-left': 'Ledge pull left · hang to stand', 'fizz-blaster': 'Fizz Stunner · six firing phases', 'look-up-down': 'Look up & down · front-facing', jump: 'Jump right · crouch to landing', 'jump-left': 'Jump left · Stunner on the far hip', fall: 'Fall right · bracing for impact', 'fall-left': 'Fall left · bracing for impact', death: 'Dramatic death', 'whistle-left': 'Whistle left · standing idle', 'whistle-right': 'Whistle right · standing idle', 'phone-idle': 'Seated phone idle · camera-facing', 'phone-typing': 'Phone typing loop · seated', 'phone-sit-and-type': 'Sit down, then type · whole performance' };
+  const motionNames = { 'walk-run': 'Run right · six phases', pogo: 'Pogo · six spring phases', climb: 'Ladder climb · hand over hand, eight phases', mantle: 'Ledge pull right · hang to stand', 'mantle-left': 'Ledge pull left · hang to stand', 'fizz-blaster': 'Fizz Stunner · six firing phases', 'look-up-down': 'Look up & down · front-facing', jump: 'Jump right · crouch to landing', 'jump-left': 'Jump left · Stunner on the far hip', fall: 'Fall right · bracing for impact', 'fall-left': 'Fall left · bracing for impact', death: 'Dramatic death', 'whistle-left': 'Whistle left · standing idle', 'whistle-right': 'Whistle right · standing idle', 'phone-idle': 'Seated phone idle · camera-facing', 'phone-typing': 'Phone typing loop · seated', 'phone-sit-and-type': 'Sit down, then type · whole performance' };
   function card(title: string, key: string, animated: boolean, extra = ''): string {
     return `<article><div class="stage"><canvas role="img" aria-label="${title}" data-${animated ? 'animation' : 'frame'}="${key}" ${extra}></canvas></div><h3>${title}</h3><p>${animated ? `<a href="animations/${key}.svg">Animated SVG</a> · <a href="animations/${key}.gif">GIF</a>` : `<a href="frames/${key}.png">PNG</a> · <a href="frames/${key}.svg">SVG</a>`}</p></article>`;
   }
@@ -40,11 +40,8 @@ export function mountGallery(data: WorkshopData): void {
       let key = canvas.dataset.frame;
       if (canvas.dataset.animation) {
         const animation = data.animations[canvas.dataset.animation];
-        const duration = animation.durationsMs.reduce((sum,value)=>sum+value,0);
         // A one-shot holds its final pose for a rest before replaying, so the review never snaps from the end back to the start.
-        let time = animation.loop === false ? Math.min(elapsed % (duration + oneShotRestMs), duration - 1) : elapsed % duration, index = 0;
-        while (index < animation.frames.length - 1 && time >= animation.durationsMs[index]) { time -= animation.durationsMs[index]; index++; }
-        key = animation.frames[index];
+        key = animation.frames[playbackFrame(animation.durationsMs, animation.loop !== false, elapsed).index];
       }
       if (!key) continue;
       const frame = data.frames[key];

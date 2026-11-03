@@ -5,8 +5,8 @@
 
 import skin from '../../source/ben-side-skin.json';
 import { mountFaceInspector } from './face-inspector.ts';
-import { rigCatalogue } from './catalogue.ts';
-import { sampleIndex, sampleRig, sampleTime } from './sample.ts';
+import { handoverTarget, rigCatalogue } from './catalogue.ts';
+import { handoverMs, playbackElapsed, rigPlayback, sampleRig, sampleTime } from './sample.ts';
 import { type SideRig, type RigPose } from './run.ts';
 import type { Chain, Vec2 } from './kinematics.ts';
 import type { WorkshopData } from '../types.ts';
@@ -30,7 +30,9 @@ export function mountRigPreview(data: WorkshopData): void {
   const bones = $<HTMLCanvasElement>('#rig-bones'), avatar = $<HTMLCanvasElement>('#rig-avatar');
   const slider = $<HTMLInputElement>('#rig-time'), play = $<HTMLButtonElement>('#rig-play'), overlay = $<HTMLInputElement>('#rig-overlay');
   const speedSelect = $<HTMLSelectElement>('#rig-speed'), mode = $<HTMLSelectElement>('#rig-mode');
-  let time = 0, last = performance.now(), speed = .5, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Playback runs on elapsed milliseconds through the saved frame holds, so it wraps like the gallery and the exports: a
+  // one-shot rests on its final pose, then replays.
+  let elapsed = 0, time = 0, last = performance.now(), speed = .5, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scale = 10;
   const lit = $<HTMLCanvasElement>('#rig-lit'), lightToggle = $<HTMLInputElement>('#rig-light'), lightMode = $<HTMLSelectElement>('#rig-light-mode');
   const lightGain = $<HTMLInputElement>('#rig-light-gain'), lightMaskToggle = $<HTMLInputElement>('#rig-light-mask');
@@ -49,9 +51,10 @@ export function mountRigPreview(data: WorkshopData): void {
   function resize(): void { for (const c of [bones, avatar, lit]) { c.width = rig.width * scale; c.height = rig.height * scale; } }
   resize(); loadLighting();
   const actionSelect = $<HTMLSelectElement>('#rig-action');
-  function selectAction(index: number): void {
+  /** Shows action `index`, starting `carryMs` into its timeline (a handover carries the time already past the lead-in). */
+  function selectAction(index: number, carryMs = 0): void {
     const keepLight = lightToggle.checked;
-    action = actions[index]; rig = action.rig; time = 0; resize(); actionSelect.value = String(index);
+    action = actions[index]; rig = action.rig; elapsed = carryMs; time = rigPlayback(rig, elapsed).time; resize(); actionSelect.value = String(index);
     section.querySelector('#face-sequence')?.remove();
     updateFace = mountFaceInspector(section, rig, data, skin.face, action.prefix, action.folder);
     section.querySelectorAll<HTMLAnchorElement>('a[href^="rig/"]').forEach(link => { link.setAttribute('href', link.getAttribute('href')!.replace(/rig\/ben-[^/]+\//, 'rig/' + action.folder + '/'));  });
@@ -76,10 +79,10 @@ export function mountRigPreview(data: WorkshopData): void {
     if (frame.source) { context.strokeStyle = lighting.colour.hex; context.lineWidth = 2; context.beginPath(); context.arc(frame.source[0] * scale, frame.source[1] * scale, lighting.radius * scale * Math.max(.05, intensity), 0, Math.PI * 2); context.stroke(); }
   }
   function updateButton(): void { play.textContent = playing ? 'Pause rig' : 'Play rig'; play.setAttribute('aria-pressed', String(playing)); }
-  updateButton(); play.onclick = () => { if (time >= 1) time = 0; playing = !playing; updateButton(); };
+  updateButton(); play.onclick = () => { playing = !playing; updateButton(); };
   speedSelect.onchange = () => { speed = Number(speedSelect.value); };
-  slider.oninput = () => { playing = false; time = Number(slider.value) / 1000; updateButton(); };
-  const step = (direction: number): void => { playing = false; time = sampleTime(rig, (currentIndex() + direction + rig.sampleCount) % rig.sampleCount); updateButton(); };
+  slider.oninput = () => { playing = false; time = Number(slider.value) / 1000; elapsed = playbackElapsed(rig, time); updateButton(); };
+  const step = (direction: number): void => { playing = false; time = sampleTime(rig, (currentIndex() + direction + rig.sampleCount) % rig.sampleCount); elapsed = playbackElapsed(rig, time); updateButton(); };
   $<HTMLButtonElement>('#rig-prev').onclick = () => step(-1); $<HTMLButtonElement>('#rig-next').onclick = () => step(1);
   function skeleton(context: CanvasRenderingContext2D, pose: RigPose, translucent = false): void {
     context.save(); context.scale(scale, scale); context.globalAlpha = translucent ? .8 : 1;
@@ -121,15 +124,15 @@ export function mountRigPreview(data: WorkshopData): void {
     }
     context.restore();
   }
-  function currentIndex(): number { return sampleIndex(rig, time); }
+  function currentIndex(): number { return rigPlayback(rig, elapsed).index; }
   function tick(now: number): void {
     if (playing) {
-      const next = time + Math.max(0, Math.min(now - last, 100)) * speed / rig.durationMs;
-      time = rig.performance && !rig.performance.loop ? Math.min(1, next) : next % 1;
-      // A one-shot with a follow-up (the phone sit-down) hands over to its loop and keeps playing; others stop on the end pose.
-      const follow = time === 1 && action.then ? actions.findIndex(entry => entry.animation === action.then) : -1;
-      if (follow >= 0) selectAction(follow);
-      else if (time === 1) {playing = false; updateButton();}
+      elapsed += Math.max(0, Math.min(now - last, 100)) * speed;
+      // A one-shot with a follow-up (the phone sit-down) hands over to its loop once its final sprite has had its hold,
+      // instead of resting and replaying; the loop then keeps cycling on the shared timeline.
+      const follow = action.then ? handoverTarget(action) : -1;
+      if (follow >= 0 && elapsed >= handoverMs(rig)) selectAction(follow, elapsed - handoverMs(rig));
+      time = rigPlayback(rig, elapsed).time;
     }
     last = now;
     const index = currentIndex();

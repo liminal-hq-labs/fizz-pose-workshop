@@ -24,11 +24,15 @@ export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: 
     const shoe = presentation.cameraShoes ? skin.cameraShoe : skin.backShoe;
     for (const foot of [pose.farFoot, pose.nearFoot]) out.patch(shoe, foot.ankle, 0);
   }
-  // Cloth follow-through slides each cuff along its upper arm, as in the side views.
-  out.part = 'arm'; paintArm(out, pose.farArm, skin, false, pose.cloth?.farSleeve);
+  // From behind, Ben's right hip is on the viewer's right: the holstered Stunner hangs there from the belt, beside the thigh.
+  if (back) { out.part = 'prop'; out.patch(skin.stunnerBack, pose.root, pose.torsoAngle); }
+  // Climbing arms reach up beside the helmet, so from behind both come out over the shirt in the same light; facing the
+  // camera, the far arm is shaded and passes behind it. Cloth follow-through slides each cuff along its upper arm.
+  out.part = 'arm'; if (!back) paintArm(out, pose.farArm, skin, false, pose.cloth?.farSleeve);
   out.part = 'shirt';
   const torso = back ? skin.torsoBack : skin.torsoFront, shirt = seated ? seatedTorso(torso, skin) : torso;
   out.patch(Math.round(presentation.breath ?? 0) >= 1 ? inhaled(shirt) : shirt, pose.root, pose.torsoAngle);
+  out.part = 'arm'; if (back) paintArm(out, pose.farArm, skin, true, pose.cloth?.farSleeve);
   if (seated) paintSeatedLegs(out, skin, pose);
   if (presentation.frontHolster && !back) {
     // Ben's right hip faces the camera's left; seated, the holster rests on top of that thigh beside the bunched hem.
