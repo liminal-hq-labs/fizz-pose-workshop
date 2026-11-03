@@ -37,7 +37,13 @@ function withSkull(face: number, x: number, y: number, z: number): number {
 type Colour = keyof typeof palette;
 export interface HeadStyle {
   readonly id:
-    "cartoon" | "sprite" | "stylised" | "toy" | "realistic" | "sprite-real";
+    | "cartoon"
+    | "sprite"
+    | "stylised"
+    | "toy"
+    | "realistic"
+    | "sprite-real"
+    | "artifact";
   readonly label: string;
   /** One-line description for the viewer and the docs. */
   readonly summary: string;
@@ -242,6 +248,32 @@ const toyField: Field = (x, y, z) => {
   return withSkull(d, x, y, z);
 };
 
+/**
+ * The artboard's "Adventure kid" face: one smooth egg, 1.07 times taller than wide and slightly shallower
+ * than wide, with the eyes on its equator. `centreY` and `height` place it under the shared cranium.
+ */
+export function artifactFace(
+  x: number,
+  y: number,
+  z: number,
+  centreY = 26.0,
+  height = 3.3,
+): number {
+  return ellipsoid(x, y, z, [0, centreY, 0.25], [3.05, height, 3.1]);
+}
+// G: the artboard's kid head on this model's neck: the egg face reaches lower, so the chin meets the neck.
+const artifactField: Field = (x, y, z) =>
+  withSkull(
+    smoothUnion(
+      artifactFace(x, y, z, 25.75, 3.45),
+      Math.hypot(x, y - 25.38, z - 3.25) - 0.26,
+      0.12,
+    ),
+    x,
+    y,
+    z,
+  );
+
 export const headStyles: readonly HeadStyle[] = [
   {
     id: "cartoon",
@@ -353,6 +385,21 @@ export const headStyles: readonly HeadStyle[] = [
       radii: [0.32, 0.8, 0.56],
       box: false,
     },
+  },
+  {
+    id: "artifact",
+    label: "G · Artifact kid",
+    summary:
+      "The artboard's adventure-kid head: one smooth egg with tall glossy blue eyes, a small round nose, a thin U-shaped smile and small ears.",
+    field: artifactField,
+    flat: false,
+    resolution: 64,
+    finish: "skin",
+    cavity: 0.15,
+    eyes: { kind: "painted", x: 1.1, y: 25.85, size: 1.2 },
+    nose: "ball",
+    mouth: { kind: "smile", y: 24.35, width: 0.6, curve: 0.55, radius: 0.12 },
+    ears: { centre: [2.98, 25.6, 0.05], radii: [0.3, 0.65, 0.48], box: false },
   },
 ];
 export const defaultHeadStyle = headStyles[0];

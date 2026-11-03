@@ -1,4 +1,5 @@
 {
+  "build": "current",
   "tolerancePixels": 2,
   "relaxedChecks": {
     "headWidth": {
@@ -118,6 +119,21 @@
     0.6666666666666666,
     0.8333333333333334
   ],
+  "poseOrder": [
+    "Standing",
+    "Run",
+    "Jump",
+    "Fall",
+    "Climb",
+    "Firing",
+    "Whistle",
+    "Phone",
+    "Look up",
+    "Look down",
+    "Belly clutch"
+  ],
+  "browserErrors": [],
+  "mobileOverflow": false,
   "metrics": [
     {
       "angle": 0,
@@ -413,20 +429,5 @@
       },
       "withinTolerance": true
     }
-  ],
-  "poseOrder": [
-    "Standing",
-    "Run",
-    "Jump",
-    "Fall",
-    "Climb",
-    "Firing",
-    "Whistle",
-    "Phone",
-    "Look up",
-    "Look down",
-    "Belly clutch"
-  ],
-  "browserErrors": [],
-  "mobileOverflow": false
+  ]
 }
