@@ -6,14 +6,15 @@
 import {test,expect} from 'bun:test';
 import {rigCatalogue} from '../src/rig/catalogue.ts';
 import {sampleRig,sampleTime} from '../src/rig/sample.ts';
-import {validateRig} from '../src/rig/run.ts';
+import {validateRig,type SideRig} from '../src/rig/run.ts';
 import {distance,type Chain} from '../src/rig/kinematics.ts';
 import {skinRig,sampleRigSprites} from './rig-skin.ts';
 import skin from '../source/ben-side-skin.json';
 import palette from '../source/game-palette.json';
 
+const keyPhase=(rig:SideRig,index:number):number=>rig.performance!.keys[index].phase;
 const entries=rigCatalogue.filter(entry=>entry.rig.performance);
-for(const {rig,prefix} of entries) test(`${rig.motion} preserves anatomy, reach, palette and canvas clearance through the whole performance`,()=>{
+for(const entry of entries) {const {rig,prefix}=entry; test(`${rig.motion} preserves anatomy, reach, palette and canvas clearance through the whole performance`,()=>{
  validateRig(rig);
  for(let i=0;i<=120;i++){
   const pose=sampleRig(rig,i/120);
@@ -24,10 +25,10 @@ for(const {rig,prefix} of entries) test(`${rig.motion} preserves anatomy, reach,
   expect(frame.grid.every(row=>row.length===rig.width&&[...row].every(code=>Object.hasOwn(palette,code)))).toBe(true);
   expect(frame.grid.slice(rig.groundY+1).every(row=>row==='.'.repeat(rig.width))).toBe(true);
  }
- const frames=sampleRigSprites(rig,skin,prefix);expect(Object.keys(frames)).toHaveLength(6);
+ const frames=sampleRigSprites(rig,skin,prefix);expect(Object.keys(frames)).toHaveLength(rig.sampleCount);expect(entry.labels).toHaveLength(rig.sampleCount);
  if(rig.performance!.loop){expect(sampleRig(rig,0)).toEqual(sampleRig(rig,1));}
- else{expect(sampleTime(rig,5)).toBe(1);expect(sampleRig(rig,1)).toEqual(sampleRig(rig,2));expect(sampleRig(rig,1)).not.toEqual(sampleRig(rig,0));}
-});
+ else{expect(sampleTime(rig,rig.sampleCount-1)).toBe(1);expect(sampleRig(rig,1)).toEqual(sampleRig(rig,2));expect(sampleRig(rig,1)).not.toEqual(sampleRig(rig,0));}
+});}
 test('ladder alternates opposite hands and feet and shows the back of the helmet',()=>{
  const rig=entries.find(e=>e.rig.motion==='ladder')!.rig;
  const a=sampleRig(rig,0),b=sampleRig(rig,.5);
@@ -37,13 +38,13 @@ test('ladder alternates opposite hands and feet and shows the back of the helmet
 });
 test('jump has a clear apex and a grounded landing',()=>{
  const rig=entries.find(e=>e.rig.motion==='jump')!.rig;
- const start=sampleRig(rig,0),apex=sampleRig(rig,.4),land=sampleRig(rig,.8);
+ const start=sampleRig(rig,0),apex=sampleRig(rig,keyPhase(rig,2)),land=sampleRig(rig,keyPhase(rig,4));
  expect(apex.root[1]).toBeLessThan(start.root[1]-10);expect(apex.contact).toBe('flight');expect(land.contact).toBe('both');expect(land.nearFoot.ball[1]).toBe(rig.groundY);
 });
 test('death clutches the belly with changing expressions and presents both soles to the camera',()=>{
  const rig=entries.find(e=>e.rig.motion==='death')!.rig;
  expect(new Set(rig.performance!.keys.map(key=>key.expression)).size).toBe(6);
- for(let i=0;i<6;i++){const p=sampleRig(rig,sampleTime(rig,i));expect(p.presentation!.cameraShoes).toBe(true);expect(p.presentation!.view).toBe('front');expect(Math.abs(p.nearArm[2][1]-p.root[1])).toBeLessThan(5);expect(Math.abs(p.farArm[2][1]-p.root[1])).toBeLessThan(5);}
+ for(let i=0;i<rig.sampleCount;i++){const p=sampleRig(rig,sampleTime(rig,i));expect(p.presentation!.cameraShoes).toBe(true);expect(p.presentation!.view).toBe('front');expect(Math.abs(p.nearArm[2][1]-p.root[1])).toBeLessThan(5);expect(Math.abs(p.farArm[2][1]-p.root[1])).toBeLessThan(5);}
 });
 test('ledge grips stay pinned through the pull and the feet finish on top',()=>{
  const rig=entries.find(e=>e.rig.motion==='ledge')!.rig;
@@ -65,18 +66,25 @@ test('rejects unordered or invalid performance goals before exporting',()=>{
  const rig=structuredClone(entries[0].rig);rig.performance!.keys[1].phase=0;expect(()=>validateRig(rig)).toThrow();
 });
 
-test('airborne jump spreads the legs and points the shoes at independent angles before a flat landing',()=>{
- const rig=entries.find(e=>e.rig.motion==='jump')!.rig,apex=sampleRig(rig,.4),land=sampleRig(rig,.8);
+test('airborne jump points its toes, folds the trailing foot back with its shin so the sole faces back and up, and lands on flat soles',()=>{
+ const rig=entries.find(e=>e.rig.motion==='jump')!.rig,pose=(i:number)=>sampleRig(rig,keyPhase(rig,i)),[crouch,launch,apex,fall,land,recover]=[0,1,2,3,4,5].map(pose);
  expect(apex.farFoot.ankle[0]-apex.nearFoot.ankle[0]).toBeGreaterThan(14);
- expect(apex.nearFoot.pitch).toBeLessThan(-.4);expect(apex.farFoot.pitch).toBeGreaterThan(.4);
- expect(land.nearFoot.pitch).toBe(0);expect(land.farFoot.pitch).toBe(0);
+ // Positive pitch turns the toe down. Both feet leave the ground toes first and reach toes first for the landing.
+ for(const p of [launch,fall])for(const foot of [p.nearFoot,p.farFoot])expect(foot.pitch).toBeGreaterThan(.4);
+ // The trailing (near) leg bends back in the air, so its foot follows the shin: toes point down and back and the white sole
+ // faces back and up (a pitch between 100° and 170°) at launch, apex and fall. The leading foot levels out under its knee at the apex.
+ for(const p of [launch,apex,fall]){const degrees=p.nearFoot.pitch*180/Math.PI;expect(degrees).toBeGreaterThan(100);expect(degrees).toBeLessThan(170);const sole=[-Math.sin(p.nearFoot.pitch),Math.cos(p.nearFoot.pitch)];expect(sole[0]).toBeLessThan(0);expect(sole[1]).toBeLessThan(0);}
+ expect(Math.abs(apex.farFoot.pitch)).toBeLessThan(.15);
+ for(const p of [crouch,land,recover]){expect(p.nearFoot.pitch).toBe(0);expect(p.farFoot.pitch).toBe(0);}
+ // The gallery and exports replay the jump straight away, as on its original six-frame loop.
+ expect(rig.performance!.replay).toBe('continuous');
 });
 
 test('left and right whistling idle preserve their saved standing artwork outside the puckered mouth',async()=>{
  const frames=await Bun.file(new URL('../edits.json',import.meta.url)).json();
  for(const entry of entries.filter(e=>e.rig.motion==='whistle')){
   const left=entry.rig.performance!.standing==='left',reference=frames[left?'ben_stand':'ben_standRight'];
-  for(let i=0;i<6;i++){
+  for(let i=0;i<entry.rig.sampleCount;i++){
    const f=skinRig(entry.rig,skin,sampleRig(entry.rig,sampleTime(entry.rig,i)));
    for(let y=0;y<reference.height;y++)for(let x=0;x<reference.width;x++){
     if(y===11)continue;
@@ -90,7 +98,7 @@ test('left and right whistling idle preserve their saved standing artwork outsid
 test('left ledge mirrors the complete right rig and every exported sprite pixel',()=>{
  const right=entries.find(e=>e.rig.motion==='ledge'&&!e.rig.mirrored)!.rig;
  const left=entries.find(e=>e.rig.motion==='ledge'&&e.rig.mirrored)!.rig;
- for(let i=0;i<6;i++){
+ for(let i=0;i<right.sampleCount;i++){
   const t=sampleTime(right,i),a=sampleRig(right,t),b=sampleRig(left,t);
   expect(b.root[0]).toBeCloseTo(right.width-1-a.root[0],8);
   for(const key of ['nearArm','farArm','nearLeg','farLeg']as const)for(let j=0;j<3;j++){expect(b[key][j][0]).toBeCloseTo(right.width-1-a[key][j][0],8);expect(b[key][j][1]).toBe(a[key][j][1]);}

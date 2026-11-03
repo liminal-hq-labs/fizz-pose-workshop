@@ -4,14 +4,22 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import type { PerformanceSettings, Expression } from './performance.ts';
+import type { ClothingSettings, ClothPose } from './clothing.ts';
 import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
 export interface SideRig {
-  motion?: 'run' | 'pogo' | 'fire' | 'ladder' | 'jump' | 'death' | 'ledge' | 'whistle' | 'phone';
+  motion?: 'run' | 'pogo' | 'fire' | 'ladder' | 'jump' | 'fall' | 'death' | 'ledge' | 'whistle' | 'phone';
   lightingNote?: string;
   performance?: PerformanceSettings;
   mirrored?: boolean;
+  /**
+   * `left` turns a right-facing rig round for left-facing sprites: the skeleton, face and patches mirror, but Ben's
+   * Fizz Stunner stays on his right hip, which is then the far side, so it is drawn behind the body instead of copied across.
+   */
+  facing?: 'right' | 'left';
+  /** Optional cloth parts (shirt hem and sleeves) with follow-through; see `src/rig/clothing.ts`. */
+  clothing?: ClothingSettings;
   pogo?: { compressedLength: number; extendedLength: number; shaftLength: number; lift: number; pegOffset: number };
   fire?: { recoil: number; kickDegrees: number };
   name: string; width: number; height: number; groundY: number; durationMs: number; sampleCount: number;
@@ -27,6 +35,7 @@ export interface RigFoot { ankle: Vec2; ball: Vec2; toe: Vec2; heel: Vec2; pitch
 export interface RigPose {
   face: FacePose;
   headAngle?: number;
+  cloth?: ClothPose;
   presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; environment?: PerformanceSettings['environment'] };
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
@@ -75,16 +84,20 @@ function footTarget(rig: SideRig, cycle: number, near = false): RigFoot {
   return { ankle, ball, toe, heel: add(ankle, rotate([rig.feet.heel[0], rig.feet.heel[1]], pitch)), pitch, toePitch, compression, stance, progress };
 }
 export function validateRig(rig: SideRig): void {
-  if (rig.motion && !["run", "pogo", "fire", "ladder", "jump", "death", "ledge", "whistle", "phone"].includes(rig.motion)) throw new Error("Unknown rig motion.");
+  if (rig.facing !== undefined && rig.facing !== 'right' && rig.facing !== 'left') throw new Error("Rig facing must be 'right' or 'left'.");
+  if (rig.facing === 'left' && rig.mirrored) throw new Error('A left-facing rig already turns round; it cannot also be a plain mirror.');
+  if (rig.motion && !["run", "pogo", "fire", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion)) throw new Error("Unknown rig motion.");
   if (rig.motion === "pogo" && (!rig.pogo || Object.values(rig.pogo).some(value => !Number.isFinite(value) || value <= 0) || rig.pogo.compressedLength > rig.pogo.extendedLength)) throw new Error("Pogo spring settings must be positive and ordered.");
   if (rig.motion === "fire" && (!rig.fire || Object.values(rig.fire).some(value => !Number.isFinite(value) || value < 0))) throw new Error("Firing settings must be finite and non-negative.");
-  if (["ladder", "jump", "death", "ledge", "whistle", "phone"].includes(rig.motion ?? "")) {
+  if (["ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion ?? "")) {
     const clip = rig.performance;
     if (!clip || clip.keys.length < 2 || clip.keys[0].phase !== 0 || clip.keys.at(-1)!.phase !== 1) throw new Error("Performance goals must cover phases zero through one.");
     for (let i = 0; i < clip.keys.length; i++) {
       const key = clip.keys[i];
       if (!Number.isFinite(key.phase) || (i > 0 && key.phase <= clip.keys[i-1].phase) || ![key.lean,key.headRoll,...key.root,...key.nearHand,...key.farHand,...key.nearAnkle,...key.farAnkle,...(key.phone ?? [])].every(Number.isFinite)) throw new Error("Performance goals must be finite and strictly ordered.");
     }
+    const times = clip.sampleTimes;
+    if (times && (times.length !== rig.sampleCount || times.some((time, i) => !Number.isFinite(time) || time < 0 || time > 1 || (i > 0 && time <= times[i - 1])) || times[0] !== 0 || (clip.loop ? times.at(-1)! >= 1 : times.at(-1) !== 1))) throw new Error("Sample times must be one ordered phase per sprite, starting at zero and ending at one for a one-shot or before one for a loop.");
     if (clip.environment?.kind === "ladder" && !(clip.environment.spacing > 0)) throw new Error("Ladder rung spacing must be positive.");
   }
   const numeric = [...rig.root, rig.face.yawDegrees, ...rig.face.eye, ...rig.face.mouth, ...rig.face.ear, ...Object.values(rig.face.profile).flat(), rig.face.shiftAmplitude, ...rig.feet.toe, ...rig.feet.heel, ...rig.feet.ball, rig.feet.landingToeDegrees, rig.feet.landingCompression, ...Object.values(rig.torso), ...Object.values(rig.arms), ...Object.values(rig.legs), ...Object.values(rig.stride), rig.groundY];

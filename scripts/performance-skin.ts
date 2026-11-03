@@ -3,12 +3,12 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-import { add, rotate, type Vec2 } from '../src/rig/kinematics.ts';
+import { add, tiltPixel, type Vec2 } from '../src/rig/kinematics.ts';
 import type { RigPose, SideRig } from '../src/rig/run.ts';
 import { paintArm, type Pixels, type RigSkin } from './rig-skin.ts';
 
 function headPixel(pose: RigPose, local: Vec2): Vec2 {
-  const point = add(pose.face.pixelAnchor, rotate(local, pose.headAngle ?? 0)); return [Math.round(point[0]), Math.round(point[1])];
+  return tiltPixel(pose.face.pixelAnchor, local, pose.headAngle ?? 0);
 }
 export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: RigPose): void {
   const back = pose.presentation!.view === 'back', phone = pose.presentation!.phone;
@@ -22,7 +22,7 @@ export function paintFacingBody(out: Pixels, rig: SideRig, skin: RigSkin, pose: 
   paintArm(out, pose.nearArm, skin, true);
   // Hands remain in front of the belly or phone instead of being hidden by the shirt.
   if (!back) for (const hand of [pose.farArm[2], pose.nearArm[2]]) out.segment([hand, add(hand, [.6,0])], 1, 'W', 'k');
-  out.patch(back ? skin.headBack : skin.headFront, pose.face.pixelAnchor, pose.headAngle ?? 0);
+  out.tiltPatch(back ? skin.headBack : skin.headFront, pose.face.pixelAnchor, pose.headAngle ?? 0);
   if (!back) {
     const pixel = (x: number, y: number, colour: string): void => {const p=headPixel(pose,[x,y]);out.pixel(p[0],p[1],colour);};
     const expression = pose.presentation!.expression;

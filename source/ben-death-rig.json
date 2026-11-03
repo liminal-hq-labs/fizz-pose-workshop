@@ -3,15 +3,16 @@
   "width": 40,
   "height": 56,
   "groundY": 48,
-  "durationMs": 1200,
-  "sampleCount": 6,
+  "durationMs": 1400,
+  "sampleCount": 7,
   "frameDurationsMs": [
+    240,
+    180,
     200,
-    160,
     200,
     200,
-    200,
-    240
+    120,
+    260
   ],
   "root": [
     20,
@@ -132,15 +133,16 @@
         ],
         "expression": "startled",
         "nearSupport": false,
-        "farSupport": false
+        "farSupport": false,
+        "hold": true
       },
       {
-        "phase": 0.2,
+        "phase": 0.18,
         "root": [
           20,
           35
         ],
-        "lean": -8,
+        "lean": -7,
         "headRoll": -7,
         "nearHand": [
           19,
@@ -160,43 +162,45 @@
         ],
         "expression": "grit",
         "nearSupport": false,
-        "farSupport": false
+        "farSupport": false,
+        "beat": true
       },
       {
-        "phase": 0.4,
+        "phase": 0.36,
         "root": [
           20,
-          34
+          35
         ],
-        "lean": -12,
+        "lean": -10,
         "headRoll": 8,
         "nearHand": [
           19,
-          30
+          31
         ],
         "farHand": [
           21,
-          30
+          31
         ],
         "nearAnkle": [
           14,
-          39
+          40
         ],
         "farAnkle": [
           27,
-          40
+          41
         ],
         "expression": "tongue",
         "nearSupport": false,
-        "farSupport": false
+        "farSupport": false,
+        "beat": true
       },
       {
-        "phase": 0.6,
+        "phase": 0.54,
         "root": [
           20,
           36
         ],
-        "lean": -5,
+        "lean": -6,
         "headRoll": -9,
         "nearHand": [
           19,
@@ -216,15 +220,16 @@
         ],
         "expression": "dizzy",
         "nearSupport": false,
-        "farSupport": false
+        "farSupport": false,
+        "beat": true
       },
       {
-        "phase": 0.8,
+        "phase": 0.72,
         "root": [
           20,
           37
         ],
-        "lean": 3,
+        "lean": -2,
         "headRoll": 7,
         "nearHand": [
           19,
@@ -244,7 +249,8 @@
         ],
         "expression": "wince",
         "nearSupport": false,
-        "farSupport": false
+        "farSupport": false,
+        "beat": true
       },
       {
         "phase": 1,
@@ -252,7 +258,7 @@
           20,
           38
         ],
-        "lean": -8,
+        "lean": 7,
         "headRoll": 10,
         "nearHand": [
           19,
@@ -272,8 +278,19 @@
         ],
         "expression": "out",
         "nearSupport": false,
-        "farSupport": false
+        "farSupport": false,
+        "hold": true,
+        "beat": true
       }
+    ],
+    "sampleTimes": [
+      0,
+      0.18,
+      0.36,
+      0.54,
+      0.72,
+      0.86,
+      1
     ]
   }
 }
