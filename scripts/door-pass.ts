@@ -27,10 +27,12 @@ export const exitCentre = exitPiece.width / 2 - 1;
 export const spriteLeft = exitCentre - centreColumn;
 /** Pixels Ben rises up the screen per frame of the walk-in: whole pixels, never down, 7 in all. */
 export const rise = [0, 1, 2, 3, 4, 5, 6, 7] as const;
-/** Bottom sprite rows hidden per frame. Zero while he is still in front of the arch, then growing until only his crown shows. */
-export const hiddenRows = [0, 0, 3, 7, 12, 18, 25, 32] as const;
-/** Rows of Ben's 36-row body (crown row 2 down to the sole row 35, so rows 0–35 of the lab frame) that the sill keeps hidden. */
-export const bodyRows = 36;
+/** Bottom sprite rows hidden per frame. Zero while he is still in front of the arch, then growing until only the top two rows of his helmet show. */
+export const hiddenRows = [0, 0, 3, 7, 12, 18, 25, 31] as const;
+/** Ben is 33 rows tall: the crown is lab row 3 and the sole row 35, so the sill can hide up to 33 of his rows. */
+export const bodyRows = 33;
+/** Rows from the top of the lab frame to the foot line (the bottom edge of row 35), which places the canvas against the floor line. */
+export const footLineRows = 36;
 /** Assumed height, in pixels, of the exit's front lip; the front-layer pass covers this many rows above the sill. */
 export const assumedLipRows = 6;
 
@@ -69,8 +71,8 @@ export async function buildDoorPass(frames: Record<string, Frame>): Promise<unkn
       stunner: 'Ben’s right hip, the viewer’s right (sprite columns 16–19 around rows 23–27); never mirrored',
       exit: { ...exitPiece, origin: 'top-left of the drawn 20 × 35 piece; its bottom edge is the sill baseline', glow: 'separate 14 × 32 piece, assumed centred on the opening column range 3–16 (to be confirmed by the game)' },
       placement: {
-        rule: 'spriteX = exitX + spriteLeft; spriteY = (sill baseline + startBelowSill) - 36 - rise[i]. Ben’s centre column 11 sits on the exit’s centre column 9.',
-        spriteLeft, centreColumn, exitCentre, bodyRows,
+        rule: 'spriteX = exitX + spriteLeft; spriteY = (sill baseline + startBelowSill) - 36 (footLineRows) - rise[i]. Ben’s centre column 11 sits on the exit’s centre column 9.',
+        spriteLeft, centreColumn, exitCentre, bodyRows, footLineRows,
         startBelowSill: 'game-defined: the floor line minus the sill baseline (the sill is drawn higher on screen than the floor line in front)',
         footLineInSprite: 'the sole’s bottom edge is the bottom of sprite row 35',
       },
@@ -78,13 +80,13 @@ export async function buildDoorPass(frames: Record<string, Frame>): Promise<unkn
       layers: {
         drawOrder: 'exit back layer (ground pass), then Ben, then the front-layer pass (lip and lintel).',
         back: 'Everything of the exit that Ben stands in front of: the arch, jambs, the lit glow piece and arrow.',
-        front: `The lip: the bottom ${assumedLipRows} rows above the sill baseline across the full 20 px, drawn after Ben so it covers his soles and ankles. The lintel is above Ben’s crown for the whole walk (the arch is 35 tall, Ben’s visible rows are at most 36 and rise only 7) and needs no split.`,
+        front: `The lip: the bottom ${assumedLipRows} rows above the sill baseline across the full 20 px, drawn after Ben so it covers his soles and ankles. The lintel is above Ben’s crown for the whole walk (the arch is 35 tall, Ben is 33 rows tall and rises only 7) and needs no split.`,
         hidingRule: 'Per frame, `hiddenRows` bottom rows of the sprite are not shown. Rows up to `assumedLipRows` come from the front-layer lip; any rows beyond that (hiddenByCrop) are not covered by a 6-row lip, so the game crops them by drawing only the top `visibleRows` rows of the sprite (a source-rectangle crop that rides with Ben), or raises the lip.',
       },
       overlapsExit: 'every frame: Ben’s occupied columns always fall inside the 20 px piece',
       perFrame: walkIn,
       shrink: {
-        recommendation: 'Do not scale. Keep Ben at full size and rely on the 7 px rise plus the progressive crop. Nearest-neighbour scaling to about 90 % (36 rows to 32) breaks his one-pixel outline and the lab’s crisp-pixel rule, and a per-frame shrink would need extra art. If the walk still reads as flat, a one-off shrunken last frame would have to be redrawn, not scaled.',
+        recommendation: 'Do not scale. Keep Ben at full size and rely on the 7 px rise plus the progressive crop. Nearest-neighbour scaling to about 90 % (33 rows to 30) breaks his one-pixel outline and the lab’s crisp-pixel rule, and a per-frame shrink would need extra art. If the walk still reads as flat, a one-off shrunken last frame would have to be redrawn, not scaled.',
       },
       dos: { frameSize: '24x44', bytesPerFrame: dosBytes(24, 44), totalBytes: dosBytes(24, 44) * walkIn.length, trimmedUnionSize: `${trimmed.width}x${trimmed.height}`, trimmedBytesPerFrame: dosBytes(trimmed.width, trimmed.height), trimmedTotalBytes: dosBytes(trimmed.width, trimmed.height) * walkIn.length },
     },

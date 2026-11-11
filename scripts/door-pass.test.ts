@@ -11,7 +11,8 @@ import { distance } from '../src/rig/kinematics.ts';
 import { validateRig } from '../src/rig/run.ts';
 import { frameDurations, replaysContinuously } from '../src/rig/timing.ts';
 import { skinRig, type RigSkin } from './rig-skin.ts';
-import { buildDoorPass, dosBytes, exitPiece, hiddenRows, occupied, rise, spriteLeft } from './door-pass.ts';
+import { trimmedHeadBack } from './performance-skin.ts';
+import { bodyRows, buildDoorPass, dosBytes, exitPiece, hiddenRows, occupied, rise, spriteLeft } from './door-pass.ts';
 import { changedPixels, cycleSteps, loadSavedFrames, median, savedAnimations } from './motion-metrics.ts';
 import skin from '../source/ben-side-skin.json';
 import palette from '../source/game-palette.json';
@@ -42,7 +43,7 @@ test('the saved frames are the rig redrawn, in the game palette', () => {
 });
 
 test('every frame is a rear view: the rear helmet is drawn at the head anchor and no face is', () => {
-  const head = (skin as unknown as RigSkin).headBack, faceEye = (skin as unknown as RigSkin).face.eye;
+  const head = trimmedHeadBack((skin as unknown as RigSkin).headBack, rig.performance!.neckTrim ?? 0), faceEye = (skin as unknown as RigSkin).face.eye;
   names.forEach((name, i) => {
     const grid = frames[name].grid, anchor = sampleRig(rig, sampleTime(rig, i)).face.pixelAnchor;
     for (const row of head.rows) {
@@ -87,6 +88,9 @@ test('the walk-in ends cleanly: a one-shot with no wrapping step, changing on ev
   // Ben stays the same size throughout: the occupied height varies by at most a row.
   const heights = sequence.map(frame => occupied(frame).height);
   expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
+  // Fizz 2's Ben is 33 px tall: the trimmed neck puts the crown on row 3 in every frame, and the soles on row 35 (row 34 in the frame where a foot lifts).
+  expect(Math.max(...heights)).toBe(33);
+  for (const frame of sequence) { expect(occupied(frame).y0).toBe(3); expect(occupied(frame).y1).toBeLessThanOrEqual(35); }
 });
 
 test('the door-pass contract is monotonic and matches the saved frames and the builder', async () => {
@@ -99,13 +103,13 @@ test('the door-pass contract is monotonic and matches the saved frames and the b
     expect(walkIn.perFrame[i].progress).toBeGreaterThan(walkIn.perFrame[i - 1].progress);
     expect(walkIn.perFrame[i].offsetFromStart.y).toBeLessThan(walkIn.perFrame[i - 1].offsetFromStart.y);
   }
-  expect(hiddenRows[0]).toBe(0); expect(hiddenRows.at(-1)!).toBeLessThan(36);
+  expect(hiddenRows[0]).toBe(0); expect(hiddenRows.at(-1)!).toBeLessThan(bodyRows);
   // Ben overlaps the exit in every frame, inside its 20 px width, and is wider than the 14 px lit opening.
   for (const frame of walkIn.perFrame) {
     expect(frame.overlapsExit).toBe(true);
     expect(frame.exitColumns.left).toBeGreaterThanOrEqual(0); expect(frame.exitColumns.right).toBeLessThan(exitPiece.width);
     expect(frame.bounds.width).toBeGreaterThan(exitPiece.openingWidth);
-    expect(frame.visibleRows + frame.hiddenRows).toBe(36);
+    expect(frame.visibleRows + frame.hiddenRows).toBe(bodyRows);
   }
   expect(spriteLeft).toBe(-2);
   expect(walkIn.dos.bytesPerFrame).toBe(dosBytes(24, 44)); expect(walkIn.dos.totalBytes).toBe(528 * 8);

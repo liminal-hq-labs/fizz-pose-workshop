@@ -28,11 +28,12 @@
       "glow": "separate 14 × 32 piece, assumed centred on the opening column range 3–16 (to be confirmed by the game)"
     },
     "placement": {
-      "rule": "spriteX = exitX + spriteLeft; spriteY = (sill baseline + startBelowSill) - 36 - rise[i]. Ben’s centre column 11 sits on the exit’s centre column 9.",
+      "rule": "spriteX = exitX + spriteLeft; spriteY = (sill baseline + startBelowSill) - 36 (footLineRows) - rise[i]. Ben’s centre column 11 sits on the exit’s centre column 9.",
       "spriteLeft": -2,
       "centreColumn": 11,
       "exitCentre": 9,
-      "bodyRows": 36,
+      "bodyRows": 33,
+      "footLineRows": 36,
       "startBelowSill": "game-defined: the floor line minus the sill baseline (the sill is drawn higher on screen than the floor line in front)",
       "footLineInSprite": "the sole’s bottom edge is the bottom of sprite row 35"
     },
@@ -53,7 +54,7 @@
     "layers": {
       "drawOrder": "exit back layer (ground pass), then Ben, then the front-layer pass (lip and lintel).",
       "back": "Everything of the exit that Ben stands in front of: the arch, jambs, the lit glow piece and arrow.",
-      "front": "The lip: the bottom 6 rows above the sill baseline across the full 20 px, drawn after Ben so it covers his soles and ankles. The lintel is above Ben’s crown for the whole walk (the arch is 35 tall, Ben’s visible rows are at most 36 and rise only 7) and needs no split.",
+      "front": "The lip: the bottom 6 rows above the sill baseline across the full 20 px, drawn after Ben so it covers his soles and ankles. The lintel is above Ben’s crown for the whole walk (the arch is 35 tall, Ben is 33 rows tall and rises only 7) and needs no split.",
       "hidingRule": "Per frame, `hiddenRows` bottom rows of the sprite are not shown. Rows up to `assumedLipRows` come from the front-layer lip; any rows beyond that (hiddenByCrop) are not covered by a 6-row lip, so the game crops them by drawing only the top `visibleRows` rows of the sprite (a source-rectangle crop that rides with Ben), or raises the lip."
     },
     "overlapsExit": "every frame: Ben’s occupied columns always fall inside the 20 px piece",
@@ -65,11 +66,11 @@
         "progress": 0,
         "bounds": {
           "x0": 4,
-          "y0": 2,
+          "y0": 3,
           "x1": 18,
           "y1": 35,
           "width": 15,
-          "height": 34
+          "height": 33
         },
         "exitColumns": {
           "left": 2,
@@ -83,7 +84,7 @@
         },
         "overlapsExit": true,
         "hiddenRows": 0,
-        "visibleRows": 36,
+        "visibleRows": 33,
         "hiddenByLip": 0,
         "hiddenByCrop": 0
       },
@@ -94,11 +95,11 @@
         "progress": 0.136,
         "bounds": {
           "x0": 3,
-          "y0": 2,
+          "y0": 3,
           "x1": 18,
           "y1": 35,
           "width": 16,
-          "height": 34
+          "height": 33
         },
         "exitColumns": {
           "left": 1,
@@ -112,7 +113,7 @@
         },
         "overlapsExit": true,
         "hiddenRows": 0,
-        "visibleRows": 36,
+        "visibleRows": 33,
         "hiddenByLip": 0,
         "hiddenByCrop": 0
       },
@@ -123,11 +124,11 @@
         "progress": 0.261,
         "bounds": {
           "x0": 2,
-          "y0": 2,
+          "y0": 3,
           "x1": 18,
           "y1": 35,
           "width": 17,
-          "height": 34
+          "height": 33
         },
         "exitColumns": {
           "left": 0,
@@ -141,7 +142,7 @@
         },
         "overlapsExit": true,
         "hiddenRows": 3,
-        "visibleRows": 33,
+        "visibleRows": 30,
         "hiddenByLip": 3,
         "hiddenByCrop": 0
       },
@@ -152,11 +153,11 @@
         "progress": 0.375,
         "bounds": {
           "x0": 3,
-          "y0": 2,
+          "y0": 3,
           "x1": 18,
           "y1": 35,
           "width": 16,
-          "height": 34
+          "height": 33
         },
         "exitColumns": {
           "left": 1,
@@ -170,7 +171,7 @@
         },
         "overlapsExit": true,
         "hiddenRows": 7,
-        "visibleRows": 29,
+        "visibleRows": 26,
         "hiddenByLip": 6,
         "hiddenByCrop": 1
       },
@@ -181,11 +182,11 @@
         "progress": 0.5,
         "bounds": {
           "x0": 3,
-          "y0": 2,
+          "y0": 3,
           "x1": 18,
           "y1": 34,
           "width": 16,
-          "height": 33
+          "height": 32
         },
         "exitColumns": {
           "left": 1,
@@ -199,7 +200,7 @@
         },
         "overlapsExit": true,
         "hiddenRows": 12,
-        "visibleRows": 24,
+        "visibleRows": 21,
         "hiddenByLip": 6,
         "hiddenByCrop": 6
       },
@@ -210,11 +211,11 @@
         "progress": 0.625,
         "bounds": {
           "x0": 4,
-          "y0": 2,
+          "y0": 3,
           "x1": 19,
           "y1": 35,
           "width": 16,
-          "height": 34
+          "height": 33
         },
         "exitColumns": {
           "left": 2,
@@ -228,7 +229,7 @@
         },
         "overlapsExit": true,
         "hiddenRows": 18,
-        "visibleRows": 18,
+        "visibleRows": 15,
         "hiddenByLip": 6,
         "hiddenByCrop": 12
       },
@@ -239,11 +240,11 @@
         "progress": 0.739,
         "bounds": {
           "x0": 4,
-          "y0": 2,
+          "y0": 3,
           "x1": 18,
           "y1": 35,
           "width": 15,
-          "height": 34
+          "height": 33
         },
         "exitColumns": {
           "left": 2,
@@ -257,7 +258,7 @@
         },
         "overlapsExit": true,
         "hiddenRows": 25,
-        "visibleRows": 11,
+        "visibleRows": 8,
         "hiddenByLip": 6,
         "hiddenByCrop": 19
       },
@@ -268,11 +269,11 @@
         "progress": 0.864,
         "bounds": {
           "x0": 4,
-          "y0": 2,
+          "y0": 3,
           "x1": 18,
           "y1": 35,
           "width": 15,
-          "height": 34
+          "height": 33
         },
         "exitColumns": {
           "left": 2,
@@ -285,22 +286,22 @@
           "y": -7
         },
         "overlapsExit": true,
-        "hiddenRows": 32,
-        "visibleRows": 4,
+        "hiddenRows": 31,
+        "visibleRows": 2,
         "hiddenByLip": 6,
-        "hiddenByCrop": 26
+        "hiddenByCrop": 25
       }
     ],
     "shrink": {
-      "recommendation": "Do not scale. Keep Ben at full size and rely on the 7 px rise plus the progressive crop. Nearest-neighbour scaling to about 90 % (36 rows to 32) breaks his one-pixel outline and the lab’s crisp-pixel rule, and a per-frame shrink would need extra art. If the walk still reads as flat, a one-off shrunken last frame would have to be redrawn, not scaled."
+      "recommendation": "Do not scale. Keep Ben at full size and rely on the 7 px rise plus the progressive crop. Nearest-neighbour scaling to about 90 % (33 rows to 30) breaks his one-pixel outline and the lab’s crisp-pixel rule, and a per-frame shrink would need extra art. If the walk still reads as flat, a one-off shrunken last frame would have to be redrawn, not scaled."
     },
     "dos": {
       "frameSize": "24x44",
       "bytesPerFrame": 528,
       "totalBytes": 4224,
-      "trimmedUnionSize": "18x34",
-      "trimmedBytesPerFrame": 306,
-      "trimmedTotalBytes": 2448
+      "trimmedUnionSize": "18x33",
+      "trimmedBytesPerFrame": 297,
+      "trimmedTotalBytes": 2376
     }
   },
   "sideOnPass": {
