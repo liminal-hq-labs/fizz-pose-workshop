@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import original from '../assets.json';
-import { mountBen3D } from './model-3d/preview.ts';
 import { mountTurntable } from './turntable-preview.ts';
 import { mountGallery } from './gallery.ts';
 import { initialiseEditor } from './editor.ts';
@@ -15,6 +14,5 @@ const data = structuredClone(original);
 mountGallery(data);
 initialiseEditor(data);
 mountTurntable(data);
-mountBen3D(data);
 
 mountRigPreview(data);

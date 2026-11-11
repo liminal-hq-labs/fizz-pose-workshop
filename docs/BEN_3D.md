@@ -1,6 +1,6 @@
 # Ben’s volumetric character model
 
-The “Ben in three dimensions” section contains a fully rounded Three.js character. His helmet, skull, ears, nose, torso, arms, jeans, shoes and Fizz Stunner have depth from every direction. The mesh uses one world unit per calibrated sprite pixel, with a standing ground plane at −0.5 and a physical helmet crown at 31.0. These are model units, not physical measurements.
+The “Ben in three dimensions” page (`ben-3d.html`, linked from the workshop index) contains a fully rounded Three.js character. His helmet, skull, ears, nose, torso, arms, jeans, shoes and Fizz Stunner have depth from every direction. The mesh uses one world unit per calibrated sprite pixel, with a standing ground plane at −0.5 and a physical helmet crown at 31.0. These are model units, not physical measurements.
 
 The model is a posing and reference figure for the sprites, and a possible basis for a 3D game or print. It stays recognisably Ben, with the sprite’s colours and equipment, but uses more realistic proportions than the 2.9-head sprite:
 

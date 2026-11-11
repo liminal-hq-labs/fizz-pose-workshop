@@ -152,7 +152,7 @@ try {
   page.setDefaultTimeout(120_000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto(process.env.MODEL_REVIEW_URL ?? "http://127.0.0.1:5173/");
+  await page.goto(process.env.MODEL_REVIEW_URL ?? "http://127.0.0.1:5173/ben-3d.html");
   await page
     .locator("#model-canvas")
     .evaluate((element) => element.scrollIntoView());

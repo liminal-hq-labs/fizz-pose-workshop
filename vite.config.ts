@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { defineConfig } from 'vite';
+import { existsSync } from 'node:fs';
 import { readFile, writeFile, copyFile, mkdir, cp } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -15,6 +16,7 @@ const run = promisify(execFile);
 let saving = false;
 export default defineConfig({
   base: './',
+  build: { rollupOptions: { input: { main: root + 'index.html', ...(existsSync(root + 'ben-3d.html') ? { ben3d: root + 'ben-3d.html' } : {}) } } },
   server: { host: '0.0.0.0', port: 5173, strictPort: true },
   plugins: [{
     name: 'sprite-project',
