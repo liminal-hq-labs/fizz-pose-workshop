@@ -18,27 +18,27 @@
     }
   ],
   "summary": {
-    "slots": 47,
+    "slots": 64,
     "byStatus": {
       "in-game": 7,
-      "ready-in-lab": 24,
-      "needs-pixel-art": 5,
-      "missing": 5,
-      "partial": 2,
-      "new-in-pr": 4
+      "ready-in-lab": 26,
+      "new-in-pr": 4,
+      "partial": 4,
+      "missing": 18,
+      "needs-pixel-art": 5
     },
     "byGameState": {
       "fizz1": {
-        "used": 20,
-        "unused": 3,
-        "could-use": 22,
-        "n/a": 2
+        "used": 22,
+        "unused": 4,
+        "could-use": 34,
+        "n/a": 4
       },
       "fizz2": {
-        "used": 15,
-        "unused": 14,
-        "could-use": 5,
-        "n/a": 13
+        "used": 17,
+        "unused": 22,
+        "could-use": 10,
+        "n/a": 15
       }
     }
   },
@@ -93,6 +93,10 @@
       "id": "stand-right",
       "label": "Stand, facing right",
       "group": "stand",
+      "facing": "right",
+      "pair": "stand-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -129,6 +133,10 @@
       "id": "stand-left",
       "label": "Stand, facing left",
       "group": "stand",
+      "facing": "left",
+      "pair": "stand-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -165,6 +173,9 @@
       "id": "stand-front",
       "label": "Stand, facing the camera",
       "group": "stand",
+      "facing": "front",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "unused",
@@ -185,7 +196,7 @@
         "frameSize": "24x44"
       },
       "status": "ready-in-lab",
-      "notes": "README.md says \"The game currently has no dedicated front-facing stand; these poses are lab assets.\" It is the base of the look-up and look-down frames.",
+      "notes": "README.md says \"The game currently has no dedicated front-facing stand; these poses are lab assets.\" It is the base of the look-up and look-down frames. The Stunner is on the camera-left hip (Ben's right).",
       "dos": {
         "bytesPerFrame": 528,
         "totalBytes": 528
@@ -195,6 +206,8 @@
       "id": "turn-360",
       "label": "Standing turn-around, 24 angles",
       "group": "stand",
+      "facing": "none",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "unused",
@@ -238,7 +251,7 @@
         "frameSize": "32x44"
       },
       "status": "needs-pixel-art",
-      "notes": "Rendered from the 3D model through the sprite converter (PR #10 on main) and listed in docs/TURNTABLE_REVIEW.md as needing redrawn in-betweens; only the front and quarter keys are hand-drawn. Uncertain which of the 24 angles have been fully redrawn since.",
+      "notes": "Rendered from the 3D model through the sprite converter (PR #10 on main) and listed in docs/TURNTABLE_REVIEW.md as needing redrawn in-betweens; only the front and quarter keys are hand-drawn. Uncertain which of the 24 angles have been fully redrawn since. It is a turntable of every yaw, so it needs no separate right or left set; the Stunner moves with the yaw and must never be mirrored.",
       "dos": {
         "bytesPerFrame": 704,
         "totalBytes": 16896
@@ -246,8 +259,12 @@
     },
     {
       "id": "run-right",
-      "label": "Run, facing right",
+      "label": "Run, facing right (6-frame cut)",
       "group": "locomotion",
+      "facing": "right",
+      "pair": "run-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -288,8 +305,12 @@
     },
     {
       "id": "run-left",
-      "label": "Run, facing left",
+      "label": "Run, facing left (6-frame cut)",
       "group": "locomotion",
+      "facing": "left",
+      "pair": "run-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -329,9 +350,117 @@
       }
     },
     {
+      "id": "run12-right",
+      "label": "Run, facing right (12-frame cut)",
+      "group": "locomotion",
+      "facing": "right",
+      "pair": "run12-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "The same slot as `run-right` (which plays the six-frame cut); the full twelve-frame loop of the same rig is the smoother alternative if the sprite budget allows. Evidence for the slot itself: episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `Spr::BenRun1`/`BenRun2` while `|vx| > 0.5` (l.1459-1462); title and cutscenes also play `ben_run1`"
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "The same slot as `run-right` (which plays the six-frame cut); the full twelve-frame loop of the same rig is the smoother alternative if the sprite budget allows. Evidence for the slot itself: crates/fizz-slice-view/src/lib.rs `ben_pose` plays `LAB_RUN` lab_run1..6 on trial/lab-ben-sprites (l.913-918); main plays `ben_run1`/`ben_run2`."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_run1",
+          "ben_run2"
+        ],
+        "note": "Fizz 2 data also has benA_run1..4 (24x32, ep2-ben-a), unplayed."
+      },
+      "new": {
+        "animation": "walk-run",
+        "frames": [
+          "ben_walkRight1",
+          "ben_walkRight2",
+          "ben_walkRight3",
+          "ben_walkRight4",
+          "ben_walkRight5",
+          "ben_walkRight6",
+          "ben_walkRight7",
+          "ben_walkRight8",
+          "ben_walkRight9",
+          "ben_walkRight10",
+          "ben_walkRight11",
+          "ben_walkRight12"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "The full 600 ms twelve-frame run (`walk-run`); `run-right` plays the odd frames of it. Drawn by `bun run draw:run`. 12,672 B per direction at 8 bits, 6,336 B at 4 bits.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 6336
+      }
+    },
+    {
+      "id": "run12-left",
+      "label": "Run, facing left (12-frame cut)",
+      "group": "locomotion",
+      "facing": "left",
+      "pair": "run12-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "The same slot as `run-left` (which plays the six-frame cut); the full twelve-frame loop of the same rig is the smoother alternative if the sprite budget allows. Evidence for the slot itself: episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) flips the run frames for `face < 0` (render.rs l.1247); no left art."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "The same slot as `run-left` (which plays the six-frame cut); the full twelve-frame loop of the same rig is the smoother alternative if the sprite budget allows. Evidence for the slot itself: crates/fizz-slice-view/src/lib.rs `ben_pose` plays `LAB_RUN_LEFT` lab_runL1..6 when `ben.face < 0.0` (l.915-916) on trial/lab-ben-sprites."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_run1",
+          "ben_run2"
+        ],
+        "note": "Mirrored by the renderer."
+      },
+      "new": {
+        "animation": "walk-run-left",
+        "frames": [
+          "ben_walkLeft1",
+          "ben_walkLeft2",
+          "ben_walkLeft3",
+          "ben_walkLeft4",
+          "ben_walkLeft5",
+          "ben_walkLeft6",
+          "ben_walkLeft7",
+          "ben_walkLeft8",
+          "ben_walkLeft9",
+          "ben_walkLeft10",
+          "ben_walkLeft11",
+          "ben_walkLeft12"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "The full 600 ms twelve-frame run (`walk-run-left`); `run-left` plays the odd frames of it. Drawn by `bun run draw:run`, left-facing, with the Stunner on the hidden far hip rather than mirrored. 12,672 B per direction at 8 bits, 6,336 B at 4 bits.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 6336
+      }
+    },
+    {
       "id": "jump-right",
       "label": "Jump, facing right",
       "group": "air",
+      "facing": "right",
+      "pair": "jump-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -373,6 +502,10 @@
       "id": "jump-left",
       "label": "Jump, facing left",
       "group": "air",
+      "facing": "left",
+      "pair": "jump-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -414,6 +547,10 @@
       "id": "fall-right",
       "label": "Fall, facing right",
       "group": "air",
+      "facing": "right",
+      "pair": "fall-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -455,6 +592,10 @@
       "id": "fall-left",
       "label": "Fall, facing left",
       "group": "air",
+      "facing": "left",
+      "pair": "fall-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -493,9 +634,13 @@
       }
     },
     {
-      "id": "land",
-      "label": "Land after a jump or fall",
+      "id": "land-right",
+      "label": "Land after a jump or fall, facing right",
       "group": "air",
+      "facing": "right",
+      "pair": "land-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -507,14 +652,63 @@
         }
       },
       "old": null,
-      "new": null,
-      "status": "missing",
-      "notes": "The lab jump loop begins with a crouch (ben_jumpRig1, 180 ms) and the character sheet says the model \"absorbs into the knees\", but no frame is saved as a dedicated landing. Not verified whether jumpRig1 can double as one."
+      "new": {
+        "animation": "jump",
+        "frames": [
+          "ben_jumpRig5"
+        ],
+        "origin": "main",
+        "frameSize": "32x52"
+      },
+      "status": "partial",
+      "notes": "Only the landing beat of the jump loop exists: `ben_jumpRig5` is the \"Land\" phase of the six-pose jump rig (docs/RIG.md: crouch, launch, apex, fall, land, recover at 180/80/130/100/110/120 ms). There is no dedicated landing animation with a squash and settle, and the braced fall loop does not end on one. A dedicated landing would extend `source/ben-jump-rig.json` or add a rig for `draw:performances`, and its left-facing twin would use `facing: \"left\"` like `jumpLeft` in `src/rig/catalogue.ts`.",
+      "dos": {
+        "bytesPerFrame": 832,
+        "totalBytes": 832
+      }
     },
     {
-      "id": "crouch",
-      "label": "Crouch or duck",
+      "id": "land-left",
+      "label": "Land after a jump or fall, facing left",
       "group": "air",
+      "facing": "left",
+      "pair": "land-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `Body.on_ground` flips on landing (test `ben_lands_and_stands_on_the_ground`, tests.rs l.37) but no landing pose exists; pogo has `squash` (world.rs `Player.squash`) only."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "crates/fizz-ep2/src/ben.rs has `squash` for the pogo only (l.102); no landing timer."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "jump-left",
+        "frames": [
+          "ben_jumpLeft5"
+        ],
+        "origin": "main",
+        "frameSize": "32x52"
+      },
+      "status": "partial",
+      "notes": "Only the landing beat of the jump loop exists: `ben_jumpLeft5` is the \"Land\" phase of the six-pose jump rig (docs/RIG.md: crouch, launch, apex, fall, land, recover at 180/80/130/100/110/120 ms). There is no dedicated landing animation with a squash and settle, and the braced fall loop does not end on one. Drawn left-facing with the Stunner on the far hip, not mirrored.",
+      "dos": {
+        "bytesPerFrame": 832,
+        "totalBytes": 832
+      }
+    },
+    {
+      "id": "crouch-right",
+      "label": "Crouch or duck, facing right",
+      "group": "air",
+      "facing": "right",
+      "pair": "crouch-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "n/a",
@@ -528,12 +722,38 @@
       "old": null,
       "new": null,
       "status": "missing",
-      "notes": "Listed for completeness only: neither game has the mechanic, so it is not a gap. The jump loop's crouch is anticipation, not a held pose."
+      "notes": "Listed for completeness only: neither game has the mechanic, so it is not a gap. The jump loop's crouch is anticipation, not a held pose. Neither facing is drawn. If a game adds the mechanic, the jump rig's crouch beat (`ben_jumpRig1` and `ben_jumpLeft1`) is the nearest art and a held crouch would be a new key on that rig."
+    },
+    {
+      "id": "crouch-left",
+      "label": "Crouch or duck, facing left",
+      "group": "air",
+      "facing": "left",
+      "pair": "crouch-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "n/a",
+          "evidence": "No crouch or duck state in Fizz 1 (searched world.rs, render.rs and GAME_DESIGN.md)."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "No crouch in fizz-ep2 (ben.rs) or docs/PLATFORM.md."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Listed for completeness only: neither game has the mechanic, so it is not a gap. The jump loop's crouch is anticipation, not a held pose. Neither facing is drawn. If a game adds the mechanic, the jump rig's crouch beat (`ben_jumpRig1` and `ben_jumpLeft1`) is the nearest art and a held crouch would be a new key on that rig."
     },
     {
       "id": "ladder-climb",
       "label": "Climb a ladder or vine (from behind)",
       "group": "climb",
+      "facing": "back",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -568,7 +788,7 @@
         "frameSize": "32x48"
       },
       "status": "ready-in-lab",
-      "notes": "The lab ladder frames (32x48) are drawn from behind with the Stunner on the right hip. Legacy 24x44 studies ben_climb1/ben_climb2 are still in assets.json. Firing up or down on a ladder uses the aim poses instead.",
+      "notes": "The lab ladder frames (32x48) are drawn from behind with the Stunner on the right hip. Legacy 24x44 studies ben_climb1/ben_climb2 are still in assets.json. Firing up or down on a ladder uses the aim poses instead. It is a back view, so it serves both sides of a ladder; the holster hangs on the viewer's right and the frames must not be mirrored. Vines and side-on climbing have no art of either facing.",
       "dos": {
         "bytesPerFrame": 768,
         "totalBytes": 6144
@@ -578,6 +798,10 @@
       "id": "mantle-right",
       "label": "Ledge grab, pull and mantle, facing right",
       "group": "climb",
+      "facing": "right",
+      "pair": "mantle-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -626,6 +850,10 @@
       "id": "mantle-left",
       "label": "Ledge grab, pull and mantle, facing left",
       "group": "climb",
+      "facing": "left",
+      "pair": "mantle-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -671,9 +899,13 @@
       }
     },
     {
-      "id": "wall-kick",
-      "label": "Wall-kick off a wall",
+      "id": "wall-kick-right",
+      "label": "Wall-kick off a wall, facing right",
       "group": "climb",
+      "facing": "right",
+      "pair": "wall-kick-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -687,12 +919,39 @@
       "old": null,
       "new": null,
       "status": "missing",
-      "notes": "Only Fizz 1 needs it, and it currently reuses the jump frame."
+      "notes": "Only Fizz 1 needs it, and it currently reuses the jump frame. No art of either facing exists; the jump rig is the closest base for a wall-kick key set."
+    },
+    {
+      "id": "wall-kick-left",
+      "label": "Wall-kick off a wall, facing left",
+      "group": "climb",
+      "facing": "left",
+      "pair": "wall-kick-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `WALL_KICK_UP`/`WALL_KICK_AWAY` (l.76-77) and docs/GAME_DESIGN.md \"Wall-kick\" define the action, but ben_sprite l.1424 has no kick branch, so a kick shows `BenJump`."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "docs/FIZZ1-DIFFERENCES.md \"Wall-kick: left out\" (owner decision 2026-10-30)."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Only Fizz 1 needs it, and it currently reuses the jump frame. No art of either facing exists; the jump rig is the closest base for a wall-kick key set."
     },
     {
       "id": "pogo-right",
       "label": "Pogo ride, facing right",
       "group": "pogo",
+      "facing": "right",
+      "pair": "pogo-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -741,6 +1000,10 @@
       "id": "pogo-left",
       "label": "Pogo ride, facing left",
       "group": "pogo",
+      "facing": "left",
+      "pair": "pogo-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -789,6 +1052,10 @@
       "id": "shoot-right",
       "label": "Fire the Stunner sideways, facing right",
       "group": "stunner",
+      "facing": "right",
+      "pair": "shoot-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -820,7 +1087,7 @@
         "frameSize": "32x44"
       },
       "status": "in-game",
-      "notes": "Six frames over 600 ms; Fizz 2 stretches them across its 0.25 s `SHOOT_POSE` (ben.rs l.32) in proportion.",
+      "notes": "Six frames over 600 ms; Fizz 2 stretches them across its 0.25 s `SHOOT_POSE` (ben.rs l.32) in proportion. Drawn by `draw:actions` (`scripts/draw-action-rigs.ts`, rig `source/ben-fire-rig.json`, `motion: \"fire\"`, sampler `src/rig/actions.ts`).",
       "dos": {
         "bytesPerFrame": 704,
         "totalBytes": 4224
@@ -830,6 +1097,10 @@
       "id": "shoot-left",
       "label": "Fire the Stunner sideways, facing left",
       "group": "stunner",
+      "facing": "left",
+      "pair": "shoot-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -849,12 +1120,16 @@
       },
       "new": null,
       "status": "missing",
-      "notes": "No ben_fireLeft frames exist. A mirrored right-facing fire frame puts the Stunner in the left hand on the near side; a true left-facing fire would hold it with the right hand across the body or show it from behind. Needs designing, not just drawing."
+      "notes": "No `ben_fireLeft` frames or animation exist in `assets.json`. A mirrored `ben_fireRight` puts the Stunner in the left hand on the near side, but it lives on Ben's right hip, which is the far hip when he faces left, so the left-facing pose must be drawn separately and the weapon must be held by the far (right) hand. Likely route: add a `facing: \"left\"` entry for the fire rig next to `ben_fireRight` in `scripts/draw-action-rigs.ts` (`prefix: \"ben_fireLeft\"`, animation `fizz-blaster-left`), the way `runLeft` and `jumpLeft` turn rigs round in `src/rig/catalogue.ts`. docs/RIG.md says that first needs the held weapon moved to the far hand in the `fire` sampler, so the option alone does not yet work. Then run `draw:actions` and `generate`. Not run."
     },
     {
-      "id": "shoot-recoil",
-      "label": "Recoil after a shot",
+      "id": "shoot-recoil-right",
+      "label": "Recoil after a shot, facing right",
       "group": "stunner",
+      "facing": "right",
+      "pair": "shoot-recoil-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "unused",
@@ -882,9 +1157,36 @@
       }
     },
     {
-      "id": "aim-up",
-      "label": "Fire upward",
+      "id": "shoot-recoil-left",
+      "label": "Recoil after a shot, facing left",
       "group": "stunner",
+      "facing": "left",
+      "pair": "shoot-recoil-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "unused",
+          "evidence": "Fizz 1 has one shoot sprite and no recoil frame (ben_sprite l.1450-1454)."
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "crates/fizz-slice-view/src/lib.rs has no recoil frame; the fire frames already carry recoil."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not drawn. The right-facing `ben_shootRecoil` is a legacy 24x44 study that the `ben_fireRight` loop supersedes, so a left-facing recoil is covered by the left-facing fire loop (`shoot-left`) rather than being a separate sprite. Draw it on its own only if a game wants the single recoil frame."
+    },
+    {
+      "id": "aim-up-right",
+      "label": "Fire upward, facing right",
+      "group": "stunner",
+      "facing": "right",
+      "pair": "aim-up-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -911,16 +1213,49 @@
         "frameSize": "24x44"
       },
       "status": "partial",
-      "notes": "The lab only has the legacy 24x44 study; it predates the rig redraw and the Stunner design, so check its helmet, shoes and gun before use. No left-facing variant.",
+      "notes": "The lab has only the legacy right-facing 24x44 study `ben_aimUp`; it predates the rig redraw and the Stunner design, so check its helmet, shoes and gun before use. Should be redrawn at the fire rig's proportions.",
       "dos": {
         "bytesPerFrame": 528,
         "totalBytes": 528
       }
     },
     {
-      "id": "aim-down",
-      "label": "Fire downward",
+      "id": "aim-up-left",
+      "label": "Fire upward, facing left",
       "group": "stunner",
+      "facing": "left",
+      "pair": "aim-up-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenAimUp` when `p.aim == 1` (l.1452)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_aimUp` (l.906); asserted by tests at l.1568 and l.1884."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_aimUp"
+        ],
+        "note": ""
+      },
+      "new": null,
+      "status": "missing",
+      "notes": "Not drawn. There is no aim-angle key in `source/ben-fire-rig.json` (its keys are sideways aim, discharge, recoil, recovery, settle and ready), so both facings need new keys for `draw:actions`, and the left-facing one also needs the far-hand weapon work described under `shoot-left`. A mirror would put the Stunner in the wrong hand."
+    },
+    {
+      "id": "aim-down-right",
+      "label": "Fire downward, facing right",
+      "group": "stunner",
+      "facing": "right",
+      "pair": "aim-down-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -947,53 +1282,48 @@
         "frameSize": "24x44"
       },
       "status": "partial",
-      "notes": "Same caveat as aim-up.",
+      "notes": "The lab has only the legacy right-facing 24x44 study `ben_aimDown`; it predates the rig redraw and the Stunner design, so check its helmet, shoes and gun before use. Should be redrawn at the fire rig's proportions.",
       "dos": {
         "bytesPerFrame": 528,
         "totalBytes": 528
       }
     },
     {
-      "id": "reload",
-      "label": "Reload the Stunner",
-      "group": "model",
+      "id": "aim-down-left",
+      "label": "Fire downward, facing left",
+      "group": "stunner",
+      "facing": "left",
+      "pair": "aim-down-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
-          "state": "could-use",
-          "evidence": "Fizz 1 counts shots (Fizz Blaster ammo is not refilled on death, per docs/GAME_DESIGN.md) but has no reload action or pose."
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenAimDown` when `p.aim == -1` (l.1453)."
         },
         "fizz2": {
-          "state": "could-use",
-          "evidence": "Fizz 2 restarts Ben with five shots (docs/FIZZ1-DIFFERENCES.md \"Ammo on a respawn\") and has a `dud` event (ben.rs l.78) but no reload pose."
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_aimDown` (l.907)."
         }
       },
-      "old": null,
-      "new": {
-        "animation": "stunner-reload",
+      "old": {
+        "set": "fizz1-ben",
         "frames": [
-          "ben_reload1",
-          "ben_reload2",
-          "ben_reload3",
-          "ben_reload4",
-          "ben_reload5",
-          "ben_reload6",
-          "ben_reload7",
-          "ben_reload8"
+          "ben_aimDown"
         ],
-        "origin": "pr-1",
-        "frameSize": "32x44"
+        "note": ""
       },
-      "status": "needs-pixel-art",
-      "notes": "Rendered from the 3D model by `draw:model-poses`; the character sheet says it waits on a loose can the skin has none of. Whether either game gets a reload action is undecided.",
-      "dos": {
-        "bytesPerFrame": 704,
-        "totalBytes": 5632
-      }
+      "new": null,
+      "status": "missing",
+      "notes": "Not drawn. There is no aim-angle key in `source/ben-fire-rig.json` (its keys are sideways aim, discharge, recoil, recovery, settle and ready), so both facings need new keys for `draw:actions`, and the left-facing one also needs the far-hand weapon work described under `shoot-left`. A mirror would put the Stunner in the wrong hand."
     },
     {
       "id": "death",
       "label": "Death",
       "group": "reaction",
+      "facing": "front",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -1026,16 +1356,20 @@
         "frameSize": "40x56"
       },
       "status": "ready-in-lab",
-      "notes": "Lab death is a seven-beat comic sequence (40x56, about 1.4 s) with a topple that would replace the spin. The Fizz games fix a 1.4 s dead timer in world.rs l.1123, which fits.",
+      "notes": "Lab death is a seven-beat comic sequence (40x56, about 1.4 s) with a topple that would replace the spin. The Fizz games fix a 1.4 s dead timer in world.rs l.1123, which fits. The sequence faces the camera, so it needs no right or left set; keep the holster on the camera-left hip.",
       "dos": {
         "bytesPerFrame": 1120,
         "totalBytes": 7840
       }
     },
     {
-      "id": "hurt",
-      "label": "Hurt, non-fatal hit",
+      "id": "hurt-right",
+      "label": "Hurt, non-fatal hit, facing right",
       "group": "reaction",
+      "facing": "right",
+      "pair": "hurt-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "n/a",
@@ -1055,12 +1389,44 @@
       },
       "new": null,
       "status": "missing",
-      "notes": "Counts as a gap only if Fizz 2 adopts non-fatal damage; docs/SPRITES.md l.58 says Fizz 1 has no hurt or dead pose."
+      "notes": "Counts as a gap only if Fizz 2 adopts non-fatal damage; docs/SPRITES.md l.58 says Fizz 1 has no hurt or dead pose. Neither facing is drawn in the lab; the unplayed `benA_hurt` is Fizz 2's only provisional art."
+    },
+    {
+      "id": "hurt-left",
+      "label": "Hurt, non-fatal hit, facing left",
+      "group": "reaction",
+      "facing": "left",
+      "pair": "hurt-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "n/a",
+          "evidence": "docs/GAME_DESIGN.md \"Mantle\": \"any hit is fatal\"; world.rs l.1594 kills unless `inv > 0`."
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "ep2-ben-a.json holds `benA_hurt` (24x32) that no code plays; `Ben.inv` (ben.rs l.99) only blinks the sprite (draw_ben l.941), and contact kills (world.rs l.576)."
+        }
+      },
+      "old": {
+        "set": "ep2-ben-a",
+        "frames": [
+          "benA_hurt"
+        ],
+        "note": "Provisional Fizz 2 art, unplayed."
+      },
+      "new": null,
+      "status": "missing",
+      "notes": "Counts as a gap only if Fizz 2 adopts non-fatal damage; docs/SPRITES.md l.58 says Fizz 1 has no hurt or dead pose. Neither facing is drawn in the lab; the unplayed `benA_hurt` is Fizz 2's only provisional art."
     },
     {
       "id": "look-up",
       "label": "Look up",
       "group": "look",
+      "facing": "front",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -1087,7 +1453,7 @@
         "frameSize": "24x44"
       },
       "status": "in-game",
-      "notes": "The lab look frames face the camera (lab_lookUp is not flipped). A legacy side-view ben_lookUp study (24x44) is also in assets.json.",
+      "notes": "The lab look frames face the camera (lab_lookUp is not flipped). A legacy side-view ben_lookUp study (24x44) is also in assets.json. The games' old `ben_lookUp` is a side view; the lab replaces it with a camera-facing pose, so there is no right or left set.",
       "dos": {
         "bytesPerFrame": 528,
         "totalBytes": 528
@@ -1097,6 +1463,9 @@
       "id": "look-down",
       "label": "Look down, half and full bend",
       "group": "look",
+      "facing": "front",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "used",
@@ -1134,6 +1503,8 @@
       "id": "overworld-n",
       "label": "Overworld walk, N",
       "group": "overworld",
+      "facing": "none",
+      "mirrorForbidden": false,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1165,6 +1536,8 @@
       "id": "overworld-ne",
       "label": "Overworld walk, NE",
       "group": "overworld",
+      "facing": "none",
+      "mirrorForbidden": false,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1196,6 +1569,8 @@
       "id": "overworld-e",
       "label": "Overworld walk, E",
       "group": "overworld",
+      "facing": "none",
+      "mirrorForbidden": false,
       "games": {
         "fizz1": {
           "state": "used",
@@ -1234,6 +1609,8 @@
       "id": "overworld-se",
       "label": "Overworld walk, SE",
       "group": "overworld",
+      "facing": "none",
+      "mirrorForbidden": false,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1265,6 +1642,8 @@
       "id": "overworld-s",
       "label": "Overworld walk, S",
       "group": "overworld",
+      "facing": "none",
+      "mirrorForbidden": false,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1296,6 +1675,8 @@
       "id": "overworld-sw",
       "label": "Overworld walk, SW",
       "group": "overworld",
+      "facing": "none",
+      "mirrorForbidden": false,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1327,6 +1708,8 @@
       "id": "overworld-w",
       "label": "Overworld walk, W",
       "group": "overworld",
+      "facing": "none",
+      "mirrorForbidden": false,
       "games": {
         "fizz1": {
           "state": "used",
@@ -1365,6 +1748,8 @@
       "id": "overworld-nw",
       "label": "Overworld walk, NW",
       "group": "overworld",
+      "facing": "none",
+      "mirrorForbidden": false,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1393,9 +1778,13 @@
       }
     },
     {
-      "id": "idle-wrist-check",
-      "label": "Idle: check the wrist computer",
+      "id": "idle-wrist-check-right",
+      "label": "Idle: check the wrist computer, facing right",
       "group": "idles",
+      "facing": "right",
+      "pair": "idle-wrist-check-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1426,9 +1815,36 @@
       }
     },
     {
-      "id": "idle-wrist-aerial",
-      "label": "Idle: pull out the wrist aerial",
+      "id": "idle-wrist-check-left",
+      "label": "Idle: check the wrist computer, facing left",
       "group": "idles",
+      "facing": "left",
+      "pair": "idle-wrist-check-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not drawn. A left-facing set would add a `facing: \"left\"` entry for `source/ben-wrist-check-rig.json` in `src/rig/catalogue.ts` (prefix `ben_wristCheckLeft`) and run `draw:performances`; not verified is which wrist carries the computer and whether it ends up on the near arm."
+    },
+    {
+      "id": "idle-wrist-aerial-right",
+      "label": "Idle: pull out the wrist aerial, facing right",
+      "group": "idles",
+      "facing": "right",
+      "pair": "idle-wrist-aerial-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1462,9 +1878,36 @@
       }
     },
     {
-      "id": "idle-helmet-tip",
-      "label": "Idle: tip the helmet",
+      "id": "idle-wrist-aerial-left",
+      "label": "Idle: pull out the wrist aerial, facing left",
       "group": "idles",
+      "facing": "left",
+      "pair": "idle-wrist-aerial-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not drawn. Same route as the wrist check: a `facing: \"left\"` entry for `source/ben-wrist-aerial-rig.json` in `src/rig/catalogue.ts`, then `draw:performances`. Check which arm the aerial uses."
+    },
+    {
+      "id": "idle-helmet-tip-right",
+      "label": "Idle: tip the helmet, facing right",
+      "group": "idles",
+      "facing": "right",
+      "pair": "idle-helmet-tip-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1499,9 +1942,36 @@
       }
     },
     {
-      "id": "idle-rock",
-      "label": "Idle: rock on the heels",
+      "id": "idle-helmet-tip-left",
+      "label": "Idle: tip the helmet, facing left",
       "group": "idles",
+      "facing": "left",
+      "pair": "idle-helmet-tip-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not drawn. A `facing: \"left\"` entry for `source/ben-helmet-tip-rig.json` in `src/rig/catalogue.ts`, then `draw:performances`. The tipping hand must stay the near hand with the Stunner hidden on the far hip."
+    },
+    {
+      "id": "idle-rock-right",
+      "label": "Idle: rock on the heels, facing right",
+      "group": "idles",
+      "facing": "right",
+      "pair": "idle-rock-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1532,9 +2002,36 @@
       }
     },
     {
+      "id": "idle-rock-left",
+      "label": "Idle: rock on the heels, facing left",
+      "group": "idles",
+      "facing": "left",
+      "pair": "idle-rock-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not drawn. A `facing: \"left\"` entry for the rocking rig in `src/rig/catalogue.ts`, then `draw:performances`; the left-facing run, jump and pogo show this turn-round keeps the Stunner on the far hip."
+    },
+    {
       "id": "idle-whistle-right",
       "label": "Idle: whistle, facing right",
       "group": "idles",
+      "facing": "right",
+      "pair": "idle-whistle-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1570,6 +2067,10 @@
       "id": "idle-whistle-left",
       "label": "Idle: whistle, facing left",
       "group": "idles",
+      "facing": "left",
+      "pair": "idle-whistle-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1605,6 +2106,9 @@
       "id": "idle-phone-sit",
       "label": "Idle: sit down with the telephone",
       "group": "idles",
+      "facing": "front",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1633,7 +2137,7 @@
         "frameSize": "40x56"
       },
       "status": "ready-in-lab",
-      "notes": "40x56, camera-facing, crossed legs. Bigger than the 16x24 game body, so it only suits a cutscene or a parked idle.",
+      "notes": "40x56, camera-facing, crossed legs. Bigger than the 16x24 game body, so it only suits a cutscene or a parked idle. The holster rests on the camera-left thigh (`performance.frontHolster`).",
       "dos": {
         "bytesPerFrame": 1120,
         "totalBytes": 10080
@@ -1643,6 +2147,9 @@
       "id": "idle-phone-type",
       "label": "Idle: type on the telephone",
       "group": "idles",
+      "facing": "front",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1677,9 +2184,77 @@
       }
     },
     {
-      "id": "head-scratch",
-      "label": "Idle: take the helmet off and scratch his head",
+      "id": "reload-right",
+      "label": "Reload the Stunner, facing right",
       "group": "model",
+      "facing": "right",
+      "pair": "reload-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "Fizz 1 counts shots (Fizz Blaster ammo is not refilled on death, per docs/GAME_DESIGN.md) but has no reload action or pose."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "Fizz 2 restarts Ben with five shots (docs/FIZZ1-DIFFERENCES.md \"Ammo on a respawn\") and has a `dud` event (ben.rs l.78) but no reload pose."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "stunner-reload",
+        "frames": [
+          "ben_reload1",
+          "ben_reload2",
+          "ben_reload3",
+          "ben_reload4",
+          "ben_reload5",
+          "ben_reload6",
+          "ben_reload7",
+          "ben_reload8"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "needs-pixel-art",
+      "notes": "Rendered from the 3D model by `draw:model-poses`; the character sheet says it waits on a loose can the skin has none of. Whether either game gets a reload action is undecided. The render is a right three-quarter view (yaw 55 in `scripts/draw-model-poses.ts`).",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 5632
+      }
+    },
+    {
+      "id": "reload-left",
+      "label": "Reload the Stunner, facing left",
+      "group": "model",
+      "facing": "left",
+      "pair": "reload-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "Fizz 1 counts shots (Fizz Blaster ammo is not refilled on death, per docs/GAME_DESIGN.md) but has no reload action or pose."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "Fizz 2 restarts Ben with five shots (docs/FIZZ1-DIFFERENCES.md \"Ammo on a respawn\") and has a `dud` event (ben.rs l.78) but no reload pose."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not rendered or drawn. The model can be rendered at a left yaw by changing the pose yaw in `scripts/draw-model-poses.ts` (not run), but the Stunner is on the far hip when facing left, so the draw and reload hands differ from the right-facing set and the pixel art must be drawn on its own, never mirrored."
+    },
+    {
+      "id": "head-scratch-right",
+      "label": "Idle: take the helmet off and scratch his head, facing right",
+      "group": "model",
+      "facing": "right",
+      "pair": "head-scratch-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1701,16 +2276,43 @@
         "frameSize": "32x44"
       },
       "status": "needs-pixel-art",
-      "notes": "Rendered from the 3D model; waits on a bare head with a full hairline and a helmet held in the hand (character sheet \"Open questions\" 2).",
+      "notes": "Rendered from the 3D model; waits on a bare head with a full hairline and a helmet held in the hand (character sheet \"Open questions\" 2). The render is a right three-quarter view (yaw 55 in `scripts/draw-model-poses.ts`).",
       "dos": {
         "bytesPerFrame": 704,
         "totalBytes": 1408
       }
     },
     {
-      "id": "helmet-spin",
-      "label": "Idle: spin the helmet on a finger",
+      "id": "head-scratch-left",
+      "label": "Idle: take the helmet off and scratch his head, facing left",
       "group": "model",
+      "facing": "left",
+      "pair": "head-scratch-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not rendered or drawn. The model could be rendered at a left yaw by changing the pose yaw in `scripts/draw-model-poses.ts` (not run), then redrawn as pixel art like the right-facing set; it is not a mirror, because the Stunner is on the far hip when facing left."
+    },
+    {
+      "id": "helmet-spin-right",
+      "label": "Idle: spin the helmet on a finger, facing right",
+      "group": "model",
+      "facing": "right",
+      "pair": "helmet-spin-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1734,16 +2336,43 @@
         "frameSize": "32x44"
       },
       "status": "needs-pixel-art",
-      "notes": "Rendered from the 3D model; same missing art as head-scratch.",
+      "notes": "Rendered from the 3D model; same missing art as head-scratch. The render is a right three-quarter view (yaw 55 in `scripts/draw-model-poses.ts`).",
       "dos": {
         "bytesPerFrame": 704,
         "totalBytes": 2816
       }
     },
     {
-      "id": "pogo-draw",
-      "label": "Draw the pogo stick from a pocket",
+      "id": "helmet-spin-left",
+      "label": "Idle: spin the helmet on a finger, facing left",
       "group": "model",
+      "facing": "left",
+      "pair": "helmet-spin-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not rendered or drawn. The model could be rendered at a left yaw by changing the pose yaw in `scripts/draw-model-poses.ts` (not run), then redrawn as pixel art like the right-facing set; it is not a mirror, because the Stunner is on the far hip when facing left."
+    },
+    {
+      "id": "pogo-draw-right",
+      "label": "Draw the pogo stick from a pocket, facing right",
+      "group": "model",
+      "facing": "right",
+      "pair": "pogo-draw-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
       "games": {
         "fizz1": {
           "state": "could-use",
@@ -1771,11 +2400,34 @@
         "frameSize": "32x44"
       },
       "status": "needs-pixel-art",
-      "notes": "Rendered from the 3D model (stick from a back pocket or backpack); waits on a hand-held pogo stick in the skin. A plain toggle flash would also work; a transition is a design choice.",
+      "notes": "Rendered from the 3D model (stick from a back pocket or backpack); waits on a hand-held pogo stick in the skin. A plain toggle flash would also work; a transition is a design choice. The render is a right three-quarter view (yaw 55 in `scripts/draw-model-poses.ts`).",
       "dos": {
         "bytesPerFrame": 704,
         "totalBytes": 5632
       }
+    },
+    {
+      "id": "pogo-draw-left",
+      "label": "Draw the pogo stick from a pocket, facing left",
+      "group": "model",
+      "facing": "left",
+      "pair": "pogo-draw-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "docs/GAME_DESIGN.md \"Pogo\": toggled on and off; ben_sprite l.1437 simply switches to the pogo pose with no draw action."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "crates/fizz-ep2/src/ben.rs `pogo` is a boolean toggle (l.91); no draw transition in crates/fizz-slice-view/src/lib.rs."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Not rendered or drawn. Same route as the other model-only poses; the left pogo ride (`pogo-left`) is already drawn, so the draw would end on that set."
     }
   ]
 }
