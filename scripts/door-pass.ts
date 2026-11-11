@@ -33,6 +33,8 @@ export const hiddenRows = [0, 0, 3, 7, 12, 18, 25, 31] as const;
 export const bodyRows = 33;
 /** Rows from the top of the lab frame to the foot line (the bottom edge of row 35), which places the canvas against the floor line. */
 export const footLineRows = 36;
+/** The lab row of Ben's crown, so a crop that keeps the top N rows of the whole 24 × 44 canvas keeps `footLineRows - hiddenRows` of them. */
+export const crownRow = footLineRows - bodyRows;
 /** Assumed height, in pixels, of the exit's front lip; the front-layer pass covers this many rows above the sill. */
 export const assumedLipRows = 6;
 
@@ -49,7 +51,7 @@ export async function buildDoorPass(frames: Record<string, Frame>): Promise<unkn
       exitColumns: { left, right, outsideOpeningLeft: Math.max(0, exitPiece.openingOffsetX - left), outsideOpeningRight: Math.max(0, right - (exitPiece.openingOffsetX + exitPiece.openingWidth - 1)) },
       offsetFromStart: { x: 0, y: -rise[i] },
       overlapsExit: true,
-      hiddenRows: hiddenRows[i], visibleRows: bodyRows - hiddenRows[i],
+      hiddenRows: hiddenRows[i], visibleRows: bodyRows - hiddenRows[i], keepCanvasRows: footLineRows - hiddenRows[i],
       hiddenByLip: Math.min(hiddenRows[i], assumedLipRows), hiddenByCrop: Math.max(0, hiddenRows[i] - assumedLipRows),
     };
   });
@@ -72,7 +74,7 @@ export async function buildDoorPass(frames: Record<string, Frame>): Promise<unkn
       exit: { ...exitPiece, origin: 'top-left of the drawn 20 × 35 piece; its bottom edge is the sill baseline', glow: 'separate 14 × 32 piece, assumed centred on the opening column range 3–16 (to be confirmed by the game)' },
       placement: {
         rule: 'spriteX = exitX + spriteLeft; spriteY = (sill baseline + startBelowSill) - 36 (footLineRows) - rise[i]. Ben’s centre column 11 sits on the exit’s centre column 9.',
-        spriteLeft, centreColumn, exitCentre, bodyRows, footLineRows,
+        spriteLeft, centreColumn, exitCentre, bodyRows, footLineRows, crownRow,
         startBelowSill: 'game-defined: the floor line minus the sill baseline (the sill is drawn higher on screen than the floor line in front)',
         footLineInSprite: 'the sole’s bottom edge is the bottom of sprite row 35',
       },
@@ -81,7 +83,7 @@ export async function buildDoorPass(frames: Record<string, Frame>): Promise<unkn
         drawOrder: 'exit back layer (ground pass), then Ben, then the front-layer pass (lip and lintel).',
         back: 'Everything of the exit that Ben stands in front of: the arch, jambs, the lit glow piece and arrow.',
         front: `The lip: the bottom ${assumedLipRows} rows above the sill baseline across the full 20 px, drawn after Ben so it covers his soles and ankles. The lintel is above Ben’s crown for the whole walk (the arch is 35 tall, Ben is 33 rows tall and rises only 7) and needs no split.`,
-        hidingRule: 'Per frame, `hiddenRows` bottom rows of the sprite are not shown. Rows up to `assumedLipRows` come from the front-layer lip; any rows beyond that (hiddenByCrop) are not covered by a 6-row lip, so the game crops them by drawing only the top `visibleRows` rows of the sprite (a source-rectangle crop that rides with Ben), or raises the lip.',
+        hidingRule: 'Per frame, `hiddenRows` bottom rows of the sprite are not shown. `visibleRows` counts rows of Ben from his crown, and `keepCanvasRows` is the same crop as the top rows of the whole 24 × 44 frame (the crown is lab row `crownRow`), so a game that keeps the canvas crops to `keepCanvasRows` and one that trims the blank rows first crops to `visibleRows`. Rows up to `assumedLipRows` come from the front-layer lip; any rows beyond that (hiddenByCrop) are not covered by a 6-row lip, so the game crops them by drawing only the top `visibleRows` rows of the sprite (a source-rectangle crop that rides with Ben), or raises the lip.',
       },
       overlapsExit: 'every frame: Ben’s occupied columns always fall inside the 20 px piece',
       perFrame: walkIn,

@@ -34,6 +34,7 @@
       "exitCentre": 9,
       "bodyRows": 33,
       "footLineRows": 36,
+      "crownRow": 3,
       "startBelowSill": "game-defined: the floor line minus the sill baseline (the sill is drawn higher on screen than the floor line in front)",
       "footLineInSprite": "the sole’s bottom edge is the bottom of sprite row 35"
     },
@@ -55,7 +56,7 @@
       "drawOrder": "exit back layer (ground pass), then Ben, then the front-layer pass (lip and lintel).",
       "back": "Everything of the exit that Ben stands in front of: the arch, jambs, the lit glow piece and arrow.",
       "front": "The lip: the bottom 6 rows above the sill baseline across the full 20 px, drawn after Ben so it covers his soles and ankles. The lintel is above Ben’s crown for the whole walk (the arch is 35 tall, Ben is 33 rows tall and rises only 7) and needs no split.",
-      "hidingRule": "Per frame, `hiddenRows` bottom rows of the sprite are not shown. Rows up to `assumedLipRows` come from the front-layer lip; any rows beyond that (hiddenByCrop) are not covered by a 6-row lip, so the game crops them by drawing only the top `visibleRows` rows of the sprite (a source-rectangle crop that rides with Ben), or raises the lip."
+      "hidingRule": "Per frame, `hiddenRows` bottom rows of the sprite are not shown. `visibleRows` counts rows of Ben from his crown, and `keepCanvasRows` is the same crop as the top rows of the whole 24 × 44 frame (the crown is lab row `crownRow`), so a game that keeps the canvas crops to `keepCanvasRows` and one that trims the blank rows first crops to `visibleRows`. Rows up to `assumedLipRows` come from the front-layer lip; any rows beyond that (hiddenByCrop) are not covered by a 6-row lip, so the game crops them by drawing only the top `visibleRows` rows of the sprite (a source-rectangle crop that rides with Ben), or raises the lip."
     },
     "overlapsExit": "every frame: Ben’s occupied columns always fall inside the 20 px piece",
     "perFrame": [
@@ -85,6 +86,7 @@
         "overlapsExit": true,
         "hiddenRows": 0,
         "visibleRows": 33,
+        "keepCanvasRows": 36,
         "hiddenByLip": 0,
         "hiddenByCrop": 0
       },
@@ -114,6 +116,7 @@
         "overlapsExit": true,
         "hiddenRows": 0,
         "visibleRows": 33,
+        "keepCanvasRows": 36,
         "hiddenByLip": 0,
         "hiddenByCrop": 0
       },
@@ -143,6 +146,7 @@
         "overlapsExit": true,
         "hiddenRows": 3,
         "visibleRows": 30,
+        "keepCanvasRows": 33,
         "hiddenByLip": 3,
         "hiddenByCrop": 0
       },
@@ -172,6 +176,7 @@
         "overlapsExit": true,
         "hiddenRows": 7,
         "visibleRows": 26,
+        "keepCanvasRows": 29,
         "hiddenByLip": 6,
         "hiddenByCrop": 1
       },
@@ -201,6 +206,7 @@
         "overlapsExit": true,
         "hiddenRows": 12,
         "visibleRows": 21,
+        "keepCanvasRows": 24,
         "hiddenByLip": 6,
         "hiddenByCrop": 6
       },
@@ -230,6 +236,7 @@
         "overlapsExit": true,
         "hiddenRows": 18,
         "visibleRows": 15,
+        "keepCanvasRows": 18,
         "hiddenByLip": 6,
         "hiddenByCrop": 12
       },
@@ -259,6 +266,7 @@
         "overlapsExit": true,
         "hiddenRows": 25,
         "visibleRows": 8,
+        "keepCanvasRows": 11,
         "hiddenByLip": 6,
         "hiddenByCrop": 19
       },
@@ -288,6 +296,7 @@
         "overlapsExit": true,
         "hiddenRows": 31,
         "visibleRows": 2,
+        "keepCanvasRows": 5,
         "hiddenByLip": 6,
         "hiddenByCrop": 25
       }

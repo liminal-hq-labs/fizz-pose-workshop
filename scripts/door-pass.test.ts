@@ -12,7 +12,7 @@ import { validateRig } from '../src/rig/run.ts';
 import { frameDurations, replaysContinuously } from '../src/rig/timing.ts';
 import { skinRig, type RigSkin } from './rig-skin.ts';
 import { trimmedHeadBack } from './performance-skin.ts';
-import { bodyRows, buildDoorPass, dosBytes, exitPiece, hiddenRows, occupied, rise, spriteLeft } from './door-pass.ts';
+import { bodyRows, buildDoorPass, crownRow, dosBytes, exitPiece, hiddenRows, occupied, rise, spriteLeft } from './door-pass.ts';
 import { changedPixels, cycleSteps, loadSavedFrames, median, savedAnimations } from './motion-metrics.ts';
 import skin from '../source/ben-side-skin.json';
 import palette from '../source/game-palette.json';
@@ -110,6 +110,7 @@ test('the door-pass contract is monotonic and matches the saved frames and the b
     expect(frame.exitColumns.left).toBeGreaterThanOrEqual(0); expect(frame.exitColumns.right).toBeLessThan(exitPiece.width);
     expect(frame.bounds.width).toBeGreaterThan(exitPiece.openingWidth);
     expect(frame.visibleRows + frame.hiddenRows).toBe(bodyRows);
+    expect(frame.keepCanvasRows).toBe(frame.visibleRows + crownRow);
   }
   expect(spriteLeft).toBe(-2);
   expect(walkIn.dos.bytesPerFrame).toBe(dosBytes(24, 44)); expect(walkIn.dos.totalBytes).toBe(528 * 8);
