@@ -1,0 +1,255 @@
+{
+  "name": "Ben \u00b7 rocking on his heels idle",
+  "width": 32,
+  "height": 44,
+  "groundY": 36,
+  "durationMs": 1400,
+  "sampleCount": 4,
+  "frameDurationsMs": [
+    280,
+    420,
+    280,
+    420
+  ],
+  "root": [
+    14,
+    24.5
+  ],
+  "torso": {
+    "leanDegrees": 0,
+    "pitchSwayDegrees": 1.2,
+    "bobAmplitude": 0.75,
+    "bobLag": 0.04,
+    "shoulderY": -7.5,
+    "shoulderSpread": 0.4,
+    "shoulderTwist": 0.4,
+    "neckHeight": 10
+  },
+  "arms": {
+    "upperLength": 3.5,
+    "forearmLength": 3.2,
+    "swingDegrees": 55,
+    "elbowDegrees": 90,
+    "elbowFlexDegrees": 4,
+    "phaseLead": 0.08333333333333333,
+    "biasDegrees": -8
+  },
+  "legs": {
+    "thighLength": 5.1,
+    "shinLength": 5.2,
+    "hipSpread": 0.3
+  },
+  "stride": {
+    "stanceFraction": 0.24,
+    "frontX": 3.5,
+    "backX": -4,
+    "lift": 6.5,
+    "toeOffDegrees": 25,
+    "recoveryToeDegrees": -12
+  },
+  "feet": {
+    "toe": [
+      3,
+      2
+    ],
+    "heel": [
+      -1,
+      2
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "landingToeDegrees": -28,
+    "landingCompression": 0.25
+  },
+  "face": {
+    "yawDegrees": 3,
+    "eye": [
+      2,
+      -5,
+      1.5
+    ],
+    "mouth": [
+      2,
+      -3,
+      1.5
+    ],
+    "shiftAmplitude": 0,
+    "ear": [
+      -1,
+      -4,
+      1.5
+    ],
+    "profile": {
+      "nose": [
+        5,
+        -4,
+        1.5
+      ],
+      "cheek": [
+        -2,
+        -3,
+        1.5
+      ],
+      "chin": [
+        0,
+        -1,
+        1.5
+      ]
+    }
+  },
+  "motion": "idle",
+  "performance": {
+    "view": "side",
+    "loop": true,
+    "keys": [
+      {
+        "phase": 0,
+        "root": [
+          14,
+          24.5
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          11.5,
+          23
+        ],
+        "farHand": [
+          12,
+          23
+        ],
+        "nearAnkle": [
+          11,
+          34
+        ],
+        "farAnkle": [
+          17,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 0.25,
+        "root": [
+          15,
+          24.5
+        ],
+        "lean": 5,
+        "headRoll": 0,
+        "nearHand": [
+          12.5,
+          23
+        ],
+        "farHand": [
+          13,
+          23
+        ],
+        "nearAnkle": [
+          11,
+          34
+        ],
+        "farAnkle": [
+          17,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": 14,
+        "farFootDegrees": 14,
+        "hold": true
+      },
+      {
+        "phase": 0.5,
+        "root": [
+          14,
+          24.5
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          11.5,
+          23
+        ],
+        "farHand": [
+          12,
+          23
+        ],
+        "nearAnkle": [
+          11,
+          34
+        ],
+        "farAnkle": [
+          17,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 0.75,
+        "root": [
+          13,
+          24.5
+        ],
+        "lean": -5,
+        "headRoll": -3,
+        "nearHand": [
+          10.5,
+          23
+        ],
+        "farHand": [
+          11,
+          23
+        ],
+        "nearAnkle": [
+          11,
+          34
+        ],
+        "farAnkle": [
+          17,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true,
+        "nearFootDegrees": -12,
+        "farFootDegrees": -12,
+        "hold": true
+      },
+      {
+        "phase": 1,
+        "root": [
+          14,
+          24.5
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          11.5,
+          23
+        ],
+        "farHand": [
+          12,
+          23
+        ],
+        "nearAnkle": [
+          11,
+          34
+        ],
+        "farAnkle": [
+          17,
+          34
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      }
+    ]
+  }
+}

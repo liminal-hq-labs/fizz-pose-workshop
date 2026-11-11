@@ -40,14 +40,13 @@ export interface ModelPoseSequence {
 const spread = (period: number, phases: readonly number[]): number[] =>
   phases.map((phase) => phase * period);
 
-/** The model-only poses: bored idles, the pogo draw and the Stunner reload. */
+/**
+ * Poses the sprite rigs cannot draw yet, because they need art the skin lacks: a bare head and a held helmet, a hand-held
+ * pogo stick and a loose fizz can. The other idles are performance rigs in `src/rig/catalogue.ts`.
+ */
 export const modelPoseSequences: readonly ModelPoseSequence[] = [
-  { key: "wrist-check", prefix: "ben_wristCheck", pose: "wrist", times: [0, 0.175], order: [0, 1, 0, 1], durationsMs: [900, 120, 120, 120] },
-  { key: "helmet-tip", prefix: "ben_helmetTip", pose: "tip", times: spread(2.856, [0.6, 0.1, 0.25]), order: [0, 1, 2, 1], durationsMs: [600, 120, 420, 120] },
   { key: "head-scratch", prefix: "ben_headScratch", pose: "scratch", times: [0.143, 0.428], order: [0, 1], durationsMs: [140, 140] },
-  { key: "rock-idle", prefix: "ben_rock", pose: "rock", times: spread(2.992, [0, 0.25, 0.5, 0.75]), order: [0, 1, 2, 3], durationsMs: [280, 420, 280, 420] },
   { key: "helmet-spin", prefix: "ben_helmetSpin", pose: "spin", times: spread(0.698, [0, 0.25, 0.5, 0.75]), order: [0, 1, 2, 3], durationsMs: [90, 90, 90, 90] },
-  { key: "wrist-aerial", prefix: "ben_aerial", pose: "aerial", times: spread(3.696, [0, 0.12, 0.3, 0.5]), order: [0, 1, 2, 3, 2, 1], durationsMs: [500, 140, 140, 600, 140, 140] },
   { key: "pogo-draw", prefix: "ben_pogoDraw", pose: "draw", times: spread(3.8, [0.02, 0.18, 0.3, 0.36, 0.5, 0.64, 0.78, 0.9]), order: [0, 1, 2, 3, 4, 5, 6, 7], durationsMs: [300, 200, 140, 140, 160, 200, 160, 500], once: true },
   { key: "stunner-reload", prefix: "ben_reload", pose: "reload", times: spread(4.6, [0.05, 0.2, 0.3, 0.4, 0.52, 0.7, 0.84, 0.95]), order: [0, 1, 2, 3, 4, 5, 6, 7], durationsMs: [300, 200, 200, 220, 260, 260, 200, 400] },
 ];

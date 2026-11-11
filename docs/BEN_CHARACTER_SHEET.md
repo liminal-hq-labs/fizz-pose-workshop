@@ -106,9 +106,11 @@ The first eleven poses follow the workshop's newest sprite sets: stand, run, pog
 - **Dramatic death** — Refine. Belly clutch, a hop onto his back with both soles to the camera, a dizzy wobble and a final topple flat.
 - **Bored idles** — Refine. Besides the telephone and whistling: checking the wrist computer, pulling out its aerial, tipping the helmet to a nearby enemy, taking the helmet off to scratch his head, spinning the helmet on a finger and rocking on his heels.
 
-## Sprites from the model
+## Sprites of the model's poses
 
-Poses that exist only on the model have no sprite yet. The workshop already renders the earlier 3D Ben into reference grids on the sprite canvas, in the 16 game colours with a black outline, for tracing in the pixel editor. `bun run draw:model-poses` uses the same converter on this model: it saves 35 first-draft frames in eight loops (the idles, the pogo draw and the reload) on the 32 × 44 canvas, to be cleaned by hand in the pixel editor. A proportion map lands the model's landmarks on the hand-drawn rows and widens each band, and every frame that wears the helmet takes the hand-drawn standing head, because Ben's likeness lives in its specifically placed pixels. The bodies are still renders: they lack the hand-drawn outline and detail and need redrawing by hand or through the lab's sprite rigs.
+Four of the new idles are drawn by the lab's own side-view sprite rig, as `source/ben-wrist-check-rig.json`, `ben-wrist-aerial-rig.json`, `ben-helmet-tip-rig.json` and `ben-rock-rig.json` in the rig catalogue: the hand-drawn head, shirt, arms, legs and shoes posed by keys, redrawn with `bun run draw:performances`. The rig's arms are shorter than the helmet is tall, so the helmet tip is a hand to the side of the rim with a small bow. The wrist computer is a two-pixel prop on the far forearm, a dark case under a lit screen, with an aerial of up to three pixels and a red tip. The lower shirt front is trimmed by one column in these frames as saved editor overrides.
+
+The head scratch, helmet spin, pogo draw and Stunner reload still come from `bun run draw:model-poses`, which renders the model through the sprite converter with a proportion map and the hand-drawn standing head. They wait on art the skin does not have: a bare head, a helmet held in the hand, a hand-held pogo stick and a loose fizz can.
 
 ## Sprite shorthand
 
@@ -123,4 +125,4 @@ The sprites compress detail into very few pixels. These features belong to that 
 ## Open questions
 
 1. **The pop bottle.** Does the runner-up Stunner design have a place: a second weapon, a power-up or a prop?
-2. **Sprites of the new poses.** The rendered bodies are placeholders. Should the new poses be drawn through the lab's side-view sprite rig and skin, like the existing actions, so they share the hand-drawn body as well as the head?
+2. **Art for the remaining poses.** Who draws the bare head, the held helmet, the hand-held pogo stick and the loose can that the last four poses need: by hand in the pixel editor, or as drafts to correct?

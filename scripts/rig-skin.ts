@@ -275,6 +275,15 @@ export function paintRig(rig: SideRig, skin: RigSkin, pose: RigPose, farStunner 
   // Ben's head stands taller than his arms can reach, so a near hand raised above the neck (gripping a ledge) crosses in
   // front of the face; drawn under the head it would vanish and read as reaching behind his back.
   if (pose.presentation && pose.nearArm[2][1] < pose.neck[1]) paintArm(out, pose.nearArm, skin, true, pose.cloth?.nearSleeve);
+  if (pose.presentation?.wrist !== undefined) {
+    // The wrist computer sits one pixel up the far forearm from the hand: a dark case with a lit screen pixel above it,
+    // and an aerial of up to three pixels with a red tip when it is pulled out.
+    const hand = pose.farArm[2], elbow = pose.farArm[1], length = Math.hypot(hand[0] - elbow[0], hand[1] - elbow[1]) || 1;
+    const x = Math.round(hand[0] - (hand[0] - elbow[0]) / length), y = Math.round(hand[1] - (hand[1] - elbow[1]) / length);
+    out.part = 'prop'; out.pixel(x, y, 'D'); out.pixel(x, y - 1, 'c');
+    const aerial = Math.round(pose.presentation.wrist * 3);
+    for (let i = 1; i <= aerial; i++) out.pixel(x, y - 1 - i, i === aerial ? 'r' : 'L');
+  }
   paintIdleProps(out, skin, pose);
   if (pose.presentation) out.closeNotches(pose.face.pixelAnchor[1], pose.face.pixelAnchor[1] + 4);
   return out;

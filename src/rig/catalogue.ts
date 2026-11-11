@@ -15,6 +15,10 @@ import whistleLeft from '../../source/ben-whistle-left-rig.json';
 import whistleRight from '../../source/ben-whistle-right-rig.json';
 import phone from '../../source/ben-phone-rig.json';
 import phoneTyping from '../../source/ben-phone-typing-rig.json';
+import wristCheck from '../../source/ben-wrist-check-rig.json';
+import wristAerial from '../../source/ben-wrist-aerial-rig.json';
+import helmetTip from '../../source/ben-helmet-tip-rig.json';
+import rock from '../../source/ben-rock-rig.json';
 import type { SideRig } from './run.ts';
 
 // The left-facing run turns the pinned right-facing run round with the same continuous solver and keys, so its twelve sprites keep the
@@ -56,6 +60,10 @@ export const rigCatalogue: readonly RigEntry[] = [
  {rig:whistleRight as SideRig,prefix:'ben_whistleRight',animation:'whistle-right',folder:'ben-whistle-right',title:'Whistle right · standing idle',labels:['Beat · note leaves the lips','Sway forward','Release · toe lifts','Second beat','Sway back · blink','Toe lifts']},
  {rig:phone as SideRig,prefix:'ben_phone',animation:'phone-idle',folder:'ben-phone',title:'Seated phone idle',labels:['Face the camera','Bend the knees','Sit down','Fold legs','Reach for the phone','Take out phone','Raise screen','Read','Settle and scroll'],then:'phone-typing'},
  {rig:phoneTyping as SideRig,prefix:'ben_phoneType',animation:'phone-typing',folder:'ben-phone-typing',title:'Phone typing loop',labels:['Far thumb taps','Near thumb taps','Far tap · breathe in','Pause · blink','Near thumb taps','Far tap · foot jiggles','Near tap · breathe in','Pause · glance up'],sequence:{name:'phone-sit-and-type',leadIn:'phone-idle',repeats:3}},
+ {rig:wristCheck as SideRig,prefix:'ben_wristCheck',animation:'wrist-check',folder:'ben-wrist-check',title:'Wrist computer check · idle',labels:['Read the screen','Tap','Lift','Tap again']},
+ {rig:wristAerial as SideRig,prefix:'ben_aerial',animation:'wrist-aerial',folder:'ben-wrist-aerial',title:'Wrist computer aerial · idle',labels:['Read the screen','Pinch the aerial','Pull','Aerial out','Push','Stow','Settle']},
+ {rig:helmetTip as SideRig,prefix:'ben_helmetTip',animation:'helmet-tip',folder:'ben-helmet-tip',title:'Helmet tip · idle',labels:['Stand','Raise the hand','Hand to the rim','Begin the bow','Bow','Straighten','Lower the hand','Settle']},
+ {rig:rock as SideRig,prefix:'ben_rock',animation:'rock-idle',folder:'ben-rock',title:'Rocking on his heels · idle',labels:['Level','Onto the toes','Level','Back on the heels']},
 ];
 
 /** The catalogue index an entry hands over to when it finishes (its `then`), or -1 when it has none. */
