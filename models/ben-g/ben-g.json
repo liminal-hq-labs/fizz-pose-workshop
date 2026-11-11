@@ -1,6 +1,6 @@
 {
   "name": "Ben Blaze · cartoon model (variation G)",
-  "source": "src/model-3d/ben-g/model.ts",
+  "source": "src/model-3d/ben-g/rig.ts",
   "units": "metres; one sprite pixel is 0.05 m",
   "files": [
     {

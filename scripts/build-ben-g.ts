@@ -7,7 +7,9 @@ import { mkdir, writeFile } from "node:fs/promises";
 import * as THREE from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import { benGClips, dumpModel } from "../src/model-3d/ben-g/dump.ts";
-import { benGSpec, buildRig, type DumpMesh, type ModelDump } from "../src/model-3d/ben-g/model.ts";
+import { buildRig } from "../src/model-3d/ben-g/rig.ts";
+import { benGSpec } from "../src/model-3d/ben-g/spec.ts";
+import type { DumpMesh, ModelDump } from "../src/model-3d/ben-g/types.ts";
 import { installThreeToolRuntime } from "./three-runtime.ts";
 
 export const benGFramesPerSecond = 24;
@@ -207,7 +209,7 @@ if (import.meta.main) {
     new URL("ben-g.json", output),
     JSON.stringify({
       name: "Ben Blaze · cartoon model (variation G)",
-      source: "src/model-3d/ben-g/model.ts",
+      source: "src/model-3d/ben-g/rig.ts",
       units: "metres; one sprite pixel is " + dump.scale + " m",
       files: benGFiles,
       framesPerSecond: benGFramesPerSecond,

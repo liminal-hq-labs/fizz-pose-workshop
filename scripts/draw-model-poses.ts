@@ -26,7 +26,7 @@ export interface ModelPoseSequence {
   readonly key: string;
   /** Frame name prefix; frames are numbered from 1. */
   readonly prefix: string;
-  /** Pose id in `src/model-3d/ben-g/model.ts`. */
+  /** Pose id in `src/model-3d/ben-g/poses.ts`. */
   readonly pose: string;
   /** Pose times, in seconds, to render. */
   readonly times: readonly number[];
