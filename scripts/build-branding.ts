@@ -21,7 +21,7 @@ const phases = running.map((_, i) => `.phase-${i} { animation-delay: -${(6 - i) 
 const swatches = ['k', 'B', 'G', 'C', 'R', 'M', 'N', 'L', 'D', 'b', 'g', 'c', 'r', 'm', 'y', 'W'].map((code, i) => `<rect x="${48 + i * 23}" y="262" width="16" height="8" rx="2" fill="${data.palette[code]}"/>`).join('');
 const hero = `${header}
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
-<title id="title">Classic Fizz Pose Workshop — Liminal HQ</title>
+<title id="title">Classic Fizz Pose Workshop — Liminal HQ Labs</title>
 <desc id="desc">Ben's original saved pixel artwork: left and right standing views flank a six-frame running loop, beside the workshop name and sixteen game-palette swatches. Reduced motion shows a still running pose.</desc>
 <defs>
   <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#080b17"/><stop offset="1" stop-color="#211526"/></linearGradient>
@@ -37,7 +37,7 @@ ${phases}
 </style>
 <rect width="1200" height="320" rx="20" fill="url(#bg)"/>
 <rect x="1" y="1" width="1198" height="318" rx="19" fill="none" stroke="#ffffff" stroke-opacity=".12"/>
-<text x="48" y="47" fill="#fdba74" font-size="12" font-weight="700" letter-spacing="3">LIMINAL HQ / CHARACTER LAB</text>
+<text x="48" y="47" fill="#fdba74" font-size="12" font-weight="700" letter-spacing="3">LIMINAL HQ LABS / CHARACTER LAB</text>
 <text x="45" y="110" fill="url(#brand)" font-size="49" font-weight="800" letter-spacing="-2">Classic Fizz</text>
 <text x="47" y="158" fill="#ffffff" font-size="36" font-weight="700" letter-spacing="-1">Pose Workshop</text>
 <text x="48" y="201" fill="#c8becf" font-size="16">Native pixels. Reusable rigs. A character in motion.</text>

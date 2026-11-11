@@ -4,6 +4,14 @@
   <img src="assets/hero.svg" alt="Classic Fizz Pose Workshop — Ben Blaze sprite studies, reusable rigs and character animation" width="100%">
 </p>
 
+<p align="center">
+  <a href="https://github.com/liminal-hq-labs/fizz-pose-workshop/actions/workflows/ci.yml"><img src="https://github.com/liminal-hq-labs/fizz-pose-workshop/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/status-experimental-a3e635" alt="Status: experimental">
+  <img src="https://img.shields.io/badge/licence-Apache--2.0%20OR%20MIT-3fb950" alt="Licence: Apache-2.0 OR MIT">
+</p>
+
+> **Status:** experimental. The pixel editor, exports, rigs and animation loops work today; the rigged 3D model is a pose reference that guides the sprites. There are no releases yet.
+
 A pose set derived from the unmodified original native Classic Fizz study, vendored in `source/classic-fizz-original.json`. The initial polished version is preserved in the first Git commit. The original files are preserved. Run `bun run dev` and open the printed local URL for the gallery and pixel editor. `standalone-preview.html` is the generated read-only gallery that also works directly from disk. The preview supports pause, scale, playback speed and side-view mirroring, and initially pauses when reduced motion is requested.
 
 ## Pixel editor
@@ -118,7 +126,7 @@ The turntable’s shoe patches now share a fixed five-row structure. Both side p
 
 ## Rigged 3D Ben
 
-The **Rigged 3D** section adds a fully volumetric Three.js character with a 24-bone skeleton, rounded helmet and head, detailed shoes, brown-blond hair and a right-hip Fizz Stunner. Orbit the model, choose a pose, show the skeleton, adjust joints or move Ben, and download a custom pose. Match the calibrated sprite references in orthographic view or enable their overlay to inspect proportions. The existing pixel sprites remain independent.
+The **Rigged 3D** page (`ben-3d.html`, linked from the workshop index) adds a fully volumetric Three.js character with a 24-bone skeleton, rounded helmet and head, detailed shoes, brown-blond hair and a right-hip Fizz Stunner. Orbit the model, choose a pose, show the skeleton, adjust joints or move Ben, and download a custom pose. Match the calibrated sprite references in orthographic view or enable their overlay to inspect proportions. The existing pixel sprites remain independent.
 
 `bun run model:build` exports `models/ben-3d/ben.glb` with nine named animation clips and the rig/skin files. With the server running, `bun run model:review` saves six reference comparisons, ten rig poses, timed firing/look cycles and measured proportion checks. See [the model guide](docs/BEN_3D.md) for controls, source files, export details, review limitations and Jar’s SVG surface-art ideas.
 
@@ -126,7 +134,11 @@ The **Rigged 3D** section adds a fully volumetric Three.js character with a 24-b
 
 [AGENTS.md](AGENTS.md) contains the contributor rules; [CLAUDE.md](CLAUDE.md) provides the Claude entry point. The workshop uses Canadian English, signed Conventional Commits and Bun/TypeScript tooling. Preserve original reference art and project saves when experimenting with poses.
 
-The [animated hero](assets/hero.svg) and [SVG avatar](assets/avatar.svg) are built from saved Ben sprites. Run `bun run branding:build` after deliberate updates to their references; [identity notes](assets/README.md) describe regeneration and the matching PNG used in Forgejo project settings.
+The [animated hero](assets/hero.svg) and [SVG avatar](assets/avatar.svg) are built from saved Ben sprites. Run `bun run branding:build` after deliberate updates to their references; [identity notes](assets/README.md) describe regeneration and the matching PNG used for the repository avatar.
+
+## Part of Liminal HQ Labs
+
+Fizz Pose Workshop is a [Liminal HQ Labs](https://github.com/liminal-hq-labs) experiment. Experiments from Liminal HQ — early, rough and open. If it proves itself, it [graduates](https://github.com/liminal-hq-labs/.github/blob/main/docs/labs-charter.md#graduation) to [Liminal HQ](https://github.com/liminal-hq).
 
 ## Licence
 
