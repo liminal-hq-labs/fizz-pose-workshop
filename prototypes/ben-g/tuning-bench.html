@@ -819,7 +819,7 @@ function applyPose(fig, o, t) {
   if (J._gunCan) { J._gunCan.visible = o.canZ !== null; J._gunCan.position.z = o.canZ === undefined || o.canZ === null ? -0.75 : o.canZ; }
   fig.turn.updateMatrixWorld(true);
   var hkk = P.hand / 2.4;
-  if (J._helmet) { var Hm = o.helmetIn, par = Hm ? J['hand' + Hm.hand] : J._hd;
+  if (J._helmet) { var Hm = fig.exportMode ? null : o.helmetIn, par = Hm ? J['hand' + Hm.hand] : J._hd;
     if (J._helmet.parent !== par) par.add(J._helmet);
     if (!Hm) { J._helmet.position.set(0, 0, 0); J._helmet.quaternion.identity(); J._helmet.scale.setScalar(1); }
     else { var spin = Hm.mode === 'spin', Qd = spin ? qE(0.1 * sin(t * 3.1), Hm.spin, 0.1 * cos(t * 2.3)) : qE(PI + 0.1 * sin(t * 2.2), 0.5, 0.08 * sin(t * 1.7));
@@ -1002,7 +1002,33 @@ function spritePasses(pose, tt, yawDeg, fr, scale) {
     scene.overrideMaterial = oldOv; hiddenList.forEach(function (m) { m.visible = true; }); ped.visible = wasPed; renderer.setRenderTarget(null); renderer.setClearColor(0x000000, 0); target.dispose(); }
   return out;
 }
-window.__rig = { spritePasses: spritePasses, poses: POSES.map(function (p) { return p[0]; }), S: S, OPT: OPT, frame: function () { frame(); }, setPose: setPose, rebuild: function () { rebuild(); syncOpts(); }, select: select };
+/* ---------- model dump: the node tree, geometry, skins and sampled clips, for the GLB build ---------- */
+function dumpModel(clips, fps) {
+  var f = fig, nodes = [], objs = [], geos = {}, geoList = [], idOf = new Map();
+  function b64(arr) { var u = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength), s = ''; for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+  function keep(o) { if (o.isLight || o.isLine || o.isLineSegments || o === f.marker) return false; if (o.isMesh) { var m = o.material; if (o.userData.ol || m === lineMat || m.visible === false || m.side === T.BackSide) return false; } return true; }
+  (function walk(o, parent) { if (!keep(o)) return; var id = nodes.length, n = { parent: parent, name: o.userData.joint || (o.isMesh ? 'mesh' : 'node') + id, bone: !!o.isBone }; nodes.push(n); objs.push(o); idOf.set(o, id);
+    if (o.isMesh) { var g = o.geometry, m = o.material;
+      if (!(g.uuid in geos)) { geos[g.uuid] = geoList.length; var a = g.attributes, e = { position: b64(Float32Array.from(a.position.array)), normal: a.normal ? b64(Float32Array.from(a.normal.array)) : null };
+        if (m.vertexColors && a.color) e.color = b64(Float32Array.from(a.color.array)); if (g.index) e.index = b64(Uint32Array.from(g.index.array));
+        if (a.skinIndex) { e.skinIndex = b64(Uint16Array.from(a.skinIndex.array)); e.skinWeight = b64(Float32Array.from(a.skinWeight.array)); } geoList.push(e); }
+      n.mesh = { geo: geos[g.uuid], color: m.color ? m.color.getHex() : 0xffffff, vertexColors: !!m.vertexColors, opacity: m.transparent ? m.opacity : 1, unlit: !!m.isMeshBasicMaterial, double: m.side === T.DoubleSide, skinned: !!o.isSkinnedMesh }; }
+    o.children.forEach(function (c) { walk(c, id); }); })(f.root, -1);
+  nodes.forEach(function (n, i) { var o = objs[i]; if (o.isSkinnedMesh) n.mesh.skin = { bones: o.skeleton.bones.map(function (bn) { return idOf.get(bn); }), inverses: o.skeleton.boneInverses.map(function (m4) { return Array.from(m4.elements); }), bind: Array.from(o.bindMatrix.elements) }; });
+  function snap() { return objs.map(function (o) { var v = o.visible; return [o.position.x, o.position.y, o.position.z, o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w, v ? o.scale.x : 0, v ? o.scale.y : 0, v ? o.scale.z : 0]; }); }
+  function pose(name, tt) { applyPose(f, POSE[name](tt, f), tt); applyFace(f, f.face || POSEFACE[name], name); f.J._eyes.scale.y = 1; f.J._eyes.position.y = 0; }
+  f.exportMode = true; f.blend = 1; f.turn.rotation.y = 0; f.shots = []; pose('stand', 0); pose('stand', 0); var rest = snap();
+  nodes.forEach(function (n, i) { n.p = rest[i].slice(0, 3); n.q = rest[i].slice(3, 7); n.s = rest[i].slice(7, 10); });
+  var out = clips.map(function (c) { var N = Math.round(c.duration * fps), frames = [], tracks = []; f.shots = []; f.lastShot = undefined; pose(c.pose, 0);
+    for (var i = 0; i <= N; i++) { pose(c.pose, c.duration * i / N); frames.push(snap()); }
+    nodes.forEach(function (n, k) { [[0, 3, 'p'], [3, 7, 'q'], [7, 10, 's']].forEach(function (r) {
+      var differs = frames.some(function (fr) { for (var j = r[0]; j < r[1]; j++) if (Math.abs(fr[k][j] - rest[k][j]) > 1e-4) return true; return false; }); if (!differs) return;
+      var w = r[1] - r[0], arr = new Float32Array((N + 1) * w); frames.forEach(function (fr, i) { for (var j = 0; j < w; j++) arr[i * w + j] = fr[k][r[0] + j]; }); tracks.push({ node: k, kind: r[2], values: b64(arr) }); }); });
+    return { name: c.name, duration: c.duration, frames: N + 1, tracks: tracks }; });
+  f.exportMode = false; f.shots = [];
+  return { scale: SC, nodes: nodes, geometries: geoList, clips: out };
+}
+window.__rig = { dumpModel: dumpModel, spritePasses: spritePasses, poses: POSES.map(function (p) { return p[0]; }), S: S, OPT: OPT, frame: function () { frame(); }, setPose: setPose, rebuild: function () { rebuild(); syncOpts(); }, select: select };
 })();
 </script>
 

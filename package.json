@@ -23,6 +23,7 @@
     "draw:model-poses": "bun scripts/draw-model-poses.ts",
     "model:build": "bun scripts/build-ben-3d.ts",
     "model:review": "bun scripts/review-ben-3d.ts",
+    "model:build-g": "bun scripts/build-ben-g.ts",
     "turntable:render": "bun scripts/render-turntable-reference.ts",
     "branding:build": "bun scripts/build-branding.ts"
   },

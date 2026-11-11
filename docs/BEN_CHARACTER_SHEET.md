@@ -2,7 +2,9 @@
 
 This sheet is the agreed design for Ben as a three-dimensional cartoon character. It records what is settled, what is still being refined and what is undecided, so the model, its exports and any later artwork work from one description. The sprites remain the authored reference artwork; where a sprite and this sheet differ, the difference is listed under [Sprite shorthand](#sprite-shorthand).
 
-The current build of this design is `prototypes/ben-g/tuning-bench.html`: one self-contained page, opened directly in a browser, that loads Three.js from a CDN. It holds the skinned body, the seventeen-bone rig, nineteen poses, hand posing and switches for the choices still being compared. It is a prototype in plain JavaScript; the design is to be ported into `src/model-3d/` so it shares the workshop's rig, pose library, GLB export and review tools.
+The current build of this design is `prototypes/ben-g/tuning-bench.html`: one self-contained page, opened directly in a browser, that loads Three.js from a CDN. It holds the skinned body, the seventeen-bone rig, nineteen poses, hand posing and switches for the choices still being compared. It is a prototype in plain JavaScript.
+
+`bun run model:build-g` exports it as `models/ben-g/ben-g.glb`, a rigged glTF binary in metres (Ben stands about 1.55 m tall): the seventeen-bone skeleton, the skinned torso, arms and legs, the rigid head, hands, runners and gear parented to their bones, and one animation clip per pose. `prototypes/ben-g/glb-viewer.html` plays the exported file. The export has these limits: props such as the pogo stick, ladder and loose can travel inside the file and are hidden by zero scale when a clip does not use them; the helmet stays on his head in the head-scratch and helmet-spin clips; each clip keeps one facial expression; the vents are painted, because cut vents need a texture; and the toon shading and ink outline belong to whatever displays the model, so a plain viewer shows smooth shading. The model's source is still the prototype page, not TypeScript in `src/model-3d/`.
 
 Each item carries one of three states:
 
