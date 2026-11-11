@@ -5,10 +5,10 @@
 
 import { chromium } from "@playwright/test";
 import { readFile, writeFile } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
 import rig from "../source/ben-turntable-rig.json";
 import palette from "../source/game-palette.json";
 import { validateFrames } from "../src/model.ts";
+import type {} from "../src/model-3d/ben-g/bench.ts";
 import type { Frame, Frames, WorkshopData } from "../src/types.ts";
 import {
   celShade,
@@ -20,13 +20,13 @@ import {
   type SpriteProportions,
 } from "./sprite-render.ts";
 
-/** One sprite sequence sampled from a pose of `prototypes/ben-g/tuning-bench.html`. */
+/** One sprite sequence sampled from a pose of the cartoon model, rendered by the tuning bench page. */
 export interface ModelPoseSequence {
   /** Animation key in `source/poses.json`. */
   readonly key: string;
   /** Frame name prefix; frames are numbered from 1. */
   readonly prefix: string;
-  /** Pose id in the prototype. */
+  /** Pose id in `src/model-3d/ben-g/model.ts`. */
   readonly pose: string;
   /** Pose times, in seconds, to render. */
   readonly times: readonly number[];
@@ -99,15 +99,6 @@ export const modelPoseOptions: SpriteOptions = {
 export const modelPoseYaw = 55;
 const scale = 8;
 
-interface EncodedPasses {
-  readonly width: number;
-  readonly height: number;
-  readonly scale: number;
-  readonly colour: string;
-  readonly normal: string;
-  readonly depth: string;
-  readonly depthRange: number;
-}
 /** A shade and the base colour it folds back to when it flickers. */
 const shadeBase: Readonly<Record<string, string>> = { m: "M", g: "G", r: "R", b: "B", c: "b", L: "W", D: "L" };
 /**
@@ -170,11 +161,24 @@ export function stampAuthoredHead(frame: Frame, authored: Frame): Frame {
 }
 const bytes = (text: string): Uint8Array => new Uint8Array(Buffer.from(text, "base64"));
 
+/** Serves the workshop so the bench page can load its modules. */
+async function startServer(): Promise<{ url: string; close: () => Promise<void> }> {
+  const { createServer } = await import("vite");
+  const server = await createServer({
+    configFile: new URL("../vite.config.ts", import.meta.url).pathname,
+    server: { port: 0, strictPort: false, host: "127.0.0.1" },
+    logLevel: "error",
+  });
+  await server.listen();
+  const address = server.httpServer?.address();
+  if (!address || typeof address === "string") throw new Error("The render server did not start.");
+  return { url: `http://127.0.0.1:${address.port}/`, close: () => server.close() };
+}
+
 /** Renders every sequence in a browser and converts each capture to a palette grid. */
 export async function drawModelPoses(authoredHead?: Frame): Promise<Frames> {
-  const page_url = pathToFileURL(
-      new URL("../prototypes/ben-g/tuning-bench.html", import.meta.url).pathname,
-    ).href,
+  const external = process.env.BEN_G_BENCH_URL,
+    server = external ? null : await startServer(),
     browser = await chromium.launch({
       executablePath: process.env.CHROMIUM_PATH ?? "/usr/bin/chromium",
       args: ["--no-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
@@ -184,22 +188,18 @@ export async function drawModelPoses(authoredHead?: Frame): Promise<Frames> {
       viewport: { width: 1280, height: 900 },
       reducedMotion: "reduce",
     });
+    page.setDefaultTimeout(180_000);
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto(page_url);
-    await page.waitForFunction(() => "__rig" in window);
+    await page.goto((external ?? server!.url) + "ben-g.html");
+    await page.waitForFunction(() => window.benG !== undefined);
     const frames: Frames = {};
     for (const sequence of modelPoseSequences)
       for (const [i, time] of sequence.times.entries()) {
-        const encoded = (await page.evaluate(
-            ({ pose, time, yaw, canvas, scale }) =>
-              (
-                window as unknown as {
-                  __rig: { spritePasses: (...args: unknown[]) => unknown };
-                }
-              ).__rig.spritePasses(pose, time, yaw, canvas, scale),
+        const encoded = await page.evaluate(
+            ({ pose, time, yaw, canvas, scale }) => window.benG!.spritePasses(pose, time, yaw, canvas, scale),
             { pose: sequence.pose, time, yaw: modelPoseYaw, canvas: modelPoseCanvas, scale },
-          )) as EncodedPasses,
+          ),
           passes: RenderPasses = {
             width: encoded.width,
             height: encoded.height,
@@ -223,6 +223,7 @@ export async function drawModelPoses(authoredHead?: Frame): Promise<Frames> {
     return validateFrames(frames, frames, palette);
   } finally {
     await browser.close();
+    await server?.close();
   }
 }
 

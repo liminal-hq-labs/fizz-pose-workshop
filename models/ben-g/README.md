@@ -1,6 +1,6 @@
 # Ben Blaze · cartoon model
 
-Two glTF binaries of the same rigged character, built by `bun run model:build-g` from `prototypes/ben-g/tuning-bench.html`. Both are in metres (Ben stands about 1.55 m tall, facing +Z, with his feet on Y = 0) and carry a seventeen-bone skeleton and nineteen animation clips at 24 frames a second. `ben-g.json` lists the bones and clips.
+Two glTF binaries of the same rigged character, built by `bun run model:build-g` from the model in `src/model-3d/ben-g/`. Both are in metres (Ben stands about 1.55 m tall, facing +Z, with his feet on Y = 0) and carry a seventeen-bone skeleton and nineteen animation clips at 24 frames a second. `ben-g.json` lists the bones and clips.
 
 | File | Use it when | What is inside |
 |---|---|---|

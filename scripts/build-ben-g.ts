@@ -1,84 +1,28 @@
-// Exports the cartoon Ben prototype as a rigged glTF binary with one named animation clip per pose.
+// Exports the cartoon Ben as rigged glTF binaries, lit and baked-cartoon, with one named animation clip per pose.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
 import * as THREE from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { benGClips, dumpModel } from "../src/model-3d/ben-g/dump.ts";
+import { benGSpec, buildRig, type DumpMesh, type ModelDump } from "../src/model-3d/ben-g/model.ts";
 import { installThreeToolRuntime } from "./three-runtime.ts";
 
-/** One exported clip: a pose of `prototypes/ben-g/tuning-bench.html` sampled over `duration` seconds. */
-export interface BenGClip {
-  readonly name: string;
-  readonly pose: string;
-  readonly duration: number;
-}
-/** Loop lengths match each pose's own period, so every looping clip closes on its first frame. */
-export const benGClips: readonly BenGClip[] = [
-  { name: "Stand", pose: "stand", duration: 3 },
-  { name: "Run", pose: "run", duration: 1 / 1.4 },
-  { name: "Pogo", pose: "pogo", duration: 0.8 },
-  { name: "Fire", pose: "fire", duration: 1 / 0.9 },
-  { name: "Jump", pose: "jump", duration: 1.9 },
-  { name: "Fall", pose: "fall", duration: 2 },
-  { name: "Climb", pose: "climb", duration: 1.92 },
-  { name: "LedgePull", pose: "ledge", duration: 6.5 },
-  { name: "Whistle", pose: "whistle", duration: (2 * Math.PI) / 2.6 },
-  { name: "Phone", pose: "phone", duration: 3 },
-  { name: "Wipeout", pose: "wipeout", duration: 4.8 },
-  { name: "WristCheck", pose: "wrist", duration: 3 },
-  { name: "HelmetTip", pose: "tip", duration: (2 * Math.PI) / 2.2 },
-  { name: "HeadScratch", pose: "scratch", duration: 2 },
-  { name: "Rock", pose: "rock", duration: (2 * Math.PI) / 2.1 },
-  { name: "HelmetSpin", pose: "spin", duration: 2.1 },
-  { name: "WristAerial", pose: "aerial", duration: (2 * Math.PI) / 1.7 },
-  { name: "PogoDraw", pose: "draw", duration: 3.8 },
-  { name: "Reload", pose: "reload", duration: 4.6 },
-];
 export const benGFramesPerSecond = 24;
-
-interface DumpMesh {
-  geo: number; color: number; vertexColors: boolean; opacity: number; unlit: boolean; double: boolean; skinned: boolean; outline: boolean; ink: boolean;
-  skin?: { bones: number[]; inverses: number[][]; bind: number[] };
-}
-interface DumpNode { parent: number; name: string; bone: boolean; p: number[]; q: number[]; s: number[]; mesh?: DumpMesh }
-interface DumpGeometry { position: string; normal: string | null; color?: string; index?: string; skinIndex?: string; skinWeight?: string }
-interface DumpClip { name: string; duration: number; frames: number; tracks: { node: number; kind: "p" | "q" | "s"; values: string }[] }
-interface Dump { scale: number; nodes: DumpNode[]; geometries: DumpGeometry[]; clips: DumpClip[] }
+type Dump = ModelDump;
 
 const floats = (text: string): Float32Array => { const b = Buffer.from(text, "base64"); return new Float32Array(b.buffer, b.byteOffset, b.byteLength / 4).slice(); };
 const uint16 = (text: string): Uint16Array => { const b = Buffer.from(text, "base64"); return new Uint16Array(b.buffer, b.byteOffset, b.byteLength / 2).slice(); };
 const uint32 = (text: string): Uint32Array => { const b = Buffer.from(text, "base64"); return new Uint32Array(b.buffer, b.byteOffset, b.byteLength / 4).slice(); };
 
-/** Opens the prototype with its vents cut into a dense shell mesh (the live page uses an alpha texture) and returns its dump. */
-async function dumpPrototype(): Promise<Dump> {
-  const browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH ?? "/usr/bin/chromium",
-    args: ["--no-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
-  });
-  try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto(pathToFileURL(new URL("../prototypes/ben-g/tuning-bench.html", import.meta.url).pathname).href);
-    await page.waitForFunction(() => "__rig" in window);
-    const dump = (await page.evaluate(
-      ({ clips, fps }) => {
-        const rig = (window as unknown as { __rig: { OPT: Record<string, unknown>; rebuild: () => void; dumpModel: (clips: unknown, fps: number) => unknown } }).__rig;
-        rig.OPT.vents = "mesh";
-        rig.rebuild();
-        return rig.dumpModel(clips, fps);
-      },
-      { clips: [...benGClips], fps: benGFramesPerSecond },
-    )) as Dump;
-    if (errors.length) throw new Error("Browser errors: " + errors.join("; "));
-    return dump;
-  } finally {
-    await browser.close();
-  }
+/**
+ * Builds Ben with his vents cut into a dense shell mesh (the live page uses an alpha texture, which a headless build
+ * cannot paint) and dumps the model with every clip sampled.
+ */
+export function dumpBenG(): Dump {
+  return dumpModel(buildRig(benGSpec({ vents: "mesh" })), benGClips, benGFramesPerSecond);
 }
 
 /** How a scene is dressed for export. */
@@ -247,7 +191,7 @@ if (import.meta.main) {
   installThreeToolRuntime();
   const output = new URL("../models/ben-g/", import.meta.url);
   await mkdir(output, { recursive: true });
-  const dump = await dumpPrototype(), sizes: string[] = [];
+  const dump = dumpBenG(), sizes: string[] = [];
   let clipList: THREE.AnimationClip[] = [];
   for (const { file, look } of benGFiles) {
     const { root, clips } = sceneFromDump(dump, look);
@@ -263,7 +207,7 @@ if (import.meta.main) {
     new URL("ben-g.json", output),
     JSON.stringify({
       name: "Ben Blaze · cartoon model (variation G)",
-      source: "prototypes/ben-g/tuning-bench.html",
+      source: "src/model-3d/ben-g/model.ts",
       units: "metres; one sprite pixel is " + dump.scale + " m",
       files: benGFiles,
       framesPerSecond: benGFramesPerSecond,
