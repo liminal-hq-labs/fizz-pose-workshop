@@ -30,13 +30,81 @@
     "contract": "source/ben-door-pass.json",
     "animation": "door-walk-in",
     "spriteLeft": -2,
-    "spriteRule": "spriteX = exitX + spriteLeft; spriteY = (sill baseline + startBelowSill) - 36 - rise[i]. Ben’s centre column 11 sits on the exit’s centre column 9.",
+    "spriteRule": "spriteX = exitX + spriteLeft; spriteY = (sill baseline + startBelowSill) - 36 (footLineRows) - rise[i]. Ben’s centre column 11 sits on the exit’s centre column 9.",
     "startBelowSill": "game-defined: the floor line in front of the exit less the sill baseline",
-    "previewStartBelowSill": 10
+    "previewStartBelowSill": 16
   },
   "sidePass": {
     "animation": "walk-run-6",
     "note": "Keyed doors are drawn before Ben, so Ben is in front of the whole door; he overlaps it only once it is open and passable."
+  },
+  "fizz2": {
+    "keyedHeight": {
+      "standardTiles": 3,
+      "minimumTiles": 2,
+      "standardPx": 48,
+      "minimumPx": 32,
+      "benBodyPx": 32,
+      "note": "3 tiles (16 × 48) is the standard door height. 2 tiles (16 × 32) is shown as a minimum only: Ben's body is exactly 32 px tall in the trial, so a 2-tile door fits him with no margin. The keyed door is a column of tiles, and the level decides how many.",
+      "twinLeavesClearOpening": {
+        "tiles2": 20,
+        "tiles3": 36,
+        "interiorWidth": 10
+      }
+    },
+    "heldOpen": {
+      "defaultKeeps": true,
+      "decidedBy": "Scott",
+      "status": "Default pending Scott's choice",
+      "keeps": [
+        "top strip (the lintel and its lit top)",
+        "side face (the lit left jamb and the shaded right jamb)"
+      ],
+      "note": "The held open frame keeps the closed door's lintel strip and side faces as decoration. They are never solid: Ben is drawn in front of the whole door and nothing blocks him. The empty ending stays available."
+    },
+    "night": {
+      "litArt": "The lift leaves, the shutter and every other door leaf and arch are ordinary lit art (bank 0): they dim with the scene at night.",
+      "glowLayer": "Only the separate glow layer (the keyed badge, the exit's light and arrow) is drawn in the glow bank (bank 2, level 14) and stays at full brightness.",
+      "status": "Default, from the Fizz 2 session"
+    },
+    "dosMemory": {
+      "copies": 2,
+      "bytesPerCopyMax": 2176,
+      "bytesBothColoursMax": 4352,
+      "sharedGrids": true,
+      "perFamily": {
+        "plank-swing": 1792,
+        "pocket-slide": 2176,
+        "twin-leaves": 1664,
+        "lock-pop": 1536,
+        "fizz-dissolve": 2048,
+        "signpost-arch": 896,
+        "classic-block": 512
+      },
+      "note": "Red and blue are two stored copies, about 2.2 KB each at most, with identical grids (only the paint letters and the badge shape differ) so one colour-swapped copy stays possible later."
+    },
+    "sound": {
+      "dooropenMs": "about 500, with a latch thud at the end",
+      "status": "Open decision for Scott: the `dooropen` sound is left as it is",
+      "proposedOpeningMs": "180 to 300",
+      "openingMs": {
+        "plank-swing": 180,
+        "pocket-slide": 220,
+        "twin-leaves": 160,
+        "lock-pop": 300,
+        "fizz-dissolve": 260,
+        "lighthouse-lift": 200,
+        "lighthouse-door": 210
+      },
+      "note": "The openings here run 160 to 300 ms, shorter than the sound's 0.5 s, so the latch thud lands after the door has finished moving. Whether to retime the openings to the sound or cut the sound to 180 to 300 ms is Scott's call."
+    },
+    "facts": [
+      "The feet line is 16 px (one tile) below the exit's far-edge sill (`docs/OBLIQUE.md` in the Fizz 2 repo), so standing Ben's head is 17 px above the sill inside the 35 px arch, and the 7 px rise keeps it inside.",
+      "The walk-in's crop riding with Ben is accepted by Fizz 2: no raised lip is needed.",
+      "The keyed door is a column of tiles whose height the level decides.",
+      "The Fizz 2 session will write the importer, the front-layer pass after Ben, the door-opening presentation state and the walk-in.",
+      "Nothing is imported until Scott picks a keyed door, an exit and the ending."
+    ]
   },
   "drawOrder": [
     "Ground pass: back wall or sky, far-plane dressing, the exit (back, glow, then the front lip), terrain from the bottom row up with the keyed doors (back, then glow), spikes",
@@ -69,6 +137,10 @@
       "badge": "triangle",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -474,6 +546,10 @@
       "badge": "disc",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -879,6 +955,10 @@
       "badge": "triangle",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -1345,6 +1425,10 @@
       "badge": "disc",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -1801,7 +1885,7 @@
       "why": "The badge never moves, so the open doorway still says which key opened it; the split lock is a clear unlocked cue.",
       "behaviour": "animated-open",
       "notes": [
-        "The transom takes the top 13 rows of the top segment, so a two-tile door has a 19 px opening under it; three tiles give 35 px, taller than Ben.",
+        "The transom takes the top 11 rows of the top segment (the lintel, the badge plate and its underline). Under it the opening is 10 px wide between the jamb faces and 36 px tall on the standard 3-tile door, 4 px over the 32 px body of Ben; the 2-tile minimum leaves only 20 px, so a 2-tile Twin Leaves is tight and Ben passes in front of it rather than through a clear gap.",
         "The badge is visible in every frame, open included."
       ],
       "segment": {
@@ -1811,6 +1895,10 @@
       "badge": "triangle",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -1896,10 +1984,10 @@
                 "kDRDk.....kkRRDk",
                 "kLRDk.....kkRRDk",
                 "kLRD.......kRRDk",
-                "kLRDkkkkkkkkRRDk",
-                "kLDDDDDDDDDDDDkk",
                 "kLkkkkkkkkkkkkDk",
-                "kLrrrrrrrrrrrRDk",
+                "kLrrrrrrrrrrrRkk",
+                "kLrrrrRkrrrrrRDk",
+                "kLrrrrRkrrrrrRDk",
                 "kLrrrrRkrrrrrRDk",
                 "kDrrrrRkrrrrrRDk"
               ],
@@ -1952,10 +2040,10 @@
                 "kDRDk.....kkRRDk",
                 "kLRDk.....kkRRDk",
                 "kLRD.......kRRDk",
-                "kLRDkkkkkkkkRRDk",
-                "kLDDDDDDDDDDDDkk",
                 "kLkkkkkkkkkkkkDk",
-                "kLrrrrkkkkrrrrDk",
+                "kLrrrr....rrrrkk",
+                "kLrrRk....rrrrDk",
+                "kLrrRk....rrrrDk",
                 "kLrrRk....rrrrDk",
                 "kDrrRk....rrrrDk"
               ],
@@ -2008,10 +2096,10 @@
                 "kDRDk.....kkRRDk",
                 "kLRDk.....kkRRDk",
                 "kLRD.......kRRDk",
-                "kLRDkkkkkkkkRRDk",
-                "kLDDDDDDDDDDDDkk",
                 "kLkkkkkkkkkkkkDk",
-                "kLrrkkkkkkkkrrDk",
+                "kLrr........rrkk",
+                "kLRk........rrDk",
+                "kLRk........rrDk",
                 "kLRk........rrDk",
                 "kDRk........rrDk"
               ],
@@ -2064,10 +2152,10 @@
                 "kDRDk.....kkRRDk",
                 "kLRDk.....kkRRDk",
                 "kLRD.......kRRDk",
-                "kLRDkkkkkkkkRRDk",
-                "kLDDDDDDDDDDDDkk",
                 "kLkkkkkkkkkkkkDk",
-                "kLkkkkkkkkkkk.Dk",
+                "kLkD..........kk",
+                "kLkk..........Dk",
+                "kLkD..........Dk",
                 "kLkk..........Dk",
                 "kDkD..........Dk"
               ],
@@ -2246,7 +2334,7 @@
       "why": "The badge never moves, so the open doorway still says which key opened it; the split lock is a clear unlocked cue.",
       "behaviour": "animated-open",
       "notes": [
-        "The transom takes the top 13 rows of the top segment, so a two-tile door has a 19 px opening under it; three tiles give 35 px, taller than Ben.",
+        "The transom takes the top 11 rows of the top segment (the lintel, the badge plate and its underline). Under it the opening is 10 px wide between the jamb faces and 36 px tall on the standard 3-tile door, 4 px over the 32 px body of Ben; the 2-tile minimum leaves only 20 px, so a 2-tile Twin Leaves is tight and Ben passes in front of it rather than through a clear gap.",
         "The badge is visible in every frame, open included."
       ],
       "segment": {
@@ -2256,6 +2344,10 @@
       "badge": "disc",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -2341,10 +2433,10 @@
                 "kDBD.......kBBDk",
                 "kLBDk.....kkBBDk",
                 "kLBDkk...kkkBBDk",
-                "kLBDkkkkkkkkBBDk",
-                "kLDDDDDDDDDDDDkk",
                 "kLkkkkkkkkkkkkDk",
-                "kLbbbbbbbbbbbBDk",
+                "kLbbbbbbbbbbbBkk",
+                "kLbbbbBkbbbbbBDk",
+                "kLbbbbBkbbbbbBDk",
                 "kLbbbbBkbbbbbBDk",
                 "kDbbbbBkbbbbbBDk"
               ],
@@ -2397,10 +2489,10 @@
                 "kDBD.......kBBDk",
                 "kLBDk.....kkBBDk",
                 "kLBDkk...kkkBBDk",
-                "kLBDkkkkkkkkBBDk",
-                "kLDDDDDDDDDDDDkk",
                 "kLkkkkkkkkkkkkDk",
-                "kLbbbbkkkkbbbbDk",
+                "kLbbbb....bbbbkk",
+                "kLbbBk....bbbbDk",
+                "kLbbBk....bbbbDk",
                 "kLbbBk....bbbbDk",
                 "kDbbBk....bbbbDk"
               ],
@@ -2453,10 +2545,10 @@
                 "kDBD.......kBBDk",
                 "kLBDk.....kkBBDk",
                 "kLBDkk...kkkBBDk",
-                "kLBDkkkkkkkkBBDk",
-                "kLDDDDDDDDDDDDkk",
                 "kLkkkkkkkkkkkkDk",
-                "kLbbkkkkkkkkbbDk",
+                "kLbb........bbkk",
+                "kLBk........bbDk",
+                "kLBk........bbDk",
                 "kLBk........bbDk",
                 "kDBk........bbDk"
               ],
@@ -2509,10 +2601,10 @@
                 "kDBD.......kBBDk",
                 "kLBDk.....kkBBDk",
                 "kLBDkk...kkkBBDk",
-                "kLBDkkkkkkkkBBDk",
-                "kLDDDDDDDDDDDDkk",
                 "kLkkkkkkkkkkkkDk",
-                "kLkkkkkkkkkkk.Dk",
+                "kLkD..........kk",
+                "kLkk..........Dk",
+                "kLkD..........Dk",
                 "kLkk..........Dk",
                 "kDkD..........Dk"
               ],
@@ -2701,6 +2793,10 @@
       "badge": "triangle",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -3187,6 +3283,10 @@
       "badge": "disc",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -3673,6 +3773,10 @@
       "badge": "triangle",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -4179,6 +4283,10 @@
       "badge": "disc",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -4685,6 +4793,10 @@
       "badge": "triangle",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -4966,6 +5078,10 @@
       "badge": "disc",
       "badgeSegment": "top",
       "heldOpenFrame": "open",
+      "heldOpenKeeps": {
+        "topStrip": true,
+        "sideFace": true
+      },
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -5247,6 +5363,7 @@
       "badge": "triangle",
       "badgeSegment": "top",
       "heldOpenFrame": null,
+      "heldOpenKeeps": null,
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -5452,6 +5569,7 @@
       "badge": "disc",
       "badgeSegment": "top",
       "heldOpenFrame": null,
+      "heldOpenKeeps": null,
       "placement": {
         "anchor": "floor-line column",
         "note": "A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben."
@@ -5695,7 +5813,8 @@
                 "frame": "ben_doorIn1",
                 "left": -2,
                 "rise": 0,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -5707,7 +5826,8 @@
                 "frame": "ben_doorIn2",
                 "left": -2,
                 "rise": 1,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -5719,7 +5839,8 @@
                 "frame": "ben_doorIn3",
                 "left": -2,
                 "rise": 2,
-                "visibleRows": 33,
+                "visibleRows": 30,
+                "keepCanvasRows": 33,
                 "behind": true
               }
             },
@@ -5731,7 +5852,8 @@
                 "frame": "ben_doorIn4",
                 "left": -2,
                 "rise": 3,
-                "visibleRows": 29,
+                "visibleRows": 26,
+                "keepCanvasRows": 29,
                 "behind": true
               }
             },
@@ -5743,7 +5865,8 @@
                 "frame": "ben_doorIn5",
                 "left": -2,
                 "rise": 4,
-                "visibleRows": 24,
+                "visibleRows": 21,
+                "keepCanvasRows": 24,
                 "behind": true
               }
             },
@@ -5756,7 +5879,8 @@
                 "frame": "ben_doorIn6",
                 "left": -2,
                 "rise": 5,
-                "visibleRows": 18,
+                "visibleRows": 15,
+                "keepCanvasRows": 18,
                 "behind": true
               }
             },
@@ -5769,7 +5893,8 @@
                 "frame": "ben_doorIn7",
                 "left": -2,
                 "rise": 6,
-                "visibleRows": 11,
+                "visibleRows": 8,
+                "keepCanvasRows": 11,
                 "behind": true
               }
             },
@@ -5782,7 +5907,8 @@
                 "frame": "ben_doorIn8",
                 "left": -2,
                 "rise": 7,
-                "visibleRows": 4,
+                "visibleRows": 2,
+                "keepCanvasRows": 5,
                 "behind": true
               }
             },
@@ -5796,6 +5922,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -5810,6 +5937,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -5823,6 +5951,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -6086,7 +6215,8 @@
                 "frame": "ben_doorIn1",
                 "left": -2,
                 "rise": 0,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -6098,7 +6228,8 @@
                 "frame": "ben_doorIn2",
                 "left": -2,
                 "rise": 1,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -6110,7 +6241,8 @@
                 "frame": "ben_doorIn3",
                 "left": -2,
                 "rise": 2,
-                "visibleRows": 33,
+                "visibleRows": 30,
+                "keepCanvasRows": 33,
                 "behind": true
               }
             },
@@ -6122,7 +6254,8 @@
                 "frame": "ben_doorIn4",
                 "left": -2,
                 "rise": 3,
-                "visibleRows": 29,
+                "visibleRows": 26,
+                "keepCanvasRows": 29,
                 "behind": true
               }
             },
@@ -6134,7 +6267,8 @@
                 "frame": "ben_doorIn5",
                 "left": -2,
                 "rise": 4,
-                "visibleRows": 24,
+                "visibleRows": 21,
+                "keepCanvasRows": 24,
                 "behind": true
               }
             },
@@ -6146,7 +6280,8 @@
                 "frame": "ben_doorIn6",
                 "left": -2,
                 "rise": 5,
-                "visibleRows": 18,
+                "visibleRows": 15,
+                "keepCanvasRows": 18,
                 "behind": true
               }
             },
@@ -6158,7 +6293,8 @@
                 "frame": "ben_doorIn7",
                 "left": -2,
                 "rise": 6,
-                "visibleRows": 11,
+                "visibleRows": 8,
+                "keepCanvasRows": 11,
                 "behind": true
               }
             },
@@ -6170,7 +6306,8 @@
                 "frame": "ben_doorIn8",
                 "left": -2,
                 "rise": 7,
-                "visibleRows": 4,
+                "visibleRows": 2,
+                "keepCanvasRows": 5,
                 "behind": true
               }
             },
@@ -6183,6 +6320,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -6397,7 +6535,8 @@
                 "frame": "ben_doorIn1",
                 "left": -2,
                 "rise": 0,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -6409,7 +6548,8 @@
                 "frame": "ben_doorIn2",
                 "left": -2,
                 "rise": 1,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -6421,7 +6561,8 @@
                 "frame": "ben_doorIn3",
                 "left": -2,
                 "rise": 2,
-                "visibleRows": 33,
+                "visibleRows": 30,
+                "keepCanvasRows": 33,
                 "behind": true
               }
             },
@@ -6433,7 +6574,8 @@
                 "frame": "ben_doorIn4",
                 "left": -2,
                 "rise": 3,
-                "visibleRows": 29,
+                "visibleRows": 26,
+                "keepCanvasRows": 29,
                 "behind": true
               }
             },
@@ -6445,7 +6587,8 @@
                 "frame": "ben_doorIn5",
                 "left": -2,
                 "rise": 4,
-                "visibleRows": 24,
+                "visibleRows": 21,
+                "keepCanvasRows": 24,
                 "behind": true
               }
             },
@@ -6457,7 +6600,8 @@
                 "frame": "ben_doorIn6",
                 "left": -2,
                 "rise": 5,
-                "visibleRows": 18,
+                "visibleRows": 15,
+                "keepCanvasRows": 18,
                 "behind": true
               }
             },
@@ -6469,7 +6613,8 @@
                 "frame": "ben_doorIn7",
                 "left": -2,
                 "rise": 6,
-                "visibleRows": 11,
+                "visibleRows": 8,
+                "keepCanvasRows": 11,
                 "behind": true
               }
             },
@@ -6481,7 +6626,8 @@
                 "frame": "ben_doorIn8",
                 "left": -2,
                 "rise": 7,
-                "visibleRows": 4,
+                "visibleRows": 2,
+                "keepCanvasRows": 5,
                 "behind": true
               }
             },
@@ -6494,6 +6640,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -6507,6 +6654,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -6832,7 +6980,8 @@
                 "frame": "ben_doorIn1",
                 "left": -2,
                 "rise": 0,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -6844,7 +6993,8 @@
                 "frame": "ben_doorIn2",
                 "left": -2,
                 "rise": 1,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -6856,7 +7006,8 @@
                 "frame": "ben_doorIn3",
                 "left": -2,
                 "rise": 2,
-                "visibleRows": 33,
+                "visibleRows": 30,
+                "keepCanvasRows": 33,
                 "behind": true
               }
             },
@@ -6868,7 +7019,8 @@
                 "frame": "ben_doorIn4",
                 "left": -2,
                 "rise": 3,
-                "visibleRows": 29,
+                "visibleRows": 26,
+                "keepCanvasRows": 29,
                 "behind": true
               }
             },
@@ -6880,7 +7032,8 @@
                 "frame": "ben_doorIn5",
                 "left": -2,
                 "rise": 4,
-                "visibleRows": 24,
+                "visibleRows": 21,
+                "keepCanvasRows": 24,
                 "behind": true
               }
             },
@@ -6892,7 +7045,8 @@
                 "frame": "ben_doorIn6",
                 "left": -2,
                 "rise": 5,
-                "visibleRows": 18,
+                "visibleRows": 15,
+                "keepCanvasRows": 18,
                 "behind": true
               }
             },
@@ -6904,7 +7058,8 @@
                 "frame": "ben_doorIn7",
                 "left": -2,
                 "rise": 6,
-                "visibleRows": 11,
+                "visibleRows": 8,
+                "keepCanvasRows": 11,
                 "behind": true
               }
             },
@@ -6916,7 +7071,8 @@
                 "frame": "ben_doorIn8",
                 "left": -2,
                 "rise": 7,
-                "visibleRows": 4,
+                "visibleRows": 2,
+                "keepCanvasRows": 5,
                 "behind": true
               }
             },
@@ -6929,6 +7085,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -6942,6 +7099,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -6955,6 +7113,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -7331,7 +7490,8 @@
                 "frame": "ben_doorIn1",
                 "left": -2,
                 "rise": 0,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -7343,7 +7503,8 @@
                 "frame": "ben_doorIn2",
                 "left": -2,
                 "rise": 1,
-                "visibleRows": 36,
+                "visibleRows": 33,
+                "keepCanvasRows": 36,
                 "behind": true
               }
             },
@@ -7355,7 +7516,8 @@
                 "frame": "ben_doorIn3",
                 "left": -2,
                 "rise": 2,
-                "visibleRows": 33,
+                "visibleRows": 30,
+                "keepCanvasRows": 33,
                 "behind": true
               }
             },
@@ -7367,7 +7529,8 @@
                 "frame": "ben_doorIn4",
                 "left": -2,
                 "rise": 3,
-                "visibleRows": 29,
+                "visibleRows": 26,
+                "keepCanvasRows": 29,
                 "behind": true
               }
             },
@@ -7379,7 +7542,8 @@
                 "frame": "ben_doorIn5",
                 "left": -2,
                 "rise": 4,
-                "visibleRows": 24,
+                "visibleRows": 21,
+                "keepCanvasRows": 24,
                 "behind": true
               }
             },
@@ -7391,7 +7555,8 @@
                 "frame": "ben_doorIn6",
                 "left": -2,
                 "rise": 5,
-                "visibleRows": 18,
+                "visibleRows": 15,
+                "keepCanvasRows": 18,
                 "behind": true
               }
             },
@@ -7403,7 +7568,8 @@
                 "frame": "ben_doorIn7",
                 "left": -2,
                 "rise": 6,
-                "visibleRows": 11,
+                "visibleRows": 8,
+                "keepCanvasRows": 11,
                 "behind": true
               }
             },
@@ -7415,7 +7581,8 @@
                 "frame": "ben_doorIn8",
                 "left": -2,
                 "rise": 7,
-                "visibleRows": 4,
+                "visibleRows": 2,
+                "keepCanvasRows": 5,
                 "behind": true
               }
             },
@@ -7428,6 +7595,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }
@@ -7441,6 +7609,7 @@
                 "left": -2,
                 "rise": 7,
                 "visibleRows": 0,
+                "keepCanvasRows": 0,
                 "behind": true,
                 "hidden": true
               }

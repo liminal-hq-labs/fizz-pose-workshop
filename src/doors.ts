@@ -21,10 +21,10 @@ export interface Step {
   readonly glowOver?: string | null;
   /**
    * Ben during an exit walk-in, by `source/ben-door-pass.json`: the workshop frame, the sprite's left edge in the exit's
-   * pixels, how far he has risen and how many of the sprite's top rows are drawn (the game crops the rest). `behind` is
+   * pixels, how far he has risen and how many rows of him are drawn from the crown (`visibleRows`; `keepCanvasRows` is the same crop as the top rows of the whole 24 × 44 frame, the crown being on row 3), the game cropping the rest. `behind` is
    * true while the front lip and `glowOver` are drawn after him; `hidden` means he is not drawn.
    */
-  readonly ben?: { readonly frame: string; readonly left: number; readonly rise: number; readonly visibleRows: number; readonly behind: boolean; readonly hidden?: boolean };
+  readonly ben?: { readonly frame: string; readonly left: number; readonly rise: number; readonly visibleRows: number; readonly keepCanvasRows: number; readonly behind: boolean; readonly hidden?: boolean };
 }
 export interface Sequence {
   readonly loop: boolean;
@@ -73,6 +73,8 @@ export interface KeyedDesign extends DesignCommon {
   readonly badgeSegment: Segment;
   /** The back frame that stays once the door has opened, or null when the door only disappears. */
   readonly heldOpenFrame: string | null;
+  /** What the held open frame keeps of the closed door's case: its lintel strip and its side faces. Null when there is no held frame. */
+  readonly heldOpenKeeps: { readonly topStrip: boolean; readonly sideFace: boolean } | null;
   readonly placement: { readonly anchor: 'floor-line column'; readonly note: string };
   readonly layers: { readonly back: KeyedLayer; readonly glow: KeyedLayer };
   readonly bytes: KeyedBytes;
@@ -86,6 +88,15 @@ export interface ExitDesign extends DesignCommon {
   readonly bytes: ExitBytes;
 }
 export type Design = KeyedDesign | ExitDesign;
+/** The standing answers from the Fizz 2 session and the defaults chosen where Scott has not yet decided. */
+export interface Fizz2Answers {
+  readonly keyedHeight: { readonly standardTiles: number; readonly minimumTiles: number; readonly standardPx: number; readonly minimumPx: number; readonly note: string; readonly twinLeavesClearOpening: { readonly tiles2: number; readonly tiles3: number; readonly interiorWidth: number }; readonly benBodyPx: number };
+  readonly heldOpen: { readonly defaultKeeps: boolean; readonly decidedBy: string; readonly status: string; readonly keeps: readonly string[]; readonly note: string };
+  readonly night: { readonly litArt: string; readonly glowLayer: string; readonly status: string };
+  readonly dosMemory: { readonly copies: number; readonly bytesPerCopyMax: number; readonly bytesBothColoursMax: number; readonly sharedGrids: boolean; readonly perFamily: Readonly<Record<string, number>>; readonly note: string };
+  readonly sound: { readonly dooropenMs: string; readonly status: string; readonly proposedOpeningMs: string; readonly openingMs: Readonly<Record<string, number>>; readonly note: string };
+  readonly facts: readonly string[];
+}
 export interface DoorDesigns {
   readonly generated: string;
   readonly palette: string;
@@ -94,6 +105,7 @@ export interface DoorDesigns {
   readonly ben: { readonly bodyHeight: number; readonly spriteWidth: number; readonly note: string };
   readonly walkIn: { readonly contract: string; readonly animation: string; readonly spriteLeft: number; readonly spriteRule: string; readonly startBelowSill: string; readonly previewStartBelowSill: number };
   readonly sidePass: { readonly animation: string; readonly note: string };
+  readonly fizz2: Fizz2Answers;
   readonly drawOrder: readonly string[];
   readonly designs: readonly Design[];
 }
@@ -212,4 +224,26 @@ export function validateDesign(design: Design, palette: Palette): string[] {
     if (frameTotal > 8) errors.push(`${design.id}: a layer has ${frameTotal} frames, more than 8`);
   }
   return errors;
+}
+
+/** The rows of the top segment that are the case's lintel strip (the dark edge and the lit top). */
+export const TOP_STRIP_ROWS = 2;
+/** The columns each side of a segment that are the case's side faces (outline and lit or shaded jamb). */
+export const SIDE_FACE_COLUMNS = 2;
+/** Whether the held open frame keeps the closed door's lintel strip and side faces exactly, so the case never opens up behind Ben. */
+export function heldOpenKeeps(design: KeyedDesign): { topStrip: boolean; sideFace: boolean } | null {
+  if (!design.heldOpenFrame) return null;
+  const closed = design.layers.back.frames[design.sequences.closed.frames[0].back!], held = design.layers.back.frames[design.heldOpenFrame];
+  const topStrip = (closed.top ?? []).slice(0, TOP_STRIP_ROWS).every((row, y) => row === held.top?.[y]);
+  const side = (row: string): string => row.slice(0, SIDE_FACE_COLUMNS) + row.slice(row.length - SIDE_FACE_COLUMNS);
+  const sideFace = SEGMENTS.every(segment => (closed[segment] ?? []).every((row, y) => side(row) === side(held[segment]?.[y] ?? '')));
+  return { topStrip, sideFace };
+}
+/** The longest run of rows whose interior columns (past the jamb faces) are all transparent, for a door `tiles` tall: the opening Ben passes. */
+export function clearOpeningRows(frame: SegmentGrids, tiles: number, from = 4, to = 14): number {
+  let best = 0, run = 0;
+  for (const row of composeKeyed(frame, tiles)) {
+    if ([...row.slice(from, to)].every(code => code === '.')) best = Math.max(best, ++run); else run = 0;
+  }
+  return best;
 }

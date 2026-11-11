@@ -15,7 +15,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import palette from '../source/game-palette.json';
 import pass from '../source/ben-door-pass.json';
-import { exitBytes, keyedBytes, validateDesign, type DoorDesigns, type ExitDesign, type ExitLayer, type Grid, type KeyedDesign, type Segment, type SegmentGrids, type Sequence, type Step } from '../src/doors.ts';
+import { clearOpeningRows, exitBytes, heldOpenKeeps, keyedBytes, validateDesign, type DoorDesigns, type Fizz2Answers, type ExitDesign, type ExitLayer, type Grid, type KeyedDesign, type Segment, type SegmentGrids, type Sequence, type Step } from '../src/doors.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const OUT = root + 'source/door-designs.json';
@@ -178,24 +178,25 @@ function slideCell(shift: number) {
 }
 
 /** Twin Leaves: a fixed transom with the badge over two leaves that slide apart into the jambs; the lock splits at the seam. */
+/** The transom takes the top 11 rows of the top segment: the lintel, the badge plate and its k underline. Everything below is open doorway once the leaves part. */
+const TWIN_TRANSOM_ROWS = 11;
 const TWIN_LOCK = ['.kkkk.', 'kWyyyk', 'kykkyk', 'kykkyk', 'kyyyNk', '.kkkk.'];
 function twinLeaf(seg: Segment, side: 'left' | 'right', col: number, y: number): string | null {
-  if (seg === 'top' && y < 13) return null;
+  if (seg === 'top' && y < TWIN_TRANSOM_ROWS) return null;
   if (seg === 'bot' && y === 15) return null;
   const x = side === 'left' ? 2 + col : 8 + col;
   if (seg === 'bot' && y >= 2 && y <= 7 && x >= 5 && x <= 10) { const code = TWIN_LOCK[y - 2][x - 5]; if (code !== '.') return code; }
   if (seg === 'bot' && y === 14) return 'Q';
-  if (seg === 'top' && y === 13) return side === 'left' ? 'P' : col === 5 ? 'Q' : 'P';
+  if (seg === 'top' && y === TWIN_TRANSOM_ROWS) return side === 'left' ? 'P' : col === 5 ? 'Q' : 'P';
   const rail = seg === 'mid' ? y === 6 : seg === 'bot' ? y === 11 : false;
   if (side === 'left') { if (col === 5) return 'k'; if (col === 4) return 'Q'; if (col === 0) return 'P'; if (rail) return 'Q'; return col === 1 ? 'P' : (hash(x, SEG_Y[seg] + y, 5) < 0.06 ? 'Q' : 'P'); }
   if (col === 0) return 'P'; if (col === 5) return 'Q'; if (rail) return 'Q'; return hash(x, SEG_Y[seg] + y, 5) < 0.06 ? 'Q' : 'P';
 }
 function twinTransom(seg: Segment, x: number, y: number): string | null {
-  if (seg !== 'top' || y < 2 || y > 12) return null;
-  if (y === 11) return 'D';
-  if (y === 12) return 'k';
-  if (x >= 3 && x <= 11 && y >= 2 && y <= 10) return plateCell(x - 3, y - 2);
-  return x === 2 || y === 2 ? 'Q' : 'Q';
+  if (seg !== 'top' || y < 2 || y >= TWIN_TRANSOM_ROWS) return null;
+  if (y === TWIN_TRANSOM_ROWS - 1) return 'k';
+  if (x >= 3 && x <= 11) return plateCell(x - 3, y - 2);
+  return 'Q';
 }
 function twinCell(part: number) {
   return (seg: Segment, x: number, y: number): string => {
@@ -205,7 +206,7 @@ function twinCell(part: number) {
     if (transom) return transom;
     if (x >= 2 && x <= 7) { const col = x - 2 + part; if (col <= 5) return twinLeaf(seg, 'left', col, y) ?? openCell(seg, x, y); }
     if (x >= 8 && x <= 13) { const col = x - 8 - part; if (col >= 0) return twinLeaf(seg, 'right', col, y) ?? openCell(seg, x, y); }
-    return seg === 'top' && y === 13 && x < 13 ? 'k' : openCell(seg, x, y);
+    return openCell(seg, x, y);
   };
 }
 
@@ -348,12 +349,13 @@ function keyedDesigns(plan: KeyedPlan): KeyedDesign[] {
       emptyEnding: { loop: true, note: 'The optional ending: after the opening frames the door is not drawn at all, as in Fizz 1.', frames: [step(null, null)], durationsMs: [1000] },
     };
     const layers = { back: { frames: back }, glow: { frames: glow } };
-    return {
+    const design: KeyedDesign = {
       id: `${plan.family}-${colour}`, family: plan.family, kind: colour === 'red' ? 'keyed-red' : 'keyed-blue', name: plan.name, idea: plan.idea, why: plan.why, behaviour: plan.behaviour, notes: plan.notes,
-      segment: { w: T, h: T }, badge: COLOURS[colour].badge, badgeSegment: 'top', heldOpenFrame: plan.held,
+      segment: { w: T, h: T }, badge: COLOURS[colour].badge, badgeSegment: 'top', heldOpenFrame: plan.held, heldOpenKeeps: null,
       placement: { anchor: 'floor-line column', note: 'A column of terrain tiles standing on the floor line, drawn in the ground pass with the terrain, before Ben.' },
       glow: KEYED_GLOW, sequences, layers, bytes: keyedBytes(layers),
     };
+    return { ...design, heldOpenKeeps: heldOpenKeeps(design) };
   });
 }
 
@@ -378,7 +380,7 @@ const KEYED: KeyedPlan[] = [
     family: 'twin-leaves', name: 'Twin Leaves', behaviour: 'animated-open',
     idea: 'Two half leaves part from the middle under a fixed transom that carries the badge; the lock splits at the seam.',
     why: 'The badge never moves, so the open doorway still says which key opened it; the split lock is a clear unlocked cue.',
-    notes: ['The transom takes the top 13 rows of the top segment, so a two-tile door has a 19 px opening under it; three tiles give 35 px, taller than Ben.', 'The badge is visible in every frame, open included.'],
+    notes: ['The transom takes the top 11 rows of the top segment (the lintel, the badge plate and its underline). Under it the opening is 10 px wide between the jamb faces and 36 px tall on the standard 3-tile door, 4 px over the 32 px body of Ben; the 2-tile minimum leaves only 20 px, so a 2-tile Twin Leaves is tight and Ben passes in front of it rather than through a clear gap.', 'The badge is visible in every frame, open included.'],
     frames: { closed: { cell: twinCell(0), badge: true }, part2: { cell: twinCell(2), badge: true }, part4: { cell: twinCell(4), badge: true }, open: { cell: twinCell(6), badge: true } },
     closed: 'closed', opening: [{ frame: 'part2', ms: 80 }, { frame: 'part4', ms: 80 }], held: 'open',
   },
@@ -557,17 +559,17 @@ const EXIT_GLOW = { bank: 'GLOW: bank 2, level 14, left at full brightness by th
 // sprite's left edge 2 px left of the exit, rising one pixel a frame, its bottom rows hidden by the lip and then cropped.
 const WALK_IN = pass.farPlaneWalkIn;
 /**
- * The preview's floor line below the sill; the game defines its own. At 10 Ben's crown stays inside the arch's opening for
- * all 7 px of the rise; any less and it ends above the 35 px arch.
+ * The floor line below the sill, as Fizz 2 has it: 16 px (one tile), per `docs/OBLIQUE.md` in the Fizz 2 repo. Standing Ben's
+ * head is then 17 px above the sill inside the 35 px arch, and the 7 px rise keeps it inside.
  */
-const PREVIEW_START_BELOW_SILL = 10;
+const PREVIEW_START_BELOW_SILL = 16;
 const walkIn = (back: string, glow: string | null, over: (index: number) => string | null = () => null): Step[] => WALK_IN.perFrame.map((frame, index) => ({
   back, front: 'lip', glow, ...(over(index) ? { glowOver: over(index) } : {}),
-  ben: { frame: frame.name, left: WALK_IN.placement.spriteLeft, rise: -frame.offsetFromStart.y, visibleRows: frame.visibleRows, behind: true },
+  ben: { frame: frame.name, left: WALK_IN.placement.spriteLeft, rise: -frame.offsetFromStart.y, visibleRows: frame.visibleRows, keepCanvasRows: frame.keepCanvasRows, behind: true },
 }));
 const WALK_MS = WALK_IN.perFrame.map(frame => frame.durationMs);
 const last = WALK_IN.perFrame[WALK_IN.perFrame.length - 1];
-const gone = { frame: last.name, left: WALK_IN.placement.spriteLeft, rise: -last.offsetFromStart.y, visibleRows: 0, behind: true, hidden: true };
+const gone = { frame: last.name, left: WALK_IN.placement.spriteLeft, rise: -last.offsetFromStart.y, visibleRows: 0, keepCanvasRows: 0, behind: true, hidden: true };
 
 interface ExitPlan { family: string; name: string; idea: string; why: string; behaviour: ExitDesign['behaviour']; notes: string[]; back: Record<string, string[]>; glow: Record<string, string[]>; sequences: Record<string, Sequence> }
 function exitDesign(plan: ExitPlan): ExitDesign {
@@ -655,9 +657,52 @@ const EXITS: ExitPlan[] = [
   },
 ];
 
+// ---------- the Fizz 2 session's answers ----------
+const designs = [...KEYED.flatMap(keyedDesigns), ...EXITS.map(exitDesign)];
+const keyedRed = designs.filter((design): design is KeyedDesign => design.kind === 'keyed-red');
+const sumMs = (values: readonly number[] | undefined): number => (values ?? []).reduce((a, b) => a + b, 0);
+const twin = keyedRed.find(design => design.family === 'twin-leaves')!;
+const twinOpen = twin.layers.back.frames[twin.heldOpenFrame!];
+const perFamilyBytes = Object.fromEntries(keyedRed.map(design => [design.family, design.bytes.segments.total]));
+const largestKeyed = Math.max(...Object.values(perFamilyBytes));
+const fizz2: Fizz2Answers = {
+  keyedHeight: {
+    standardTiles: 3, minimumTiles: 2, standardPx: 3 * T, minimumPx: 2 * T, benBodyPx: 32,
+    note: '3 tiles (16 × 48) is the standard door height. 2 tiles (16 × 32) is shown as a minimum only: Ben\'s body is exactly 32 px tall in the trial, so a 2-tile door fits him with no margin. The keyed door is a column of tiles, and the level decides how many.',
+    twinLeavesClearOpening: { tiles2: clearOpeningRows(twinOpen, 2), tiles3: clearOpeningRows(twinOpen, 3), interiorWidth: 10 },
+  },
+  heldOpen: {
+    defaultKeeps: true, decidedBy: 'Scott', status: 'Default pending Scott\'s choice',
+    keeps: ['top strip (the lintel and its lit top)', 'side face (the lit left jamb and the shaded right jamb)'],
+    note: 'The held open frame keeps the closed door\'s lintel strip and side faces as decoration. They are never solid: Ben is drawn in front of the whole door and nothing blocks him. The empty ending stays available.',
+  },
+  night: {
+    litArt: 'The lift leaves, the shutter and every other door leaf and arch are ordinary lit art (bank 0): they dim with the scene at night.',
+    glowLayer: 'Only the separate glow layer (the keyed badge, the exit\'s light and arrow) is drawn in the glow bank (bank 2, level 14) and stays at full brightness.',
+    status: 'Default, from the Fizz 2 session',
+  },
+  dosMemory: {
+    copies: 2, bytesPerCopyMax: largestKeyed, bytesBothColoursMax: largestKeyed * 2, sharedGrids: true, perFamily: perFamilyBytes,
+    note: 'Red and blue are two stored copies, about 2.2 KB each at most, with identical grids (only the paint letters and the badge shape differ) so one colour-swapped copy stays possible later.',
+  },
+  sound: {
+    dooropenMs: 'about 500, with a latch thud at the end',
+    status: 'Open decision for Scott: the `dooropen` sound is left as it is',
+    proposedOpeningMs: '180 to 300',
+    openingMs: Object.fromEntries([...keyedRed, ...designs.filter((design): design is ExitDesign => design.kind === 'exit')].filter(design => design.sequences.opening?.durationsMs.length).map(design => [design.family, sumMs(design.sequences.opening.durationsMs)])),
+    note: 'The openings here run 160 to 300 ms, shorter than the sound\'s 0.5 s, so the latch thud lands after the door has finished moving. Whether to retime the openings to the sound or cut the sound to 180 to 300 ms is Scott\'s call.',
+  },
+  facts: [
+    'The feet line is 16 px (one tile) below the exit\'s far-edge sill (`docs/OBLIQUE.md` in the Fizz 2 repo), so standing Ben\'s head is 17 px above the sill inside the 35 px arch, and the 7 px rise keeps it inside.',
+    'The walk-in\'s crop riding with Ben is accepted by Fizz 2: no raised lip is needed.',
+    'The keyed door is a column of tiles whose height the level decides.',
+    'The Fizz 2 session will write the importer, the front-layer pass after Ben, the door-opening presentation state and the walk-in.',
+    'Nothing is imported until Scott picks a keyed door, an exit and the ending.',
+  ],
+};
+
 // ---------- output ----------
 
-const designs = [...KEYED.flatMap(keyedDesigns), ...EXITS.map(exitDesign)];
 const data: DoorDesigns = {
   generated: GENERATED,
   palette: 'source/game-palette.json',
@@ -673,6 +718,7 @@ const data: DoorDesigns = {
     previewStartBelowSill: PREVIEW_START_BELOW_SILL,
   },
   sidePass: { animation: 'walk-run-6', note: 'Keyed doors are drawn before Ben, so Ben is in front of the whole door; he overlaps it only once it is open and passable.' },
+  fizz2,
   drawOrder: [
     'Ground pass: back wall or sky, far-plane dressing, the exit (back, glow, then the front lip), terrain from the bottom row up with the keyed doors (back, then glow), spikes',
     'Keys and snacks', 'Chicken', 'Shots', 'Puffs',
