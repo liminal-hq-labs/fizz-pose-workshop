@@ -2,6 +2,8 @@
 
 This sheet is the agreed design for Ben as a three-dimensional cartoon character. It records what is settled, what is still being refined and what is undecided, so the model, its exports and any later artwork work from one description. The sprites remain the authored reference artwork; where a sprite and this sheet differ, the difference is listed under [Sprite shorthand](#sprite-shorthand).
 
+The current build of this design is `prototypes/ben-g/tuning-bench.html`: one self-contained page, opened directly in a browser, that loads Three.js from a CDN. It holds the skinned body, the seventeen-bone rig, fifteen poses, hand posing and switches for the choices still being compared. It is a prototype in plain JavaScript; the design is to be ported into `src/model-3d/` so it shares the workshop's rig, pose library, GLB export and review tools.
+
 Each item carries one of three states:
 
 - **Locked** — decided. Change it only by editing this sheet first.
@@ -10,7 +12,7 @@ Each item carries one of three states:
 
 ## Who he is
 
-Ben "Lieutenant Fizz" Blaze is a neighbourhood tinkerer who follows his older cousin Billy into space wearing a bicycle helmet, with a modified pogo stick under one arm and a Fizz Stunner on his hip. He is an ordinary kid who goes on adventures: skinny, quick, cheerful and determined. He reads as a cartoon, in clean flat colours with an ink line, and never as a toy with an oversized round head.
+Ben "Lieutenant Fizz" Blaze is a neighbourhood tinkerer who follows his older cousin Billy into space wearing a bicycle helmet, with a modified pogo stick under one arm and a Fizz Stunner on his hip. He is an ordinary kid who goes on adventures: skinny, quick, cheerful and determined. The games borrow the look of the 1990s, but Ben is a child of the 2020s: he messages his friends, looks things up and carries a telephone and a wrist computer. He reads as a cartoon, in clean flat colours with an ink line, and never as a toy with an oversized round head.
 
 - **Ink line** — Locked as a look, with an adjustable weight. The black outline is drawn by the renderer around the silhouette, so its thickness is a setting and not part of the mesh. The default is thin enough to appear and vanish as he moves.
 
@@ -33,7 +35,7 @@ Locked. One unit is one sprite pixel of the 24 × 44 side view, with the floor a
 | Torso width × depth | 5.4 × 4.0 |
 | Upper arm / forearm / hand | 4.4 / 3.8 / 2.6 |
 | Thigh / shin / ankle height | 4.5 / 4.25 / 2.1 |
-| Shoe length × width | 6.4 × 2.7 |
+| Shoe length × width | 5.75 × 2.5 |
 
 The head is an egg, taller than it is wide and deeper than it is wide, on a short neck: the chin sits just above the collar. The body is one continuous surface. Shoulders, elbows, waist, hips and knees bend as a person's do, with no visible ball or bulge at a joint.
 
@@ -60,11 +62,12 @@ Locked. These are the model's flat base colours; lighting produces the shades be
 ## Head and face
 
 - **Eyes** — Locked. Large upright ovals: white, a blue iris, a dark pupil and one white glint, under short brown-blond eyebrows.
+- **Gaze** — Refine. The irises move inside the eyes, so he looks at his wrist computer, his telephone, the ladder above him or an enemy instead of staring ahead. Each pose sets a direction; finer control is still to come.
 - **Nose** — Locked. A small round button.
 - **Hair** — Locked. Close-cropped brown-blond, showing at the temples and nape below the helmet, with a small fringe escaping under the front rim.
 - **Ears** — Locked. Small, at mid-depth, below the helmet rim.
-- **Cheeks** — Refine. A hint of colour that gives the cheeks shape. The current pink ovals are too strong; they should be fainter and softer, or be replaced by a different way of shaping the cheek.
-- **Expressions** — Refine. He needs a full range: smiling (the default), whistling, shouting, determined and worried at the least, each built from eyebrows, eyelids and mouth together. Blinking is part of every idle.
+- **Cheeks** — Locked. No blush or cheek marks; the shape of the face carries the cheeks.
+- **Expressions** — Refine. He needs a full range: smiling (the default), whistling, shouting, determined and worried at the least, each built from eyebrows, eyelids and mouth together. Blinking is part of every idle. The five are in place as first drafts.
 
 ## Clothes
 
@@ -72,47 +75,51 @@ Locked. These are the model's flat base colours; lighting produces the shades be
 - **Chest print** — Locked. The bubble trio: three yellow bubbles of different sizes with brown rims and a white glint each.
 - **Jeans** — Locked. Slim blue denim jeans held by a dark belt with a yellow buckle.
 - **Cloth detail** — Refine. Clothes carry a little construction detail so they read as cloth: a hem at the sleeves and waist of the shirt, and side seams, hems and pockets on the jeans. The detail also helps the sleeves sit on the shoulders as part of the shirt instead of as tubes beside the torso.
-- **Jeans stripe** — Locked. The bright stripe down each leg is lighting in the sprite. Painted on, it turns the jeans into track trousers, so the model has no stripe; a highlight on the denim comes from the lighting alone.
-- **Hands** — Refine. Bare, with a thumb and three fingers in the cartoon convention. No gloves. The finger and palm shapes need more care, and each finger needs its own joints so he can grip.
-- **Runners** — Refine. Red running shoes with white rubber soles, a white rubber toe cap that wraps up over the front, white laces and a yellow badge on the outer side. The colour scheme is locked; the shoe shape is to be explored in a few variations.
+- **Jeans detail** — Locked. The jeans keep two features that began as sprite lighting and work as design: a light stripe down the front of each leg and a darker seam down each outer side. Hems and back pockets complete them.
+- **Hands** — Refine. Bare, with a thumb and three fingers in the cartoon convention. No gloves. They have a flat palm, knuckles and jointed fingers and thumb; they still need to read less like a mitten, especially around the Stunner's grip.
+- **Runners** — Locked. Red high-top running shoes with white rubber soles, a white rubber toe cap that wraps up over the front, white laces and a yellow badge on the outer side. The collar covers the ankle so the jeans never show through it.
 
 ## Gear
 
-- **Bare-headed** — Refine. He can take the helmet off, for example in a bored idle while he waits, so his hair needs a complete design on top as well as at the edges. The current top is a first draft.
-- **Helmet** — Locked. A close-fitting green bicycle helmet with a white stripe along the centre rib, dark vents either side, a grey rim and a rounded tail at the back. It crowns about one unit above the skull, so it reads as a helmet rather than a cap.
-- **Chin strap** — Refine. Dark webbing with a grey buckle under the chin. It must visibly meet the helmet shell in front of and behind each ear; it currently hangs clear of it.
-- **Fizz Stunner** — Refine. Worn on the right hip. Ben collects cans of fizz, cream soda in Episode 1 and grape in Episode 2, and the Stunner fires that carbonated fizz to stun enemies. A shot is a floating orb in the colour of the fizz. It is a cartoon science-fiction sidearm with real punch: rounded, detailed and clearly powered by pop, without having to look like a literal bottle. The concept is locked; three shapes are under comparison, a can loader, a bubble dome and a pop bottle.
+- **Bare-headed** — Refine. He takes the helmet off in some idles, holding it by the straps, so his hair has a complete top. The hairline at the temples is still a hard edge.
+- **Helmet** — Refine. A close-fitting green bicycle helmet with a white stripe along the centre, a grey rim and a gentle teardrop tail. The shell has real thickness, with a darker liner inside. Its vents are cut through the shell like a real helmet's, with painted vents kept as an alternative; the cut edges are still coarse.
+- **Chin strap** — Locked. Dark webbing hangs from the rim in front of and behind each ear, meets at a grey divider below the ear and runs under the chin to a buckle.
+- **Fizz Stunner** — Refine. Worn on the right hip. Ben collects cans of fizz, cream soda in Episode 1 and grape in Episode 2, and the Stunner fires that carbonated fizz to stun enemies. A shot is a floating orb in the colour of the fizz. It is a cartoon science-fiction sidearm with real punch: rounded, detailed and clearly powered by pop. The chosen design is the can loader: a round drum with a flared nozzle, and a can of fizz that loads into the back. The pop bottle design is the runner-up and may return as a second weapon or a prop.
 - **Fizz colour** — Locked. Everything powered by fizz takes the episode's flavour: pink cream soda in Episode 1, grape in Episode 2.
-- **Wrist computer** — Refine. A small computer strapped to his left wrist with a glowing screen, two buttons and a stub aerial. It exists on the model only; the sprites do not show it. Its shape is a first draft.
-- **Where the pogo stick lives** — Refine. It appears when he needs it, as tools do in action games. On the model he pulls it from a back pocket, or from the backpack when he wears one; that transition is still to be animated.
+- **Wrist computer** — Refine. A small computer strapped to his left wrist with a glowing screen and two buttons. It shows his map, sends and receives messages and answers quick questions through his own AI helper, as an extension of his telephone. It has no aerial in normal use; a pull-out aerial may appear in a pose where he plays with it. It exists on the model only so far.
+- **Where the pogo stick lives** — Refine. It appears when he needs it, as tools do in action games. On the model he pulls it from a back pocket, or from the backpack when he wears one. Both draws are still to be animated.
 - **Pogo stick** — Locked. A yellow shaft with a red band, a yellow T handlebar with black rubber grips and red bar ends, dark footpegs with yellow end caps and a coil spring over a chrome plunger on a rubber tip.
-- **Backpack** — Locked as optional gear. The model can wear it or leave it off; Ben without it is the default. It carries a can of fizz in a side pocket.
+- **Backpack** — Locked as optional gear. The model can wear it or leave it off; Ben without it is the default. Its straps loop over the shoulders and under the arms, it carries a can of fizz in a side pocket and the pogo stick rides in it.
 - **Telephone** — Locked as a prop. A dark slab whose screen lights his face and hands in the seated idle.
 
 ## Movement
 
-The eleven poses follow the workshop's newest sprite sets: stand, run, pogo, Fizz Stunner, jump, fall, ladder climb, ledge hang, whistle, seated phone and the dramatic death.
+The first eleven poses follow the workshop's newest sprite sets: stand, run, pogo, Fizz Stunner, jump, fall, ladder climb, ledge hang, whistle, seated phone and the dramatic death. Motion on the model is bigger and more dramatic than the sprites allow, and the hips and shoulders counter-rotate so he never moves as a stiff block.
 
-- **Run, climb, whistle, phone** — Locked in character. Light, bouncy and readable.
-- **Jump** — Refine. The stride and reach are exaggerated in the sprite because a small sprite needs it. In three dimensions the jump should be subtler: a shorter stride and less arm reach.
-- **Pogo grip** — Refine. Each hand wraps its own handlebar grip, fingers over the front and thumb behind. The hands must not meet in the middle or clasp each other.
+- **Run** — Refine. Heel strike, roll, toe-off and a flight phase, with the hips and shoulders twisting against each other. Foot contact still needs polish.
+- **Pogo** — Refine. Each hand wraps its own handlebar grip, fingers over the front. The spine and chest squash and stretch with the spring; he should read as springy rather than rigid.
+- **Jump** — Locked. Subtler than the sprite: a shorter stride and less arm reach.
+- **Climb** — Refine. The hips and shoulders sway from side to side, the knees turn out past the ladder and the hands stay clear of the face.
+- **Dramatic death** — Refine. The model holds one beat of it; the sprite sequence's belly clutch, changing faces and final topple are still to be added.
+- **Bored idles** — Refine. Besides the telephone and whistling: checking the wrist computer, tipping the helmet to a nearby enemy, taking the helmet off to scratch his head and rocking on his heels. These four exist as first drafts. Spinning the helmet on a finger and playing with the wrist computer's aerial are still to come.
+- **Drawing the pogo stick** — Open. See [Open questions](#open-questions).
+
+## Sprites from the model
+
+Poses that exist only on the model have no sprite yet. The workshop already renders the earlier 3D Ben into reference grids on the sprite canvas, in the 16 game colours with a black outline, for tracing in the pixel editor. The same route can produce first-draft sprites of the new poses from this model, in the lab's frame format, to be cleaned by hand.
 
 ## Sprite shorthand
 
 The sprites compress detail into very few pixels. These features belong to that shorthand and are not copied literally into the model:
 
 - **White skin.** The sprite uses the palette's white for skin. The model uses a natural skin tone.
-- **Light-red shoulders and sleeves.** Light falling on a single red shirt, not a second colour of cloth.
-- **The bright stripe on the jeans.** Light on denim.
+- **Light-red shoulders and sleeves.** Light falling on a single red shirt, not a second colour of cloth. The jeans' stripe and side seam began the same way and are kept as design.
 - **The yellow cross on the chest.** The bubble trio at the size a sprite allows.
 - **The Stunner's outline.** A stand-in for a design that cannot be drawn in a four by five pixel patch.
 - **The black outline.** Ink, not physical thickness on the helmet or shoes.
 
 ## Open questions
 
-1. **The Stunner's shape.** Which of the three designs, or which parts of each?
-2. **Runner shape.** High-top, low runner or chunky?
-3. **Cheeks.** A soft tint, a small crease line or nothing?
-4. **The wrist computer.** What does it do in the story: a map, a link to Billy, a fizz gauge? Its job decides its screen and buttons.
-5. **Drawing the pogo stick.** A quick cartoon pull from the back pocket, or a simple pop into his hands?
-6. **The helmet idle.** When he is bored, does he take the helmet off, tip it back or spin it on a finger?
+1. **Drawing the pogo stick.** A quick cartoon pull from the back pocket or backpack, or a simple pop into his hands?
+2. **The pop bottle.** Does the runner-up Stunner design have a place: a second weapon, a power-up or a prop?
+3. **Sprites of the new poses.** Should the new idles get sprite versions straight away, or once the model's poses are polished?
