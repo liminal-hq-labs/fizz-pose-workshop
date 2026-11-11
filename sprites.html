@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fizz 2 · Sprite checklist</title>
+<meta name="description" content="Old and new Ben sprites side by side, with what is done, what is in the game and what is still missing.">
+</head>
+<body class="sprites-page">
+<header>
+  <div class="eyebrow">LIEUTENANT FIZZ / ART WORKSHOP</div>
+  <h1>Fizz 2 · Sprite checklist</h1>
+  <p>Every sprite slot Ben needs, with the old game sprite beside the new workshop art. Gaps sort to the top of each group. Previews never mirror: left-facing art is its own set of frames, and the Fizz Stunner stays on his right hip.</p>
+  <nav aria-label="Page links"><a href="./">&larr; Back to the workshop</a></nav>
+  <p class="small"><span id="generated"></span> <span id="sources"></span></p>
+</header>
+
+<main>
+  <section aria-labelledby="progress-heading" class="panel">
+    <h2 id="progress-heading">Progress</h2>
+    <div id="progress-bar" class="progress" role="progressbar" aria-labelledby="progress-heading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-ready"></span><span id="progress-game"></span></div>
+    <p id="progress-text"></p>
+    <p class="small legend"><span class="swatch-key ready"></span> New art ready <span class="swatch-key game"></span> Already in the game</p>
+    <ul id="tiles" class="tiles" aria-label="Slots per status. Choose one to filter the table."></ul>
+    <p id="games-line" class="small"></p>
+  </section>
+
+  <form id="f-form" class="filters panel" role="search" aria-label="Filter the checklist">
+    <label>Search<input id="f-search" type="search" placeholder="Slot, frame or note"></label>
+    <label>Status<select id="f-status"></select></label>
+    <label>Group<select id="f-group"></select></label>
+    <label>Game usage<select id="f-usage"></select></label>
+    <label>Order<select id="f-sort"><option value="gaps-first">Gaps first</option><option value="inventory">Inventory order</option></select></label>
+    <label class="check"><input id="f-gaps" type="checkbox">Show only gaps</label>
+    <button id="f-reset" type="button">Reset filters</button>
+  </form>
+
+  <div class="controls">
+    <button id="pause-all" type="button" aria-pressed="true">Pause all previews</button>
+    <label>Preview scale <select id="scale"><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
+  </div>
+  <p id="count" class="small" role="status" aria-live="polite"></p>
+  <p id="empty" class="empty" hidden></p>
+
+  <div class="table-wrap">
+    <table id="checklist">
+      <caption class="sr-only">Ben sprite slots with old and new previews, usage in each game, status and DOS cost</caption>
+      <thead><tr><th scope="col">Slot</th><th scope="col">In the games</th><th scope="col">Old sprite</th><th scope="col">New sprite</th><th scope="col">Status</th><th scope="col">DOS cost</th><th scope="col">Notes</th></tr></thead>
+    </table>
+  </div>
+</main>
+
+<footer>Standalone art study. Old sprites come from committed snapshots of the game; new sprites come from this workshop. <a href="./">Back to the workshop</a></footer>
+<script type="module" src="/src/sprites-page.ts"></script>
+</body>
+</html>
