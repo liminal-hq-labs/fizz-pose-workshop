@@ -38,6 +38,23 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .slot-name{display:block;font-weight:700;font-size:1rem}
 #checklist code{font-size:.75rem;color:#9bb3a4}
 details{margin-top:8px;font-size:.8rem}summary{cursor:pointer;color:var(--ok)}details p{margin:6px 0;font-size:.8rem}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.chips .badge{font-size:.72rem;padding:2px 8px;font-weight:600}
+.badge-facing-right,.badge-facing-left{color:var(--pr)}
+.badge-facing-front,.badge-facing-back,.badge-facing-none{color:#aebdb3;font-weight:400}
+.badge-nomirror{color:var(--art)}
+#checklist tbody tr[id]:target,#checklist tbody tr[id]:focus{outline:3px solid #fff;outline-offset:-3px}
+.matrix-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:8px 0}
+.matrix{width:100%;border-collapse:collapse}
+.matrix th,.matrix td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:.85rem;vertical-align:middle}
+.matrix thead th{background:#1b2b23;color:#a9ee73;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase}
+.matrix tbody th{font-weight:600}
+.matrix tr:last-child>*{border-bottom:0}
+.cell-link{display:flex;justify-content:space-between;gap:8px;align-items:baseline;padding:6px 10px;border-radius:8px;border:2px solid currentColor;background:#ffffff0d;text-decoration:none;font-weight:700;min-height:32px}
+.cell-link .cell-frames{font-weight:400;font-size:.75rem;color:#c3d6c8}
+.cell-link:hover{background:#ffffff1f}
+.cell-in-game{color:var(--ok)}.cell-ready-in-lab{color:var(--ready)}.cell-new-in-pr{color:var(--pr)}.cell-partial{color:var(--warn);border-style:dashed}
+.cell-missing{color:var(--bad);border-style:dotted}.cell-needs-pixel-art{color:var(--art);border-style:dashed}
 .usage{display:flex;gap:8px;align-items:center;margin-bottom:6px;white-space:nowrap}.usage .game{min-width:46px;color:#b4c7bc;font-size:.8rem}
 .muted{color:#9bb3a4}td>span>.muted{display:block}.warn{color:var(--warn)}
 .caption{display:flex;flex-direction:column;gap:2px;margin-top:8px;font-size:.78rem;color:#c3d6c8}
@@ -63,6 +80,10 @@ details{margin-top:8px;font-size:.8rem}summary{cursor:pointer;color:var(--ok)}de
 .tile.badge{border-radius:10px;font-weight:400;white-space:normal}
 
 @media(max-width:800px){
+  .matrix th,.matrix td{padding:4px 6px}
+  .cell-link{flex-direction:column;gap:0;padding:4px 6px}
+  .matrix thead th{font-size:.68rem;letter-spacing:0}
+
   .sprites-page{padding:16px}
   .panel{padding:14px}
   .table-wrap{overflow:visible;border:0}

@@ -25,13 +25,30 @@
     <p id="games-line" class="small"></p>
   </section>
 
+  <section aria-labelledby="matrix-heading" class="panel">
+    <h2 id="matrix-heading">Right and left</h2>
+    <p class="small">Each pose that faces a side, with the state of its right-facing and left-facing sprites. Left-facing art is drawn on its own because the Fizz Stunner is on Ben's right hip. Choose a state to jump to its row.</p>
+    <p id="matrix-summary" class="small"></p>
+    <p><button id="matrix-missing" type="button" aria-pressed="false">Show only slots missing a side</button></p>
+    <div class="matrix-wrap">
+      <table id="matrix" class="matrix">
+        <caption class="sr-only">Poses with a right-facing and a left-facing sprite, and the status of each</caption>
+        <thead><tr><th scope="col">Pose</th><th scope="col">Facing right</th><th scope="col">Facing left</th></tr></thead>
+        <tbody id="matrix-body"></tbody>
+      </table>
+    </div>
+    <p id="matrix-other" class="small"></p>
+  </section>
+
   <form id="f-form" class="filters panel" role="search" aria-label="Filter the checklist">
     <label>Search<input id="f-search" type="search" placeholder="Slot, frame or note"></label>
     <label>Status<select id="f-status"></select></label>
     <label>Group<select id="f-group"></select></label>
+    <label>Facing<select id="f-facing"></select></label>
     <label>Game usage<select id="f-usage"></select></label>
     <label>Order<select id="f-sort"><option value="gaps-first">Gaps first</option><option value="inventory">Inventory order</option></select></label>
     <label class="check"><input id="f-gaps" type="checkbox">Show only gaps</label>
+    <label class="check"><input id="f-side" type="checkbox">Missing a side</label>
     <button id="f-reset" type="button">Reset filters</button>
   </form>
 

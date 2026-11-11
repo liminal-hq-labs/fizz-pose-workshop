@@ -9,7 +9,7 @@ import workshop from '../assets.json';
 import './style.css';
 import './sprites.css';
 import {
-  STATUSES, defaultFilters, filterSlots, frameIndexAt, frameOffset, gridSize, gridToPixels, groupSlots, newPlayback, oldPlayback, parseInventory, parseSpriteSet,
+  STATUSES, buildFacingMatrix, defaultFilters, facingInfo, FACINGS, isMissingSide, isSideView, rowsMissingSide, filterSlots, frameIndexAt, frameOffset, gridSize, gridToPixels, groupSlots, newPlayback, oldPlayback, parseInventory, parseSpriteSet,
   progress, statusInfo, summarise, totalDosBytes, usageLabel,
   type Filters, type Playback, type Slot, type SortMode, type UsageFilter,
 } from './sprite-checklist.ts';
@@ -104,13 +104,17 @@ function buildRow(slot: Slot): HTMLTableRowElement {
   const all = [...oldPlay.frames, ...newPlay.frames].map(rows => gridSize(rows));
   const box = { width: Math.max(1, ...all.map(size => size.width)), height: Math.max(1, ...all.map(size => size.height)) };
   const evidence = [['Fizz 1', slot.games.fizz1], ['Fizz 2', slot.games.fizz2]].filter(([, usage]) => (usage as Slot['games']['fizz1']).evidence);
-  const slotCell = el('th', { scope: 'row', 'data-label': 'Slot' }, el('span', { class: 'slot-name' }, slot.label), el('code', {}, slot.id));
+  const stunnerHint = slot.stunnerSide === 'right-hip' ? 'The Fizz Stunner is on Ben\'s right hip.' : slot.stunnerSide === 'far-hip-left-facing' ? 'The Fizz Stunner is on Ben\'s right hip, the far hip when he faces left, so it is mostly hidden.' : '';
+  const chips = el('span', { class: 'chips' }, badge(`facing-${slot.facing}`, facingInfo(slot.facing).chip, facingInfo(slot.facing).label + (slot.pair ? `. Opposite side: ${slot.pair}` : '')));
+  if (slot.mirrorForbidden) chips.append(badge('nomirror', 'Never mirrored', `${stunnerHint} Draw each side separately; a flipped sprite puts the Stunner on the wrong hip.`.trim()));
+  if (isMissingSide(slot)) chips.append(badge('missing', 'Missing a side', 'This facing has no finished sprite yet'));
+  const slotCell = el('th', { scope: 'row', 'data-label': 'Slot' }, el('span', { class: 'slot-name' }, slot.label), el('code', {}, slot.id), chips);
   if (evidence.length) slotCell.append(el('details', {}, el('summary', {}, 'Evidence'), ...evidence.map(([game, usage]) => el('p', {}, `${game as string}: ${(usage as Slot['games']['fizz1']).evidence}`))));
   const count = (play: Playback) => play.expected ? `${play.frames.length}${play.frames.length < play.expected ? ' of ' + play.expected : ''} ${play.expected === 1 ? 'frame' : 'frames'}` : 'no frames';
   const oldCaption = slot.old ? [el('span', {}, `${slot.old.set || 'unknown set'} · ${count(oldPlay)}`), slot.old.note && el('span', { class: 'muted' }, slot.old.note)] : [el('span', {}, 'no old sprite')];
   const newCaption = slot.new ? [el('span', {}, `${originLabel(slot.new.origin)}${slot.new.frameSize ? ' · ' + slot.new.frameSize : ''} · ${count(newPlay)}`), newPlay.missing.length && newPlay.frames.length ? el('span', { class: 'warn' }, `Missing: ${newPlay.missing.join(', ')}`) : null] : [el('span', {}, 'no new sprite')];
   const dos = slot.dos;
-  return el('tr', { 'data-status': slot.status },
+  return el('tr', { id: `slot-${slot.id}`, tabindex: '-1', 'data-status': slot.status, 'data-facing': slot.facing },
     slotCell,
     el('td', { 'data-label': 'In the games' }, usageLine('Fizz 1', slot, 'fizz1'), usageLine('Fizz 2', slot, 'fizz2')),
     el('td', { 'data-label': 'Old' }, buildPreview('Old', slot, oldPlay, box, 'No old sprite recorded'), el('div', { class: 'caption' }, ...oldCaption)),
@@ -142,6 +146,38 @@ function renderSummary(): void {
   $('#games-line').textContent = `Fizz 1: ${summary.fizz1.used} used, ${summary.fizz1['could-use']} could use. Fizz 2: ${summary.fizz2.used} used, ${summary.fizz2['could-use']} could use.`;
 }
 
+const matrixRows = buildFacingMatrix(inventory.slots);
+function showSlot(id: string): void {
+  // A filtered-out row is brought back by clearing the filters, so a matrix link always lands somewhere.
+  if (!document.getElementById(`slot-${id}`)) { filters = { ...defaultFilters }; syncControls(); renderTable(); renderSummary(); renderMatrix(); }
+  const row = document.getElementById(`slot-${id}`);
+  if (!row) return;
+  row.scrollIntoView({ block: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
+  row.focus({ preventScroll: true });
+}
+function matrixCell(slot: Slot): HTMLTableCellElement {
+  const info = statusInfo(slot.status);
+  const link = el('a', { href: `#slot-${slot.id}`, class: `cell-link cell-${info.id}`, title: `${slot.id}: ${info.hint}` }, el('span', { class: 'cell-status' }, info.label), el('span', { class: 'cell-frames' }, slot.new ? `${slot.new.frames.length} ${slot.new.frames.length === 1 ? 'frame' : 'frames'}` : 'no frames'));
+  link.setAttribute('aria-label', `${slot.label}: ${info.label}`);
+  link.onclick = event => { event.preventDefault(); showSlot(slot.id); };
+  return el('td', { 'data-label': slot.facing === 'right' ? 'Facing right' : 'Facing left' }, link);
+}
+function renderMatrix(): void {
+  $('#matrix-body').replaceChildren(...matrixRows.map(row => el('tr', {}, el('th', { scope: 'row' }, row.label), matrixCell(row.right), matrixCell(row.left))));
+  const missing = rowsMissingSide(matrixRows), sides = inventory.slots.filter(isMissingSide).length;
+  $('#matrix-summary').textContent = matrixRows.length
+    ? `${matrixRows.length} poses have a right and a left slot. ${missing.length} of them have a side with no finished sprite (${sides} slots missing a side).`
+    : 'No right and left pairs are recorded in the inventory yet.';
+  const other = inventory.slots.filter(slot => !isSideView(slot));
+  const counts = FACINGS.filter(entry => entry.id !== 'right' && entry.id !== 'left').map(entry => [entry, other.filter(slot => slot.facing === entry.id).length] as const).filter(([, n]) => n);
+  $('#matrix-other').textContent = counts.length ? `Not in the matrix: ${counts.map(([entry, n]) => `${n} ${entry.label.toLowerCase()}`).join(', ')}.` : '';
+  const button = $<HTMLButtonElement>('#matrix-missing');
+  button.setAttribute('aria-pressed', String(filters.missingSide));
+  button.textContent = filters.missingSide ? 'Showing only slots missing a side (show all)' : 'Show only slots missing a side';
+  button.hidden = !matrixRows.length;
+  $('#matrix').closest('.matrix-wrap')!.toggleAttribute('hidden', !matrixRows.length);
+}
+
 function renderTable(): void {
   previews = [];
   const visible = filterSlots(inventory.slots, filters);
@@ -168,25 +204,30 @@ function syncControls(): void {
   $<HTMLSelectElement>('#f-usage').value = filters.usage;
   $<HTMLInputElement>('#f-search').value = filters.search;
   $<HTMLInputElement>('#f-gaps').checked = filters.gapsOnly;
+  $<HTMLSelectElement>('#f-facing').value = filters.facing;
+  $<HTMLInputElement>('#f-side').checked = filters.missingSide;
   $<HTMLSelectElement>('#f-sort').value = sort;
 }
 function option(value: string, label: string): HTMLOptionElement { return el('option', { value }, label); }
 function setupControls(): void {
   $('#f-status').append(option('all', 'All statuses'), ...STATUSES.map(status => option(status.id, status.label)));
   $('#f-group').append(option('all', 'All groups'), ...inventory.groups.map(group => option(group.id, group.label)));
+  $('#f-facing').append(option('all', 'Any facing'), ...FACINGS.map(entry => option(entry.id, entry.label)));
   const usageOptions: [UsageFilter, string][] = [['all', 'Any'], ['fizz1-used', 'Used in Fizz 1'], ['fizz2-used', 'Used in Fizz 2'], ['either-used', 'Used in either'], ['could-use', 'Could use'], ['unused', 'Unused']];
   $('#f-usage').append(...usageOptions.map(([value, label]) => option(value, label)));
   const update = () => {
     filters = {
       status: $<HTMLSelectElement>('#f-status').value, group: $<HTMLSelectElement>('#f-group').value, usage: $<HTMLSelectElement>('#f-usage').value as UsageFilter,
       search: $<HTMLInputElement>('#f-search').value, gapsOnly: $<HTMLInputElement>('#f-gaps').checked,
+      facing: $<HTMLSelectElement>('#f-facing').value, missingSide: $<HTMLInputElement>('#f-side').checked,
     };
     sort = $<HTMLSelectElement>('#f-sort').value as SortMode;
-    renderTable(); renderSummary();
+    renderTable(); renderSummary(); renderMatrix();
   };
-  for (const id of ['#f-status', '#f-group', '#f-usage', '#f-search', '#f-gaps', '#f-sort']) $(id).addEventListener('input', update);
+  for (const id of ['#f-status', '#f-group', '#f-facing', '#f-side', '#f-usage', '#f-search', '#f-gaps', '#f-sort']) $(id).addEventListener('input', update);
   $('#f-form').addEventListener('submit', event => event.preventDefault());
-  $('#f-reset').onclick = () => { filters = { ...defaultFilters }; sort = 'gaps-first'; syncControls(); renderTable(); renderSummary(); };
+  $('#f-reset').onclick = () => { filters = { ...defaultFilters }; sort = 'gaps-first'; syncControls(); renderTable(); renderSummary(); renderMatrix(); };
+  $('#matrix-missing').onclick = () => { filters = { ...filters, missingSide: !filters.missingSide }; syncControls(); renderTable(); renderSummary(); renderMatrix(); };
   const pause = $<HTMLButtonElement>('#pause-all');
   const label = () => { pause.textContent = globalPaused ? 'Play all previews' : 'Pause all previews'; pause.setAttribute('aria-pressed', String(!globalPaused)); };
   pause.onclick = () => { globalPaused = !globalPaused; for (const preview of previews) setPaused(preview, globalPaused); label(); };
@@ -214,5 +255,6 @@ $('#generated').textContent = inventory.generated ? `Inventory generated ${inven
 $('#sources').textContent = inventory.sources.map(source => `${source.id}: ${source.repo}@${source.ref}`).join(' · ');
 setupControls();
 renderSummary();
+renderMatrix();
 renderTable();
 requestAnimationFrame(tick);
