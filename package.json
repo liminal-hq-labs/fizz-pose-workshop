@@ -26,7 +26,8 @@
     "model:build-g": "bun scripts/build-ben-g.ts",
     "model:render-g": "bun scripts/render-ben-g.ts",
     "turntable:render": "bun scripts/render-turntable-reference.ts",
-    "branding:build": "bun scripts/build-branding.ts"
+    "branding:build": "bun scripts/build-branding.ts",
+    "doors:build": "bun scripts/build-door-designs.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
