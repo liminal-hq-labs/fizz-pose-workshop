@@ -2,6 +2,16 @@
   "name": "Ben Blaze · cartoon model (variation G)",
   "source": "prototypes/ben-g/tuning-bench.html",
   "units": "metres; one sprite pixel is 0.05 m",
+  "files": [
+    {
+      "file": "ben-g.glb",
+      "look": "lit"
+    },
+    {
+      "file": "ben-g-toon.glb",
+      "look": "toon"
+    }
+  ],
   "framesPerSecond": 24,
   "bones": [
     "pelvis",
@@ -22,7 +32,7 @@
     "legL-1",
     "foot-1"
   ],
-  "nodes": 338,
+  "nodes": 397,
   "animations": [
     {
       "name": "Stand",

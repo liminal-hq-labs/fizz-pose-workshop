@@ -1007,14 +1007,14 @@ function dumpModel(clips, fps) {
   function pose0() { applyPose(fig, POSE.stand(0, fig), 0); }
   var f = fig, nodes = [], objs = [], geos = {}, geoList = [], idOf = new Map();
   function b64(arr) { var u = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength), s = ''; for (var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
-  function keep(o) { if (o.isLight || o.isLine || o.isLineSegments || o === f.marker) return false; if (o.isMesh) { var m = o.material; if (o.userData.ol || m === lineMat || m.visible === false || m.side === T.BackSide) return false; } return true; }
+  function keep(o) { if (o.isLight || o.isLine || o.isLineSegments || o === f.marker) return false; if (o.isMesh) { var m = o.material; if (o.userData.ol) return true; if (m === lineMat || m.visible === false || m.side === T.BackSide) return false; } return true; }
   pose0(); if (f.J._helmet) { f.held = {}; [1, -1].forEach(function (s) { var c = f.J._helmet.clone(true); c.visible = false; f.J['hand' + s].add(c); f.held[s] = c; }); }
   (function walk(o, parent) { if (!keep(o)) return; var id = nodes.length, n = { parent: parent, name: o.userData.joint || (o.isMesh ? 'mesh' : 'node') + id, bone: !!o.isBone }; nodes.push(n); objs.push(o); idOf.set(o, id);
     if (o.isMesh) { var g = o.geometry, m = o.material;
       if (!(g.uuid in geos)) { geos[g.uuid] = geoList.length; var a = g.attributes, e = { position: b64(Float32Array.from(a.position.array)), normal: a.normal ? b64(Float32Array.from(a.normal.array)) : null };
-        if (m.vertexColors && a.color) e.color = b64(Float32Array.from(a.color.array)); if (g.index) e.index = b64(Uint32Array.from(g.index.array));
+        if (m.vertexColors && a.color && !o.userData.ol) e.color = b64(Float32Array.from(a.color.array)); if (g.index) e.index = b64(Uint32Array.from(g.index.array));
         if (a.skinIndex) { e.skinIndex = b64(Uint16Array.from(a.skinIndex.array)); e.skinWeight = b64(Float32Array.from(a.skinWeight.array)); } geoList.push(e); }
-      n.mesh = { geo: geos[g.uuid], color: m.color ? m.color.getHex() : 0xffffff, vertexColors: !!m.vertexColors, opacity: m.transparent ? m.opacity : 1, unlit: !!m.isMeshBasicMaterial, double: m.side === T.DoubleSide, skinned: !!o.isSkinnedMesh, outline: !!o.isSkinnedMesh || o.children.some(function (c) { return c.userData.ol; }) }; }
+      n.mesh = { geo: geos[g.uuid], color: m.color ? m.color.getHex() : 0xffffff, vertexColors: !!m.vertexColors, opacity: m.transparent ? m.opacity : 1, unlit: !!m.isMeshBasicMaterial, double: m.side === T.DoubleSide, skinned: !!o.isSkinnedMesh, ink: !!o.userData.ol, outline: !!o.isSkinnedMesh || o.children.some(function (c) { return c.userData.ol; }) }; }
     o.children.forEach(function (c) { walk(c, id); }); })(f.root, -1);
   nodes.forEach(function (n, i) { var o = objs[i]; if (o.isSkinnedMesh) n.mesh.skin = { bones: o.skeleton.bones.map(function (bn) { return idOf.get(bn); }), inverses: o.skeleton.boneInverses.map(function (m4) { return Array.from(m4.elements); }), bind: Array.from(o.bindMatrix.elements) }; });
   function snap() { return objs.map(function (o) { var v = o.visible; return [o.position.x, o.position.y, o.position.z, o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w, v ? o.scale.x : 0, v ? o.scale.y : 0, v ? o.scale.z : 0]; }); }
