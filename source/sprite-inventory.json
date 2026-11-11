@@ -1,0 +1,1781 @@
+{
+  "generated": "2026-11-11",
+  "sources": [
+    {
+      "id": "fizz1",
+      "repo": "/home/scott/source/liminal-hq/lieutenant-fizz",
+      "ref": "chore/google-play-deploy@9729c07 (main is 94f354d)"
+    },
+    {
+      "id": "fizz2",
+      "repo": "/home/scott/source/experiments/fizz-2",
+      "ref": "trial/lab-ben-sprites@7b948ae (main is 4ae26c6)"
+    },
+    {
+      "id": "lab",
+      "repo": "liminal-hq/fizz-pose-workshop (this repository)",
+      "ref": "feat/sprite-inventory@f1baabe (tip of PR #3 docs/ben-evolution; stack is #1 docs/ben-character-sheet, #2 feat/ben-g-typescript, #3 docs/ben-evolution on main@a43b322)"
+    }
+  ],
+  "summary": {
+    "slots": 47,
+    "byStatus": {
+      "in-game": 7,
+      "ready-in-lab": 24,
+      "needs-pixel-art": 5,
+      "missing": 5,
+      "partial": 2,
+      "new-in-pr": 4
+    },
+    "byGameState": {
+      "fizz1": {
+        "used": 20,
+        "unused": 3,
+        "could-use": 22,
+        "n/a": 2
+      },
+      "fizz2": {
+        "used": 15,
+        "unused": 14,
+        "could-use": 5,
+        "n/a": 13
+      }
+    }
+  },
+  "groups": [
+    {
+      "id": "stand",
+      "label": "Standing and facing"
+    },
+    {
+      "id": "locomotion",
+      "label": "Run and walk"
+    },
+    {
+      "id": "air",
+      "label": "Jump, fall and land"
+    },
+    {
+      "id": "climb",
+      "label": "Ladders, vines and ledges"
+    },
+    {
+      "id": "pogo",
+      "label": "Pogo stick"
+    },
+    {
+      "id": "stunner",
+      "label": "Fizz Stunner"
+    },
+    {
+      "id": "reaction",
+      "label": "Hurt and death"
+    },
+    {
+      "id": "look",
+      "label": "Looking up and down"
+    },
+    {
+      "id": "overworld",
+      "label": "Overworld map"
+    },
+    {
+      "id": "idles",
+      "label": "Idles and performances"
+    },
+    {
+      "id": "model",
+      "label": "Model-only poses awaiting pixel art"
+    }
+  ],
+  "slots": [
+    {
+      "id": "stand-right",
+      "label": "Stand, facing right",
+      "group": "stand",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) returns `Spr::BenStand` at rest (l.1469); the sprite faces right and render.rs flips it for left (l.1247 `flip: p.face < 0.0`)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` (l.895) plays Fizz 1's `ben_*` grids from assets/sprites/fizz1-slice.json; on trial/lab-ben-sprites `lab_standRight` (l.932, ep2-ben-lab.json) replaces it. benA_idle in ep2-ben-a.json is data only (docs/SPRITES.md l.66: \"no code reads the `benA_` sprites yet\")."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_stand"
+        ],
+        "note": "Fizz 2 data also has benA_idle (24x32, ep2-ben-a), unplayed."
+      },
+      "new": {
+        "animation": null,
+        "frames": [
+          "ben_standRight"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "in-game",
+      "notes": "Lab art is wired only on the unmerged Fizz 2 trial branch (cropped to lab_standRight, 14x33). Carries the Stunner on the right hip as the character sheet requires.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 528
+      }
+    },
+    {
+      "id": "stand-left",
+      "label": "Stand, facing left",
+      "group": "stand",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) `Spr::BenStand` flipped by `face` (render.rs l.1247); no left-specific art."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` returns `lab_standLeft` when `ben.face < 0.0` (l.930) on trial/lab-ben-sprites; main flips Fizz 1's stand."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_stand"
+        ],
+        "note": "A mirror of the right-facing sprite; Fizz 1 has no separate left art."
+      },
+      "new": {
+        "animation": null,
+        "frames": [
+          "ben_stand"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "in-game",
+      "notes": "`ben_stand` is the left-facing stand. It has no visible Stunner pixels, which is correct: the Stunner rides on the right hip, which is the far hip when he faces left (a mirrored right-facing copy would wrongly show it on the near hip).",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 528
+      }
+    },
+    {
+      "id": "stand-front",
+      "label": "Stand, facing the camera",
+      "group": "stand",
+      "games": {
+        "fizz1": {
+          "state": "unused",
+          "evidence": "No code in episodes/episode-1 draws a front-facing Ben (ben_sprite l.1424 has only side-view poses)."
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` never returns a front stand; `lab_standRight`/`lab_standLeft` are the only stands. No lab_front sprite exists in ep2-ben-lab.json."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": null,
+        "frames": [
+          "ben_standFront"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "README.md says \"The game currently has no dedicated front-facing stand; these poses are lab assets.\" It is the base of the look-up and look-down frames.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 528
+      }
+    },
+    {
+      "id": "turn-360",
+      "label": "Standing turn-around, 24 angles",
+      "group": "stand",
+      "games": {
+        "fizz1": {
+          "state": "unused",
+          "evidence": "No turn or rotate-in-place state in Fizz 1 (world.rs `Player` has `face` as -1 or 1 only, l.222)."
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "docs/SPRITES.md l.78: \"Fizz 1 has no turn or idle animation\"; crates/fizz-ep2/src/ben.rs `face` is -1 or 1."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "standing-360",
+        "frames": [
+          "ben_turn000",
+          "ben_turn015",
+          "ben_turn030",
+          "ben_turn045",
+          "ben_turn060",
+          "ben_turn075",
+          "ben_turn090",
+          "ben_turn105",
+          "ben_turn120",
+          "ben_turn135",
+          "ben_turn150",
+          "ben_turn165",
+          "ben_turn180",
+          "ben_turn195",
+          "ben_turn210",
+          "ben_turn225",
+          "ben_turn240",
+          "ben_turn255",
+          "ben_turn270",
+          "ben_turn285",
+          "ben_turn300",
+          "ben_turn315",
+          "ben_turn330",
+          "ben_turn345"
+        ],
+        "origin": "main",
+        "frameSize": "32x44"
+      },
+      "status": "needs-pixel-art",
+      "notes": "Rendered from the 3D model through the sprite converter (PR #10 on main) and listed in docs/TURNTABLE_REVIEW.md as needing redrawn in-betweens; only the front and quarter keys are hand-drawn. Uncertain which of the 24 angles have been fully redrawn since.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 16896
+      }
+    },
+    {
+      "id": "run-right",
+      "label": "Run, facing right",
+      "group": "locomotion",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `Spr::BenRun1`/`BenRun2` while `|vx| > 0.5` (l.1459-1462); title and cutscenes also play `ben_run1`/`ben_run2` (episodes/episode-1/src/cine.ts l.247, l.297)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` plays `LAB_RUN` lab_run1..6 on trial/lab-ben-sprites (l.913-918); main plays `ben_run1`/`ben_run2`."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_run1",
+          "ben_run2"
+        ],
+        "note": "Fizz 2 data also has benA_run1..4 (24x32, ep2-ben-a), unplayed."
+      },
+      "new": {
+        "animation": "walk-run-6",
+        "frames": [
+          "ben_walkRight1",
+          "ben_walkRight3",
+          "ben_walkRight5",
+          "ben_walkRight7",
+          "ben_walkRight9",
+          "ben_walkRight11"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "in-game",
+      "notes": "Fizz 2 trial branch imports ben_walkRight1..6 (the earlier six-frame run), not today's walk-run-6 cut of the odd frames of the twelve-frame run; re-import before relying on it. The twelve-frame `walk-run` animation (ben_walkRight1..12) is 6336 bytes at 4 bits.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 3168
+      }
+    },
+    {
+      "id": "run-left",
+      "label": "Run, facing left",
+      "group": "locomotion",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) flips the run frames for `face < 0` (render.rs l.1247); no left art."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` plays `LAB_RUN_LEFT` lab_runL1..6 when `ben.face < 0.0` (l.915-916) on trial/lab-ben-sprites."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_run1",
+          "ben_run2"
+        ],
+        "note": "Mirrored by the renderer."
+      },
+      "new": {
+        "animation": "walk-run-left-6",
+        "frames": [
+          "ben_walkLeft1",
+          "ben_walkLeft3",
+          "ben_walkLeft5",
+          "ben_walkLeft7",
+          "ben_walkLeft9",
+          "ben_walkLeft11"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "in-game",
+      "notes": "Left-facing frames are drawn, not mirrored: the Stunner is on the hidden far hip, so they show no Stunner pixels. Same six-frame caveat as run-right.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 3168
+      }
+    },
+    {
+      "id": "jump-right",
+      "label": "Jump, facing right",
+      "group": "air",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `Spr::BenJump` whenever Ben is airborne and not firing (l.1456-1457)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` returns `ben_jump` when `!ben.b.on_ground` (l.909-910), Fizz 1's sprite."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_jump"
+        ],
+        "note": "Fizz 2 data also has benA_jump (24x32, ep2-ben-a), unplayed."
+      },
+      "new": {
+        "animation": "jump",
+        "frames": [
+          "ben_jumpRig1",
+          "ben_jumpRig2",
+          "ben_jumpRig3",
+          "ben_jumpRig4",
+          "ben_jumpRig5",
+          "ben_jumpRig6"
+        ],
+        "origin": "main",
+        "frameSize": "32x52"
+      },
+      "status": "ready-in-lab",
+      "notes": "The game plays one frame for the whole air time; the lab loop (crouch, take-off, stride, landing) is a six-frame animation whose phases would need mapping to rise/apex/fall. The older single study `ben_jump` (24x44) also remains in assets.json.",
+      "dos": {
+        "bytesPerFrame": 832,
+        "totalBytes": 4992
+      }
+    },
+    {
+      "id": "jump-left",
+      "label": "Jump, facing left",
+      "group": "air",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) `Spr::BenJump` flipped by `face`."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` `ben_jump` flipped by `ben.face` (draw_ben l.957)."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_jump"
+        ],
+        "note": "Mirrored by the renderer."
+      },
+      "new": {
+        "animation": "jump-left",
+        "frames": [
+          "ben_jumpLeft1",
+          "ben_jumpLeft2",
+          "ben_jumpLeft3",
+          "ben_jumpLeft4",
+          "ben_jumpLeft5",
+          "ben_jumpLeft6"
+        ],
+        "origin": "main",
+        "frameSize": "32x52"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 832,
+        "totalBytes": 4992
+      }
+    },
+    {
+      "id": "fall-right",
+      "label": "Fall, facing right",
+      "group": "air",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "No separate fall pose: episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) shows `BenJump` for any airborne frame (l.1456), including a fall; the camera has a long-fall case (tests.rs `the_tower_camera_keeps_ben_in_view_through_a_long_fall`)."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` has no fall branch (airborne is `ben_jump`, l.909); ep2-ben-a.json holds an unplayed `benA_fall`."
+        }
+      },
+      "old": {
+        "set": "ep2-ben-a",
+        "frames": [
+          "benA_fall"
+        ],
+        "note": "Fizz 2 provisional art, not played by any code."
+      },
+      "new": {
+        "animation": "fall",
+        "frames": [
+          "ben_fallRig1",
+          "ben_fallRig2",
+          "ben_fallRig3",
+          "ben_fallRig4",
+          "ben_fallRig5",
+          "ben_fallRig6"
+        ],
+        "origin": "main",
+        "frameSize": "32x52"
+      },
+      "status": "ready-in-lab",
+      "notes": "Needs a rule (vy below a threshold) in the game view to choose it; neither game has one.",
+      "dos": {
+        "bytesPerFrame": 832,
+        "totalBytes": 4992
+      }
+    },
+    {
+      "id": "fall-left",
+      "label": "Fall, facing left",
+      "group": "air",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "As fall-right: render.rs l.1456 shows BenJump flipped."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "As fall-right: no fall branch in `ben_pose`."
+        }
+      },
+      "old": {
+        "set": "ep2-ben-a",
+        "frames": [
+          "benA_fall"
+        ],
+        "note": "Mirrored if used."
+      },
+      "new": {
+        "animation": "fall-left",
+        "frames": [
+          "ben_fallLeft1",
+          "ben_fallLeft2",
+          "ben_fallLeft3",
+          "ben_fallLeft4",
+          "ben_fallLeft5",
+          "ben_fallLeft6"
+        ],
+        "origin": "main",
+        "frameSize": "32x52"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 832,
+        "totalBytes": 4992
+      }
+    },
+    {
+      "id": "land",
+      "label": "Land after a jump or fall",
+      "group": "air",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `Body.on_ground` flips on landing (test `ben_lands_and_stands_on_the_ground`, tests.rs l.37) but no landing pose exists; pogo has `squash` (world.rs `Player.squash`) only."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "crates/fizz-ep2/src/ben.rs has `squash` for the pogo only (l.102); no landing timer."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "The lab jump loop begins with a crouch (ben_jumpRig1, 180 ms) and the character sheet says the model \"absorbs into the knees\", but no frame is saved as a dedicated landing. Not verified whether jumpRig1 can double as one."
+    },
+    {
+      "id": "crouch",
+      "label": "Crouch or duck",
+      "group": "air",
+      "games": {
+        "fizz1": {
+          "state": "n/a",
+          "evidence": "No crouch or duck state in Fizz 1 (searched world.rs, render.rs and GAME_DESIGN.md)."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "No crouch in fizz-ep2 (ben.rs) or docs/PLATFORM.md."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Listed for completeness only: neither game has the mechanic, so it is not a gap. The jump loop's crouch is anticipation, not a held pose."
+    },
+    {
+      "id": "ladder-climb",
+      "label": "Climb a ladder or vine (from behind)",
+      "group": "climb",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `Spr::BenClimb1`/`BenClimb2` while `p.climb` (l.1444-1449); vines set `climb` too (world.rs l.1786 `self.p.climb = true`); intro cutscene climbs down with them (cine.ts l.293)."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "crates/fizz-ep2/src/ben.rs header l.8: \"Left out on purpose: mantle, ladders and vines, wall kicks\"; docs/PLATFORM.md l.164."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_climb1",
+          "ben_climb2"
+        ],
+        "note": ""
+      },
+      "new": {
+        "animation": "climb",
+        "frames": [
+          "ben_ladder1",
+          "ben_ladder2",
+          "ben_ladder3",
+          "ben_ladder4",
+          "ben_ladder5",
+          "ben_ladder6",
+          "ben_ladder7",
+          "ben_ladder8"
+        ],
+        "origin": "main",
+        "frameSize": "32x48"
+      },
+      "status": "ready-in-lab",
+      "notes": "The lab ladder frames (32x48) are drawn from behind with the Stunner on the right hip. Legacy 24x44 studies ben_climb1/ben_climb2 are still in assets.json. Firing up or down on a ladder uses the aim poses instead.",
+      "dos": {
+        "bytesPerFrame": 768,
+        "totalBytes": 6144
+      }
+    },
+    {
+      "id": "mantle-right",
+      "label": "Ledge grab, pull and mantle, facing right",
+      "group": "climb",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenMantle1` grip, `BenMantle2` haul, `BenMantle3` push by `m.progress()` (l.1428-1436); docs/GAME_DESIGN.md \"Mantle\" describes the three frames."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "crates/fizz-ep2/src/ben.rs l.83-86 \"Mantle is out of scope\"; docs/PLATFORM.md l.164."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_mantle1",
+          "ben_mantle2",
+          "ben_mantle3"
+        ],
+        "note": ""
+      },
+      "new": {
+        "animation": "mantle",
+        "frames": [
+          "ben_ledge1",
+          "ben_ledge2",
+          "ben_ledge3",
+          "ben_ledge4",
+          "ben_ledge5",
+          "ben_ledge6",
+          "ben_ledge7",
+          "ben_ledge8",
+          "ben_ledge9",
+          "ben_ledge10",
+          "ben_ledge11"
+        ],
+        "origin": "main",
+        "frameSize": "40x72"
+      },
+      "status": "ready-in-lab",
+      "notes": "Fizz 1 plays three poses across 0.30 s (MANTLE_TIME, world.rs l.70); the lab pull is eleven frames (about 1.0 s). Mapping to grab/haul/push is a decision for whoever wires it, and the timing differs by more than three times.",
+      "dos": {
+        "bytesPerFrame": 1440,
+        "totalBytes": 15840
+      }
+    },
+    {
+      "id": "mantle-left",
+      "label": "Ledge grab, pull and mantle, facing left",
+      "group": "climb",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) mantle poses flipped by `face`."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "As mantle-right: mantle is not in Fizz 2."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_mantle1",
+          "ben_mantle2",
+          "ben_mantle3"
+        ],
+        "note": "Mirrored by the renderer."
+      },
+      "new": {
+        "animation": "mantle-left",
+        "frames": [
+          "ben_ledgeLeft1",
+          "ben_ledgeLeft2",
+          "ben_ledgeLeft3",
+          "ben_ledgeLeft4",
+          "ben_ledgeLeft5",
+          "ben_ledgeLeft6",
+          "ben_ledgeLeft7",
+          "ben_ledgeLeft8",
+          "ben_ledgeLeft9",
+          "ben_ledgeLeft10",
+          "ben_ledgeLeft11"
+        ],
+        "origin": "main",
+        "frameSize": "40x72"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 1440,
+        "totalBytes": 15840
+      }
+    },
+    {
+      "id": "wall-kick",
+      "label": "Wall-kick off a wall",
+      "group": "climb",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `WALL_KICK_UP`/`WALL_KICK_AWAY` (l.76-77) and docs/GAME_DESIGN.md \"Wall-kick\" define the action, but ben_sprite l.1424 has no kick branch, so a kick shows `BenJump`."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "docs/FIZZ1-DIFFERENCES.md \"Wall-kick: left out\" (owner decision 2026-10-30)."
+        }
+      },
+      "old": null,
+      "new": null,
+      "status": "missing",
+      "notes": "Only Fizz 1 needs it, and it currently reuses the jump frame."
+    },
+    {
+      "id": "pogo-right",
+      "label": "Pogo ride, facing right",
+      "group": "pogo",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenPogo2` during the squash, `BenPogo` otherwise (l.1437-1441); title screen also plays `pogo`/`pogo2` (packages/engine/src/menu/title-ben.ts l.7)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pogo2`/`ben_pogo` (l.897-902) from Fizz 1's grids; `benA_pogoUp`/`benA_pogoDown` exist unplayed in ep2-ben-a.json."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_pogo",
+          "ben_pogo2"
+        ],
+        "note": "Squash frame is `ben_pogo2`. Fizz 2 data also has benA_pogoUp and benA_pogoDown (24x40)."
+      },
+      "new": {
+        "animation": "pogo",
+        "frames": [
+          "ben_pogoRight1",
+          "ben_pogoRight2",
+          "ben_pogoRight3",
+          "ben_pogoRight4",
+          "ben_pogoRight5",
+          "ben_pogoRight6",
+          "ben_pogoRight7",
+          "ben_pogoRight8",
+          "ben_pogoRight9",
+          "ben_pogoRight10",
+          "ben_pogoRight11",
+          "ben_pogoRight12"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "Twelve frames over 840 ms redrawn from the 3D pogo stick (PR #16 on main). The games need a mapping from squash/rise/apex to frames; they show two poses today.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 6336
+      }
+    },
+    {
+      "id": "pogo-left",
+      "label": "Pogo ride, facing left",
+      "group": "pogo",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) pogo poses flipped by `face`."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "As pogo-right, flipped by `ben.face`."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_pogo",
+          "ben_pogo2"
+        ],
+        "note": "Mirrored by the renderer."
+      },
+      "new": {
+        "animation": "pogo-left",
+        "frames": [
+          "ben_pogoLeft1",
+          "ben_pogoLeft2",
+          "ben_pogoLeft3",
+          "ben_pogoLeft4",
+          "ben_pogoLeft5",
+          "ben_pogoLeft6",
+          "ben_pogoLeft7",
+          "ben_pogoLeft8",
+          "ben_pogoLeft9",
+          "ben_pogoLeft10",
+          "ben_pogoLeft11",
+          "ben_pogoLeft12"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 6336
+      }
+    },
+    {
+      "id": "shoot-right",
+      "label": "Fire the Stunner sideways, facing right",
+      "group": "stunner",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenShoot` while `shoot_t > 0` and aim level (l.1450-1454)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `LAB_FIRE` lab_fire1..6 spread over `SHOOT_POSE` by `lab_fire_frame` (l.888, l.908) on trial/lab-ben-sprites; main plays `ben_shoot`."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_shoot"
+        ],
+        "note": "Fizz 2 data also has benA_shoot, unplayed."
+      },
+      "new": {
+        "animation": "fizz-blaster",
+        "frames": [
+          "ben_fireRight1",
+          "ben_fireRight2",
+          "ben_fireRight3",
+          "ben_fireRight4",
+          "ben_fireRight5",
+          "ben_fireRight6"
+        ],
+        "origin": "main",
+        "frameSize": "32x44"
+      },
+      "status": "in-game",
+      "notes": "Six frames over 600 ms; Fizz 2 stretches them across its 0.25 s `SHOOT_POSE` (ben.rs l.32) in proportion.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 4224
+      }
+    },
+    {
+      "id": "shoot-left",
+      "label": "Fire the Stunner sideways, facing left",
+      "group": "stunner",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424) `BenShoot` flipped by `face`."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs draw_ben l.957: lab_fire frames are flipped for `face < 0`, which moves the Stunner to the wrong hip."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_shoot"
+        ],
+        "note": "Mirrored by the renderer."
+      },
+      "new": null,
+      "status": "missing",
+      "notes": "No ben_fireLeft frames exist. A mirrored right-facing fire frame puts the Stunner in the left hand on the near side; a true left-facing fire would hold it with the right hand across the body or show it from behind. Needs designing, not just drawing."
+    },
+    {
+      "id": "shoot-recoil",
+      "label": "Recoil after a shot",
+      "group": "stunner",
+      "games": {
+        "fizz1": {
+          "state": "unused",
+          "evidence": "Fizz 1 has one shoot sprite and no recoil frame (ben_sprite l.1450-1454)."
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "crates/fizz-slice-view/src/lib.rs has no recoil frame; the fire frames already carry recoil."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": null,
+        "frames": [
+          "ben_shootRecoil"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "Legacy 24x44 study from before the rig redraw; superseded by ben_fireRight4..6.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 528
+      }
+    },
+    {
+      "id": "aim-up",
+      "label": "Fire upward",
+      "group": "stunner",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenAimUp` when `p.aim == 1` (l.1452)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_aimUp` (l.906); asserted by tests at l.1568 and l.1884."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_aimUp"
+        ],
+        "note": ""
+      },
+      "new": {
+        "animation": null,
+        "frames": [
+          "ben_aimUp"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "partial",
+      "notes": "The lab only has the legacy 24x44 study; it predates the rig redraw and the Stunner design, so check its helmet, shoes and gun before use. No left-facing variant.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 528
+      }
+    },
+    {
+      "id": "aim-down",
+      "label": "Fire downward",
+      "group": "stunner",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenAimDown` when `p.aim == -1` (l.1453)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_aimDown` (l.907)."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_aimDown"
+        ],
+        "note": ""
+      },
+      "new": {
+        "animation": null,
+        "frames": [
+          "ben_aimDown"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "partial",
+      "notes": "Same caveat as aim-up.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 528
+      }
+    },
+    {
+      "id": "reload",
+      "label": "Reload the Stunner",
+      "group": "model",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "Fizz 1 counts shots (Fizz Blaster ammo is not refilled on death, per docs/GAME_DESIGN.md) but has no reload action or pose."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "Fizz 2 restarts Ben with five shots (docs/FIZZ1-DIFFERENCES.md \"Ammo on a respawn\") and has a `dud` event (ben.rs l.78) but no reload pose."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "stunner-reload",
+        "frames": [
+          "ben_reload1",
+          "ben_reload2",
+          "ben_reload3",
+          "ben_reload4",
+          "ben_reload5",
+          "ben_reload6",
+          "ben_reload7",
+          "ben_reload8"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "needs-pixel-art",
+      "notes": "Rendered from the 3D model by `draw:model-poses`; the character sheet says it waits on a loose can the skin has none of. Whether either game gets a reload action is undecided.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 5632
+      }
+    },
+    {
+      "id": "death",
+      "label": "Death",
+      "group": "reaction",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `p.dead > 0.0` returns `BenJump`, turned by `rot` (l.1425-1426, draw l.1247-1248); Fizz 1 has no dedicated death pose."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` returns `ben_jump` for `dead` and `blit_sprite_turned` spins it (l.896-897, l.936); docs/SPRITES.md l.80."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_jump"
+        ],
+        "note": "A stand-in: the jump frame spun about its centre. Fizz 2 data also has benA_hurt, unplayed."
+      },
+      "new": {
+        "animation": "death",
+        "frames": [
+          "ben_death1",
+          "ben_death2",
+          "ben_death3",
+          "ben_death4",
+          "ben_death5",
+          "ben_death6",
+          "ben_death7"
+        ],
+        "origin": "main",
+        "frameSize": "40x56"
+      },
+      "status": "ready-in-lab",
+      "notes": "Lab death is a seven-beat comic sequence (40x56, about 1.4 s) with a topple that would replace the spin. The Fizz games fix a 1.4 s dead timer in world.rs l.1123, which fits.",
+      "dos": {
+        "bytesPerFrame": 1120,
+        "totalBytes": 7840
+      }
+    },
+    {
+      "id": "hurt",
+      "label": "Hurt, non-fatal hit",
+      "group": "reaction",
+      "games": {
+        "fizz1": {
+          "state": "n/a",
+          "evidence": "docs/GAME_DESIGN.md \"Mantle\": \"any hit is fatal\"; world.rs l.1594 kills unless `inv > 0`."
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "ep2-ben-a.json holds `benA_hurt` (24x32) that no code plays; `Ben.inv` (ben.rs l.99) only blinks the sprite (draw_ben l.941), and contact kills (world.rs l.576)."
+        }
+      },
+      "old": {
+        "set": "ep2-ben-a",
+        "frames": [
+          "benA_hurt"
+        ],
+        "note": "Provisional Fizz 2 art, unplayed."
+      },
+      "new": null,
+      "status": "missing",
+      "notes": "Counts as a gap only if Fizz 2 adopts non-fatal damage; docs/SPRITES.md l.58 says Fizz 1 has no hurt or dead pose."
+    },
+    {
+      "id": "look-up",
+      "label": "Look up",
+      "group": "look",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenLookUp` when `p.look_up > 0.0` at rest (l.1464-1465)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` returns `lab_lookUp` for `ben.look_up > 0.0` (l.920-921) on trial/lab-ben-sprites; main plays `ben_lookUp`."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_lookUp"
+        ],
+        "note": ""
+      },
+      "new": {
+        "animation": "look-up-down",
+        "frames": [
+          "ben_frontLookUp"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "in-game",
+      "notes": "The lab look frames face the camera (lab_lookUp is not flipped). A legacy side-view ben_lookUp study (24x44) is also in assets.json.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 528
+      }
+    },
+    {
+      "id": "look-down",
+      "label": "Look down, half and full bend",
+      "group": "look",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs `ben_sprite` (l.1424): `BenLookDown` when `p.look_down > 0.0` (l.1466-1467)."
+        },
+        "fizz2": {
+          "state": "used",
+          "evidence": "crates/fizz-slice-view/src/lib.rs `ben_pose` switches `lab_bendHalf` then `lab_bendFull` over `LOOK_RAMP` (l.922-929) on trial/lab-ben-sprites."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "ben_lookDown"
+        ],
+        "note": ""
+      },
+      "new": {
+        "animation": "look-up-down",
+        "frames": [
+          "ben_frontBendHalf",
+          "ben_frontBendFull"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "in-game",
+      "notes": "Two lab frames replace the single Fizz 1 pose. Legacy side-view ben_lookDown study is in assets.json.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 1056
+      }
+    },
+    {
+      "id": "overworld-n",
+      "label": "Overworld walk, N",
+      "group": "overworld",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `tick_map` (l.979) moves Ben with both `vx` and `vy`, so he walks all directions, yet render.rs l.660-668 draws only the one sideways sprite flipped."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "Fizz 2 has no overworld; the slice is one level."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "overworld-N",
+        "frames": [
+          "benMap_N0",
+          "benMap_N1"
+        ],
+        "origin": "main",
+        "frameSize": "24x24"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 288,
+        "totalBytes": 576
+      }
+    },
+    {
+      "id": "overworld-ne",
+      "label": "Overworld walk, NE",
+      "group": "overworld",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `tick_map` (l.979) moves Ben with both `vx` and `vy`, so he walks all directions, yet render.rs l.660-668 draws only the one sideways sprite flipped."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "Fizz 2 has no overworld; the slice is one level."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "overworld-NE",
+        "frames": [
+          "benMap_NE0",
+          "benMap_NE1"
+        ],
+        "origin": "main",
+        "frameSize": "24x24"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 288,
+        "totalBytes": 576
+      }
+    },
+    {
+      "id": "overworld-e",
+      "label": "Overworld walk, E",
+      "group": "overworld",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs l.660-668: `Spr::BenMap0`/`BenMap1` alternate by `p.anim`, flipped for `face < 0.0`; sprite is a 16x16 head-and-shoulders walker."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "Fizz 2 has no overworld; the slice is one level."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "benMap0",
+          "benMap1"
+        ],
+        "note": "One two-frame sprite serves every direction; E is the sprite as drawn, W its mirror."
+      },
+      "new": {
+        "animation": "overworld-E",
+        "frames": [
+          "benMap_E0",
+          "benMap_E1"
+        ],
+        "origin": "main",
+        "frameSize": "24x24"
+      },
+      "status": "ready-in-lab",
+      "notes": "24x24 against Fizz 1's 16x16, so the game's map scale would need confirming.",
+      "dos": {
+        "bytesPerFrame": 288,
+        "totalBytes": 576
+      }
+    },
+    {
+      "id": "overworld-se",
+      "label": "Overworld walk, SE",
+      "group": "overworld",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `tick_map` (l.979) moves Ben with both `vx` and `vy`, so he walks all directions, yet render.rs l.660-668 draws only the one sideways sprite flipped."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "Fizz 2 has no overworld; the slice is one level."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "overworld-SE",
+        "frames": [
+          "benMap_SE0",
+          "benMap_SE1"
+        ],
+        "origin": "main",
+        "frameSize": "24x24"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 288,
+        "totalBytes": 576
+      }
+    },
+    {
+      "id": "overworld-s",
+      "label": "Overworld walk, S",
+      "group": "overworld",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `tick_map` (l.979) moves Ben with both `vx` and `vy`, so he walks all directions, yet render.rs l.660-668 draws only the one sideways sprite flipped."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "Fizz 2 has no overworld; the slice is one level."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "overworld-S",
+        "frames": [
+          "benMap_S0",
+          "benMap_S1"
+        ],
+        "origin": "main",
+        "frameSize": "24x24"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 288,
+        "totalBytes": 576
+      }
+    },
+    {
+      "id": "overworld-sw",
+      "label": "Overworld walk, SW",
+      "group": "overworld",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `tick_map` (l.979) moves Ben with both `vx` and `vy`, so he walks all directions, yet render.rs l.660-668 draws only the one sideways sprite flipped."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "Fizz 2 has no overworld; the slice is one level."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "overworld-SW",
+        "frames": [
+          "benMap_SW0",
+          "benMap_SW1"
+        ],
+        "origin": "main",
+        "frameSize": "24x24"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 288,
+        "totalBytes": 576
+      }
+    },
+    {
+      "id": "overworld-w",
+      "label": "Overworld walk, W",
+      "group": "overworld",
+      "games": {
+        "fizz1": {
+          "state": "used",
+          "evidence": "episodes/episode-1/game/src/render.rs l.660-668: `Spr::BenMap0`/`BenMap1` alternate by `p.anim`, flipped for `face < 0.0`; sprite is a 16x16 head-and-shoulders walker."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "Fizz 2 has no overworld; the slice is one level."
+        }
+      },
+      "old": {
+        "set": "fizz1-ben",
+        "frames": [
+          "benMap0",
+          "benMap1"
+        ],
+        "note": "One two-frame sprite serves every direction; E is the sprite as drawn, W its mirror."
+      },
+      "new": {
+        "animation": "overworld-W",
+        "frames": [
+          "benMap_W0",
+          "benMap_W1"
+        ],
+        "origin": "main",
+        "frameSize": "24x24"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 288,
+        "totalBytes": 576
+      }
+    },
+    {
+      "id": "overworld-nw",
+      "label": "Overworld walk, NW",
+      "group": "overworld",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs `tick_map` (l.979) moves Ben with both `vx` and `vy`, so he walks all directions, yet render.rs l.660-668 draws only the one sideways sprite flipped."
+        },
+        "fizz2": {
+          "state": "n/a",
+          "evidence": "Fizz 2 has no overworld; the slice is one level."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "overworld-NW",
+        "frames": [
+          "benMap_NW0",
+          "benMap_NW1"
+        ],
+        "origin": "main",
+        "frameSize": "24x24"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 288,
+        "totalBytes": 576
+      }
+    },
+    {
+      "id": "idle-wrist-check",
+      "label": "Idle: check the wrist computer",
+      "group": "idles",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "wrist-check",
+        "frames": [
+          "ben_wristCheck1",
+          "ben_wristCheck2",
+          "ben_wristCheck3",
+          "ben_wristCheck4"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "new-in-pr",
+      "notes": "Drawn by the side-view sprite rig (`draw:performances`), PR #1 stack. Right-facing only; no left-facing set.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 2816
+      }
+    },
+    {
+      "id": "idle-wrist-aerial",
+      "label": "Idle: pull out the wrist aerial",
+      "group": "idles",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "wrist-aerial",
+        "frames": [
+          "ben_aerial1",
+          "ben_aerial2",
+          "ben_aerial3",
+          "ben_aerial4",
+          "ben_aerial5",
+          "ben_aerial6",
+          "ben_aerial7"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "new-in-pr",
+      "notes": "Right-facing only.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 4928
+      }
+    },
+    {
+      "id": "idle-helmet-tip",
+      "label": "Idle: tip the helmet",
+      "group": "idles",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "helmet-tip",
+        "frames": [
+          "ben_helmetTip1",
+          "ben_helmetTip2",
+          "ben_helmetTip3",
+          "ben_helmetTip4",
+          "ben_helmetTip5",
+          "ben_helmetTip6",
+          "ben_helmetTip7",
+          "ben_helmetTip8"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "new-in-pr",
+      "notes": "The character sheet says the rig's arms are shorter than the helmet is tall, so the tip is a hand beside the rim. Right-facing only.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 5632
+      }
+    },
+    {
+      "id": "idle-rock",
+      "label": "Idle: rock on the heels",
+      "group": "idles",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "rock-idle",
+        "frames": [
+          "ben_rock1",
+          "ben_rock2",
+          "ben_rock3",
+          "ben_rock4"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "new-in-pr",
+      "notes": "Right-facing only.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 2816
+      }
+    },
+    {
+      "id": "idle-whistle-right",
+      "label": "Idle: whistle, facing right",
+      "group": "idles",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "whistle-right",
+        "frames": [
+          "ben_whistleRight1",
+          "ben_whistleRight2",
+          "ben_whistleRight3",
+          "ben_whistleRight4",
+          "ben_whistleRight5",
+          "ben_whistleRight6"
+        ],
+        "origin": "main",
+        "frameSize": "32x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 4224
+      }
+    },
+    {
+      "id": "idle-whistle-left",
+      "label": "Idle: whistle, facing left",
+      "group": "idles",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "whistle-left",
+        "frames": [
+          "ben_whistleLeft1",
+          "ben_whistleLeft2",
+          "ben_whistleLeft3",
+          "ben_whistleLeft4",
+          "ben_whistleLeft5",
+          "ben_whistleLeft6"
+        ],
+        "origin": "main",
+        "frameSize": "32x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "Drawn left-facing with the Stunner hidden on the far hip, not mirrored.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 4224
+      }
+    },
+    {
+      "id": "idle-phone-sit",
+      "label": "Idle: sit down with the telephone",
+      "group": "idles",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. The sit-down is a bigger change of pose than a stand idle."
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "phone-idle",
+        "frames": [
+          "ben_phone1",
+          "ben_phone2",
+          "ben_phone3",
+          "ben_phone4",
+          "ben_phone5",
+          "ben_phone6",
+          "ben_phone7",
+          "ben_phone8",
+          "ben_phone9"
+        ],
+        "origin": "main",
+        "frameSize": "40x56"
+      },
+      "status": "ready-in-lab",
+      "notes": "40x56, camera-facing, crossed legs. Bigger than the 16x24 game body, so it only suits a cutscene or a parked idle.",
+      "dos": {
+        "bytesPerFrame": 1120,
+        "totalBytes": 10080
+      }
+    },
+    {
+      "id": "idle-phone-type",
+      "label": "Idle: type on the telephone",
+      "group": "idles",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "phone-typing",
+        "frames": [
+          "ben_phoneType1",
+          "ben_phoneType2",
+          "ben_phoneType3",
+          "ben_phoneType4",
+          "ben_phoneType5",
+          "ben_phoneType6",
+          "ben_phoneType7",
+          "ben_phoneType8"
+        ],
+        "origin": "main",
+        "frameSize": "40x56"
+      },
+      "status": "ready-in-lab",
+      "notes": "Loops after the sit-down.",
+      "dos": {
+        "bytesPerFrame": 1120,
+        "totalBytes": 8960
+      }
+    },
+    {
+      "id": "head-scratch",
+      "label": "Idle: take the helmet off and scratch his head",
+      "group": "model",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "head-scratch",
+        "frames": [
+          "ben_headScratch1",
+          "ben_headScratch2"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "needs-pixel-art",
+      "notes": "Rendered from the 3D model; waits on a bare head with a full hairline and a helmet held in the hand (character sheet \"Open questions\" 2).",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 1408
+      }
+    },
+    {
+      "id": "helmet-spin",
+      "label": "Idle: spin the helmet on a finger",
+      "group": "model",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "episodes/episode-1/game/src/world.rs counts standing still (`Fun.idle`, l.318; `JOKE_IDLE`, l.325, fired at l.1170) for a twenty-second joke toast (docs/GAME_DESIGN.md \"Jokes\"); ben_sprite l.1469 returns the plain stand, so an idle animation is the natural fit. "
+        },
+        "fizz2": {
+          "state": "unused",
+          "evidence": "No idle state: docs/SPRITES.md l.78 \"Fizz 1 has no turn or idle animation. Fizz 2's rules keep no such counter and drawing may not add one\"; ben.rs header lists \"jokes and counters\" as left out."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "helmet-spin",
+        "frames": [
+          "ben_helmetSpin1",
+          "ben_helmetSpin2",
+          "ben_helmetSpin3",
+          "ben_helmetSpin4"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "needs-pixel-art",
+      "notes": "Rendered from the 3D model; same missing art as head-scratch.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 2816
+      }
+    },
+    {
+      "id": "pogo-draw",
+      "label": "Draw the pogo stick from a pocket",
+      "group": "model",
+      "games": {
+        "fizz1": {
+          "state": "could-use",
+          "evidence": "docs/GAME_DESIGN.md \"Pogo\": toggled on and off; ben_sprite l.1437 simply switches to the pogo pose with no draw action."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "crates/fizz-ep2/src/ben.rs `pogo` is a boolean toggle (l.91); no draw transition in crates/fizz-slice-view/src/lib.rs."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "pogo-draw",
+        "frames": [
+          "ben_pogoDraw1",
+          "ben_pogoDraw2",
+          "ben_pogoDraw3",
+          "ben_pogoDraw4",
+          "ben_pogoDraw5",
+          "ben_pogoDraw6",
+          "ben_pogoDraw7",
+          "ben_pogoDraw8"
+        ],
+        "origin": "pr-1",
+        "frameSize": "32x44"
+      },
+      "status": "needs-pixel-art",
+      "notes": "Rendered from the 3D model (stick from a back pocket or backpack); waits on a hand-held pogo stick in the skin. A plain toggle flash would also work; a transition is a design choice.",
+      "dos": {
+        "bytesPerFrame": 704,
+        "totalBytes": 5632
+      }
+    }
+  ]
+}
