@@ -1,0 +1,56 @@
+/* Styles the Fizz 2 door design gallery.
+ *
+ * (c) Copyright 2026 Liminal HQ, Scott Morris
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
+ */
+
+.doors-page{overflow-x:hidden}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.panel{margin:24px 0;padding:20px;border:1px solid #57735e;border-radius:12px;background:#14221b}
+.panel h2{margin:0 0 12px;font-size:1.2rem}
+.door-controls{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center}
+.door-controls label{font-size:.9rem}
+.door-controls .check input{width:20px;height:20px}
+.segmented{display:flex;flex-wrap:wrap;gap:4px 12px;border:1px solid #45614d;border-radius:8px;padding:4px 10px 8px;margin:0}
+.segmented legend{font-size:.75rem;color:#a9ee73;letter-spacing:.06em;text-transform:uppercase;padding:0 4px}
+.segmented label{gap:6px}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:2px}
+
+.door-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.door-card{padding:14px 16px;min-width:0}
+.door-card h3{margin:0 0 6px;display:inline-block;margin-right:10px}
+.door-card p{margin:10px 0}
+.door-card .why{color:#cfe0d3}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;border:1px solid currentColor;font-size:.75rem;font-weight:700;vertical-align:middle}
+.badge.animated-open{color:#8cbcff}.badge.always-open{color:#ffd08b}
+.pair{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:12px 0 4px}
+.pair figure{margin:0;min-width:0;max-width:100%}
+.pair figcaption{font-size:.8rem;color:#b4c7bc;margin-top:4px}
+.door-stage{background:repeating-conic-gradient(#2a3a33 0 25%,#22302a 0 50%) 0 0/16px 16px;border-radius:6px;padding:6px;line-height:0;max-width:100%;overflow:hidden}
+.door-stage canvas,.segment-list canvas{image-rendering:pixelated;max-width:100%;height:auto;display:block}
+.preview-block{border-top:1px solid #344a3f;margin-top:12px;padding-top:8px}
+.preview-block h4{margin:4px 0;font-size:.95rem}
+.preview-block .scene{font-size:.8rem;color:#b4c7bc;margin:4px 0 0}
+.frame-caption{font:13px/1.4 monospace;color:#a8df9c;min-height:2.8em;margin:6px 0}
+.card-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card-controls label{font-size:.85rem}
+.mini{padding:4px 10px;font-size:.85rem}
+.cost{width:100%;border-collapse:collapse;font-size:.8rem;margin:10px 0}
+.cost th,.cost td{text-align:left;padding:4px 6px;border-bottom:1px solid #344a3f;vertical-align:top}
+.cost thead th{color:#a9ee73;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase}
+.cost td:last-child{white-space:nowrap;font-weight:700}
+.notes{padding-left:18px;margin:8px 0}
+.segments{margin-top:10px}
+.segments summary{cursor:pointer;color:#a9ee73;font-size:.85rem;padding:4px 0}
+.segment-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.segment-row{display:flex;gap:4px;align-items:flex-end;margin:0;padding:6px;border:1px solid #344a3f;border-radius:8px;flex-wrap:wrap}
+.segment-row figcaption{font-size:.75rem;color:#b4c7bc;width:100%}
+.segment{display:flex;flex-direction:column;align-items:center;font-size:.65rem;color:#9bb3a4;gap:2px}
+@media(max-width:600px){
+  .doors-page{padding:16px}
+  .panel{padding:14px}
+  .door-grid{grid-template-columns:minmax(0,1fr)}
+  .door-controls{gap:10px}
+  .cost th,.cost td{padding:3px 4px}
+}
+@media(prefers-reduced-motion:reduce){.doors-page *{scroll-behavior:auto;transition:none}}

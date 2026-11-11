@@ -17,7 +17,7 @@ export default defineConfig({
   base: './',
   server: { host: '0.0.0.0', port: 5173, strictPort: true },
   // The workshop and the cartoon Ben tuning bench are separate pages of one build.
-  build: { rollupOptions: { input: { index: root + 'index.html', 'ben-g': root + 'ben-g.html', sprites: root + 'sprites.html' } } },
+  build: { rollupOptions: { input: { index: root + 'index.html', 'ben-g': root + 'ben-g.html', sprites: root + 'sprites.html', doors: root + 'doors.html' } } },
   plugins: [{
     name: 'sprite-project',
     configureServer(server) {
