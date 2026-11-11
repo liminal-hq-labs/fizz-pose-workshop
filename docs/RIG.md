@@ -148,6 +148,35 @@ The loop is 840 ms. The game supplies the bounce height: the sprite lifts its ti
 
 At one byte per pixel each 24 × 44 frame costs 1,056 bytes, and at four bits 528 bytes. Each twelve-frame direction is 12,672 bytes (12.4 KB) at 8 bits or 6,336 bytes (6.2 KB) at 4 bits, and both directions together 25,344 bytes (24.8 KB) or 12,672 bytes (12.4 KB), before trimming the transparent border. The two directions cannot be one stored set flipped at blit time, because the Stunner shows only facing right.
 
+### Walking through doors
+
+Fizz 2 has two doors, and only one needs new art. `source/ben-door-pass.json` is the contract (built by `bun scripts/door-pass.ts`, checked against the saved frames by `scripts/door-pass.test.ts`).
+
+**Far-plane exit walk-in.** `source/ben-door-in-rig.json` (`ben_doorIn1`–`8`, animation `door-walk-in`, exports in `rig/ben-door-in/`) is a rear-view performance one-shot on a 24 × 44 canvas, drawn with the back skin of the ladder climb (rear helmet, no face, the holster on Ben's right hip, the viewer's right, never mirrored). He walks away from the camera in small alternating steps: the near foot (viewer's left) lifts, reaches and lands over frames 2–4, then the far foot over frames 5–7, with a half-pixel dip on each landing and a slight sway towards the standing leg, while the arms swing a pixel opposite the stepping leg. The eight holds are 120, 110, 100, 110, 110, 100, 110 and 120 ms (880 ms), saved with `loop: false` so the gallery rests on the last pose. Ben keeps the same size in every frame: the rig draws him in place and the game moves him up the screen. Run `bun run draw:performances door-walk-in` and `bun run generate` to redraw it.
+
+The exit is a 20 × 35 piece with a separate 14 × 32 glow piece for the lit opening. Ben's centre column (sprite column 11) sits on the exit's centre column 9, so his sprite's left edge is 2 px left of the exit's, and he is 15–17 px wide, a little wider than the 14 px opening and always inside the 20 px piece. Per frame the contract records the occupied bounds, his columns in exit coordinates, the progress, the offset from his starting position and how many bottom rows are hidden:
+
+| Frame | Progress | Rise | Hidden rows | Visible rows |
+|---|---|---|---|---|
+| 1 | 0.000 | 0 | 0 | 36 |
+| 2 | 0.136 | 1 | 0 | 36 |
+| 3 | 0.261 | 2 | 3 | 33 |
+| 4 | 0.375 | 3 | 7 | 29 |
+| 5 | 0.500 | 4 | 12 | 24 |
+| 6 | 0.625 | 5 | 18 | 18 |
+| 7 | 0.739 | 6 | 25 | 11 |
+| 8 | 0.864 | 7 | 32 | 4 |
+
+Progress is the frame's start time over the 880 ms. The foot line is the bottom edge of sprite row 35, and Ben's body is the 36 rows 0–35 of the frame. The game draws the exit's back layer (arch, jambs, glow, arrow), then Ben, then the front layer (the lip, and the lintel, which stays above his crown throughout, so only the lip matters). The lip's height is the game's to say; the contract assumes 6 rows (`assumedLipRows`). Frames 1–2 need nothing hidden, such a lip covers frame 3 exactly (3 rows) and all but one row of frame 4, and from frame 4 on the rows beyond the lip (`hiddenByCrop`) must be cropped: the game draws only the top `visibleRows` rows of the sprite, as a source-rectangle crop that rides with Ben, or makes the lip that tall. After frame 8 the game hides Ben and takes its exit event.
+
+I recommend no per-frame shrink. Scaling the 34-row sprite by a few percent with nearest-neighbour breaks his one-pixel outline and the crisp-pixel rule, and the rise plus the progressive crop already says "going in". A shrink would have to be redrawn frames, not a scale.
+
+**Side-on pass through a keyed door.** No new rig. The keyed doors are 16 × 48 and passable on the tick the key touches them; their opening animation is presentation only and is drawn before Ben, so Ben is drawn in front of the entire door and there is no front layer to split. A 34-row Ben never reaches the top of a 48-row door, so he needs no duck. The existing six-frame run does the job: `walk-run-6` (`ben_walkRight1`, 3, 5, 7, 9, 11) and `walk-run-left-6` (the same odd frames of `ben_walkLeft`), 100 ms each, with the Stunner shown facing right and hidden on the far hip facing left, so neither is a mirror. The contract lists each frame's occupied bounds (15–19 px wide, 32 rows tall) and the overlap rule: with the door's left edge at 0 and a sprite at column `u`, a frame overlaps the door while `u + x0 < 16` and `u + x1 >= 0`, a total travel of 16 + its width. Any frame wider than 16 px is never fully inside the door's width.
+
+The cost is 24 × 44 ÷ 2 = 528 bytes per frame at four bits. The walk-in is 8 frames, 4,224 bytes (or 2,448 bytes trimmed to the 18 × 34 union of its bounds). The side-on pass adds nothing: its twelve frames are the run's six-frame cuts, 3,168 bytes per direction, already counted.
+
+Fizz 2 needs to: place the sprite with `spriteLeft` (−2) from the exit's left edge and `startBelowSill` from its floor line; play the eight frames with their holds as a one-shot while raising him one pixel per frame; draw the front-layer pass after Ben; hide the rows listed per frame; hide Ben after the last frame; and for keyed doors simply draw the door before Ben and play the existing run.
+
 ### Cloth parts
 
 A rig opts into secondary shirt motion with `clothing` in its JSON (`src/rig/clothing.ts`). It is deterministic and subtle at sprite scale: one pixel of movement in the right frames. The settings are:
