@@ -12,7 +12,9 @@ Each item carries one of three states:
 
 Ben "Lieutenant Fizz" Blaze is a neighbourhood tinkerer who follows his older cousin Billy into space wearing a bicycle helmet, with a modified pogo stick under one arm and a Fizz Stunner on his hip. He is an ordinary kid who goes on adventures: skinny, quick, cheerful and determined. He reads as a cartoon, in clean flat colours with an ink line, and never as a toy with an oversized round head.
 
-- **Age** — Open. The series documents say 10; the brief for the model says 8.
+- **Ink line** — Locked as a look, with an adjustable weight. The black outline is drawn by the renderer around the silhouette, so its thickness is a setting and not part of the mesh. The default is thin enough to appear and vanish as he moves.
+
+- **Age** — Locked. Ben is 10, in every document and description.
 - **Handedness** — Locked. Right-handed: the Stunner rides on his right hip and fires from his right hand.
 
 ## Proportions
@@ -69,17 +71,22 @@ Locked. These are the model's flat base colours; lighting produces the shades be
 - **Shirt** — Locked. A plain red short-sleeved T-shirt. The white at his neck is the shirt's own collar band, part of the shirt, not a separate item.
 - **Chest print** — Locked. The bubble trio: three yellow bubbles of different sizes with brown rims and a white glint each.
 - **Jeans** — Locked. Slim blue denim jeans held by a dark belt with a yellow buckle.
-- **Jeans stripe** — Open. The bright stripe down each leg began as lighting in the sprite. It is interesting as a design feature, but it makes the jeans read as track trousers. See [Open questions](#open-questions).
+- **Cloth detail** — Refine. Clothes carry a little construction detail so they read as cloth: a hem at the sleeves and waist of the shirt, and side seams, hems and pockets on the jeans. The detail also helps the sleeves sit on the shoulders as part of the shirt instead of as tubes beside the torso.
+- **Jeans stripe** — Locked. The bright stripe down each leg is lighting in the sprite. Painted on, it turns the jeans into track trousers, so the model has no stripe; a highlight on the denim comes from the lighting alone.
 - **Hands** — Refine. Bare, with a thumb and three fingers in the cartoon convention. No gloves. The finger and palm shapes need more care, and each finger needs its own joints so he can grip.
 - **Runners** — Refine. Red running shoes with white rubber soles, a white rubber toe cap that wraps up over the front, white laces and a yellow badge on the outer side. The colour scheme is locked; the shoe shape is to be explored in a few variations.
 
 ## Gear
 
+- **Bare-headed** — Refine. He can take the helmet off, for example in a bored idle while he waits, so his hair needs a complete design on top as well as at the edges. The current top is a first draft.
 - **Helmet** — Locked. A close-fitting green bicycle helmet with a white stripe along the centre rib, dark vents either side, a grey rim and a rounded tail at the back. It crowns about one unit above the skull, so it reads as a helmet rather than a cap.
 - **Chin strap** — Refine. Dark webbing with a grey buckle under the chin. It must visibly meet the helmet shell in front of and behind each ear; it currently hangs clear of it.
-- **Fizz Stunner** — Refine. Worn on the right hip. The sprite draws it as a small grape-coloured sidearm because nothing more fits in a few pixels; the idea matters more than that shape. It is not simply a ray gun, and its design is to be explored.
+- **Fizz Stunner** — Refine. Worn on the right hip. Ben collects cans of fizz, cream soda in Episode 1 and grape in Episode 2, and the Stunner fires that carbonated fizz to stun enemies. A shot is a floating orb in the colour of the fizz. It is a cartoon science-fiction sidearm with real punch: rounded, detailed and clearly powered by pop, without having to look like a literal bottle. The concept is locked; three shapes are under comparison, a can loader, a bubble dome and a pop bottle.
+- **Fizz colour** — Locked. Everything powered by fizz takes the episode's flavour: pink cream soda in Episode 1, grape in Episode 2.
+- **Wrist computer** — Refine. A small computer strapped to his left wrist with a glowing screen, two buttons and a stub aerial. It exists on the model only; the sprites do not show it. Its shape is a first draft.
+- **Where the pogo stick lives** — Refine. It appears when he needs it, as tools do in action games. On the model he pulls it from a back pocket, or from the backpack when he wears one; that transition is still to be animated.
 - **Pogo stick** — Locked. A yellow shaft with a red band, a yellow T handlebar with black rubber grips and red bar ends, dark footpegs with yellow end caps and a coil spring over a chrome plunger on a rubber tip.
-- **Backpack** — Open. He has not carried one before. It suits him and may become optional gear.
+- **Backpack** — Locked as optional gear. The model can wear it or leave it off; Ben without it is the default. It carries a can of fizz in a side pocket.
 - **Telephone** — Locked as a prop. A dark slab whose screen lights his face and hands in the seated idle.
 
 ## Movement
@@ -103,9 +110,9 @@ The sprites compress detail into very few pixels. These features belong to that 
 
 ## Open questions
 
-1. **Age.** Is Ben 8 or 10? It changes nothing in the proportions above, but it should be one number everywhere.
-2. **The Stunner.** What does it do, and what is it made from? Knowing whether it is a toy he rebuilt, something from Billy's lab or a shaken-up bottle of pop decides its shape.
-3. **The jeans stripe.** Remove it, keep it as a faint highlight, or turn it into something real such as a turned-out seam?
-4. **The backpack.** Always worn, worn only for certain adventures, or left out?
-5. **Carrying the pogo stick.** Where is it when he is not riding it: under one arm, in his hand, or strapped to the backpack?
-6. **Without the helmet.** Is he ever seen bare-headed? If so, his hair needs a full design rather than only the edges that show.
+1. **The Stunner's shape.** Which of the three designs, or which parts of each?
+2. **Runner shape.** High-top, low runner or chunky?
+3. **Cheeks.** A soft tint, a small crease line or nothing?
+4. **The wrist computer.** What does it do in the story: a map, a link to Billy, a fizz gauge? Its job decides its screen and buttons.
+5. **Drawing the pogo stick.** A quick cartoon pull from the back pocket, or a simple pop into his hands?
+6. **The helmet idle.** When he is bored, does he take the helmet off, tip it back or spin it on a finger?
