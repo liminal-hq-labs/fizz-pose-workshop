@@ -122,6 +122,8 @@ The **Rigged 3D** section adds a fully volumetric Three.js character with a 24-b
 
 `bun run model:build` exports `models/ben-3d/ben.glb` with nine named animation clips and the rig/skin files. With the server running, `bun run model:review` saves six reference comparisons, ten rig poses, timed firing/look cycles and measured proportion checks. See [the model guide](docs/BEN_3D.md) for controls, source files, export details, review limitations and Jar’s SVG surface-art ideas.
 
+[Ben’s character sheet](docs/BEN_CHARACTER_SHEET.md) records the agreed cartoon design for the model: locked proportions and colours, the features still being refined and the questions that remain open.
+
 ## Contributing and repository identity
 
 [AGENTS.md](AGENTS.md) contains the contributor rules; [CLAUDE.md](CLAUDE.md) provides the Claude entry point. The workshop uses Canadian English, signed Conventional Commits and Bun/TypeScript tooling. Preserve original reference art and project saves when experimenting with poses.
