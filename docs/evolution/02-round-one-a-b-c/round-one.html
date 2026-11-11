@@ -1,0 +1,591 @@
+<!doctype html>
+<!--
+  Round one of the Ben Blaze 3D studies: variations A, B and C on a turntable. Kept as it was shown, for the record.
+
+  (c) Copyright 2026 Liminal HQ, Scott Morris
+  SPDX-License-Identifier: Apache-2.0 OR MIT
+-->
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body style="margin:0">
+<title>Ben Blaze 3D Studies</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: one wide turntable stage on top, three variant cards under it that double as the picker, sprite read-out last. */
+:root {
+  --bg: #eef0f8; --panel: #ffffff; --ink: #161936; --muted: #565c82; --line: #cdd2e8;
+  --stage-a: #e3e8fa; --stage-b: #aab6e6; --accent: #0a7f2e; --accent-ink: #ffffff; --grape: #a012a8;
+  --display: "Pixelify Sans", "Courier New", monospace;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b0d22; --panel: #14173a; --ink: #eef0ff; --muted: #a3a9d2; --line: #2c3166;
+  --stage-a: #1c2260; --stage-b: #090b24; --accent: #55ff55; --accent-ink: #06210c; --grape: #ff55ff; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b0d22; --panel: #14173a; --ink: #eef0ff; --muted: #a3a9d2; --line: #2c3166;
+  --stage-a: #1c2260; --stage-b: #090b24; --accent: #55ff55; --accent-ink: #06210c; --grape: #ff55ff; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 22px; }
+header { display: flex; flex-direction: column; gap: 6px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(28px, 5vw, 44px); line-height: 1.05; margin: 0; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.lede { margin: 0; max-width: 62ch; color: var(--muted); }
+h2 { font-family: var(--display); font-weight: 700; font-size: 22px; margin: 0; }
+
+.stage { position: relative; border: 2px solid var(--ink); background: radial-gradient(120% 90% at 50% 20%, var(--stage-a), var(--stage-b)); aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; cursor: grab; }
+.stage canvas:active { cursor: grabbing; }
+.hint { position: absolute; left: 10px; bottom: 8px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; text-align: center; color: var(--muted); }
+@media (max-width: 640px) { .stage { aspect-ratio: 1 / 1; } }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; }
+.group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.group > span { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.seg { display: inline-flex; border: 2px solid var(--ink); }
+button { font: inherit; color: inherit; }
+.seg button { background: var(--panel); border: 0; border-right: 2px solid var(--ink); padding: 6px 12px; cursor: pointer; font-weight: 500; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+button:focus-visible { outline: 3px solid var(--grape); outline-offset: 2px; }
+
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .cards { grid-template-columns: 1fr; } }
+.card { text-align: left; background: var(--panel); border: 2px solid var(--line); padding: 14px 16px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card[aria-pressed="true"] { border-color: var(--ink); box-shadow: 5px 5px 0 var(--accent); }
+.card .tag { font-family: var(--display); font-size: 13px; color: var(--grape); font-weight: 700; }
+.card h3 { font-family: var(--display); font-size: 21px; margin: 0; line-height: 1.1; }
+.card p { margin: 0; color: var(--muted); font-size: 14px; }
+.card ul { margin: 0; padding-left: 18px; font-size: 14px; }
+
+.read { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px 28px; align-items: start; border-top: 2px solid var(--line); padding-top: 22px; }
+@media (max-width: 760px) { .read { grid-template-columns: 1fr; } }
+.sprites { display: flex; gap: 4px; align-items: flex-end; background: #0000aa; padding: 10px 10px 8px; border: 2px solid var(--ink); overflow-x: auto; max-width: 100%; }
+.sprites canvas { image-rendering: pixelated; display: block; flex: none; }
+.notes { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.notes dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; font-size: 14px; }
+.notes dt { display: flex; gap: 3px; align-items: center; padding-top: 3px; }
+.notes dd { margin: 0; }
+.sw { width: 14px; height: 14px; border: 1px solid var(--ink); display: inline-block; }
+.notes p { margin: 0; color: var(--muted); font-size: 14px; max-width: 65ch; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Lieutenant Fizz · character study</div>
+    <h1>Ben Blaze, <span>off the sprite sheet</span></h1>
+    <p class="lede">Three takes on Ben in 3D, each built from his new 24 by 44 sprite and the story bible. Drag to turn him, switch poses, then pick the one to refine.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="3D turntable showing three versions of Ben Blaze"></canvas>
+    <div class="hint">Drag to turn</div>
+  </div>
+
+  <div class="controls">
+    <div class="group"><span>Show</span>
+      <div class="seg" id="segView">
+        <button type="button" id="v-all" data-v="-1" aria-pressed="true">Line-up</button>
+        <button type="button" id="v-a" data-v="0" aria-pressed="false">A</button>
+        <button type="button" id="v-b" data-v="1" aria-pressed="false">B</button>
+        <button type="button" id="v-c" data-v="2" aria-pressed="false">C</button>
+      </div>
+    </div>
+    <div class="group"><span>Pose</span>
+      <div class="seg" id="segPose">
+        <button type="button" id="p-ready" data-p="ready" aria-pressed="true">Ready</button>
+        <button type="button" id="p-pogo" data-p="pogo" aria-pressed="false">Pogo</button>
+        <button type="button" id="p-fizz" data-p="fizz" aria-pressed="false">Fizz!</button>
+      </div>
+    </div>
+    <div class="group"><span>Fizz colour</span>
+      <div class="seg" id="segFizz">
+        <button type="button" id="f-cyan" data-f="cyan" aria-pressed="false">Cyan · Ep 1</button>
+        <button type="button" id="f-grape" data-f="grape" aria-pressed="true">Grape · Ep 2</button>
+      </div>
+    </div>
+    <div class="group">
+      <div class="seg">
+        <button type="button" id="t-line" aria-pressed="true">Ink outline</button>
+        <button type="button" id="t-spin" aria-pressed="true">Spin</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards" id="cards">
+    <button type="button" class="card" id="c-a" data-v="0" aria-pressed="false">
+      <span class="tag">Variation A</span>
+      <h3>Pixel-true</h3>
+      <p>The new sprite, inflated. Same proportions, exact EGA colours and a heavy ink line, with nothing added.</p>
+      <ul><li>Paper-white skin, blue dot eyes and red grin, as drawn</li><li>Only the canon gear: helmet, pogo stick, holstered blaster</li></ul>
+    </button>
+    <button type="button" class="card" id="c-b" data-v="1" aria-pressed="false">
+      <span class="tag">Variation B</span>
+      <h3>Lieutenant</h3>
+      <p>Saturday-morning action hero. Leaner, taller, big expressive eyes and a rank he gave himself.</p>
+      <ul><li>Comms aerial and mic for Billy's voice in Episode 2</li><li>Yellow scarf, self-awarded chevrons, star badge</li><li>Backpack with a can of cream soda in the side pocket</li></ul>
+    </button>
+    <button type="button" class="card" id="c-c" data-v="2" aria-pressed="false">
+      <span class="tag">Variation C</span>
+      <h3>Tinkerer</h3>
+      <p>Low-poly and faceted, the kid who rebuilt his own pogo stick. Stockier, scuffed, safety gear that matches the helmet.</p>
+      <ul><li>Goggles pushed up, bike reflector on the back</li><li>Tool belt with a wrench, knee and elbow pads</li><li>Freckles and a bandage from the last test run</li></ul>
+    </button>
+  </div>
+
+  <section class="read">
+    <div class="sprites" id="sprites" aria-label="Ben's new-format sprites"></div>
+    <div class="notes">
+      <h2>What the sprite says</h2>
+      <dl>
+        <dt><i class="sw" style="background:#55ff55"></i><i class="sw" style="background:#00aa00"></i><i class="sw" style="background:#aaaaaa"></i></dt>
+        <dd>Close-fitting green bicycle helmet with a white centre stripe, dark vents and a grey band. Mildred calls it cute.</dd>
+        <dt><i class="sw" style="background:#0000aa"></i><i class="sw" style="background:#aa0000"></i></dt>
+        <dd>Blue eyes and a red grin, with a tuft of dark hair at the nape.</dd>
+        <dt><i class="sw" style="background:#ff5555"></i><i class="sw" style="background:#aa0000"></i><i class="sw" style="background:#ffff55"></i></dt>
+        <dd>Red T-shirt, lighter across the shoulders, bare forearms, and a yellow chest emblem with an orange base.</dd>
+        <dt><i class="sw" style="background:#555555"></i><i class="sw" style="background:#ff55ff"></i></dt>
+        <dd>Grey belt with a yellow buckle, and the grape Fizz Blaster holstered on his right hip.</dd>
+        <dt><i class="sw" style="background:#0000aa"></i><i class="sw" style="background:#55ffff"></i></dt>
+        <dd>Slim blue jeans with a light stripe, the ones he wipes his Cheezie fingers on.</dd>
+        <dt><i class="sw" style="background:#aa0000"></i><i class="sw" style="background:#ffffff"></i></dt>
+        <dd>Red high-top runners with white toes, white soles and a yellow dot on the side.</dd>
+      </dl>
+      <p>These are the three new-format frames you attached. They have no pogo frame, so the pogo stick follows <code>benA_pogoUp</code> in <code>ep2-ben-a.json</code>. The pedestals use the plank brown from the Lighthouse Point slice.</p>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.152.2/three.min.js"></script>
+<script>
+(function () {
+'use strict';
+var SPRITES = {"new_side": ["........................", "........................", "........kkkkkk..........", "......kkggWgggkk........", ".....kgggWggGGgk........", ".....kgGGWggGGGGk.......", ".....kGgWgggGGGGk.......", "....kGGGGGGGGGGGk.......", "....kLLLLLLLLDDGk.......", "......kWWBWWBWWk........", "......kWWWLWWWWk........", ".......kWRRRWLk.........", "........kWWWLk..........", "........DkLLk...........", "........kWWWWk..........", ".......krrrrrrkk........", ".......krryyrrrrk.......", ".......kRRyokkrRk.......", ".......kRRRRRkrRk.......", ".......kRRRRRkWWk.......", "......kkRRRRRRWLk.......", ".....kWkRRRRRLWLk.......", ".....kLkkRRRWWWLk.......", "......kDDyWDWWkk........", ".......kBBBkBBk.........", ".......kBkBBBck.........", ".......kBkBbck..........", ".......kBkBbck..........", ".......kBkBbck..........", ".......kRkBbck..........", "....kkkRRkBbck..........", "...kWWWRkkRRRRk.........", "...kWWkkkRRRyRk.........", ".....kWWWRRRRRk.........", ".....kWWWWWWWWk.........", "........................", "........................", "........................", "........................", "........................", "........................", "........................", "........................", "........................"], "new_holster": ["........................", "........................", "..........kkkkkk........", "........kkgggWggkk......", "........kgGGggWgggk.....", ".......kGGGGggWGGgk.....", ".......kGGGGgggWgGk.....", ".......kGGGGGGGGGGGk....", ".......kGDDLLLLLLLLk....", "........kWWBWWBWWk......", "........kWWWWLWWWk......", ".........kLWRRRWk.......", "..........kLWWWk........", "...........kLLkD........", "..........kWWWWk........", "........kkrrrrrrk.......", ".......krrrryyrrk.......", ".......kRrkkoyRRk.......", ".......kRrkRRRRRk.......", ".......kWWkRRRRRk.......", ".......kLWRRRRRRkk......", ".......kLWLRRRRRkWk.....", ".......kLWWWRRRkkLk.....", "........kkWWDWyDDk......", "........kDDkkBBBk.......", "........kMmMkBkBk.......", "........kMMkbBkBk.......", ".........kMkbBkBk.......", "..........kcbBkBk.......", "..........kcbBkRk.......", "..........kcbBkRRkkk....", ".........kRRRRkkRWWWk...", ".........kRyRRRkkkWWk...", ".........kRRRRRWWWk.....", ".........kWWWWWWWWk.....", "........................", "........................", "........................", "........................", "........................", "........................", "........................", "........................", "........................"], "new_front": ["........................", "........................", ".........kkkkk..........", ".......kkggWggkk........", "......kggggWggggk.......", "......kgGGgWgGGgk.......", "......kGgggWgggGk.......", "......kGGGGGGGGGk.......", "......kLLLLLLLLLk.......", ".......kWBWWWBWk........", ".......kWWWLWWWk........", "........kWRRRWk.........", ".........kWLWk..........", ".........kLLLk..........", "........kWWWWWk.........", ".......krrrrrrrk........", ".....krrrrryrrrrrk......", ".....kRrkRyyyRkrRk......", ".....kRrkRRoRRkrRk......", ".....kRRkRRRRRkRRk......", ".....kWLRRRRRRRWLk......", ".....kWLRRRRRRRWLk......", ".....kWLRRRRRRRWLk......", ".....kWLkDDyDDkWLk......", "......kDkBBkBBkkk.......", ".....kMmkBckcBk.........", "......kMkBckcBk.........", ".......kkBckcBk.........", "........kBckcBk.........", "........kBckcBk.........", "........kRRkRRk.........", ".......kRRRkRRRk........", "......kWRRRkRRRWk.......", "......kWWWWkWWWWk.......", "........................", "........................", "........................", "........................", "........................", "........................", "........................", "........................", "........................", "........................"]};
+var EGA = { k:'#000000', g:'#55ff55', G:'#00aa00', W:'#ffffff', D:'#555555', L:'#aaaaaa', r:'#ff5555', R:'#aa0000', y:'#ffff55', B:'#0000aa', b:'#5555ff', c:'#55ffff', C:'#00aaaa', m:'#ff55ff', M:'#aa00aa' };
+
+/* ---------- sprite reference ---------- */
+(function drawSprites() {
+  var host = document.getElementById('sprites');
+  ['new_side', 'new_holster', 'new_front'].forEach(function (name) {
+    var rows = SPRITES[name]; if (!rows) return; rows = rows.slice(1, 36);
+    var c = document.createElement('canvas'); c.width = rows[0].length; c.height = rows.length;
+    c.style.width = (c.width * 5) + 'px'; c.style.height = (c.height * 5) + 'px';
+    var x = c.getContext('2d');
+    rows.forEach(function (row, j) { for (var i = 0; i < row.length; i++) { var col = EGA[row[i]]; if (col) { x.fillStyle = col; x.fillRect(i, j, 1, 1); } } });
+    c.setAttribute('role', 'img'); c.setAttribute('aria-label', name);
+    host.appendChild(c);
+  });
+})();
+
+var stage = document.getElementById('stage'), canvas = document.getElementById('gl');
+if (!window.THREE) { fail(); return; }
+var T = THREE, renderer;
+try { renderer = new T.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true }); } catch (e) { fail(); return; }
+function fail() { var d = document.createElement('div'); d.className = 'fail'; d.textContent = 'The 3D view needs WebGL, which is not available here.'; stage.appendChild(d); }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+var scene = new T.Scene();
+var camera = new T.PerspectiveCamera(30, 16 / 9, 0.1, 60);
+scene.add(new T.HemisphereLight(0xffffff, 0x9aa0cc, 0.78));
+var key = new T.DirectionalLight(0xffffff, 0.8); key.position.set(2.5, 4, 3.5); scene.add(key);
+var rim = new T.DirectionalLight(0xbfd0ff, 0.5); rim.position.set(-3, 2, -3); scene.add(rim);
+
+var gradTex = (function () { var d = new Uint8Array([120,120,120,255, 190,190,190,255, 255,255,255,255]); var t = new T.DataTexture(d, 3, 1, T.RGBAFormat); t.minFilter = t.magFilter = T.NearestFilter; t.needsUpdate = true; return t; })();
+var lineMat = new T.MeshBasicMaterial({ color: 0x0a0a12, side: T.BackSide });
+var allOutlines = [];
+var FIZZ = { cyan: { light: 0x55ffff, dark: 0x00aaaa }, grape: { light: 0xff55ff, dark: 0xaa00aa } };
+var fizzMats = [];
+
+/* ---------- variant specs ---------- */
+var SPECS = [
+  { id: 'A', style: 'toon', line: 0.016, prop: 1.05,
+    headR: 0.285, neck: 0.01, torsoH: 0.36, torsoW: 0.33, torsoD: 0.25, legL: 0.4, legR: 0.066, armL: 0.38, limbR: 0.054, shoeH: 0.12,
+    eyes: 'dot',
+    col: { helmet: 0x55ff55, helmetD: 0x00aa00, shirt: 0xaa0000, sleeve: 0xff5555, jeans: 0x0000aa, jeansL: 0x5555ff, shoe: 0xaa0000, skin: 0xfff4ea, hair: 0x555555, eye: 0x0000aa, mouth: 0xaa0000 } },
+  { id: 'B', style: 'toon', line: 0.011, prop: 1.0,
+    headR: 0.235, neck: 0.03, torsoH: 0.42, torsoW: 0.33, torsoD: 0.22, legL: 0.52, legR: 0.062, armL: 0.46, limbR: 0.05, shoeH: 0.1,
+    eyes: 'toon', blush: true, kit: 'lieutenant',
+    col: { helmet: 0x4fdc5c, helmetD: 0x1c8a38, shirt: 0xe8483f, sleeve: 0xc2332d, jeans: 0x2c40ad, jeansL: 0x5a70e0, shoe: 0xc92f2f, skin: 0xf7caa5, hair: 0x6b4423, eye: 0x2648c8, mouth: 0xb3202c } },
+  { id: 'C', style: 'facet', line: 0.011, prop: 1.08,
+    headR: 0.29, neck: 0.01, torsoH: 0.38, torsoW: 0.38, torsoD: 0.27, legL: 0.38, legR: 0.075, armL: 0.38, limbR: 0.06, shoeH: 0.11,
+    eyes: 'dot', brows: true, kit: 'tinkerer',
+    col: { helmet: 0x6ae664, helmetD: 0x27963f, shirt: 0xef5b4d, sleeve: 0xb53027, jeans: 0x3149b8, jeansL: 0x6f86ea, shoe: 0xb92b2b, skin: 0xf0bf98, hair: 0x3a3238, eye: 0x1f3fb5, mouth: 0xa81f28 } }
+];
+
+function buildBen(P) {
+  var facet = P.style === 'facet', C = P.col, mats = {};
+  function M(c, opt) {
+    var k = c + (opt || '');
+    if (!mats[k]) {
+      mats[k] = facet ? new T.MeshStandardMaterial({ color: c, flatShading: true, roughness: 0.85, emissive: c, emissiveIntensity: 0.3 })
+                      : new T.MeshToonMaterial({ color: c, gradientMap: gradTex });
+      if (opt === 'ds') mats[k].side = T.DoubleSide;
+    }
+    return mats[k];
+  }
+  function fizzM(shade) { var m = (facet ? new T.MeshStandardMaterial({ flatShading: true, roughness: 0.6 }) : new T.MeshToonMaterial({ gradientMap: gradTex })); fizzMats.push({ m: m, shade: shade }); return m; }
+  var outlines = [];
+  function add(parent, geo, col, o) {
+    o = o || {};
+    var m = new T.Mesh(geo, col && col.isMaterial ? col : M(col));
+    if (o.p) m.position.set(o.p[0], o.p[1], o.p[2]);
+    if (o.r) m.rotation.set(o.r[0], o.r[1], o.r[2]);
+    if (o.s) { if (o.s.length) m.scale.set(o.s[0], o.s[1], o.s[2]); else m.scale.setScalar(o.s); }
+    parent.add(m);
+    if (o.line !== false) {
+      geo.computeBoundingBox(); var sz = new T.Vector3(); geo.boundingBox.getSize(sz);
+      var ol = new T.Mesh(geo, lineMat), w = 2 * P.line * (o.lw || 1);
+      ol.scale.set(1 + w / Math.max(sz.x * m.scale.x, 0.02), 1 + w / Math.max(sz.y * m.scale.y, 0.02), 1 + w / Math.max(sz.z * m.scale.z, 0.02));
+      m.add(ol); outlines.push(ol); allOutlines.push(ol);
+    }
+    return m;
+  }
+  function grp(parent, p) { var g = new T.Group(); if (p) g.position.set(p[0], p[1], p[2]); parent.add(g); return g; }
+  var sph = function (r) { return facet ? new T.IcosahedronGeometry(r, 1) : new T.SphereGeometry(r, 22, 16); };
+  var cap = function (r, len) { return facet ? new T.CylinderGeometry(r, r * 0.92, len + r * 1.6, 6) : new T.CapsuleGeometry(r, Math.max(len, 0.001), 4, 12); };
+  var cyl = function (rt, rb, h, n) { return new T.CylinderGeometry(rt, rb, h, n || (facet ? 8 : 20)); };
+  var box = function (x, y, z) { return new T.BoxGeometry(x, y, z); };
+  function rod(parent, a, b, r, col, o) {
+    var va = new T.Vector3(a[0], a[1], a[2]), vb = new T.Vector3(b[0], b[1], b[2]), d = vb.clone().sub(va);
+    var m = add(parent, cyl(r, r, d.length(), 8), col, o);
+    m.position.copy(va).addScaledVector(d, 0.5);
+    m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize());
+    return m;
+  }
+
+  var root = new T.Group();
+  var sh = P.shoeH, hipY = sh + P.legL, W = P.torsoW, H = P.torsoH, D = P.torsoD, R = P.headR;
+  var rig = { root: root, arm: {}, leg: {}, joints: [] };
+
+  /* body */
+  var body = rig.body = grp(root, [0, hipY, 0]); rig.joints.push(body);
+  add(body, cap(W / 2, H - W * 0.62), C.shirt, { p: [0, H * 0.5, 0], s: [1, 1, D / W] });
+  add(body, sph(W * 0.5), C.jeans, { p: [0, 0.015, 0], s: [1.03, 0.62, D / W * 1.03] });
+  if (P.kit !== 'tinkerer') {
+    add(body, new T.TorusGeometry(W * 0.5, 0.024, 6, 20), 0x555555, { p: [0, 0.07, 0], r: [Math.PI / 2, 0, 0], s: [1, D / W, 1], line: false });
+    add(body, box(0.05, 0.045, 0.02), 0xffff55, { p: [0, 0.07, D * 0.52], line: false });
+  }
+
+  /* chest emblem */
+  var ez = D * 0.5 * (facet ? 0.94 : 0.985), ey = H * 0.66, ex = 0;
+  if (P.kit === 'lieutenant') {
+    var star = new T.Shape();
+    for (var i = 0; i < 10; i++) { var rr = i % 2 ? 0.026 : 0.06, a = i * Math.PI / 5 + Math.PI / 2; if (i) star.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else star.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    add(body, new T.ExtrudeGeometry(star, { depth: 0.014, bevelEnabled: false }), 0xffe34d, { p: [ex, ey, ez - 0.004], line: false });
+  } else {
+    add(body, cyl(W * 0.14, W * 0.14, 0.016, 4), 0xffff55, { p: [ex, ey, ez], r: [Math.PI / 2, 0, 0], line: false });
+    add(body, box(W * 0.09, W * 0.07, 0.016), 0xaa5500, { p: [ex, ey - W * 0.15, ez - 0.003], line: false });
+  }
+
+  /* head */
+  var head = rig.head = grp(body, [0, H + P.neck + R * 0.78, 0]); rig.joints.push(head);
+  add(head, sph(R), C.skin, { s: [1, 0.95, 0.96] });
+  [1, -1].forEach(function (s) { add(head, sph(R * 0.2), C.skin, { p: [s * R * 0.94, -R * 0.12, 0], s: [0.5, 1, 0.8] }); });
+  var fz = function (x, y) { return Math.sqrt(Math.max(R * R * 0.9 - x * x - y * y, 0.0001)); };
+  [1, -1].forEach(function (s) {
+    var x = s * R * 0.34, y = R * 0.0;
+    if (P.eyes === 'toon') {
+      add(head, sph(R * 0.21), 0xffffff, { p: [x, y, fz(x, y) - R * 0.02], s: [1, 1.18, 0.35], line: false });
+      add(head, sph(R * 0.125), C.eye, { p: [x + R * 0.02, y - R * 0.01, fz(x, y) + R * 0.04], s: [1, 1.2, 0.35], line: false });
+      add(head, sph(R * 0.04), 0xffffff, { p: [x + R * 0.06, y + R * 0.07, fz(x, y) + R * 0.075], line: false });
+    } else {
+      add(head, sph(R * 0.105), C.eye, { p: [x, y, fz(x, y)], s: [1, 1.55, 0.45], line: false });
+      add(head, sph(R * 0.035), 0xffffff, { p: [x + R * 0.03, y + R * 0.07, fz(x, y) + R * 0.04], line: false });
+    }
+    if (P.eyes === 'toon' || P.brows) add(head, box(R * 0.27, R * 0.055, R * 0.05), C.hair, { p: [x, R * 0.3, fz(x, R * 0.3) + R * 0.02], r: [-0.3, 0, s * 0.24], line: false });
+    if (P.blush) add(head, sph(R * 0.11), 0xff9a9a, { p: [s * R * 0.56, -R * 0.26, fz(s * R * 0.56, -R * 0.26) - R * 0.03], s: [1, 0.7, 0.3], line: false });
+    if (P.kit) add(head, new T.ConeGeometry(R * 0.16, R * 0.34, 6), C.hair, { p: [s * R * 0.86, R * 0.02, R * 0.22], r: [Math.PI, 0, -s * 0.15] });
+  });
+  add(head, sph(R * 0.085), C.skin, { p: [0, -R * 0.14, fz(0, -R * 0.14) + R * 0.03], line: false });
+  add(head, new T.TorusGeometry(R * 0.2, R * 0.045, 6, 14, Math.PI), C.mouth, { p: [0, -R * 0.3, fz(0, -R * 0.42) + R * 0.0], r: [0.25, 0, Math.PI], line: false });
+  /* hair tufts at the nape and a fringe under the brim */
+  [-1, 0, 1].forEach(function (i) {
+    add(head, new T.ConeGeometry(R * 0.3, R * 0.5, 6), C.hair, { p: [i * R * 0.36, -R * 0.5, -R * 0.76], r: [Math.PI + 0.55, 0, i * 0.25] });
+    if (P.kit) add(head, new T.ConeGeometry(R * 0.15, R * 0.3, 5), C.hair, { p: [i * R * 0.28 + R * 0.06, R * 0.34, R * 0.84], r: [Math.PI - 0.3, 0, 0.3], line: false });
+  });
+  /* chin strap */
+  add(head, new T.TorusGeometry(R * 1.0, R * 0.035, 6, 24, Math.PI), 0x333340, { p: [0, R * 0.1, R * 0.08], r: [0, 0, Math.PI], line: false });
+
+  /* helmet */
+  var HR = R * 1.1;
+  var helm = rig.helm = grp(head, [0, R * 0.14, -R * 0.02]); helm.rotation.x = -0.1;
+  var shell = grp(helm); shell.scale.set(1, 1.02, 1.12);
+  add(shell, facet ? new T.SphereGeometry(HR, 9, 4, 0, Math.PI * 2, 0, Math.PI * 0.5) : new T.SphereGeometry(HR, 28, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), M(C.helmet, 'ds'), { lw: 0.5 });
+  add(shell, new T.TorusGeometry(HR, R * 0.085, 8, facet ? 9 : 30), 0xaaaaaa, { r: [Math.PI / 2, 0, 0] });
+  add(shell, new T.TorusGeometry(HR * 0.985, R * 0.055, 6, 20, Math.PI), 0xffffff, { r: [0, Math.PI / 2, 0], s: [1, 1, 1.6], line: false });
+  add(helm, sph(1), C.helmetD, { p: [0, R * 0.02, HR * 1.1], s: [HR * 0.5, R * 0.085, HR * 0.2] });
+  function onShell(a, b, rad) { var n = new T.Vector3(Math.sin(a), Math.cos(a) * Math.cos(b), Math.cos(a) * Math.sin(b)).normalize(); var t = new T.Vector3(0, 0, 1); t.addScaledVector(n, -t.dot(n)).normalize(); var x = new T.Vector3().crossVectors(n, t); return { pos: n.clone().multiplyScalar(rad), q: new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(x, n, t)) }; }
+  [-0.62, 0.62].forEach(function (a) { [0.62, -0.5].forEach(function (b) {
+    var f = onShell(a, b, HR * 0.985), v = add(shell, sph(1), C.helmetD, { s: [R * 0.085, R * 0.045, R * 0.27], line: false }); v.position.copy(f.pos); v.quaternion.copy(f.q);
+  }); });
+
+  /* arms */
+  [1, -1].forEach(function (s) {
+    var L = P.armL, r = P.limbR;
+    var shl = grp(body, [s * (W / 2 + r * 0.45), H - r * 1.1, 0]);
+    add(shl, cap(r, L * 0.5 - r), C.sleeve, { p: [0, -L * 0.25, 0] });
+    var el = grp(shl, [0, -L * 0.5, 0]);
+    add(el, cap(r * 0.9, L * 0.5 - r), C.skin, { p: [0, -L * 0.22, 0] });
+    var hand = grp(el, [0, -L * 0.5, 0]);
+    add(hand, sph(r * 1.3), C.skin);
+    rig.arm[s] = { sh: shl, el: el, hand: hand }; rig.joints.push(shl, el, hand);
+  });
+
+  /* legs */
+  [1, -1].forEach(function (s) {
+    var L = P.legL, r = P.legR;
+    var hip = grp(root, [s * W * 0.25, hipY, 0]);
+    add(hip, cap(r, L * 0.5 - r), C.jeans, { p: [0, -L * 0.25, 0] });
+    var knee = grp(hip, [0, -L * 0.5, 0]);
+    add(knee, cap(r * 0.97, L * 0.5 - r), C.jeans, { p: [0, -L * 0.25, 0] });
+    var foot = grp(knee, [0, -L * 0.5, 0]);
+    add(hip, cap(r * 0.4, L * 0.5 - r), C.jeansL, { p: [-s * r * 0.25, -L * 0.25, r * 0.68], line: false });
+    add(knee, cap(r * 0.38, L * 0.5 - r * 1.6), C.jeansL, { p: [-s * r * 0.25, -L * 0.22, r * 0.66], line: false });
+    add(foot, cyl(r * 1.2, r * 1.25, sh * 0.8), C.shoe, { p: [0, sh * 0.05, 0] });
+    add(foot, sph(1), C.shoe, { p: [0, -sh * 0.42, r * 1.0], s: [r * 1.42, sh * 0.58, r * 2.45] });
+    add(foot, cyl(1, 1, 1), 0xffffff, { p: [0, -sh * 0.88, r * 1.0], s: [r * 1.47, sh * 0.24, r * 2.52] });
+    add(foot, sph(1), 0xffffff, { p: [0, -sh * 0.5, r * 2.75], s: [r * 1.05, sh * 0.44, r * 0.85], line: false });
+    add(foot, sph(r * 0.3), 0xffff55, { p: [s * r * 1.22, -sh * 0.2, r * 0.3], s: [0.5, 1, 1], line: false });
+    rig.leg[s] = { hip: hip, knee: knee, foot: foot }; rig.joints.push(hip, knee, foot);
+  });
+
+  /* ----- kits ----- */
+  if (P.kit === 'lieutenant') {
+    rod(helm, [-HR * 0.62, HR * 0.6, -HR * 0.25], [-HR * 0.78, HR * 1.75, -HR * 0.45], R * 0.03, 0x9aa0b4, { line: false });
+    add(helm, sph(R * 0.09), 0xff3030, { p: [-HR * 0.78, HR * 1.78, -HR * 0.45] });
+    add(head, cyl(R * 0.22, R * 0.22, R * 0.12), 0x333340, { p: [R * 0.98, -R * 0.12, 0], r: [0, 0, Math.PI / 2] });
+    rod(head, [R * 0.98, -R * 0.2, R * 0.05], [R * 0.52, -R * 0.5, R * 0.86], R * 0.03, 0x333340, { line: false });
+    add(head, sph(R * 0.07), 0x111118, { p: [R * 0.5, -R * 0.5, R * 0.88], line: false });
+    add(body, new T.TorusGeometry(W * 0.3, 0.04, 8, 18), 0xffd84a, { p: [0, H + 0.005, 0.01], r: [Math.PI / 2, 0, 0], s: [1, D / W * 1.15, 1] });
+    var tails = rig.tails = grp(body, [-0.07, H, -D * 0.5]); tails.rotation.x = -1.1;
+    add(tails, box(0.07, 0.26, 0.016), 0xffd84a, { p: [0, -0.13, 0] });
+    add(tails, box(0.06, 0.2, 0.016), 0xf2bd2a, { p: [0.06, -0.1, -0.012], r: [0, 0, 0.25] });
+    add(body, box(W * 0.82, H * 0.66, 0.14), 0xaa5500, { p: [0, H * 0.5, -(D / 2 + 0.06)] });
+    add(body, box(W * 0.84, H * 0.22, 0.15), 0xc9742a, { p: [0, H * 0.74, -(D / 2 + 0.06)], line: false });
+    add(body, box(0.05, 0.035, 0.02), 0xffe34d, { p: [0, H * 0.64, -(D / 2 + 0.14)], line: false });
+    [1, -1].forEach(function (s) { add(body, box(0.035, H * 0.62, D * 1.02), 0xaa5500, { p: [s * W * 0.33, H * 0.62, 0], line: false }); });
+    var can = grp(body, [W * 0.41 + 0.05, H * 0.34, -(D / 2 + 0.06)]);
+    add(can, cyl(0.042, 0.042, 0.12), 0xff6fae);
+    add(can, cyl(0.043, 0.043, 0.03), 0xffffff, { p: [0, 0.005, 0], line: false });
+    add(can, cyl(0.036, 0.042, 0.014), 0xc8ccd8, { p: [0, 0.066, 0], line: false });
+    add(body, box(0.09, 0.07, 0.05), 0x8a4400, { p: [W * 0.41 + 0.05, H * 0.27, -(D / 2 + 0.06)] });
+    [0, 1].forEach(function (i) { add(rig.arm[1].sh, box(0.012, 0.022, 0.09), 0xffe34d, { p: [P.limbR, -P.armL * (0.14 + i * 0.08), 0], line: false }); });
+  }
+  if (P.kit === 'tinkerer') {
+    var gg = grp(helm, [0, HR * 0.5, HR * 0.98]); gg.rotation.x = -0.55;
+    [1, -1].forEach(function (s) {
+      add(gg, cyl(R * 0.23, R * 0.23, R * 0.16, 8), 0x444450, { p: [s * R * 0.27, 0, 0], r: [Math.PI / 2, 0, 0] });
+      add(gg, cyl(R * 0.17, R * 0.17, R * 0.04, 8), 0xa8f4ff, { p: [s * R * 0.27, 0, R * 0.09], r: [Math.PI / 2, 0, 0], line: false });
+    });
+    add(gg, box(R * 0.14, R * 0.08, R * 0.08), 0x444450, { p: [0, 0, 0], line: false });
+    add(helm, sph(1), 0xff3030, { p: [0, HR * 0.38, -HR * 1.04], s: [R * 0.18, R * 0.12, R * 0.05] });
+    add(body, new T.TorusGeometry(W * 0.52, 0.032, 5, 10), 0xaa5500, { p: [0, 0.075, 0], r: [Math.PI / 2, 0, 0], s: [1, D / W, 1] });
+    add(body, box(0.05, 0.05, 0.02), 0xffe34d, { p: [0, 0.075, D * 0.52], line: false });
+    add(body, box(0.09, 0.1, 0.07), 0x8a4400, { p: [W * 0.5 + 0.02, 0.03, 0.02] });
+    add(body, box(0.07, 0.08, 0.06), 0x8a4400, { p: [-W * 0.42, 0.03, D * 0.42] });
+    rod(body, [-W * 0.52, 0.08, -0.03], [-W * 0.6, -0.13, -0.02], 0.014, 0xb8bcc8);
+    add(body, new T.TorusGeometry(0.03, 0.012, 5, 8, Math.PI * 1.5), 0xb8bcc8, { p: [-W * 0.6, -0.155, -0.02], r: [0, 0, -0.8], line: false });
+    [1, -1].forEach(function (s) {
+      add(rig.leg[s].knee, sph(P.legR * 1.3), 0xc9ccd6, { p: [0, 0, P.legR * 0.55], s: [1, 1, 0.6] });
+      add(rig.arm[s].el, sph(P.limbR * 1.3), 0xc9ccd6, { p: [0, 0, -P.limbR * 0.5], s: [1, 1, 0.6] });
+    });
+    add(head, box(R * 0.3, R * 0.11, R * 0.03), 0xfff3d6, { p: [R * 0.58, -R * 0.3, R * 0.72], r: [0, 0.68, 0.35], line: false });
+    [[-0.5, -0.2], [-0.62, -0.26], [-0.44, -0.3], [0.22, -0.2], [0.3, -0.27]].forEach(function (f) { add(head, sph(R * 0.022), 0xb9744a, { p: [f[0] * R, f[1] * R, fz(f[0] * R, f[1] * R) + R * 0.035], line: false }); });
+  }
+
+  /* ----- pogo stick ----- */
+  var ps = P.prop, PEG = 0.27 * ps;
+  var pogo = grp(root);
+  var shaft = add(pogo, cyl(0.02 * ps, 0.02 * ps, 1), 0xaaaaaa);
+  var bar = grp(pogo), barM = add(bar, cyl(0.018 * ps, 0.018 * ps, 1, 8), 0x555555, { r: [0, 0, Math.PI / 2] });
+  var grips = [1, -1].map(function (s) { return add(bar, cyl(0.026 * ps, 0.026 * ps, 0.07 * ps, 8), C.shoe, { r: [0, 0, Math.PI / 2] }); });
+  var pegM = add(pogo, box(1, 0.03 * ps, 0.09 * ps), 0x555555, { p: [0, PEG - 0.015 * ps, 0] });
+  var spring = grp(pogo, [0, PEG - 0.04 * ps, 0]), SPR = PEG - 0.09 * ps;
+  for (var k = 0; k < 4; k++) add(spring, new T.TorusGeometry(0.042 * ps, 0.013 * ps, 6, 12), 0x555555, { p: [0, -(k + 0.5) * SPR / 4, 0], r: [Math.PI / 2 + 0.12, 0, 0], line: false });
+  add(spring, cyl(0.015 * ps, 0.015 * ps, SPR, 6), 0xaaaaaa, { p: [0, -SPR / 2, 0], line: false });
+  var tip = add(pogo, sph(0.04 * ps), 0x333340, { p: [0, 0.035 * ps, 0], s: [1, 0.85, 1] });
+  rig.pogo = { g: pogo, spring: spring, tip: tip, tipY: 0.035 * ps, SPR: SPR, PEG: PEG,
+    fit: function (h, barW, pegW) {
+      shaft.scale.y = h - PEG + 0.04; shaft.position.y = PEG - 0.04 + (h - PEG + 0.04) / 2;
+      bar.position.y = h; barM.scale.y = barW; grips[0].position.x = barW / 2 - 0.03 * ps; grips[1].position.x = -barW / 2 + 0.03 * ps;
+      pegM.scale.x = pegW;
+    } };
+
+  /* ----- fizz blaster ----- */
+  function makeBlaster(parent) {
+    var g = grp(parent);
+    add(g, sph(1), fizzM('light'), { p: [0, 0.01, 0.07], s: [0.052, 0.058, 0.135] });
+    add(g, box(0.07, 0.03, 0.2), fizzM('dark'), { p: [0, -0.035, 0.07] });
+    add(g, cyl(0.03, 0.048, 0.055), 0xffffff, { p: [0, 0.005, 0.215], r: [Math.PI / 2, 0, 0] });
+    add(g, sph(0.05), 0xffff55, { p: [0, 0.075, 0.03] });
+    add(g, box(0.04, 0.11, 0.05), 0x555555, { p: [0, -0.075, -0.01], r: [0.25, 0, 0] });
+    return g;
+  }
+  var bl = rig.blaster = makeBlaster(rig.arm[-1].hand); bl.rotation.x = Math.PI / 2; bl.scale.setScalar(ps); bl.position.set(0, -P.limbR * 0.6, P.limbR * 0.9);
+  var hol = rig.holster = makeBlaster(body); hol.rotation.set(Math.PI / 2 + 0.25, 0, 0); hol.scale.setScalar(ps * 0.8); hol.position.set(-(W / 2 + 0.045), 0.06, -0.02);
+  rig.muzzle = grp(bl, [0, 0.005, 0.25]);
+  rig.bubbles = [0, 1, 2].map(function () {
+    var m = new T.Mesh(new T.SphereGeometry(0.05, 14, 10), new T.MeshBasicMaterial({ transparent: true, opacity: 0.8 }));
+    fizzMats.push({ m: m.material, shade: 'light' }); root.add(m); return m;
+  });
+
+  return { P: P, rig: rig, root: root, outlines: outlines };
+}
+
+/* ---------- poses ---------- */
+var v3 = new T.Vector3();
+function setPose(fig, name) {
+  var r = fig.rig, P = fig.P, root = fig.root;
+  r.joints.forEach(function (j) { j.rotation.set(0, 0, 0); });
+  root.position.y = 0;
+  function leg(s, hx, kx, hz) { var l = r.leg[s]; l.hip.rotation.set(hx, 0, hz); l.knee.rotation.x = kx; l.foot.rotation.set(-(hx + kx), 0, -hz); }
+  function arm(s, sx, sz, ex, ez) { var a = r.arm[s]; a.sh.rotation.set(sx, 0, sz); a.el.rotation.set(ex, 0, ez || 0); }
+  var chibi = false;
+  if (name === 'ready') {
+    leg(1, 0, 0, 0.13); leg(-1, 0, 0, -0.13);
+    arm(1, 0.1, 0.72, 0, -1.72);
+    arm(-1, -0.55, chibi ? -0.75 : -0.5, -0.5, 0);
+    r.head.rotation.set(0, 0.12, 0);
+  } else if (name === 'fizz') {
+    leg(1, -0.5, 0.55, 0.12); leg(-1, 0.4, 0.2, -0.14);
+    arm(-1, -1.5, -0.08, 0, 0);
+    arm(1, 0.7, 0.35, -1.25, 0);
+    r.body.rotation.set(0.06, -0.12, 0); r.head.rotation.set(-0.05, 0.1, 0);
+  } else {
+    leg(1, -1.0, 1.25, 0.2); leg(-1, -1.0, 1.25, -0.2);
+    arm(1, -0.8, chibi ? 0.1 : -0.12, -0.85, 0); arm(-1, -0.8, chibi ? -0.1 : 0.12, -0.85, 0);
+    r.body.rotation.set(0.14, 0, 0); r.head.rotation.set(-0.12, 0, 0);
+  }
+  fig.turn.updateMatrixWorld(true);
+  var loc = function (o) { return root.worldToLocal(o.getWorldPosition(new T.Vector3())); };
+  var fL = loc(r.leg[1].foot), fR = loc(r.leg[-1].foot), hL = loc(r.arm[1].hand), hR = loc(r.arm[-1].hand);
+  var pg = r.pogo, sh = P.shoeH;
+  pg.g.visible = name !== 'fizz'; r.blaster.visible = name === 'fizz'; r.holster.visible = name !== 'fizz';
+  r.bubbles.forEach(function (b) { b.visible = name === 'fizz'; });
+  pg.g.rotation.set(0, 0, 0); pg.spring.scale.y = 1; pg.tip.position.y = pg.tipY;
+  if (name === 'pogo') {
+    var sy = (fL.y + fR.y) / 2 - sh, szz = (fL.z + fR.z) / 2 + P.legR * 0.9, hy = (hL.y + hR.y) / 2, hz = (hL.z + hR.z) / 2;
+    var th = Math.atan2(hz - szz, hy - sy), len = Math.hypot(hz - szz, hy - sy);
+    pg.fit(pg.PEG + len, Math.abs(hL.x - hR.x) + 0.12, Math.abs(fL.x - fR.x) + P.legR * 3.2);
+    pg.g.rotation.x = th;
+    var ty = sy - pg.PEG * Math.cos(th);
+    pg.g.position.set(0, ty, szz - pg.PEG * Math.sin(th));
+    root.position.y = -ty;
+  } else {
+    root.position.y = sh - Math.min(fL.y, fR.y);
+    if (name === 'ready') {
+      pg.fit(hR.y + root.position.y + 0.05, 0.3 * P.prop, 0.3 * P.prop);
+      pg.g.position.set(hR.x, -root.position.y, hR.z);
+    }
+  }
+  fig.baseY = root.position.y; fig.pose = name;
+  fig.base = r.joints.map(function (j) { return [j, j.rotation.x, j.rotation.y, j.rotation.z]; });
+  fig.turn.updateMatrixWorld(true);
+  fig.muz = loc(r.muzzle);
+}
+
+/* ---------- assemble the line-up ---------- */
+var figs = SPECS.map(function (P, i) {
+  var fig = buildBen(P);
+  var turn = fig.turn = new T.Group(); turn.position.x = (i - 1) * 1.7; scene.add(turn);
+  turn.add(fig.root);
+  var ped = new T.Mesh(new T.CylinderGeometry(0.62, 0.66, 0.1, 40), [new T.MeshBasicMaterial({ color: 0x7a3c00 }), new T.MeshBasicMaterial({ color: 0xaa5500 }), new T.MeshBasicMaterial({ color: 0x7a3c00 })]);
+  ped.position.y = -0.05; turn.add(ped);
+  var ring = new T.Mesh(new T.TorusGeometry(0.62, 0.012, 6, 48), new T.MeshBasicMaterial({ color: 0xffff55 })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.001; turn.add(ring);
+  fig.shadow = new T.Mesh(new T.CircleGeometry(0.3, 24), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
+  fig.shadow.rotation.x = -Math.PI / 2; fig.shadow.position.y = 0.004; turn.add(fig.shadow);
+  fig.phase = i * 0.37;
+  return fig;
+});
+
+/* ---------- state + controls ---------- */
+var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var S = { view: -1, pose: 'ready', fizz: 'grape', line: true, spin: !reduce, yaw: 0.55, pitch: 0.1 };
+var cam = { x: 0, dist: 8, tx: 0, td: 8 };
+
+function press(container, test) { Array.prototype.forEach.call(container.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', test(b) ? 'true' : 'false'); }); }
+function setView(v) { S.view = v; press(document.getElementById('segView'), function (b) { return +b.dataset.v === v; }); press(document.getElementById('cards'), function (b) { return +b.dataset.v === v; }); frame(); }
+function setPoseAll(p) { S.pose = p; figs.forEach(function (f) { setPose(f, p); }); press(document.getElementById('segPose'), function (b) { return b.dataset.p === p; }); }
+function setFizz(f) { S.fizz = f; fizzMats.forEach(function (e) { e.m.color.setHex(FIZZ[f][e.shade]); }); press(document.getElementById('segFizz'), function (b) { return b.dataset.f === f; }); }
+document.getElementById('segView').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setView(+b.dataset.v); });
+document.getElementById('cards').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setView(S.view === +b.dataset.v ? -1 : +b.dataset.v); });
+document.getElementById('segPose').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setPoseAll(b.dataset.p); });
+document.getElementById('segFizz').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setFizz(b.dataset.f); });
+document.getElementById('t-line').addEventListener('click', function () { S.line = !S.line; this.setAttribute('aria-pressed', S.line); allOutlines.forEach(function (o) { o.visible = S.line; }); });
+document.getElementById('t-spin').addEventListener('click', function () { S.spin = !S.spin; this.setAttribute('aria-pressed', S.spin); });
+document.getElementById('t-spin').setAttribute('aria-pressed', S.spin);
+
+var drag = null;
+canvas.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY }; try { canvas.setPointerCapture(e.pointerId); } catch (err) {} });
+canvas.addEventListener('pointermove', function (e) { if (!drag) return; S.yaw += (e.clientX - drag.x) * 0.012; if (e.pointerType === 'mouse') S.pitch = Math.max(-0.25, Math.min(0.9, S.pitch + (e.clientY - drag.y) * 0.006)); drag.x = e.clientX; drag.y = e.clientY; });
+['pointerup', 'pointercancel'].forEach(function (n) { canvas.addEventListener(n, function () { drag = null; }); });
+
+function frame() {
+  var tf = Math.tan(camera.fov * Math.PI / 360), w = S.view < 0 ? 4.9 : 1.75, h = 2.0;
+  cam.td = Math.max(h / 2 / tf, w / 2 / (tf * camera.aspect)) * 1.06;
+  cam.tx = S.view < 0 ? 0 : (S.view - 1) * 1.7;
+}
+function resize() {
+  var w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); frame();
+}
+if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener('resize', resize);
+resize(); cam.x = cam.tx; cam.dist = cam.td;
+
+setFizz(S.fizz); setPoseAll(S.pose);
+
+/* ---------- loop ---------- */
+var last = performance.now(), t = 0;
+function tick(now) {
+  var dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
+  if (S.spin && !drag) S.yaw += dt * 0.35;
+  cam.x += (cam.tx - cam.x) * Math.min(1, dt * 6); cam.dist += (cam.td - cam.dist) * Math.min(1, dt * 6);
+  var ty = 0.78;
+  camera.position.set(cam.x, ty + Math.sin(S.pitch) * cam.dist, Math.cos(S.pitch) * cam.dist); camera.lookAt(cam.x, ty, 0);
+  figs.forEach(function (f) {
+    var r = f.rig, a = reduce ? 0 : 1, ph = t + f.phase * 6;
+    f.turn.rotation.y = S.yaw;
+    f.base.forEach(function (b) { b[0].rotation.set(b[1], b[2], b[3]); });
+    r.body.scale.y = 1 + a * 0.012 * Math.sin(ph * 2.2);
+    r.head.rotation.z += a * 0.035 * Math.sin(ph * 1.3);
+    if (r.tails) r.tails.rotation.x = -1.1 + a * 0.18 * Math.sin(ph * 5) - (f.pose === 'pogo' ? 0.3 : 0);
+    var lift = 0;
+    if (f.pose === 'pogo') {
+      var u = reduce ? 0.3 : ((t * 1.45 + f.phase) % 1), near = Math.max(0, 1 - u * 7) + Math.max(0, 1 - (1 - u) * 7), c = 0.5 * near * r.pogo.SPR;
+      lift = 4 * 0.42 * u * (1 - u);
+      r.pogo.spring.scale.y = 1 - c / r.pogo.SPR; r.pogo.tip.position.y = r.pogo.tipY + c;
+      f.root.position.y = f.baseY + lift - c;
+      r.leg[1].knee.rotation.x += near * 0.18; r.leg[-1].knee.rotation.x += near * 0.18;
+      r.leg[1].hip.rotation.x -= near * 0.12; r.leg[-1].hip.rotation.x -= near * 0.12;
+    } else {
+      f.root.position.y = f.baseY;
+      if (f.pose === 'ready') r.arm[1].sh.rotation.z += a * 0.03 * Math.sin(ph * 2.2);
+      if (f.pose === 'fizz') {
+        r.arm[-1].sh.rotation.x += a * 0.05 * Math.max(0, Math.sin(ph * 5.03));
+        r.bubbles.forEach(function (b, i) {
+          var u2 = reduce ? (i + 1) / 4 : ((t * 0.8 + i / 3 + f.phase) % 1);
+          b.position.set(f.muz.x + Math.sin(u2 * 9 + i) * 0.03, f.muz.y + u2 * 0.12 + Math.sin(u2 * 7 + i * 2) * 0.02, f.muz.z + 0.06 + u2 * 1.1);
+          b.scale.setScalar((0.5 + u2 * 1.1) * f.P.prop); b.material.opacity = 0.85 * (1 - u2 * u2);
+        });
+      }
+    }
+    var sc = 1 / (1 + lift * 1.6); f.shadow.scale.setScalar(sc); f.shadow.material.opacity = 0.3 * sc;
+  });
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+window.__ben = { setView: setView, setPose: setPoseAll, S: S };
+})();
+</script>
+
+</body>
+</html>
