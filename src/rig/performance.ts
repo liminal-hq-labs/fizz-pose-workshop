@@ -62,6 +62,8 @@ export interface PerformanceKey {
 export interface NoteSettings { emitPhase: number; path: number[][]; }
 export interface PerformanceSettings {
   view: 'side' | 'back' | 'front'; standing?: 'left' | 'right'; loop: boolean; keys: PerformanceKey[];
+  /** Rear view only: rows removed from the nape of the rear helmet (0 or 1), shortening the head-to-shoulders gap. The collar and shoulders keep their pixels. */
+  neckTrim?: number;
   /** Ben wears his wrist computer on the far (left) forearm in this clip. */
   wristComputer?: boolean;
   /**

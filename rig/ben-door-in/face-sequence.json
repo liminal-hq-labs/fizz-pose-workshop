@@ -122,7 +122,12 @@
         ]
       },
       "shift": 0,
-      "renderedEar": [],
+      "renderedEar": [
+        [
+          10,
+          10
+        ]
+      ],
       "renderedEye": [],
       "renderedMouth": []
     },
@@ -247,7 +252,12 @@
         ]
       },
       "shift": 0,
-      "renderedEar": [],
+      "renderedEar": [
+        [
+          10,
+          10
+        ]
+      ],
       "renderedEye": [],
       "renderedMouth": []
     },
@@ -372,7 +382,12 @@
         ]
       },
       "shift": 0,
-      "renderedEar": [],
+      "renderedEar": [
+        [
+          10,
+          10
+        ]
+      ],
       "renderedEye": [],
       "renderedMouth": []
     },
@@ -497,7 +512,12 @@
         ]
       },
       "shift": 0,
-      "renderedEar": [],
+      "renderedEar": [
+        [
+          10,
+          10
+        ]
+      ],
       "renderedEye": [],
       "renderedMouth": []
     },
@@ -622,7 +642,12 @@
         ]
       },
       "shift": 0,
-      "renderedEar": [],
+      "renderedEar": [
+        [
+          10,
+          10
+        ]
+      ],
       "renderedEye": [],
       "renderedMouth": []
     },
@@ -747,7 +772,12 @@
         ]
       },
       "shift": 0,
-      "renderedEar": [],
+      "renderedEar": [
+        [
+          10,
+          10
+        ]
+      ],
       "renderedEye": [],
       "renderedMouth": []
     },
@@ -872,7 +902,12 @@
         ]
       },
       "shift": 0,
-      "renderedEar": [],
+      "renderedEar": [
+        [
+          10,
+          10
+        ]
+      ],
       "renderedEye": [],
       "renderedMouth": []
     },
@@ -997,7 +1032,12 @@
         ]
       },
       "shift": 0,
-      "renderedEar": [],
+      "renderedEar": [
+        [
+          10,
+          10
+        ]
+      ],
       "renderedEye": [],
       "renderedMouth": []
     }

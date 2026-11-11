@@ -106,6 +106,7 @@
   "motion": "idle",
   "performance": {
     "view": "back",
+    "neckTrim": 1,
     "loop": false,
     "keys": [
       {
