@@ -1,0 +1,347 @@
+{
+  "name": "Ben · walking in through the far-plane door rig",
+  "width": 24,
+  "height": 44,
+  "groundY": 35,
+  "durationMs": 880,
+  "sampleCount": 8,
+  "frameDurationsMs": [
+    120,
+    110,
+    100,
+    110,
+    110,
+    100,
+    110,
+    120
+  ],
+  "root": [
+    11,
+    24
+  ],
+  "torso": {
+    "leanDegrees": 0,
+    "pitchSwayDegrees": 0,
+    "bobAmplitude": 0.75,
+    "bobLag": 0.04,
+    "shoulderY": -8,
+    "shoulderSpread": 3.8,
+    "shoulderTwist": 0.4,
+    "neckHeight": 10
+  },
+  "arms": {
+    "upperLength": 4.2,
+    "forearmLength": 4,
+    "swingDegrees": 55,
+    "elbowDegrees": 90,
+    "elbowFlexDegrees": 4,
+    "phaseLead": 0.08333333333333333,
+    "biasDegrees": -8
+  },
+  "legs": {
+    "thighLength": 4.8,
+    "shinLength": 4.8,
+    "hipSpread": 3
+  },
+  "stride": {
+    "stanceFraction": 0.24,
+    "frontX": 3.5,
+    "backX": -4,
+    "lift": 6.5,
+    "toeOffDegrees": 25,
+    "recoveryToeDegrees": -12
+  },
+  "feet": {
+    "toe": [
+      3,
+      2
+    ],
+    "heel": [
+      -1,
+      2
+    ],
+    "ball": [
+      1,
+      2
+    ],
+    "landingToeDegrees": -28,
+    "landingCompression": 0.25
+  },
+  "face": {
+    "yawDegrees": 3,
+    "eye": [
+      2,
+      -5,
+      1.5
+    ],
+    "mouth": [
+      2,
+      -3,
+      1.5
+    ],
+    "shiftAmplitude": 0,
+    "ear": [
+      -1,
+      -4,
+      1.5
+    ],
+    "profile": {
+      "nose": [
+        5,
+        -4,
+        1.5
+      ],
+      "cheek": [
+        -2,
+        -3,
+        1.5
+      ],
+      "chin": [
+        0,
+        -1,
+        1.5
+      ]
+    }
+  },
+  "motion": "idle",
+  "performance": {
+    "view": "back",
+    "loop": false,
+    "keys": [
+      {
+        "phase": 0,
+        "root": [
+          11,
+          24
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          6.1,
+          23.6
+        ],
+        "farHand": [
+          15.9,
+          23.6
+        ],
+        "nearAnkle": [
+          8,
+          33
+        ],
+        "farAnkle": [
+          14,
+          33
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": true
+      },
+      {
+        "phase": 0.14285714285714285,
+        "root": [
+          11.4,
+          24
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          6.5,
+          23.7
+        ],
+        "farHand": [
+          16.4,
+          22.8
+        ],
+        "nearAnkle": [
+          8,
+          31
+        ],
+        "farAnkle": [
+          14,
+          33
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": true
+      },
+      {
+        "phase": 0.2857142857142857,
+        "root": [
+          11.4,
+          23.5
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          6.5,
+          23.3
+        ],
+        "farHand": [
+          16.4,
+          21.9
+        ],
+        "nearAnkle": [
+          8,
+          29.5
+        ],
+        "farAnkle": [
+          14,
+          33
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": true
+      },
+      {
+        "phase": 0.42857142857142855,
+        "root": [
+          11,
+          24.4
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          6.1,
+          24.1
+        ],
+        "farHand": [
+          16,
+          23.2
+        ],
+        "nearAnkle": [
+          8,
+          31
+        ],
+        "farAnkle": [
+          14,
+          33
+        ],
+        "expression": "normal",
+        "nearSupport": false,
+        "farSupport": true
+      },
+      {
+        "phase": 0.5714285714285714,
+        "root": [
+          10.7,
+          24
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          5.8,
+          23.2
+        ],
+        "farHand": [
+          15.6,
+          23.4
+        ],
+        "nearAnkle": [
+          8,
+          32
+        ],
+        "farAnkle": [
+          14,
+          31.5
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": false
+      },
+      {
+        "phase": 0.7142857142857143,
+        "root": [
+          10.6,
+          23.5
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          5.6,
+          22
+        ],
+        "farHand": [
+          15.5,
+          23.3
+        ],
+        "nearAnkle": [
+          8,
+          33
+        ],
+        "farAnkle": [
+          14,
+          29.5
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": false
+      },
+      {
+        "phase": 0.8571428571428571,
+        "root": [
+          11,
+          24.4
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          6,
+          23.2
+        ],
+        "farHand": [
+          15.9,
+          24.1
+        ],
+        "nearAnkle": [
+          8,
+          33
+        ],
+        "farAnkle": [
+          14,
+          31
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": false
+      },
+      {
+        "phase": 1,
+        "root": [
+          11,
+          24.1
+        ],
+        "lean": 0,
+        "headRoll": 0,
+        "nearHand": [
+          6.1,
+          23.3
+        ],
+        "farHand": [
+          15.9,
+          23.6
+        ],
+        "nearAnkle": [
+          8,
+          33
+        ],
+        "farAnkle": [
+          14,
+          31.5
+        ],
+        "expression": "normal",
+        "nearSupport": true,
+        "farSupport": false
+      }
+    ],
+    "sampleTimes": [
+      0,
+      0.14285714285714285,
+      0.2857142857142857,
+      0.42857142857142855,
+      0.5714285714285714,
+      0.7142857142857143,
+      0.8571428571428571,
+      1
+    ]
+  }
+}
