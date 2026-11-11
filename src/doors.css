@@ -54,3 +54,6 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
   .cost th,.cost td{padding:3px 4px}
 }
 @media(prefers-reduced-motion:reduce){.doors-page *{scroll-behavior:auto;transition:none}}
+
+#answers dt { font-weight: 600; margin-top: 0.7em; }
+#answers dd { margin: 0.15em 0 0; }

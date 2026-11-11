@@ -148,8 +148,8 @@ function drawExit(picture: Picture, design: ExitDesign, step: Step, waiting: boo
   if (ben && !ben.hidden && benShown()) {
     const frame = walkInSprites.get(ben.frame);
     // source/ben-door-pass.json: spriteX = exitX + spriteLeft; spriteY = (sill + startBelowSill) - 36 - rise; only the top
-    // visibleRows rows are drawn.
-    if (frame) picture.grid(frame.grid, EXIT_OX + ben.left, sill + settings.startBelowSill - 36 - ben.rise, settings.night ? ACTOR : 1, ben.visibleRows);
+    // keepCanvasRows rows of the 24 × 44 frame are drawn (visibleRows of Ben from his crown, which is on row 3).
+    if (frame) picture.grid(frame.grid, EXIT_OX + ben.left, sill + settings.startBelowSill - 36 - ben.rise, settings.night ? ACTOR : 1, ben.keepCanvasRows);
   }
   if (ben?.behind) {
     if (shows('glow')) putLayer(picture, glow, step.glowOver, level(true));
@@ -319,7 +319,7 @@ function keyedCard(red: KeyedDesign, blue: KeyedDesign): HTMLElement {
       ['Baked 16 × 48', `${layerBytesLine('back', b.composed48.back)}; ${layerBytesLine('glow', b.composed48.glow)}`, b.composed48.total],
       ['Baked 16 × 32', `${layerBytesLine('back', b.composed32.back)}; ${layerBytesLine('glow', b.composed32.glow)}`, b.composed32.total],
     ]),
-    el('p', { class: 'small' }, 'Each colour costs this; red and blue share the grids, so a colour-swapping bake would pay once.'),
+    el('p', { class: 'small' }, 'Each colour costs this, stored as two copies; red and blue share every grid, so a colour-swapping bake could pay once later.'),
     el('ul', { class: 'notes small' }, ...red.notes.map(note => el('li', {}, note))),
     segmentStack(red),
   );
@@ -388,6 +388,17 @@ function setup(): void {
   night.onchange = () => { settings.night = night.checked; repaintAll(); };
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name=height]')) radio.onchange = () => { settings.height = Number(radio.value); repaintAll(); };
   for (const radio of document.querySelectorAll<HTMLInputElement>('input[name=ending]')) radio.onchange = () => { settings.ending = radio.value as 'held' | 'empty'; for (const preview of previews) preview.elapsed = 0; repaintAll(); };
+  const { fizz2 } = data, open = fizz2.keyedHeight.twinLeavesClearOpening;
+  $('#height-note').textContent = `${fizz2.keyedHeight.standardTiles} tiles (16 × ${fizz2.keyedHeight.standardPx}) is the standard keyed door. ${fizz2.keyedHeight.minimumTiles} tiles (16 × ${fizz2.keyedHeight.minimumPx}) is a minimum only: Ben's body is exactly ${fizz2.keyedHeight.benBodyPx} px tall, so it fits him with no margin. Twin Leaves leaves a ${open.tiles3} px opening at 3 tiles and a tight ${open.tiles2} px at 2.`;
+  const row = (term: string, ...text: string[]) => [el('dt', {}, term), el('dd', {}, ...text)];
+  $('#answers').replaceChildren(
+    ...row('Keyed door height', fizz2.keyedHeight.note),
+    ...row('Held open frame', `${fizz2.heldOpen.status}: ${fizz2.heldOpen.note} It keeps the ${fizz2.heldOpen.keeps.join(' and the ')}.`),
+    ...row('Night', fizz2.night.litArt, ' ', fizz2.night.glowLayer),
+    ...row('DOS memory', fizz2.dosMemory.note, ` Largest design: ${bytes(fizz2.dosMemory.bytesPerCopyMax)} a colour, ${bytes(fizz2.dosMemory.bytesBothColoursMax)} for both.`),
+    ...row('Sound and timing (open decision)', `${fizz2.sound.note} The \`dooropen\` sound is about ${fizz2.sound.dooropenMs}. Openings: ${Object.entries(fizz2.sound.openingMs).map(([family, ms]) => `${family} ${ms} ms`).join(', ')}.`),
+  );
+  $('#facts').replaceChildren(...fizz2.facts.map(fact => el('li', {}, fact)));
   $('#controls').addEventListener('submit', event => event.preventDefault());
 }
 

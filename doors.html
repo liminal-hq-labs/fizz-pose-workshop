@@ -23,30 +23,38 @@
     <label>Layers <select id="layers"><option value="all">All layers</option><option value="back">Back only</option><option value="front">Front only (exits)</option><option value="glow">Glow only</option></select></label>
     <label>Background <select id="background"><option value="wall">Back wall and floor</option><option value="sky">Night sky and floor</option><option value="none">Transparent</option></select></label>
     <label class="check"><input id="ben" type="checkbox" checked>Show Ben</label>
-    <label>Exit floor line below the sill <select id="sill"><option value="0">0 px</option><option value="6">6 px</option><option value="10">10 px</option><option value="16">16 px (feet plane)</option></select></label>
+    <label>Exit floor line below the sill <select id="sill"><option value="0">0 px</option><option value="6">6 px</option><option value="10">10 px</option><option value="16">16 px (the real game value)</option></select></label>
     <label class="check"><input id="night" type="checkbox">Night (glow bank stays lit)</label>
     <fieldset class="segmented"><legend>Keyed door height</legend>
       <label><input type="radio" name="height" value="1">1 tile</label>
-      <label><input type="radio" name="height" value="2">2 tiles</label>
-      <label><input type="radio" name="height" value="3" checked>3 tiles</label>
+      <label><input type="radio" name="height" value="2">2 tiles (minimum)</label>
+      <label><input type="radio" name="height" value="3" checked>3 tiles (standard)</label>
     </fieldset>
     <fieldset class="segmented"><legend>Keyed door ending</legend>
-      <label><input type="radio" name="ending" value="held" checked>Held open frame</label>
+      <label><input type="radio" name="ending" value="held" checked>Held open frame (default)</label>
       <label><input type="radio" name="ending" value="empty">Empty (as Fizz 1)</label>
     </fieldset>
   </form>
   <p class="small" id="motion-note"></p>
+  <p class="small" id="height-note"></p>
 
   <section aria-labelledby="keyed-heading">
     <h2 id="keyed-heading">Keyed doors</h2>
-    <p class="small">A keyed door is a column of 16 × 16 terrain segments standing on the floor line: the top segment carries the badge (white triangle on red, white disc on blue), the bottom one the lock, and middles repeat. Two tiles stack top and bottom; one tile is the top alone. The key opens the door on the tick it touches it; the opening frames are presentation only, drawn before Ben, so Ben is always in front of the whole door. Each card shows the opening with Ben waiting beside the door, then Ben running across the open doorway (<code>walk-run-6</code>). Red and blue share every grid and differ only in colour and badge shape.</p>
+    <p class="small">A keyed door is a column of 16 × 16 terrain segments standing on the floor line: the top segment carries the badge (white triangle on red, white disc on blue), the bottom one the lock, and middles repeat. Two tiles stack top and bottom; one tile is the top alone. The key opens the door on the tick it touches it; the opening frames are presentation only, drawn before Ben, so Ben is always in front of the whole door. Each card shows the opening with Ben waiting beside the door, then Ben running across the open doorway (<code>walk-run-6</code>). Red and blue share every grid and differ only in colour and badge shape. Three tiles (16 × 48) is the standard height; two tiles is shown as a minimum only. A held open door keeps its lintel strip and side faces as decoration, never blocking Ben.</p>
     <div id="keyed" class="door-grid"></div>
   </section>
 
   <section aria-labelledby="exits-heading">
     <h2 id="exits-heading">Exits</h2>
-    <p class="small">The exit is a 20 × 35 doorway on the far plane: its sill sits on the far edge of the floor, higher on screen than the floor line Ben stands on in front of it. It is placed 4 px right of its cell and 35 px above the top of the lower exit cell, with the 14 × 32 light on its own glow layer. Ben presses Up while overlapping it; the walk-in uses <code>ben_doorIn1</code> to <code>ben_doorIn8</code> placed by <code>source/ben-door-pass.json</code>, and the front lip (the bottom 6 rows) is drawn over him. How far the floor line is below the sill is the game's to set; try it with the control above.</p>
+    <p class="small">The exit is a 20 × 35 doorway on the far plane: its sill sits on the far edge of the floor, higher on screen than the floor line Ben stands on in front of it. It is placed 4 px right of its cell and 35 px above the top of the lower exit cell, with the 14 × 32 light on its own glow layer. Ben presses Up while overlapping it; the walk-in uses <code>ben_doorIn1</code> to <code>ben_doorIn8</code> placed by <code>source/ben-door-pass.json</code>, and the front lip (the bottom 6 rows) is drawn over him. In Fizz 2 the floor line is 16 px, one tile, below the sill, so standing Ben's head is 17 px above the sill inside the 35 px arch; the control above can still try other distances.</p>
     <div id="exits" class="door-grid"></div>
+  </section>
+
+  <section aria-labelledby="answers-heading" class="panel">
+    <h2 id="answers-heading">Fizz 2 answers and open decisions</h2>
+    <dl id="answers" class="small"></dl>
+    <h3>Fizz 2 facts</h3>
+    <ul id="facts" class="small"></ul>
   </section>
 
   <section aria-labelledby="contract-heading" class="panel">
