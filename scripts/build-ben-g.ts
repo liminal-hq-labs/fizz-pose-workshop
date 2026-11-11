@@ -41,7 +41,7 @@ export const benGClips: readonly BenGClip[] = [
 export const benGFramesPerSecond = 24;
 
 interface DumpMesh {
-  geo: number; color: number; vertexColors: boolean; opacity: number; unlit: boolean; double: boolean; skinned: boolean;
+  geo: number; color: number; vertexColors: boolean; opacity: number; unlit: boolean; double: boolean; skinned: boolean; outline: boolean;
   skin?: { bones: number[]; inverses: number[][]; bind: number[] };
 }
 interface DumpNode { parent: number; name: string; bone: boolean; p: number[]; q: number[]; s: number[]; mesh?: DumpMesh }
@@ -53,7 +53,7 @@ const floats = (text: string): Float32Array => { const b = Buffer.from(text, "ba
 const uint16 = (text: string): Uint16Array => { const b = Buffer.from(text, "base64"); return new Uint16Array(b.buffer, b.byteOffset, b.byteLength / 2).slice(); };
 const uint32 = (text: string): Uint32Array => { const b = Buffer.from(text, "base64"); return new Uint32Array(b.buffer, b.byteOffset, b.byteLength / 4).slice(); };
 
-/** Opens the prototype with painted vents (the cut vents are an alpha texture) and returns its dump. */
+/** Opens the prototype with its vents cut into a dense shell mesh (the live page uses an alpha texture) and returns its dump. */
 async function dumpPrototype(): Promise<Dump> {
   const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH ?? "/usr/bin/chromium",
@@ -68,7 +68,7 @@ async function dumpPrototype(): Promise<Dump> {
     const dump = (await page.evaluate(
       ({ clips, fps }) => {
         const rig = (window as unknown as { __rig: { OPT: Record<string, unknown>; rebuild: () => void; dumpModel: (clips: unknown, fps: number) => unknown } }).__rig;
-        rig.OPT.vents = "painted";
+        rig.OPT.vents = "mesh";
         rig.rebuild();
         return rig.dumpModel(clips, fps);
       },
@@ -112,6 +112,8 @@ export function sceneFromDump(dump: Dump): { root: THREE.Object3D; clips: THREE.
       ? node.mesh.skinned ? new THREE.SkinnedMesh(geometries[node.mesh.geo], material(node.mesh)) : new THREE.Mesh(geometries[node.mesh.geo], material(node.mesh))
       : new THREE.Group();
     object.name = names[i];
+    // Viewers that draw an ink line read this to know which parts carry one.
+    if (node.mesh?.outline) object.userData.outline = true;
     object.position.fromArray(node.p);
     object.quaternion.fromArray(node.q);
     object.scale.fromArray(node.s);

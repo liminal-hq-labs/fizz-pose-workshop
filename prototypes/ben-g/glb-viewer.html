@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Loads models/ben-g/ben-g.glb and plays its animation clips, as a check of the exported file.
+  Plays models/ben-g/ben-g.glb as a cartoon: toon shading, an ink outline, soft shadows and a clip picker.
 
   (c) Copyright 2026 Liminal HQ, Scott Morris
   SPDX-License-Identifier: Apache-2.0 OR MIT
@@ -8,55 +8,154 @@
 <html lang="en-CA">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ben Blaze GLB viewer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ben Blaze 3D Viewer</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #1b1e3f; color: #eef0ff; font: 15px system-ui, sans-serif; }
-  #bar { position: fixed; left: 12px; top: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 24px); }
-  button { font: inherit; color: inherit; background: #262b63; border: 2px solid #eef0ff; padding: 4px 9px; cursor: pointer; }
-  button[aria-pressed="true"] { background: #55ff55; color: #06210c; font-weight: 700; }
-  #note { position: fixed; left: 12px; bottom: 10px; color: #a3a9d2; }
-  canvas { display: block; }
+  :root { color-scheme: dark; --bg: #0b0d22; --panel: #14173a; --ink: #eef0ff; --muted: #a3a9d2; --accent: #55ff55; --accent-ink: #06210c; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.4 "DM Sans", system-ui, sans-serif; overflow: hidden; }
+  #stage { position: fixed; inset: 0; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); background: linear-gradient(transparent, rgba(11, 13, 34, .92) 35%); display: flex; flex-direction: column; gap: 8px; }
+  #clips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  button, select { font: inherit; color: var(--ink); background: var(--panel); border: 2px solid var(--ink); padding: 4px 10px; cursor: pointer; flex: none; }
+  button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #ff55ff; outline-offset: 2px; }
+  label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  input[type=range] { width: 110px; accent-color: var(--accent); }
+  #title { position: fixed; left: max(14px, env(safe-area-inset-left, 0px)); top: calc(12px + env(safe-area-inset-top, 0px)); font-weight: 700; letter-spacing: .04em; pointer-events: none; }
+  #title small { display: block; font-weight: 400; color: var(--muted); letter-spacing: 0; }
+  body.bare #ui, body.bare #title { display: none; }
 </style>
 </head>
 <body>
-<div id="bar"></div>
-<div id="note">Loading models/ben-g/ben-g.glb…</div>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script>
-(function () {
-  'use strict';
-  var renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.outputEncoding = THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  document.body.appendChild(renderer.domElement);
-  var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, 1, 0.05, 50);
-  camera.position.set(2.6, 1.3, 4.4);
-  var controls = new THREE.OrbitControls(camera, renderer.domElement); controls.target.set(0, 0.85, 0); controls.update();
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8088c0, 1.0));
-  var key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(2.5, 5, 4); scene.add(key);
-  var floor = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.66, 0.1, 44), new THREE.MeshStandardMaterial({ color: 0xaa5500, roughness: 0.9 })); floor.position.y = -0.05; scene.add(floor);
-  function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
-  addEventListener('resize', resize); resize();
-  var mixer = null, current = null, clock = new THREE.Clock(), note = document.getElementById('note'), bar = document.getElementById('bar');
-  var file = new URLSearchParams(location.search).get('file') || '../../models/ben-g/ben-g.glb';
-  new THREE.GLTFLoader().load(file, function (gltf) {
-    scene.add(gltf.scene); mixer = new THREE.AnimationMixer(gltf.scene);
-    gltf.scene.traverse(function (o) { if (o.isSkinnedMesh) o.frustumCulled = false; });
-    function play(clip, button) {
-      if (current) current.stop(); current = mixer.clipAction(clip); current.reset().play();
-      Array.prototype.forEach.call(bar.children, function (b) { b.setAttribute('aria-pressed', b === button ? 'true' : 'false'); });
-    }
-    gltf.animations.forEach(function (clip, i) {
-      var b = document.createElement('button'); b.type = 'button'; b.textContent = clip.name; b.id = 'clip-' + clip.name; b.setAttribute('aria-pressed', 'false');
-      b.addEventListener('click', function () { play(clip, b); }); bar.appendChild(b); if (i === 0) play(clip, b);
-    });
-    note.textContent = gltf.animations.length + ' clips · drag to orbit, scroll to zoom';
-    window.__viewer = { mixer: mixer, clips: gltf.animations, seek: function (name, t) { var c = gltf.animations.filter(function (x) { return x.name === name; })[0]; play(c, document.getElementById('clip-' + name)); mixer.setTime(t); } };
-  }, undefined, function (error) { note.textContent = 'Could not load the model: ' + (error && error.message || error); });
-  (function tick() { requestAnimationFrame(tick); if (mixer && !window.__hold) mixer.update(clock.getDelta()); else clock.getDelta(); renderer.render(scene, camera); })();
+<div id="stage"><canvas id="gl" aria-label="Ben Blaze, animated in 3D"></canvas></div>
+<div id="title">BEN BLAZE<small id="note">Loading…</small></div>
+<div id="ui">
+  <div id="clips" aria-label="Animation clips"></div>
+  <div class="row">
+    <button type="button" id="b-play" aria-pressed="true">Play</button>
+    <button type="button" id="b-spin" aria-pressed="false">Turntable</button>
+    <button type="button" id="b-toon" aria-pressed="true">Toon</button>
+    <label for="r-line">Ink <input type="range" id="r-line" min="0" max="5" step="0.25" value="2"></label>
+    <label for="r-speed">Speed <input type="range" id="r-speed" min="0.1" max="2" step="0.05" value="1"></label>
+    <label for="s-sky">Backdrop <select id="s-sky"><option value="dusk">Zargoth dusk</option><option value="day">Day</option><option value="studio">Studio</option></select></label>
+  </div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const params = new URLSearchParams(location.search), $ = (id) => document.getElementById(id);
+if (params.get('ui') === '0') document.body.classList.add('bare');
+const canvas = $('gl'), renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(28, 1, 0.05, 60);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.minDistance = 1.2; controls.maxDistance = 12; controls.maxPolarAngle = Math.PI * 0.53;
+const yaw = +(params.get('yaw') ?? 0.5), pitch = +(params.get('pitch') ?? 0.12), dist = +(params.get('dist') ?? 5.6), lookY = +(params.get('look') ?? 0.82);
+controls.target.set(0, lookY, 0);
+camera.position.set(Math.sin(yaw) * Math.cos(pitch) * dist, lookY + Math.sin(pitch) * dist, Math.cos(yaw) * Math.cos(pitch) * dist);
+controls.update();
+
+/* light rig: warm key with soft shadow, cool fill from the sky, a rim from behind */
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8a80c8, 1.35); scene.add(hemi);
+const key = new THREE.DirectionalLight(0xfff2dc, 1.9); key.position.set(2.6, 5.2, 3.6); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048); key.shadow.radius = 5; key.shadow.bias = -0.0008; key.shadow.normalBias = 0.02;
+Object.assign(key.shadow.camera, { left: -2.2, right: 2.2, top: 3, bottom: -0.6, near: 0.5, far: 14 }); scene.add(key);
+const rim = new THREE.DirectionalLight(0x9fc0ff, 1.1); rim.position.set(-3, 2.4, -3.5); scene.add(rim);
+
+/* backdrop: a vertical gradient sky and a ground that fades into it */
+const skies = { dusk: ['#241650', '#b0559a', '', 0x4a2f78], day: ['#2f6fd8', '#bfe0ff', '', 0x7fb069], studio: ['#14173a', '#3a4080', '', 0x2a2f66] };
+function sky(name) {
+  const c = document.createElement('canvas'); c.width = 4; c.height = 256; const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256), s = skies[name];
+  g.addColorStop(0, s[0]); g.addColorStop(0.42, s[1]); g.addColorStop(1, s[1]); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; scene.background = t; ground.material.color.setHex(s[3]); scene.fog = new THREE.Fog(new THREE.Color(s[1]).getHex(), 7, 24);
+}
+const ground = new THREE.Mesh(new THREE.CircleGeometry(30, 64), new THREE.MeshStandardMaterial({ color: 0x3a2a6a, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 0.93, 64), new THREE.MeshBasicMaterial({ color: 0xffff55, transparent: true, opacity: 0.55 })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.002; scene.add(ring);
+sky(params.get('sky') ?? 'dusk'); $('s-sky').value = params.get('sky') ?? 'dusk';
+
+/* toon shading: a three-step ramp, and an ink line drawn as a back-facing shell pushed out in screen space */
+const ramp = new THREE.DataTexture(new Uint8Array([105, 105, 120, 255, 190, 190, 200, 255, 255, 255, 255, 255]), 3, 1, THREE.RGBAFormat); ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.needsUpdate = true;
+const ink = { value: 2 }, viewport = { value: new THREE.Vector2(1, 1) };
+const inkMaterial = new THREE.MeshLambertMaterial({ color: 0x07070d, emissive: 0x07070d, side: THREE.BackSide });
+inkMaterial.onBeforeCompile = (shader) => {
+  shader.uniforms.uInk = ink; shader.uniforms.uViewport = viewport;
+  shader.vertexShader = 'uniform float uInk;\nuniform vec2 uViewport;\n' + shader.vertexShader.replace('#include <project_vertex>',
+    '#include <project_vertex>\n vec3 inkNormal = transformedNormal;\n #ifdef FLIP_SIDED\n inkNormal = -inkNormal;\n #endif\n vec2 inkDir = inkNormal.xy; float inkLen = length(inkDir);\n if (inkLen > 1e-5) gl_Position.xy += inkDir / inkLen * uInk * 2.0 / uViewport * gl_Position.w;');
+};
+const toonOf = new Map(), plainOf = new Map(), shaded = [], outlines = [];
+function toon(material) {
+  if (!material.isMeshStandardMaterial) return material;
+  let made = toonOf.get(material);
+  if (!made) { made = new THREE.MeshToonMaterial({ color: material.color, vertexColors: material.vertexColors, gradientMap: ramp, side: material.side, transparent: material.transparent, opacity: material.opacity }); toonOf.set(material, made); plainOf.set(made, material); }
+  return made;
+}
+function dress(root) {
+  const meshes = []; root.traverse((o) => { if (o.isMesh) meshes.push(o); });
+  for (const mesh of meshes) {
+    mesh.castShadow = true; mesh.frustumCulled = false; shaded.push(mesh); mesh.userData.plain = mesh.material; mesh.material = toon(mesh.material);
+    if (!mesh.userData.outline) continue;
+    let line;
+    if (mesh.isSkinnedMesh) { line = new THREE.SkinnedMesh(mesh.geometry, inkMaterial); line.bind(mesh.skeleton, mesh.bindMatrix); mesh.parent.add(line); }
+    else { line = new THREE.Mesh(mesh.geometry, inkMaterial); mesh.add(line); }
+    line.frustumCulled = false; outlines.push(line);
+  }
+}
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); viewport.value.set(w, h);
+}
+new ResizeObserver(resize).observe(canvas); resize();
+
+const state = { playing: params.get('hold') !== '1', spin: false, speed: 1, toon: true, mixer: null, action: null, clips: [] };
+function play(name) {
+  const clip = state.clips.find((c) => c.name === name) ?? state.clips[0]; if (!clip) return;
+  if (state.action) state.action.stop(); state.action = state.mixer.clipAction(clip); state.action.reset().play();
+  for (const b of $('clips').children) b.setAttribute('aria-pressed', b.dataset.clip === clip.name ? 'true' : 'false');
+}
+function bytes() {
+  if (window.BEN_GLB_BASE64) { const s = atob(window.BEN_GLB_BASE64), out = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i); return Promise.resolve(out.buffer); }
+  return fetch(params.get('file') ?? '../../models/ben-g/ben-g.glb').then((r) => { if (!r.ok) throw new Error(r.status + ' ' + r.statusText); return r.arrayBuffer(); });
+}
+window.viewerReady = bytes().then((buffer) => new GLTFLoader().parseAsync(buffer, '')).then((gltf) => {
+  scene.add(gltf.scene); dress(gltf.scene);
+  state.clips = gltf.animations; state.mixer = new THREE.AnimationMixer(gltf.scene);
+  for (const clip of state.clips) {
+    const b = document.createElement('button'); b.type = 'button'; b.id = 'clip-' + clip.name; b.dataset.clip = clip.name; b.textContent = clip.name.replace(/([a-z])([A-Z])/g, '$1 $2'); b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => play(clip.name)); $('clips').appendChild(b);
+  }
+  play(params.get('clip') ?? 'Stand');
+  if (params.has('t')) state.mixer.setTime(+params.get('t'));
+  $('note').textContent = state.clips.length + ' clips · drag to orbit · scroll or pinch to zoom';
+  return true;
+}).catch((error) => { $('note').textContent = 'Could not load the model: ' + error.message; throw error; });
+
+$('b-play').addEventListener('click', (e) => { state.playing = !state.playing; e.currentTarget.setAttribute('aria-pressed', state.playing); });
+$('b-play').setAttribute('aria-pressed', state.playing);
+$('b-spin').addEventListener('click', (e) => { state.spin = !state.spin; e.currentTarget.setAttribute('aria-pressed', state.spin); });
+$('b-toon').addEventListener('click', (e) => { state.toon = !state.toon; e.currentTarget.setAttribute('aria-pressed', state.toon); for (const m of shaded) m.material = state.toon ? toon(m.userData.plain) : m.userData.plain; for (const o of outlines) o.visible = state.toon; });
+$('r-line').addEventListener('input', (e) => { ink.value = +e.target.value; });
+$('r-speed').addEventListener('input', (e) => { state.speed = +e.target.value; });
+$('s-sky').addEventListener('change', (e) => sky(e.target.value));
+if (params.has('ink')) { ink.value = +params.get('ink'); $('r-line').value = ink.value; }
+
+const clock = new THREE.Clock();
+(function tick() {
+  requestAnimationFrame(tick); const dt = clock.getDelta();
+  if (state.mixer && state.playing) state.mixer.update(dt * state.speed);
+  controls.autoRotate = state.spin; controls.autoRotateSpeed = 2.4; controls.update();
+  renderer.render(scene, camera);
 })();
+window.viewer = { state, play, seek: (name, t) => { play(name); state.playing = false; $('b-play').setAttribute('aria-pressed', 'false'); state.mixer.setTime(t); } };
 </script>
 </body>
 </html>

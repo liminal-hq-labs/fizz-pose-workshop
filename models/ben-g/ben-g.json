@@ -22,12 +22,12 @@
     "legL-1",
     "foot-1"
   ],
-  "nodes": 316,
+  "nodes": 338,
   "animations": [
     {
       "name": "Stand",
       "duration": 3,
-      "tracks": 2
+      "tracks": 4
     },
     {
       "name": "Run",
@@ -47,77 +47,77 @@
     {
       "name": "Jump",
       "duration": 1.9,
-      "tracks": 48
+      "tracks": 50
     },
     {
       "name": "Fall",
       "duration": 2,
-      "tracks": 47
+      "tracks": 49
     },
     {
       "name": "Climb",
       "duration": 1.92,
-      "tracks": 55
+      "tracks": 57
     },
     {
       "name": "LedgePull",
       "duration": 6.5,
-      "tracks": 54
+      "tracks": 56
     },
     {
       "name": "Whistle",
       "duration": 2.417,
-      "tracks": 56
+      "tracks": 58
     },
     {
       "name": "Phone",
       "duration": 3,
-      "tracks": 53
+      "tracks": 55
     },
     {
       "name": "Wipeout",
       "duration": 4.8,
-      "tracks": 58
+      "tracks": 60
     },
     {
       "name": "WristCheck",
       "duration": 3,
-      "tracks": 44
+      "tracks": 46
     },
     {
       "name": "HelmetTip",
       "duration": 2.856,
-      "tracks": 58
+      "tracks": 60
     },
     {
       "name": "HeadScratch",
       "duration": 2,
-      "tracks": 50
+      "tracks": 57
     },
     {
       "name": "Rock",
       "duration": 2.992,
-      "tracks": 57
+      "tracks": 61
     },
     {
       "name": "HelmetSpin",
       "duration": 2.1,
-      "tracks": 43
+      "tracks": 52
     },
     {
       "name": "WristAerial",
       "duration": 3.696,
-      "tracks": 46
+      "tracks": 52
     },
     {
       "name": "PogoDraw",
       "duration": 3.8,
-      "tracks": 61
+      "tracks": 67
     },
     {
       "name": "Reload",
       "duration": 4.6,
-      "tracks": 60
+      "tracks": 66
     }
   ]
 }

@@ -24,6 +24,7 @@
     "model:build": "bun scripts/build-ben-3d.ts",
     "model:review": "bun scripts/review-ben-3d.ts",
     "model:build-g": "bun scripts/build-ben-g.ts",
+    "model:render-g": "bun scripts/render-ben-g.ts",
     "turntable:render": "bun scripts/render-turntable-reference.ts",
     "branding:build": "bun scripts/build-branding.ts"
   },
