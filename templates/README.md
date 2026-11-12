@@ -16,6 +16,8 @@ Drafts are stored in this browser for this local address. **Save to project** wr
 
 The app entry is `index.html`; `preview.html` redirects to the app. `src/` contains the gallery, editor, styles and edit validation. `vite.config.ts` handles the development save endpoint and packages the image exports for builds. Frame overrides in `edits.json` take precedence over the authored grids in `source/poses.json`; per-frame reset restores the project version loaded by the page.
 
+The workshop is published to GitHub Pages from `main` by `.github/workflows/pages.yml`: `bun run build` produces `dist/`, which holds the editor and every other page. The saving endpoint only exists in the development server, so the published copy is read-only.
+
 ## Game palette
 
 The editable sprites use exactly the game's sixteen EGA colours plus transparent (`.`). `source/game-palette.json` mirrors `packages/engine/src/palette.ts` from the game repository. The untouched original reference keeps its original colours. Imports and older browser drafts are converted to game codes before validation. Saved edits and all generated sprite exports use the game palette.
