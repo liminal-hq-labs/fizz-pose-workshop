@@ -25,7 +25,7 @@ Every new frame in the stack arrived with PR #1; PR #2 only tunes `ben_headScrat
 
 ## Slots
 
-Totals: 64 slots — 26 ready-in-lab, 18 missing, 7 in-game, 5 needs-pixel-art, 4 new-in-pr and 4 partial. For Fizz 1, 22 used, 4 unused, 34 could-use, 4 n/a; for Fizz 2, 17 used, 22 unused, 10 could-use, 15 n/a. The new art totals 180,624 bytes at 4 bits, counting each frame once even where two slots show it (the twelve-frame run contains the six-frame run, and a landing beat is a frame of its jump), of which 16,896 is the 24-angle turn-around.
+Totals: 67 slots — 28 ready-in-lab, 18 missing, 7 in-game, 5 needs-pixel-art, 5 new-in-pr and 4 partial. For Fizz 1, 22 used, 4 unused, 34 could-use, 7 n/a; for Fizz 2, 17 used, 22 unused, 13 could-use, 15 n/a. The new art totals 184,848 bytes at 4 bits, counting each frame once even where two slots show it (the twelve-frame run contains the six-frame run, a landing beat is a frame of its jump, and the door pass reuses the six-frame run), of which 16,896 is the 24-angle turn-around.
 
 Every slot also has a `facing` (see [Facings](#facings)); the `Facing` column repeats it.
 
@@ -76,6 +76,16 @@ Every slot also has a `facing` (see [Facings](#facings)); the `Facing` column re
 |---|---|---|---|---|---|---|
 | `pogo-right` | right | used | used | `ben_pogo`, `ben_pogo2` | `ben_pogoRight1` to `ben_pogoRight12` (12) (24x44, 6336 B) | ready-in-lab |
 | `pogo-left` | left | used | used | `ben_pogo`, `ben_pogo2` | `ben_pogoLeft1` to `ben_pogoLeft12` (12) (24x44, 6336 B) | ready-in-lab |
+
+### Doors and exits
+
+| Slot | Facing | Fizz 1 | Fizz 2 | Old | New | Status |
+|---|---|---|---|---|---|---|
+| `door-walk-in` | back | n/a | could-use | — | `ben_doorIn1` to `ben_doorIn8` (8) (24x44, 4224 B) | new-in-pr |
+| `door-through-right` | right | n/a | could-use | — | `ben_walkRight1` to `ben_walkRight11` (6) (24x44, 3168 B) | ready-in-lab |
+| `door-through-left` | left | n/a | could-use | — | `ben_walkLeft1` to `ben_walkLeft11` (6) (24x44, 3168 B) | ready-in-lab |
+
+The walk-in is new art from the walking-through-doors performance (see [Walking through doors](RIG.md#walking-through-doors)). The two side-on slots point at the existing six-frame run, because a keyed door is passable at once and drawn behind Ben, so no dedicated pose is needed. Their frames are the run's, counted once under `run-right` and `run-left`. Fizz 1 is recorded n/a without having been checked for an exit or keyed doors.
 
 ### Fizz Stunner
 
@@ -187,6 +197,7 @@ Status of each side, from the slot statuses above.
 | `crouch` | `crouch-right`: missing | `crouch-left`: missing | Fizz 1 n/a, Fizz 2 n/a |
 | `mantle` | `mantle-right`: ready-in-lab | `mantle-left`: ready-in-lab | Fizz 1 used, Fizz 2 n/a |
 | `wall-kick` | `wall-kick-right`: missing | `wall-kick-left`: missing | Fizz 1 could-use, Fizz 2 n/a |
+| `door-through` | `door-through-right`: ready-in-lab | `door-through-left`: ready-in-lab | Fizz 1 n/a, Fizz 2 could-use |
 | `pogo` | `pogo-right`: ready-in-lab | `pogo-left`: ready-in-lab | Fizz 1 used, Fizz 2 used |
 | `shoot` | `shoot-right`: in-game | `shoot-left`: missing | Fizz 1 used, Fizz 2 used |
 | `shoot-recoil` | `shoot-recoil-right`: ready-in-lab | `shoot-recoil-left`: missing | Fizz 1 unused, Fizz 2 unused |

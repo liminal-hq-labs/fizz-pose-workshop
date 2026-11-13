@@ -19,6 +19,7 @@ import wristCheck from '../../source/ben-wrist-check-rig.json';
 import wristAerial from '../../source/ben-wrist-aerial-rig.json';
 import helmetTip from '../../source/ben-helmet-tip-rig.json';
 import rock from '../../source/ben-rock-rig.json';
+import doorIn from '../../source/ben-door-in-rig.json';
 import type { SideRig } from './run.ts';
 
 // The left-facing run turns the pinned right-facing run round with the same continuous solver and keys, so its twelve sprites keep the
@@ -64,6 +65,7 @@ export const rigCatalogue: readonly RigEntry[] = [
  {rig:wristAerial as SideRig,prefix:'ben_aerial',animation:'wrist-aerial',folder:'ben-wrist-aerial',title:'Wrist computer aerial · idle',labels:['Read the screen','Pinch the aerial','Pull','Aerial out','Push','Stow','Settle']},
  {rig:helmetTip as SideRig,prefix:'ben_helmetTip',animation:'helmet-tip',folder:'ben-helmet-tip',title:'Helmet tip · idle',labels:['Stand','Raise the hand','Hand to the rim','Begin the bow','Bow','Straighten','Lower the hand','Settle']},
  {rig:rock as SideRig,prefix:'ben_rock',animation:'rock-idle',folder:'ben-rock',title:'Rocking on his heels · idle',labels:['Level','Onto the toes','Level','Back on the heels']},
+ {rig:doorIn as SideRig,prefix:'ben_doorIn',animation:'door-walk-in',folder:'ben-door-in',title:'Walking in through the far-plane door',labels:['Stand at the door','Near foot lifts','Near foot reaches','Near foot lands','Far foot lifts','Far foot reaches','Far foot lands','Settle and go in']},
 ];
 
 /** The catalogue index an entry hands over to when it finishes (its `then`), or -1 when it has none. */

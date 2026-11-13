@@ -18,26 +18,26 @@
     }
   ],
   "summary": {
-    "slots": 64,
+    "slots": 67,
     "byStatus": {
       "in-game": 7,
-      "ready-in-lab": 26,
-      "new-in-pr": 4,
+      "ready-in-lab": 28,
+      "needs-pixel-art": 5,
       "partial": 4,
       "missing": 18,
-      "needs-pixel-art": 5
+      "new-in-pr": 5
     },
     "byGameState": {
       "fizz1": {
         "used": 22,
         "unused": 4,
         "could-use": 34,
-        "n/a": 4
+        "n/a": 7
       },
       "fizz2": {
         "used": 17,
         "unused": 22,
-        "could-use": 10,
+        "could-use": 13,
         "n/a": 15
       }
     }
@@ -58,6 +58,10 @@
     {
       "id": "climb",
       "label": "Ladders, vines and ledges"
+    },
+    {
+      "id": "doors",
+      "label": "Doors and exits"
     },
     {
       "id": "pogo",
@@ -943,6 +947,124 @@
       "new": null,
       "status": "missing",
       "notes": "Only Fizz 1 needs it, and it currently reuses the jump frame. No art of either facing exists; the jump rig is the closest base for a wall-kick key set."
+    },
+    {
+      "id": "door-walk-in",
+      "label": "Walk in through a far-plane exit door (from behind)",
+      "group": "doors",
+      "facing": "back",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "n/a",
+          "evidence": "Not investigated: this slot came from the Fizz 2 session’s door brief. Fizz 1 is recorded n/a until someone checks its code for an exit or keyed doors."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "Fizz 2 session brief (door walk-in): the level exit is a 20 × 35 stone-arched doorway on the far plane of the floor; Ben presses Up while overlapping it and no sprite walks him in yet, so the slot is wanted but unwired."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "door-walk-in",
+        "frames": [
+          "ben_doorIn1",
+          "ben_doorIn2",
+          "ben_doorIn3",
+          "ben_doorIn4",
+          "ben_doorIn5",
+          "ben_doorIn6",
+          "ben_doorIn7",
+          "ben_doorIn8"
+        ],
+        "origin": "pr-4",
+        "frameSize": "24x44"
+      },
+      "status": "new-in-pr",
+      "notes": "A rear-view one-shot of eight frames and 880 ms: small alternating steps, Ben the same size and rising a few pixels (the game applies the rise), the Stunner on the viewer’s right. `source/ben-door-pass.json` says how much of him the exit’s front lip hides per frame. Never mirror it.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 4224
+      }
+    },
+    {
+      "id": "door-through-right",
+      "label": "Walk through an opened keyed door, facing right",
+      "group": "doors",
+      "facing": "right",
+      "pair": "door-through-left",
+      "stunnerSide": "right-hip",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "n/a",
+          "evidence": "Not investigated: this slot came from the Fizz 2 session’s door brief. Fizz 1 is recorded n/a until someone checks its code for an exit or keyed doors."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "Fizz 2 session brief (keyed doors): a 16 × 48 door is passable on the tick the key touches it and Ben is drawn in front of it; the slice plays its ordinary run through the doorway and has no door-specific pose."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "walk-run-6",
+        "frames": [
+          "ben_walkRight1",
+          "ben_walkRight3",
+          "ben_walkRight5",
+          "ben_walkRight7",
+          "ben_walkRight9",
+          "ben_walkRight11"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "No dedicated art: the six-frame run already serves, because the door is 16 × 48 (nothing to duck under) and is drawn before Ben, so he is in front of the whole door. The overlap table is in `source/ben-door-pass.json`. The frames are already counted under `run-right`.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 3168
+      }
+    },
+    {
+      "id": "door-through-left",
+      "label": "Walk through an opened keyed door, facing left",
+      "group": "doors",
+      "facing": "left",
+      "pair": "door-through-right",
+      "stunnerSide": "far-hip-left-facing",
+      "mirrorForbidden": true,
+      "games": {
+        "fizz1": {
+          "state": "n/a",
+          "evidence": "Not investigated: this slot came from the Fizz 2 session’s door brief. Fizz 1 is recorded n/a until someone checks its code for an exit or keyed doors."
+        },
+        "fizz2": {
+          "state": "could-use",
+          "evidence": "Fizz 2 session brief (keyed doors): a 16 × 48 door is passable on the tick the key touches it and Ben is drawn in front of it; the slice plays its ordinary run through the doorway and has no door-specific pose."
+        }
+      },
+      "old": null,
+      "new": {
+        "animation": "walk-run-left-6",
+        "frames": [
+          "ben_walkLeft1",
+          "ben_walkLeft3",
+          "ben_walkLeft5",
+          "ben_walkLeft7",
+          "ben_walkLeft9",
+          "ben_walkLeft11"
+        ],
+        "origin": "main",
+        "frameSize": "24x44"
+      },
+      "status": "ready-in-lab",
+      "notes": "The six-frame left run, drawn rather than mirrored: the Stunner is on the hidden far hip. Same overlap contract as the right-facing pass. Counted already under `run-left`.",
+      "dos": {
+        "bytesPerFrame": 528,
+        "totalBytes": 3168
+      }
     },
     {
       "id": "pogo-right",

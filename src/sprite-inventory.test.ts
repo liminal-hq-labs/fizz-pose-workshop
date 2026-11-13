@@ -11,7 +11,7 @@ import assets from '../assets.json';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const STATES = ['used', 'could-use', 'unused', 'n/a'] as const;
 const STATUSES = ['in-game', 'ready-in-lab', 'new-in-pr', 'partial', 'missing', 'needs-pixel-art'] as const;
-const ORIGINS = ['main', 'pr-1', 'pr-2', 'pr-3', 'main+pr-1', 'none'] as const;
+const ORIGINS = ['main', 'pr-1', 'pr-2', 'pr-3', 'main+pr-1', 'pr-4', 'none'] as const;
 const GAMES = ['fizz1', 'fizz2'] as const;
 const FACINGS = ['right', 'left', 'front', 'back', 'none'] as const;
 const STUNNER_SIDES = ['right-hip', 'far-hip-left-facing'] as const;
