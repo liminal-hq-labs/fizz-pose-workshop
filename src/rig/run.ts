@@ -11,7 +11,7 @@ import { sampleFace, type FaceSettings, type FacePose } from './face.ts';
 import { add, bezier, forwardChain, lerp, radians, rotate, smoothstep, solveTwoBone, tau, wrap, type Chain, type Vec2 } from './kinematics.ts';
 
 export interface SideRig {
-  motion?: 'run' | 'pogo' | 'fire' | 'ladder' | 'jump' | 'fall' | 'death' | 'ledge' | 'whistle' | 'phone';
+  motion?: 'run' | 'pogo' | 'fire' | 'ladder' | 'jump' | 'fall' | 'death' | 'ledge' | 'whistle' | 'phone' | 'idle';
   lightingNote?: string;
   /** A dynamic prop light exported as data beside the unlit sprites; see `src/rig/lighting.ts`. */
   lighting?: LightingSettings;
@@ -43,7 +43,9 @@ export interface RigPose {
   cloth?: ClothPose;
   presentation?: {view: 'side' | 'back' | 'front'; expression: Expression; cameraShoes: boolean; standing?: 'left' | 'right'; phone?: Vec2; notes?: Vec2[]; pucker?: number; blink?: number; environment?: PerformanceSettings['environment'];
     /** Seated, crossed-leg and phone-screen state for front-facing idles; see `PerformanceKey`. */
-    seated?: boolean; shinOver?: 'near' | 'far'; frontHolster?: boolean; screen?: number; taps?: number[]; gaze?: number; breath?: number };
+    seated?: boolean; shinOver?: 'near' | 'far'; frontHolster?: boolean; screen?: number; taps?: number[]; gaze?: number; breath?: number;
+    /** A wrist computer on the far (left) forearm, with its aerial pulled out by this fraction; absent without one. */
+    wrist?: number };
   time: number; root: Vec2; torsoAngle: number; torsoTurn: number; headTurn: number; neck: Vec2;
   nearArm: Chain; farArm: Chain; nearLeg: Chain; farLeg: Chain; nearFoot: RigFoot; farFoot: RigFoot;
   contact: 'near' | 'far' | 'flight' | 'pogo' | 'both';
@@ -93,10 +95,10 @@ function footTarget(rig: SideRig, cycle: number, near = false): RigFoot {
 export function validateRig(rig: SideRig): void {
   if (rig.facing !== undefined && rig.facing !== 'right' && rig.facing !== 'left') throw new Error("Rig facing must be 'right' or 'left'.");
   if (rig.facing === 'left' && rig.mirrored) throw new Error('A left-facing rig already turns round; it cannot also be a plain mirror.');
-  if (rig.motion && !["run", "pogo", "fire", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion)) throw new Error("Unknown rig motion.");
+  if (rig.motion && !["run", "pogo", "fire", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone", "idle"].includes(rig.motion)) throw new Error("Unknown rig motion.");
   if (rig.motion === "pogo" && (!validPogo(rig.pogo) || !rig.performance?.keys.every(key => key.stick && [key.stick.x, key.stick.lift, key.stick.compression, key.stick.lean].every(Number.isFinite)))) throw new Error("A pogo ride needs positive, ordered stick settings and the stick keyed on every key.");
   if (rig.motion === "fire" && (!rig.fire || Object.values(rig.fire).some(value => !Number.isFinite(value) || value < 0))) throw new Error("Firing settings must be finite and non-negative.");
-  if (["pogo", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone"].includes(rig.motion ?? "")) {
+  if (["pogo", "ladder", "jump", "fall", "death", "ledge", "whistle", "phone", "idle"].includes(rig.motion ?? "")) {
     const clip = rig.performance;
     if (!clip || clip.keys.length < 2 || clip.keys[0].phase !== 0 || clip.keys.at(-1)!.phase !== 1) throw new Error("Performance goals must cover phases zero through one.");
     for (let i = 0; i < clip.keys.length; i++) {

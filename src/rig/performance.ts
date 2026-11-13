@@ -49,6 +49,8 @@ export interface PerformanceKey {
   taps?: number[];
   /** Eyes: 0 looking ahead, 1 glancing down (at a held phone). The front skin lowers the eye pixels by one from 0.5. */
   gaze?: number;
+  /** The wrist computer's aerial: 0 stowed, 1 fully pulled out. Only drawn when the clip sets `wristComputer`. */
+  aerial?: number;
   /** Breathing: 0 out, 1 in. The neck and shoulders rise by this many pixels and the front shirt deepens its chest by one row. */
   breath?: number;
 }
@@ -60,6 +62,8 @@ export interface PerformanceKey {
 export interface NoteSettings { emitPhase: number; path: number[][]; }
 export interface PerformanceSettings {
   view: 'side' | 'back' | 'front'; standing?: 'left' | 'right'; loop: boolean; keys: PerformanceKey[];
+  /** Ben wears his wrist computer on the far (left) forearm in this clip. */
+  wristComputer?: boolean;
   /**
    * How a one-shot's saved sprite animation replays in the gallery and exports: `rest` (the default) holds the final pose
    * before replaying; `continuous` replays straight away, as a loop whose final pose leads back into the first (the jump).
@@ -177,7 +181,7 @@ const origins: Record<Limb, keyof Body> = { nearHand: 'nearShoulder', farHand: '
 
 /** Curves for one clip, built once per settings object so sampling stays allocation-light. */
 interface ClipCurves {
-  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink' | 'screen' | 'nearTap' | 'farTap' | 'gaze' | 'breath' | 'stickX' | 'stickLift' | 'stickCompression' | 'stickLean', Curve>;
+  scalar: Record<'rootX' | 'rootY' | 'lean' | 'headRoll' | 'nearFoot' | 'farFoot' | 'pucker' | 'blink' | 'screen' | 'nearTap' | 'farTap' | 'gaze' | 'breath' | 'aerial' | 'stickX' | 'stickLift' | 'stickCompression' | 'stickLean', Curve>;
   limbs: Partial<Record<Limb, { x: Curve; y: Curve; angle: Curve; reach: Curve; grounded: readonly boolean[] }>>;
   phone?: { from: number; x: Curve; y: Curve };
 }
@@ -221,7 +225,7 @@ function clipCurves(rig: SideRig, clip: PerformanceSettings): ClipCurves {
       nearFoot: curve(keys.map(key => key.nearFootDegrees ?? 0)), farFoot: curve(keys.map(key => key.farFootDegrees ?? 0)),
       pucker: curve(keys.map(key => key.pucker ?? 0)), blink: curve(keys.map(key => key.blink ?? 0)),
       screen: curve(keys.map(key => key.screen ?? 0)), nearTap: curve(keys.map(key => key.taps?.[0] ?? 0)), farTap: curve(keys.map(key => key.taps?.[1] ?? 0)),
-      gaze: curve(keys.map(key => key.gaze ?? 0)), breath: curve(keys.map(key => key.breath ?? 0)),
+      gaze: curve(keys.map(key => key.gaze ?? 0)), breath: curve(keys.map(key => key.breath ?? 0)), aerial: curve(keys.map(key => key.aerial ?? 0)),
       stickX: curve(keys.map(key => key.stick?.x ?? 0)), stickLift: curve(keys.map(key => key.stick?.lift ?? 0)),
       stickCompression: curve(keys.map(key => key.stick?.compression ?? 0)), stickLean: curve(keys.map(key => key.stick?.lean ?? 0)),
     },
@@ -320,7 +324,7 @@ export function samplePerformance(rig: SideRig, time: number): RigPose {
     cloth, ...(stick ? { pogo: stick } : {}),
     presentation: {view: clip.view, standing: clip.standing, expression: a.expression, environment: scrolledEnvironment(clip, shift), cameraShoes: rig.motion === 'death', phone, notes, pucker: at(curves.scalar.pucker), blink: at(curves.scalar.blink),
       ...(a.seated ? { seated: true } : {}), ...(a.shinOver ? { shinOver: a.shinOver } : {}), ...(clip.frontHolster ? { frontHolster: true } : {}),
-      gaze: at(curves.scalar.gaze), breath,
+      gaze: at(curves.scalar.gaze), breath, ...(clip.wristComputer ? { wrist: Math.max(0, Math.min(1, at(curves.scalar.aerial))) } : {}),
       ...(phone ? { screen: Math.max(0, Math.min(1, at(curves.scalar.screen))), taps: [at(curves.scalar.nearTap), at(curves.scalar.farTap)] } : {})},
   };
 }

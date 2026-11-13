@@ -1,0 +1,133 @@
+{
+  "name": "Ben Blaze · cartoon model (variation G)",
+  "source": "prototypes/ben-g/tuning-bench.html",
+  "units": "metres; one sprite pixel is 0.05 m",
+  "files": [
+    {
+      "file": "ben-g.glb",
+      "look": "lit"
+    },
+    {
+      "file": "ben-g-toon.glb",
+      "look": "toon"
+    }
+  ],
+  "framesPerSecond": 24,
+  "bones": [
+    "pelvis",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "armU1",
+    "armL1",
+    "hand1",
+    "armU-1",
+    "armL-1",
+    "hand-1",
+    "legU1",
+    "legL1",
+    "foot1",
+    "legU-1",
+    "legL-1",
+    "foot-1"
+  ],
+  "nodes": 397,
+  "animations": [
+    {
+      "name": "Stand",
+      "duration": 3,
+      "tracks": 4
+    },
+    {
+      "name": "Run",
+      "duration": 0.714,
+      "tracks": 29
+    },
+    {
+      "name": "Pogo",
+      "duration": 0.8,
+      "tracks": 46
+    },
+    {
+      "name": "Fire",
+      "duration": 1.111,
+      "tracks": 52
+    },
+    {
+      "name": "Jump",
+      "duration": 1.9,
+      "tracks": 50
+    },
+    {
+      "name": "Fall",
+      "duration": 2,
+      "tracks": 49
+    },
+    {
+      "name": "Climb",
+      "duration": 1.92,
+      "tracks": 57
+    },
+    {
+      "name": "LedgePull",
+      "duration": 6.5,
+      "tracks": 56
+    },
+    {
+      "name": "Whistle",
+      "duration": 2.417,
+      "tracks": 58
+    },
+    {
+      "name": "Phone",
+      "duration": 3,
+      "tracks": 55
+    },
+    {
+      "name": "Wipeout",
+      "duration": 4.8,
+      "tracks": 60
+    },
+    {
+      "name": "WristCheck",
+      "duration": 3,
+      "tracks": 46
+    },
+    {
+      "name": "HelmetTip",
+      "duration": 2.856,
+      "tracks": 60
+    },
+    {
+      "name": "HeadScratch",
+      "duration": 2,
+      "tracks": 57
+    },
+    {
+      "name": "Rock",
+      "duration": 2.992,
+      "tracks": 61
+    },
+    {
+      "name": "HelmetSpin",
+      "duration": 2.1,
+      "tracks": 52
+    },
+    {
+      "name": "WristAerial",
+      "duration": 3.696,
+      "tracks": 52
+    },
+    {
+      "name": "PogoDraw",
+      "duration": 3.8,
+      "tracks": 67
+    },
+    {
+      "name": "Reload",
+      "duration": 4.6,
+      "tracks": 66
+    }
+  ]
+}

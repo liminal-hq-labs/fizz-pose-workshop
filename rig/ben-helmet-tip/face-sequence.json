@@ -1,0 +1,1085 @@
+{
+  "note": "World landmarks follow the continuous rig; pixels share one snapped head anchor. Crops are aligned to that anchor.",
+  "frames": [
+    {
+      "frame": 1,
+      "phase": 0,
+      "view": "side",
+      "expression": "normal",
+      "headAnchor": [
+        14,
+        15
+      ],
+      "eye": {
+        "local": [
+          2,
+          -5
+        ],
+        "world": [
+          16,
+          9.5
+        ],
+        "pixel": [
+          16,
+          10
+        ]
+      },
+      "eyePixels": [
+        [
+          16,
+          10
+        ]
+      ],
+      "mouth": {
+        "local": [
+          2,
+          -3
+        ],
+        "world": [
+          16,
+          11.5
+        ],
+        "pixel": [
+          16,
+          12
+        ]
+      },
+      "mouthPixels": [
+        [
+          16,
+          12
+        ]
+      ],
+      "ear": {
+        "local": [
+          -1,
+          -4
+        ],
+        "world": [
+          13,
+          10.5
+        ],
+        "pixel": [
+          13,
+          11
+        ]
+      },
+      "nose": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseTip": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseVisible": true,
+      "cheek": {
+        "local": [
+          -2,
+          -3
+        ],
+        "world": [
+          12,
+          11.5
+        ],
+        "pixel": [
+          12,
+          12
+        ]
+      },
+      "chin": {
+        "local": [
+          0,
+          -1
+        ],
+        "world": [
+          14,
+          13.5
+        ],
+        "pixel": [
+          14,
+          14
+        ]
+      },
+      "shift": 0,
+      "renderedEar": [
+        [
+          13,
+          11
+        ]
+      ],
+      "renderedEye": [
+        [
+          16,
+          10
+        ]
+      ],
+      "renderedMouth": [
+        [
+          16,
+          12
+        ]
+      ]
+    },
+    {
+      "frame": 2,
+      "phase": 0.1299999999999999,
+      "view": "side",
+      "expression": "normal",
+      "headAnchor": [
+        14,
+        15
+      ],
+      "eye": {
+        "local": [
+          2,
+          -5
+        ],
+        "world": [
+          16,
+          9.5
+        ],
+        "pixel": [
+          16,
+          10
+        ]
+      },
+      "eyePixels": [
+        [
+          16,
+          10
+        ]
+      ],
+      "mouth": {
+        "local": [
+          2,
+          -3
+        ],
+        "world": [
+          16,
+          11.5
+        ],
+        "pixel": [
+          16,
+          12
+        ]
+      },
+      "mouthPixels": [
+        [
+          16,
+          12
+        ]
+      ],
+      "ear": {
+        "local": [
+          -1,
+          -4
+        ],
+        "world": [
+          13,
+          10.5
+        ],
+        "pixel": [
+          13,
+          11
+        ]
+      },
+      "nose": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseTip": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseVisible": true,
+      "cheek": {
+        "local": [
+          -2,
+          -3
+        ],
+        "world": [
+          12,
+          11.5
+        ],
+        "pixel": [
+          12,
+          12
+        ]
+      },
+      "chin": {
+        "local": [
+          0,
+          -1
+        ],
+        "world": [
+          14,
+          13.5
+        ],
+        "pixel": [
+          14,
+          14
+        ]
+      },
+      "shift": 0,
+      "renderedEar": [
+        [
+          13,
+          11
+        ]
+      ],
+      "renderedEye": [
+        [
+          16,
+          10
+        ]
+      ],
+      "renderedMouth": [
+        [
+          16,
+          12
+        ]
+      ]
+    },
+    {
+      "frame": 3,
+      "phase": 0.26,
+      "view": "side",
+      "expression": "normal",
+      "headAnchor": [
+        14,
+        15
+      ],
+      "eye": {
+        "local": [
+          2,
+          -5
+        ],
+        "world": [
+          16,
+          9.5
+        ],
+        "pixel": [
+          16,
+          10
+        ]
+      },
+      "eyePixels": [
+        [
+          16,
+          10
+        ]
+      ],
+      "mouth": {
+        "local": [
+          2,
+          -3
+        ],
+        "world": [
+          16,
+          11.5
+        ],
+        "pixel": [
+          16,
+          12
+        ]
+      },
+      "mouthPixels": [
+        [
+          16,
+          12
+        ]
+      ],
+      "ear": {
+        "local": [
+          -1,
+          -4
+        ],
+        "world": [
+          13,
+          10.5
+        ],
+        "pixel": [
+          13,
+          11
+        ]
+      },
+      "nose": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseTip": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseVisible": true,
+      "cheek": {
+        "local": [
+          -2,
+          -3
+        ],
+        "world": [
+          12,
+          11.5
+        ],
+        "pixel": [
+          12,
+          12
+        ]
+      },
+      "chin": {
+        "local": [
+          0,
+          -1
+        ],
+        "world": [
+          14,
+          13.5
+        ],
+        "pixel": [
+          14,
+          14
+        ]
+      },
+      "shift": 0,
+      "renderedEar": [
+        [
+          13,
+          11
+        ]
+      ],
+      "renderedEye": [],
+      "renderedMouth": []
+    },
+    {
+      "frame": 4,
+      "phase": 0.33000000000000007,
+      "view": "side",
+      "expression": "normal",
+      "headAnchor": [
+        15,
+        15
+      ],
+      "eye": {
+        "local": [
+          2,
+          -5
+        ],
+        "world": [
+          16.77335956242944,
+          9.763704652454262
+        ],
+        "pixel": [
+          17,
+          10
+        ]
+      },
+      "eyePixels": [
+        [
+          17,
+          10
+        ]
+      ],
+      "mouth": {
+        "local": [
+          2,
+          -3
+        ],
+        "world": [
+          16.77335956242944,
+          11.763704652454262
+        ],
+        "pixel": [
+          17,
+          12
+        ]
+      },
+      "mouthPixels": [
+        [
+          17,
+          12
+        ]
+      ],
+      "ear": {
+        "local": [
+          -1,
+          -4
+        ],
+        "world": [
+          13.77335956242944,
+          10.763704652454262
+        ],
+        "pixel": [
+          14,
+          11
+        ]
+      },
+      "nose": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19.77335956242944,
+          10.763704652454262
+        ],
+        "pixel": [
+          20,
+          11
+        ]
+      },
+      "noseTip": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19.77335956242944,
+          10.763704652454262
+        ],
+        "pixel": [
+          20,
+          11
+        ]
+      },
+      "noseVisible": true,
+      "cheek": {
+        "local": [
+          -2,
+          -3
+        ],
+        "world": [
+          12.77335956242944,
+          11.763704652454262
+        ],
+        "pixel": [
+          13,
+          12
+        ]
+      },
+      "chin": {
+        "local": [
+          0,
+          -1
+        ],
+        "world": [
+          14.77335956242944,
+          13.763704652454262
+        ],
+        "pixel": [
+          15,
+          14
+        ]
+      },
+      "shift": 0,
+      "renderedEar": [
+        [
+          14,
+          11
+        ]
+      ],
+      "renderedEye": [],
+      "renderedMouth": []
+    },
+    {
+      "frame": 5,
+      "phase": 0.3999999999999999,
+      "view": "side",
+      "expression": "normal",
+      "headAnchor": [
+        16,
+        15
+      ],
+      "eye": {
+        "local": [
+          2,
+          -5
+        ],
+        "world": [
+          17.545284632676534,
+          10.054781046317267
+        ],
+        "pixel": [
+          18,
+          10
+        ]
+      },
+      "eyePixels": [
+        [
+          18,
+          10
+        ]
+      ],
+      "mouth": {
+        "local": [
+          2,
+          -3
+        ],
+        "world": [
+          17.545284632676534,
+          12.054781046317267
+        ],
+        "pixel": [
+          18,
+          12
+        ]
+      },
+      "mouthPixels": [
+        [
+          18,
+          12
+        ]
+      ],
+      "ear": {
+        "local": [
+          -1,
+          -4
+        ],
+        "world": [
+          14.545284632676536,
+          11.054781046317267
+        ],
+        "pixel": [
+          15,
+          11
+        ]
+      },
+      "nose": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          20.545284632676534,
+          11.054781046317267
+        ],
+        "pixel": [
+          21,
+          11
+        ]
+      },
+      "noseTip": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          20.545284632676534,
+          11.054781046317267
+        ],
+        "pixel": [
+          21,
+          11
+        ]
+      },
+      "noseVisible": true,
+      "cheek": {
+        "local": [
+          -2,
+          -3
+        ],
+        "world": [
+          13.545284632676536,
+          12.054781046317267
+        ],
+        "pixel": [
+          14,
+          12
+        ]
+      },
+      "chin": {
+        "local": [
+          0,
+          -1
+        ],
+        "world": [
+          15.545284632676536,
+          14.054781046317267
+        ],
+        "pixel": [
+          16,
+          14
+        ]
+      },
+      "shift": 0,
+      "renderedEar": [
+        [
+          15,
+          11
+        ]
+      ],
+      "renderedEye": [
+        [
+          18,
+          10
+        ]
+      ],
+      "renderedMouth": []
+    },
+    {
+      "frame": 6,
+      "phase": 0.75,
+      "view": "side",
+      "expression": "normal",
+      "headAnchor": [
+        15,
+        15
+      ],
+      "eye": {
+        "local": [
+          2,
+          -5
+        ],
+        "world": [
+          16.773359562429437,
+          9.763704652454262
+        ],
+        "pixel": [
+          17,
+          10
+        ]
+      },
+      "eyePixels": [
+        [
+          17,
+          10
+        ]
+      ],
+      "mouth": {
+        "local": [
+          2,
+          -3
+        ],
+        "world": [
+          16.773359562429437,
+          11.763704652454262
+        ],
+        "pixel": [
+          17,
+          12
+        ]
+      },
+      "mouthPixels": [
+        [
+          17,
+          12
+        ]
+      ],
+      "ear": {
+        "local": [
+          -1,
+          -4
+        ],
+        "world": [
+          13.773359562429437,
+          10.763704652454262
+        ],
+        "pixel": [
+          14,
+          11
+        ]
+      },
+      "nose": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19.773359562429437,
+          10.763704652454262
+        ],
+        "pixel": [
+          20,
+          11
+        ]
+      },
+      "noseTip": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19.773359562429437,
+          10.763704652454262
+        ],
+        "pixel": [
+          20,
+          11
+        ]
+      },
+      "noseVisible": true,
+      "cheek": {
+        "local": [
+          -2,
+          -3
+        ],
+        "world": [
+          12.773359562429437,
+          11.763704652454262
+        ],
+        "pixel": [
+          13,
+          12
+        ]
+      },
+      "chin": {
+        "local": [
+          0,
+          -1
+        ],
+        "world": [
+          14.773359562429437,
+          13.763704652454262
+        ],
+        "pixel": [
+          15,
+          14
+        ]
+      },
+      "shift": 0,
+      "renderedEar": [
+        [
+          14,
+          11
+        ]
+      ],
+      "renderedEye": [],
+      "renderedMouth": []
+    },
+    {
+      "frame": 7,
+      "phase": 0.8300000000000001,
+      "view": "side",
+      "expression": "normal",
+      "headAnchor": [
+        14,
+        15
+      ],
+      "eye": {
+        "local": [
+          2,
+          -5
+        ],
+        "world": [
+          16,
+          9.5
+        ],
+        "pixel": [
+          16,
+          10
+        ]
+      },
+      "eyePixels": [
+        [
+          16,
+          10
+        ]
+      ],
+      "mouth": {
+        "local": [
+          2,
+          -3
+        ],
+        "world": [
+          16,
+          11.5
+        ],
+        "pixel": [
+          16,
+          12
+        ]
+      },
+      "mouthPixels": [
+        [
+          16,
+          12
+        ]
+      ],
+      "ear": {
+        "local": [
+          -1,
+          -4
+        ],
+        "world": [
+          13,
+          10.5
+        ],
+        "pixel": [
+          13,
+          11
+        ]
+      },
+      "nose": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseTip": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseVisible": true,
+      "cheek": {
+        "local": [
+          -2,
+          -3
+        ],
+        "world": [
+          12,
+          11.5
+        ],
+        "pixel": [
+          12,
+          12
+        ]
+      },
+      "chin": {
+        "local": [
+          0,
+          -1
+        ],
+        "world": [
+          14,
+          13.5
+        ],
+        "pixel": [
+          14,
+          14
+        ]
+      },
+      "shift": 0,
+      "renderedEar": [
+        [
+          13,
+          11
+        ]
+      ],
+      "renderedEye": [
+        [
+          16,
+          10
+        ]
+      ],
+      "renderedMouth": []
+    },
+    {
+      "frame": 8,
+      "phase": 0.8999999999999999,
+      "view": "side",
+      "expression": "normal",
+      "headAnchor": [
+        14,
+        15
+      ],
+      "eye": {
+        "local": [
+          2,
+          -5
+        ],
+        "world": [
+          16,
+          9.5
+        ],
+        "pixel": [
+          16,
+          10
+        ]
+      },
+      "eyePixels": [
+        [
+          16,
+          10
+        ]
+      ],
+      "mouth": {
+        "local": [
+          2,
+          -3
+        ],
+        "world": [
+          16,
+          11.5
+        ],
+        "pixel": [
+          16,
+          12
+        ]
+      },
+      "mouthPixels": [
+        [
+          16,
+          12
+        ]
+      ],
+      "ear": {
+        "local": [
+          -1,
+          -4
+        ],
+        "world": [
+          13,
+          10.5
+        ],
+        "pixel": [
+          13,
+          11
+        ]
+      },
+      "nose": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseTip": {
+        "local": [
+          5,
+          -4
+        ],
+        "world": [
+          19,
+          10.5
+        ],
+        "pixel": [
+          19,
+          11
+        ]
+      },
+      "noseVisible": true,
+      "cheek": {
+        "local": [
+          -2,
+          -3
+        ],
+        "world": [
+          12,
+          11.5
+        ],
+        "pixel": [
+          12,
+          12
+        ]
+      },
+      "chin": {
+        "local": [
+          0,
+          -1
+        ],
+        "world": [
+          14,
+          13.5
+        ],
+        "pixel": [
+          14,
+          14
+        ]
+      },
+      "shift": 0,
+      "renderedEar": [
+        [
+          13,
+          11
+        ]
+      ],
+      "renderedEye": [
+        [
+          16,
+          10
+        ]
+      ],
+      "renderedMouth": [
+        [
+          16,
+          12
+        ]
+      ]
+    }
+  ]
+}
