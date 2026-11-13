@@ -40,6 +40,19 @@ export function usageLabel(state: string): string {
   return USAGE_STATES.find(entry => entry.id === state)?.label ?? (state || 'Unknown');
 }
 
+export interface FacingInfo { readonly id: string; readonly label: string; readonly chip: string }
+export const FACINGS: readonly FacingInfo[] = [
+  { id: 'right', label: 'Facing right', chip: 'Facing right' },
+  { id: 'left', label: 'Facing left', chip: 'Facing left' },
+  { id: 'front', label: 'Facing the camera', chip: 'Front view' },
+  { id: 'back', label: 'Seen from behind', chip: 'Back view' },
+  { id: 'none', label: 'Not facing-specific', chip: 'No facing' },
+];
+export function facingInfo(id: string): FacingInfo {
+  return FACINGS.find(entry => entry.id === id) ?? { id, label: id || 'Unknown facing', chip: id || 'Facing unknown' };
+}
+export const isSideView = (slot: Pick<Slot, 'facing'>): boolean => slot.facing === 'right' || slot.facing === 'left';
+
 export interface Usage { readonly state: string; readonly evidence: string }
 export interface OldArt { readonly set: string; readonly frames: readonly string[]; readonly note: string }
 export interface NewArt { readonly animation: string | null; readonly frames: readonly string[]; readonly origin: string; readonly frameSize: string }
@@ -50,6 +63,14 @@ export interface Slot {
   readonly games: { readonly fizz1: Usage; readonly fizz2: Usage };
   readonly old: OldArt | null;
   readonly new: NewArt | null;
+  /** Which way Ben faces; `none` is for sprites that are not facing-specific, such as the overworld and the turntable. */
+  readonly facing: string;
+  /** Id of the opposite-facing slot, for side views. */
+  readonly pair: string | null;
+  /** Where the Fizz Stunner sits: `right-hip`, or `far-hip-left-facing` when Ben faces left. Empty when not recorded. */
+  readonly stunnerSide: string;
+  /** True when the frames carry the Stunner, so a left-facing pose must be drawn rather than a mirror of the right-facing one. */
+  readonly mirrorForbidden: boolean;
   readonly status: string;
   readonly dos: { readonly bytesPerFrame: number; readonly totalBytes: number } | null;
   readonly notes: string;
@@ -90,6 +111,7 @@ export function parseInventory(raw: unknown): Inventory {
       id: text(entry.id), label: text(entry.label) || text(entry.id), group: text(entry.group),
       games: { fizz1: parseUsage(games.fizz1), fizz2: parseUsage(games.fizz2) },
       old: parseOld(entry.old), new: parseNew(entry.new), status: text(entry.status), dos, notes: text(entry.notes),
+      facing: text(entry.facing) || 'none', pair: text(entry.pair) || null, stunnerSide: text(entry.stunnerSide), mirrorForbidden: entry.mirrorForbidden === true,
     });
   }
   const groups: Group[] = [];
@@ -134,8 +156,16 @@ export function progress(slots: readonly Slot[]): Progress {
   return { used: used.length, ready, inGame, percent, inGamePercent };
 }
 
+/** Adds up the 4-bit cost of the frames shown, counting a frame once even when two slots show it (a landing is a frame of its jump). */
 export function totalDosBytes(slots: readonly Slot[]): number {
-  return slots.reduce((sum, slot) => sum + (slot.dos?.totalBytes ?? 0), 0);
+  const counted = new Set<string>();
+  let total = 0;
+  for (const slot of slots) {
+    if (!slot.dos) continue;
+    if (!slot.new || !slot.dos.bytesPerFrame) { total += slot.dos.totalBytes; continue; }
+    for (const name of slot.new.frames) if (!counted.has(name)) { counted.add(name); total += slot.dos.bytesPerFrame; }
+  }
+  return total;
 }
 
 export type UsageFilter = 'all' | 'fizz1-used' | 'fizz2-used' | 'either-used' | 'could-use' | 'unused';
@@ -145,8 +175,15 @@ export interface Filters {
   readonly usage: UsageFilter;
   readonly search: string;
   readonly gapsOnly: boolean;
+  /** `all`, or one of the facing ids. */
+  readonly facing: string;
+  /** Only side views whose sprite is missing or still needs pixel art. */
+  readonly missingSide: boolean;
 }
-export const defaultFilters: Filters = { status: 'all', group: 'all', usage: 'all', search: '', gapsOnly: false };
+export const defaultFilters: Filters = { status: 'all', group: 'all', usage: 'all', search: '', gapsOnly: false, facing: 'all', missingSide: false };
+
+/** A right- or left-facing slot with no finished sprite of its own: nothing drawn, or only a model render. Partial art counts as drawn. */
+export const isMissingSide = (slot: Slot): boolean => isSideView(slot) && (slot.status === 'missing' || slot.status === 'needs-pixel-art');
 
 function matchesUsage(slot: Slot, usage: UsageFilter): boolean {
   const { fizz1, fizz2 } = slot.games;
@@ -163,15 +200,43 @@ export function slotMatches(slot: Slot, filters: Filters): boolean {
   if (filters.status !== 'all' && slot.status !== filters.status) return false;
   if (filters.group !== 'all' && slot.group !== filters.group) return false;
   if (filters.gapsOnly && !isGap(slot)) return false;
+  if (filters.facing !== 'all' && slot.facing !== filters.facing) return false;
+  if (filters.missingSide && !isMissingSide(slot)) return false;
   if (!matchesUsage(slot, filters.usage)) return false;
   const needle = filters.search.trim().toLowerCase();
   if (!needle) return true;
-  const haystack = [slot.id, slot.label, slot.notes, slot.games.fizz1.evidence, slot.games.fizz2.evidence, slot.old?.frames.join(' '), slot.new?.frames.join(' '), slot.old?.note].join(' ').toLowerCase();
+  const haystack = [slot.id, slot.label, facingInfo(slot.facing).label, slot.notes, slot.games.fizz1.evidence, slot.games.fizz2.evidence, slot.old?.frames.join(' '), slot.new?.frames.join(' '), slot.old?.note].join(' ').toLowerCase();
   return needle.split(/\s+/).every(word => haystack.includes(word));
 }
 export function filterSlots(slots: readonly Slot[], filters: Filters): Slot[] {
   return slots.filter(slot => slotMatches(slot, filters));
 }
+
+export interface FacingRow {
+  /** The slot id without its side, such as `shoot` for `shoot-right`; unique per pose. */
+  readonly key: string;
+  readonly label: string;
+  readonly right: Slot;
+  readonly left: Slot;
+}
+/** The pose name without its side, so "Run, facing right (6-frame cut)" becomes "Run (6-frame cut)". */
+export function poseLabel(label: string): string {
+  return label.replace(/,?\s*facing (?:right|left)/, '').trim();
+}
+/** Pairs each right-facing slot with the left-facing slot it names, in inventory order. Unpaired or dangling side views are left out. */
+export function buildFacingMatrix(slots: readonly Slot[]): FacingRow[] {
+  const byId = new Map(slots.map(slot => [slot.id, slot]));
+  const rows: FacingRow[] = [];
+  for (const slot of slots) {
+    if (slot.facing !== 'right' || !slot.pair) continue;
+    const left = byId.get(slot.pair);
+    if (!left || left.facing !== 'left' || left.pair !== slot.id) continue;
+    rows.push({ key: slot.id.replace(/-right$/, ''), label: poseLabel(slot.label), right: slot, left });
+  }
+  return rows;
+}
+/** Poses where at least one side still has no finished sprite. */
+export const rowsMissingSide = (rows: readonly FacingRow[]): FacingRow[] => rows.filter(row => isMissingSide(row.right) || isMissingSide(row.left));
 
 export type SortMode = 'gaps-first' | 'inventory';
 export interface GroupedSlots { readonly group: Group; readonly slots: readonly Slot[]; readonly gaps: number }

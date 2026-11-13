@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import { test, expect } from 'bun:test';
-import { defaultFilters, filterSlots, frameIndexAt, frameOffset, gridToPixels, groupSlots, newPlayback, oldPlayback, parseInventory, parseSpriteSet, progress, summarise, totalDosBytes } from './sprite-checklist.ts';
+import { buildFacingMatrix, defaultFilters, filterSlots, isMissingSide, poseLabel, rowsMissingSide, frameIndexAt, frameOffset, gridToPixels, groupSlots, newPlayback, oldPlayback, parseInventory, parseSpriteSet, progress, summarise, totalDosBytes } from './sprite-checklist.ts';
 
 const slot = (id: string, group: string, status: string, fizz1 = 'n/a', fizz2 = 'n/a', extra: Record<string, unknown> = {}) => ({
   id, label: id.toUpperCase(), group, status, games: { fizz1: { state: fizz1, evidence: '' }, fizz2: { state: fizz2, evidence: 'Found in room 4' } }, old: null, new: null, ...extra,
@@ -102,4 +102,70 @@ test('frame index loops over uneven durations', () => {
   expect(frameIndexAt([100, 200], 150)).toBe(1);
   expect(frameIndexAt([100, 200], 300)).toBe(0);
   expect(frameIndexAt([], 50)).toBe(0);
+});
+
+const side = (id: string, facing: string, status: string, pair?: string, extra: Record<string, unknown> = {}) =>
+  slot(id, 'move', status, 'used', 'used', { facing, pair, stunnerSide: facing === 'left' ? 'far-hip-left-facing' : 'right-hip', mirrorForbidden: true, ...extra });
+const facings = parseInventory({
+  groups: [{ id: 'move', label: 'Movement' }],
+  slots: [
+    side('stand-right', 'right', 'in-game', 'stand-left', { label: 'Stand, facing right' }),
+    side('stand-left', 'left', 'in-game', 'stand-right'),
+    side('shoot-right', 'right', 'in-game', 'shoot-left', { label: 'Fire, facing right (6-frame cut)' }),
+    side('shoot-left', 'left', 'missing', 'shoot-right'),
+    side('reload-right', 'right', 'needs-pixel-art', 'reload-left'),
+    side('reload-left', 'left', 'missing', 'reload-right'),
+    side('aim-right', 'right', 'partial', 'aim-left'),
+    side('aim-left', 'left', 'partial', 'aim-right'),
+    side('orphan-right', 'right', 'ready-in-lab', 'gone-left'),
+    slot('death', 'move', 'ready-in-lab', 'used', 'used', { facing: 'front', mirrorForbidden: true }),
+    slot('overworld', 'move', 'ready-in-lab', 'used', 'n/a', { facing: 'none' }),
+    slot('legacy', 'move', 'in-game'),
+  ],
+});
+
+test('parsing reads facing, pair, Stunner side and the mirror flag, with safe defaults', () => {
+  const byId = new Map(facings.slots.map(entry => [entry.id, entry]));
+  expect(byId.get('shoot-left')).toMatchObject({ facing: 'left', pair: 'shoot-right', stunnerSide: 'far-hip-left-facing', mirrorForbidden: true });
+  expect(byId.get('overworld')).toMatchObject({ facing: 'none', pair: null, stunnerSide: '', mirrorForbidden: false });
+  expect(byId.get('legacy')).toMatchObject({ facing: 'none', pair: null, mirrorForbidden: false });
+});
+
+test('a missing side is a right- or left-facing slot with no finished sprite', () => {
+  const ids = filterSlots(facings.slots, { ...defaultFilters, missingSide: true }).map(entry => entry.id);
+  expect(ids).toEqual(['shoot-left', 'reload-right', 'reload-left']);
+  expect(isMissingSide(facings.slots.find(entry => entry.id === 'aim-left')!)).toBe(false);
+  expect(isMissingSide(facings.slots.find(entry => entry.id === 'death')!)).toBe(false);
+});
+
+test('the facing filter keeps one facing and combines with the other filters', () => {
+  const ids = (extra: Partial<typeof defaultFilters>) => filterSlots(facings.slots, { ...defaultFilters, ...extra }).map(entry => entry.id);
+  expect(ids({ facing: 'front' })).toEqual(['death']);
+  expect(ids({ facing: 'none' })).toEqual(['overworld', 'legacy']);
+  expect(ids({ facing: 'left', missingSide: true })).toEqual(['shoot-left', 'reload-left']);
+  expect(ids({ facing: 'left', status: 'partial' })).toEqual(['aim-left']);
+  expect(ids({ search: 'facing the camera' })).toEqual(['death']);
+  expect(ids({ facing: 'up' })).toEqual([]);
+});
+
+test('the matrix pairs each right-facing slot with its left-facing twin and names the pose without a side', () => {
+  const rows = buildFacingMatrix(facings.slots);
+  expect(rows.map(row => [row.key, row.label, row.right.id, row.left.id])).toEqual([
+    ['stand', 'Stand', 'stand-right', 'stand-left'],
+    ['shoot', 'Fire (6-frame cut)', 'shoot-right', 'shoot-left'],
+    ['reload', 'RELOAD-RIGHT', 'reload-right', 'reload-left'],
+    ['aim', 'AIM-RIGHT', 'aim-right', 'aim-left'],
+  ]);
+  expect(rowsMissingSide(rows).map(row => row.key)).toEqual(['shoot', 'reload']);
+  expect(poseLabel('Idle: whistle, facing left')).toBe('Idle: whistle');
+  expect(buildFacingMatrix([])).toEqual([]);
+});
+
+test('the DOS total counts a frame once when two slots show it', () => {
+  const art = (frames: string[]) => ({ animation: null, frames, origin: 'main', frameSize: '2x2' });
+  const shared = parseInventory({ slots: [
+    slot('jump', 'move', 'ready-in-lab', 'used', 'used', { new: art(['a', 'b', 'c']), dos: { bytesPerFrame: 2, totalBytes: 6 } }),
+    slot('land', 'move', 'partial', 'used', 'used', { new: art(['c']), dos: { bytesPerFrame: 2, totalBytes: 2 } }),
+  ] });
+  expect(totalDosBytes(shared.slots)).toBe(6);
 });

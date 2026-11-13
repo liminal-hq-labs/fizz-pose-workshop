@@ -13,6 +13,8 @@ const STATES = ['used', 'could-use', 'unused', 'n/a'] as const;
 const STATUSES = ['in-game', 'ready-in-lab', 'new-in-pr', 'partial', 'missing', 'needs-pixel-art'] as const;
 const ORIGINS = ['main', 'pr-1', 'pr-2', 'pr-3', 'main+pr-1', 'none'] as const;
 const GAMES = ['fizz1', 'fizz2'] as const;
+const FACINGS = ['right', 'left', 'front', 'back', 'none'] as const;
+const STUNNER_SIDES = ['right-hip', 'far-hip-left-facing'] as const;
 
 interface Slot {
   readonly id: string;
@@ -21,6 +23,10 @@ interface Slot {
   readonly games: Record<(typeof GAMES)[number], { state: string; evidence: string }>;
   readonly old: { set: string; frames: string[]; note: string } | null;
   readonly new: { animation: string | null; frames: string[]; origin: string; frameSize: string } | null;
+  readonly facing: string;
+  readonly pair?: string;
+  readonly stunnerSide?: string;
+  readonly mirrorForbidden: boolean;
   readonly status: string;
   readonly dos?: { bytesPerFrame: number; totalBytes: number };
   readonly notes: string;
@@ -34,7 +40,7 @@ interface Inventory {
 }
 
 const inventory = JSON.parse(readFileSync(`${root}source/sprite-inventory.json`, 'utf8')) as Inventory;
-const labFrames = assets.frames as Record<string, { width: number; height: number }>;
+const labFrames = assets.frames as Record<string, { width: number; height: number; grid: string[] }>;
 const labAnimations = assets.animations as Record<string, { frames: string[] }>;
 
 /** Frame names in a snapshot of a game's sprite sheet, read once per set. */
@@ -126,4 +132,67 @@ test('keeps drawn left-facing frames apart from the right-facing ones', () => {
     const shared = slot.new.frames.filter((name) => right.new?.frames.includes(name));
     expect(shared, `${slot.id} reuses a right-facing frame`).toEqual([]);
   }
+});
+
+const slotById = new Map(inventory.slots.map((slot) => [slot.id, slot]));
+const isSide = (slot: Slot): boolean => slot.facing === 'right' || slot.facing === 'left';
+
+test('gives every slot a known facing, a boolean mirror flag and a valid Stunner side', () => {
+  for (const slot of inventory.slots) {
+    expect(FACINGS, slot.id).toContain(slot.facing as (typeof FACINGS)[number]);
+    expect(typeof slot.mirrorForbidden, slot.id).toBe('boolean');
+    if (slot.stunnerSide !== undefined) expect(STUNNER_SIDES, slot.id).toContain(slot.stunnerSide as (typeof STUNNER_SIDES)[number]);
+    if (slot.facing === 'right') expect(slot.stunnerSide, slot.id).toBe('right-hip');
+    if (slot.facing === 'left') expect(slot.stunnerSide, slot.id).toBe('far-hip-left-facing');
+    if (slot.stunnerSide) expect(slot.mirrorForbidden, `${slot.id} carries the Stunner`).toBe(true);
+  }
+});
+
+test('pairs every right- and left-facing slot with its opposite, and nothing else', () => {
+  for (const slot of inventory.slots) {
+    if (!isSide(slot)) {
+      expect(slot.pair, `${slot.id} is not a side view`).toBeUndefined();
+      continue;
+    }
+    expect(slot.pair, slot.id).toBeDefined();
+    const other = slotById.get(slot.pair!);
+    expect(other, `${slot.id} pairs with ${slot.pair}`).toBeDefined();
+    expect(other!.pair, `${slot.pair} points back`).toBe(slot.id);
+    expect(other!.facing, `${slot.id} and ${slot.pair} face opposite ways`).toBe(slot.facing === 'right' ? 'left' : 'right');
+    expect(other!.group).toBe(slot.group);
+    // Ids that name a side must agree with the facing field.
+    if (slot.id.endsWith('-right')) expect(slot.facing).toBe('right');
+    if (slot.id.endsWith('-left')) expect(slot.facing).toBe('left');
+  }
+});
+
+test('a side with no frames is a gap, and a side with frames is not marked missing', () => {
+  for (const slot of inventory.slots) {
+    if (!isSide(slot)) continue;
+    if (!slot.new) expect(['missing', 'needs-pixel-art'], slot.id).toContain(slot.status);
+    else expect(slot.status, slot.id).not.toBe('missing');
+  }
+});
+
+/** A frame's pixel mirror image, so exact flips of another frame can be spotted. */
+const flipped = (grid: string[]): string => grid.map((row) => [...row].reverse().join('')).join('\n');
+
+test('never previews a mirrored copy: a Stunner-bearing frame is not the flip of any frame in its pair', () => {
+  for (const slot of inventory.slots) {
+    if (!slot.mirrorForbidden || !isSide(slot) || !slot.new) continue;
+    const other = slotById.get(slot.pair!)!;
+    if (!other.new) continue;
+    const otherGrids = new Map(other.new.frames.map((name) => [name, labFrames[name].grid.join('\n')]));
+    for (const name of slot.new.frames) {
+      const grid = labFrames[name].grid;
+      if (flipped(grid) === grid.join('\n')) continue;
+      for (const [otherName, otherGrid] of otherGrids) expect(flipped(grid) === otherGrid, `${slot.id}: ${name} is a mirror of ${otherName}`).toBe(false);
+    }
+  }
+});
+
+test('lists every lab animation with a left-facing set under a left-facing slot', () => {
+  const leftAnimations = Object.keys(labAnimations).filter((name) => /-left(-\d+)?$/.test(name));
+  const claimed = new Set(inventory.slots.filter((slot) => slot.facing === 'left').map((slot) => slot.new?.animation));
+  for (const name of leftAnimations) expect(claimed.has(name), `${name} belongs to no left-facing slot`).toBe(true);
 });
