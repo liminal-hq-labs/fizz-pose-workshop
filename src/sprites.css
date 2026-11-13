@@ -1,0 +1,84 @@
+/* Styles the Ben sprite checklist page.
+ *
+ * (c) Copyright 2026 Liminal HQ, Scott Morris
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
+ */
+
+.sprites-page{--ok:#a9ee73;--ready:#6fe0c0;--pr:#8cbcff;--warn:#ffd08b;--bad:#ff8a80;--art:#e6a8ff;--line:#344a3f;overflow-x:hidden}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.panel{margin:24px 0;padding:20px;border:1px solid #57735e;border-radius:12px;background:#14221b}
+.panel h2{margin:0 0 12px;font-size:1.2rem}
+.legend{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.swatch-key{display:inline-block;width:14px;height:14px;border-radius:3px}.swatch-key.ready{background:var(--ready)}.swatch-key.game{background:var(--ok);margin-left:12px}
+
+.progress{position:relative;height:18px;border-radius:9px;background:#0c1912;border:1px solid #45614d;overflow:hidden}
+.progress span{position:absolute;inset:0 auto 0 0;display:block}
+#progress-ready{background:var(--ready);opacity:.7}#progress-game{background:var(--ok)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;list-style:none;margin:16px 0 8px;padding:0}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:10px 12px;border-radius:10px;text-align:left;background:#1b2b23;border:1px solid var(--line);color:inherit}
+.tile strong{font-size:1.7rem;line-height:1.1}
+button.tile{cursor:pointer}button.tile[aria-pressed="true"]{outline:3px solid #fff;outline-offset:1px}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:2px}
+
+.filters{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end}
+.filters label{flex-direction:column;align-items:flex-start;gap:4px;font-size:.85rem;color:#b4c7bc}
+.filters input[type=search],.filters select{min-width:150px;max-width:100%;background:#23372d;color:#e8f1e5;border:1px solid #607c62;border-radius:6px;padding:8px 10px}
+.filters label.check{flex-direction:row;align-items:center;gap:8px;padding:8px 0;color:#e8f1e5;font-size:1rem}
+.filters .check input{width:20px;height:20px}
+.controls{margin:8px 0}
+.empty{padding:16px;border:1px dashed #607c62;border-radius:8px}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+#checklist{width:100%;border-collapse:collapse;min-width:900px}
+#checklist thead th{position:sticky;top:0;background:#1b2b23;text-align:left;padding:10px 12px;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:#a9ee73;border-bottom:1px solid #45614d}
+#checklist td,#checklist tbody th[scope=row]{padding:12px;vertical-align:top;border-bottom:1px solid var(--line);text-align:left;font-weight:normal;font-size:.9rem}
+#checklist .group-row th{text-align:left;background:#1f3328;padding:10px 12px;font-size:1rem;color:#e8f1e5;border-bottom:1px solid #45614d}
+.group-count{color:#b4c7bc;font-size:.85rem}
+.slot-name{display:block;font-weight:700;font-size:1rem}
+#checklist code{font-size:.75rem;color:#9bb3a4}
+details{margin-top:8px;font-size:.8rem}summary{cursor:pointer;color:var(--ok)}details p{margin:6px 0;font-size:.8rem}
+.usage{display:flex;gap:8px;align-items:center;margin-bottom:6px;white-space:nowrap}.usage .game{min-width:46px;color:#b4c7bc;font-size:.8rem}
+.muted{color:#9bb3a4}td>span>.muted{display:block}.warn{color:var(--warn)}
+.caption{display:flex;flex-direction:column;gap:2px;margin-top:8px;font-size:.78rem;color:#c3d6c8}
+
+.preview{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.stage{height:auto;min-height:0;width:max-content;max-width:100%;padding:8px 10px 0;align-items:flex-end;border-radius:8px}
+.stage canvas{display:block;height:auto;max-width:100%;transform:none}
+.mini{padding:4px 10px;font-size:.8rem}
+.no-sprite{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;min-width:110px;min-height:96px;padding:10px;border:2px dashed #607c62;border-radius:8px;color:#9bb3a4;font-size:.78rem;background:repeating-linear-gradient(135deg,#ffffff06 0 8px,transparent 8px 16px)}
+.no-sprite strong{color:#c3d6c8;font-size:.9rem}
+
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;border:1px solid currentColor;font-size:.8rem;font-weight:700;white-space:nowrap;background:#ffffff0d}
+.badge-in-game,.badge-used{color:var(--ok)}
+.badge-ready-in-lab{color:var(--ready)}
+.badge-new-in-pr{color:var(--pr)}
+.badge-partial,.badge-could{color:var(--warn)}
+.badge-missing{color:var(--bad)}
+.badge-needs-pixel-art{color:var(--art)}
+.badge-unused,.badge-na,.badge-unknown{color:#aebdb3;font-weight:400}
+.tile.badge-in-game,.tile.badge-ready-in-lab,.tile.badge-new-in-pr,.tile.badge-partial,.tile.badge-missing,.tile.badge-needs-pixel-art{background:#1b2b23}
+.tile span{font-size:.85rem;color:#e8f1e5}
+.tile.badge-in-game strong{color:var(--ok)}.tile.badge-ready-in-lab strong{color:var(--ready)}.tile.badge-new-in-pr strong{color:var(--pr)}.tile.badge-partial strong{color:var(--warn)}.tile.badge-missing strong{color:var(--bad)}.tile.badge-needs-pixel-art strong{color:var(--art)}
+.tile.badge{border-radius:10px;font-weight:400;white-space:normal}
+
+@media(max-width:800px){
+  .sprites-page{padding:16px}
+  .panel{padding:14px}
+  .table-wrap{overflow:visible;border:0}
+  #checklist{min-width:0}
+  #checklist,#checklist tbody,#checklist tr,#checklist td,#checklist th{display:block;width:100%}
+  #checklist thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  #checklist tbody{margin-bottom:16px}
+  #checklist tr:not(.group-row){border:1px solid var(--line);border-radius:12px;background:#17231e;margin:10px 0;overflow:hidden}
+  #checklist .group-row{background:none}#checklist .group-row th{border-radius:8px}
+  #checklist td,#checklist tbody th[scope=row]{border:0;padding:8px 14px;display:block}
+  #checklist tbody th[scope=row]{display:block;padding-top:14px}
+  #checklist td::before{content:attr(data-label);color:#a9ee73;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px}
+  .controls label{flex-wrap:wrap}
+  .usage{margin-bottom:4px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .filters label,.filters input[type=search],.filters select{width:100%}
+  .filters label{flex:1 1 140px}
+}
+@media(prefers-reduced-motion:reduce){.sprites-page *{scroll-behavior:auto;transition:none}}
