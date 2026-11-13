@@ -6,7 +6,8 @@
 import { expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import metadata from "../models/ben-g/ben-g.json";
-import { benGClips, benGFiles, benGFramesPerSecond } from "./build-ben-g.ts";
+import { benGClips } from "../src/model-3d/ben-g/dump.ts";
+import { benGFiles, benGFramesPerSecond } from "./build-ben-g.ts";
 
 interface Gltf {
   asset: { version: string };

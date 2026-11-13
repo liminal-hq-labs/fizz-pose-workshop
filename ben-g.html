@@ -1,0 +1,99 @@
+<!doctype html>
+<!--
+  The cartoon Ben tuning bench: a posable 3D figure with switches for the design choices under comparison.
+
+  (c) Copyright 2026 Liminal HQ, Scott Morris
+  SPDX-License-Identifier: Apache-2.0 OR MIT
+-->
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ben Blaze Tuning Bench</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/src/model-3d/ben-g/bench.css">
+</head>
+<body style="margin:0">
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Lieutenant Fizz · Ben Blaze, variation G</div>
+    <h1>Ben Blaze, <span>on the tuning bench</span></h1>
+    <p class="lede">A posable cartoon rig of Ben with switches for the design choices still under comparison. Pick a pose from the strip, orbit and zoom the view, and click any body part to bend it.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="3D turntable showing Ben Blaze"></canvas>
+    <div class="hint">Drag to orbit · scroll or pinch to zoom · shift-drag or right-drag to move · click a part to pose it</div>
+  </div>
+
+  <div class="bar">
+    <div class="group">
+      <div class="seg">
+        <button type="button" id="t-spin" aria-pressed="false">Spin</button>
+        <button type="button" id="t-bones" aria-pressed="false">Skeleton</button>
+        <button type="button" id="t-play" aria-pressed="true">Motion</button>
+      </div>
+    </div>
+    <label class="view" for="zoom">Zoom <input type="range" id="zoom" min="0.6" max="5" step="0.05" value="1"></label>
+    <label class="view" for="look">Height <input type="range" id="look" min="0" max="2.2" step="0.01" value="0.98"></label>
+    <button type="button" class="btn" id="b-view">Reset view</button>
+  </div>
+
+  <div class="poses" id="poses" aria-label="Poses, shown as the workshop sprites they come from"></div>
+
+  <div class="cols">
+    <div class="bench" id="tune">
+      <h2>Tune him</h2>
+      <div class="row"><label for="o-line">Ink line</label><input type="range" id="o-line" min="0" max="0.3" step="0.01" value="0.11"><output id="o-line-out">0.11</output></div>
+      <div class="opt"><span class="label">Fizz flavour</span><div class="seg" data-opt="fizz"><button type="button" id="fz-grape" data-val="grape">Grape</button><button type="button" id="fz-cream" data-val="cream">Cream soda</button></div></div>
+      <div class="opt"><span class="label">Fizz Stunner</span><div class="seg" data-opt="stunner"><button type="button" id="st-can" data-val="can">Can loader</button><button type="button" id="st-dome" data-val="dome">Bubble dome</button><button type="button" id="st-bottle" data-val="bottle">Pop bottle</button></div></div>
+      <div class="opt"><span class="label">Runners</span><div class="seg" data-opt="shoe"><button type="button" id="sh-high" data-val="high">High-top</button><button type="button" id="sh-low" data-val="low">Low runner</button><button type="button" id="sh-chunky" data-val="chunky">Chunky</button></div></div>
+      <div class="opt"><span class="label">Jeans</span><div class="seg" data-opt="jeans"><button type="button" id="jn-both" data-val="both">Seams + stripe</button><button type="button" id="jn-seam" data-val="seam">Seams</button><button type="button" id="jn-stripe" data-val="stripe">Stripe</button><button type="button" id="jn-plain" data-val="plain">Plain</button></div></div>
+      <div class="opt"><span class="label">Cheeks</span><div class="seg" data-opt="cheeks"><button type="button" id="ck-soft" data-val="soft">Soft</button><button type="button" id="ck-line" data-val="line">Lines</button><button type="button" id="ck-none" data-val="none">None</button></div></div>
+      <div class="opt"><span class="label">Helmet vents</span><div class="seg" data-opt="vents"><button type="button" id="vt-holes" data-val="holes">Cut through</button><button type="button" id="vt-painted" data-val="painted">Painted</button></div></div>
+      <div class="opt"><span class="label">Gear</span><div class="seg" id="gear"><button type="button" id="g-helmet" data-flag="helmet">Helmet</button><button type="button" id="g-backpack" data-flag="backpack">Backpack</button><button type="button" id="g-wrist" data-flag="wrist">Wrist computer</button></div></div>
+      <div class="opt"><label class="label" for="selFace">Expression</label>
+        <select id="selFace"><option value="auto">Follows the pose</option><option value="smile">Smiling</option><option value="whistle">Whistling</option><option value="shout">Shouting</option><option value="determined">Determined</option><option value="worried">Worried</option></select></div>
+      <div class="opt"><label class="label" for="selGaze">Eyes</label>
+        <select id="selGaze"><option value="auto">Follow the pose</option><option value="centre">Straight ahead</option><option value="left">His left</option><option value="right">His right</option><option value="up">Up</option><option value="down">Down</option></select></div>
+      <div class="btns"><button type="button" class="btn primary" id="b-choices">Copy my choices</button></div>
+      <textarea id="choiceOut" class="out" readonly hidden aria-label="Choices as JSON"></textarea>
+    </div>
+
+    <div class="side">
+      <div class="bench">
+        <h2>Pose him by hand</h2>
+        <div class="status" id="status">Following the preset pose</div>
+        <p>Click a body part on the stage, or choose a joint, then turn the dials. Each dial starts at zero and turns the part from where it is now: forward and back, twist along its own length, or out to the side. Motion pauses while you pose.</p>
+        <label class="label" for="selJoint">Joint</label>
+        <select id="selJoint"></select>
+        <div class="row"><label for="rx">Fwd/back</label><input type="range" id="rx" min="-180" max="180" step="1" value="0"><output id="ox">0°</output></div>
+        <div class="row"><label for="ry">Twist</label><input type="range" id="ry" min="-180" max="180" step="1" value="0"><output id="oy">0°</output></div>
+        <div class="row"><label for="rz">Out/in</label><input type="range" id="rz" min="-180" max="180" step="1" value="0"><output id="oz">0°</output></div>
+        <div class="btns"><button type="button" class="btn primary" id="b-resume">Back to preset</button><button type="button" class="btn" id="b-copy">Copy pose</button></div>
+        <textarea id="poseOut" class="out" readonly hidden aria-label="Pose as JSON"></textarea>
+      </div>
+      <div class="notes">
+        <h2>What this build includes</h2>
+        <ul>
+          <li>Helmet: a thicker shell with a teardrop tail, vents you can cut through or paint, and straps that hang from the rim either side of each ear.</li>
+          <li>Stunner: the can loader is a round drum and the fizz can loads into the back.</li>
+          <li>Hands: a flat palm with knuckles, longer jointed fingers and a thumb at the side.</li>
+          <li>Runners are about a size and a half smaller, with a collar that covers the ankle.</li>
+          <li>Jeans keep both the front stripe and the side seams. Cheeks are off.</li>
+          <li>The backpack straps loop under the arms. The wrist computer has no aerial.</li>
+          <li>Run: heel strike, roll, toe-off and a real flight phase. Climb: the hips and shoulders sway and the knees turn out past the ladder.</li>
+          <li>Pogo: his spine and chest squash and stretch with the spring.</li>
+          <li>Eyes move: they follow the wrist computer, the phone, the ladder and the ledge, or you can aim them.</li>
+          <li>Idles: wrist check, helmet tip, head scratch with the helmet hanging from his hand, rocking on his heels, spinning the helmet on a finger and pulling out the wrist computer's aerial.</li>
+          <li>Pogo draw: he pulls the stick from his back pocket, or from the backpack when he wears it, and plants it.</li>
+          <li>Reload: he slides the spent can out of the back of the Stunner, drops it, takes a fresh one and pushes it home.</li>
+          <li>The dramatic death plays its beats: belly clutch, soles to the camera, dizzy wobble and the final topple.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="/src/model-3d/ben-g/bench.ts"></script>
+</body>
+</html>
