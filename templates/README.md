@@ -128,6 +128,8 @@ The cartoon model lives in `src/model-3d/ben-g/`: `rig.ts` builds the figure fro
 
 Four of the model’s idles are sprite rigs in the catalogue, drawn by `bun run draw:performances` from the side-view skin: checking the wrist computer, pulling out its aerial, tipping the helmet and rocking on his heels. `bun run draw:model-poses` renders the poses the skin cannot draw yet (head scratch, helmet spin, pogo draw and Stunner reload) through the same sprite converter as the turntable reference and saves them as 22 first-draft frames in four loops, each helmeted frame carrying the hand-drawn standing head; run `bun run generate` afterwards. It needs Chromium (`CHROMIUM_PATH`).
 
+[The evolution of Ben](docs/evolution/README.md) is a short brief, with the samples from each stage in order, on how the sprite became the model.
+
 [Ben’s character sheet](docs/BEN_CHARACTER_SHEET.md) records the agreed cartoon design for the model: locked proportions and colours, the features still being refined and the questions that remain open.
 
 ## Contributing and repository identity
