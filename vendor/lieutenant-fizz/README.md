@@ -7,6 +7,7 @@ Built from [`liminal-hq/lieutenant-fizz`](https://github.com/liminal-hq/lieutena
 | `sim.wasm` | The Episode 1 simulation: every rule of the game, with a raw C-ABI export surface and no imports. | `bun run build:wasm` in the game repository, without the optional `wasm-opt` pass. |
 | `sprites.png` | Every sprite the simulation can draw, packed into one 1024-pixel sheet at one texel a pixel. | `buildAtlas(defineSprites(), { size: 1024, scale: 1 })` from the game's engine and sprite catalogue; the albedo flipped to read top-down. |
 | `sprites.json` | Each sprite's `[left, bottom, width, height]` in that sheet, in pixels. | The same atlas's rectangles. |
+| `fonts/` | The Fizz font in regular and bold, the game's own pixel typeface, with its licence. | Copied from `packages/engine/assets/fonts/`. The font is licensed OFL-1.1 (`fonts/OFL.txt`), unlike the rest. |
 
 The 3D level page (`crater-fields.html`) runs `sim.wasm` and draws what it says to draw. The simulation scales sprites by the sizes in `sprites.json`, so the two files must come from the same build. `sprites.png` is used only to draw a sprite flat when it has no 3D model.
 

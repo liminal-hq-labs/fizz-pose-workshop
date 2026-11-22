@@ -31,12 +31,21 @@ export const State = {
 /** Sim modes. */
 export const Mode = { none: 0, attract: 1, map: 2, level: 3 } as const;
 /** Event kinds worth showing. */
-export const SimEvent = { levelComplete: 4, died: 5, gameOver: 6 } as const;
+export const SimEvent = { caption: 1, toast: 3, levelComplete: 4, died: 5, gameOver: 6 } as const;
+/** One thing the sim reported: a kind and up to five numbers whose meaning depends on it. */
+export interface SimEventRecord {
+	kind: number;
+	a: number;
+	b: number;
+	c: number;
+}
 /** The sim's fixed step, in seconds. */
 export const stepSeconds = 1 / 60;
 
 const stride = 20;
-const spriteTable = 0;
+const spriteTable = 0,
+	captionTable = 1,
+	toastTable = 2;
 
 interface Exports {
 	memory: WebAssembly.Memory;
@@ -44,6 +53,7 @@ interface Exports {
 	table_len(table: number): number;
 	name_ptr(table: number, i: number): number;
 	name_len(table: number, i: number): number;
+	caption_colour(i: number): number;
 	sprite_table_ptr(): number;
 	instance_ptr(): number;
 	out_ptr(): number;
@@ -72,19 +82,22 @@ export interface SpriteSheet {
  */
 export class LevelSim {
 	readonly names: string[];
+	/** The sound words the sim can raise, such as `boing` and `fzzt`, each with its colour; colour 0 is never shown. */
+	readonly captions: { text: string; colour: number }[];
+	/** The one-line messages the sim can raise, such as the red cookie door opening. */
+	readonly toasts: string[];
 	private constructor(
 		private readonly x: Exports,
 		sheet: SpriteSheet,
 	) {
 		if (x.stride() !== stride)
 			throw new Error(`instance stride is ${x.stride()}, expected ${stride}`);
-		const text = new TextDecoder();
-		this.names = [];
-		for (let i = 0, count = x.table_len(spriteTable); i < count; i++) {
-			const pointer = x.name_ptr(spriteTable, i),
-				length = x.name_len(spriteTable, i);
-			this.names.push(text.decode(new Uint8Array(x.memory.buffer, pointer, length)));
-		}
+		this.names = this.table(spriteTable);
+		this.captions = this.table(captionTable).map((text, index) => ({
+			text,
+			colour: x.caption_colour(index),
+		}));
+		this.toasts = this.table(toastTable);
 		/* The sim tags each instance with its sprite's sheet position. Give every sprite its index there instead, so an
 		   instance says which sprite it is; the sizes are the real ones, because the sim scales sprites by them. */
 		/* A call into the sim can grow its memory and detach the old buffer, so take each pointer before the buffer. */
@@ -95,6 +108,18 @@ export class LevelSim {
 			if (!rect) throw new Error(`the sprite sheet has no "${name}"`);
 			table.set([i, 0, 1, 1, rect[2], rect[3]], i * 6);
 		});
+	}
+
+	/** A name table the sim owns. A call into the sim can grow its memory, so each pointer is taken before the buffer. */
+	private table(table: number): string[] {
+		const text = new TextDecoder(),
+			out: string[] = [];
+		for (let i = 0, count = this.x.table_len(table); i < count; i++) {
+			const pointer = this.x.name_ptr(table, i),
+				length = this.x.name_len(table, i);
+			out.push(text.decode(new Uint8Array(this.x.memory.buffer, pointer, length)));
+		}
+		return out;
 	}
 
 	static async load(wasm: BufferSource, sheet: SpriteSheet): Promise<LevelSim> {
@@ -130,16 +155,20 @@ export class LevelSim {
 		this.x.state_set(State.playerY, y);
 	}
 
-	/** The kinds of the events raised since the last call. */
-	events(): number[] {
+	/**
+	 * What the sim reported since the last call. A caption carries where it happened (`a`, `b` in tiles) and which word
+	 * (`c`); a toast carries which message (`a`).
+	 */
+	events(): SimEventRecord[] {
 		const count = this.x.events_len();
 		if (!count) return [];
 		const pointer = this.x.events_ptr(),
-			raw = new Float32Array(this.x.memory.buffer, pointer, count * 6);
-		const kinds: number[] = [];
-		for (let i = 0; i < count; i++) kinds.push(raw[i * 6]);
+			raw = new Float32Array(this.x.memory.buffer, pointer, count * 6),
+			list: SimEventRecord[] = [];
+		for (let i = 0; i < count; i++)
+			list.push({ kind: raw[i * 6], a: raw[i * 6 + 1], b: raw[i * 6 + 2], c: raw[i * 6 + 3] });
 		this.x.events_clear();
-		return kinds;
+		return list;
 	}
 
 	/**

@@ -38,6 +38,7 @@ const keyInputs: Record<string, number> = {
 };
 
 let held = 0;
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
 function wireControls(restart: () => void): void {
 	window.addEventListener('keydown', (event: KeyboardEvent) => {
 		if (event.code === 'KeyR') restart();
@@ -67,10 +68,41 @@ function wireControls(restart: () => void): void {
 	}
 }
 
+/**
+ * Floats one of the game's sound words where it happened, in its colour: it rises a pixel at a time and fades, as in the
+ * game. A word with colour 0 only cues a sound there, so it is not shown.
+ */
+function caption(
+	stage: Stage,
+	word: { text: string; colour: number } | undefined,
+	x: number,
+	y: number,
+): void {
+	if (!word || !word.colour) return;
+	const at = new THREE.Vector3(x, y, 0).project(stage.camera),
+		element = document.createElement('span');
+	element.className = 'caption';
+	element.textContent = word.text;
+	element.style.color = `#${word.colour.toString(16).padStart(6, '0')}`;
+	element.style.left = `${Math.round((at.x * 0.5 + 0.5) * innerWidth)}px`;
+	element.style.top = `${Math.round((-at.y * 0.5 + 0.5) * innerHeight)}px`;
+	document.body.append(element);
+	element
+		.animate(
+			[
+				{ transform: 'translate(-50%, 0)', opacity: 1 },
+				{ transform: 'translate(-50%, -24px)', opacity: 0 },
+			],
+			{ duration: 950, easing: 'steps(24, end)' },
+		)
+		.finished.then(() => element.remove());
+}
+
 function say(text: string): void {
 	toast.textContent = text;
 	toast.classList.add('show');
-	setTimeout(() => toast.classList.remove('show'), 1800);
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => toast.classList.remove('show'), Math.max(1800, text.length * 55));
 }
 
 /**
@@ -198,10 +230,11 @@ async function start(): Promise<void> {
 	if (query.has('paused')) stage.paused = true;
 	const frame = (now: number): void => {
 		stage.tick(now);
-		for (const kind of sim.events()) {
-			if (kind === SimEvent.levelComplete) say('Level complete!');
-			if (kind === SimEvent.died) say('Ouch!');
-			if (kind === SimEvent.gameOver) say('Game over');
+		for (const event of sim.events()) {
+			if (event.kind === SimEvent.caption) caption(stage, sim.captions[event.c], event.a, event.b);
+			if (event.kind === SimEvent.toast) say(sim.toasts[event.a] ?? '');
+			if (event.kind === SimEvent.levelComplete) say('Level complete!');
+			if (event.kind === SimEvent.gameOver) say('Game over');
 		}
 		if (sim.mode !== Mode.level) restart();
 		hud.innerHTML =
