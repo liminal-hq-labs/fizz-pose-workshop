@@ -15,6 +15,7 @@
   --columns n, --gap tiles, --distance tiles   gallery layout
   --size WxH    picture size, default 1600x900
   --zoom f      move the level camera closer (2 is twice as close)
+  --flat        draw every sprite flat, as the game does, to compare a view with its models
   --stats       print the stage's counts for the picture: draw calls, triangles, actors, milliseconds in sync
   Prints the sprites that still have no 3D model.
 */
@@ -61,7 +62,9 @@ try {
 		await page.waitForTimeout(400);
 		console.log('families:', await page.evaluate('window.gallery.families.join(" ")'));
 	} else {
-		await page.goto(`http://127.0.0.1:${port}/crater-fields.html?paused`);
+		await page.goto(
+			`http://127.0.0.1:${port}/crater-fields.html?paused${flag('flat') !== undefined ? '&flat' : ''}`,
+		);
 		await page.waitForFunction('window.ready === true', null, { timeout: 60000 });
 		const at = flag('at')?.split(',').map(Number),
 			hold = (flag('hold') ?? '').split(',').filter(Boolean),

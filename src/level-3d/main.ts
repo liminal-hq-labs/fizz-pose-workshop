@@ -344,7 +344,14 @@ async function start(): Promise<void> {
 	sheetImage.colorSpace = THREE.SRGBColorSpace;
 	const sim = await LevelSim.load(wasm, sheet);
 	sim.enter(craterFields);
-	const stage = new Stage({ canvas, sim, sheet, sheetImage, sets: modelSets, held: () => held });
+	const stage = new Stage({
+		canvas,
+		sim,
+		sheet,
+		sheetImage,
+		sets: query.has('flat') ? [] : modelSets,
+		held: () => held,
+	});
 	/* A page held with `?paused` (tooling) keeps the sim still whatever the flow does. */
 	const hold = query.has('paused');
 	const sound = new LevelSound({
