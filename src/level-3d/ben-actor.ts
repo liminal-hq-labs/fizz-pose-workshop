@@ -11,14 +11,35 @@ import { buildRig } from '../model-3d/ben-g/rig.ts';
 import { inkMaterial } from '../model-3d/ben-g/shared.ts';
 import { benGSpec, defaultOptions } from '../model-3d/ben-g/spec.ts';
 import type { Fig, FootGoal, HandGoal, PoseOut } from '../model-3d/ben-g/types.ts';
+import { Gait } from './ben-gait.ts';
+import { Blink, Idle, Rng, type IdlePose } from './ben-idle.ts';
+import {
+	aimArms,
+	airPose,
+	idleLife,
+	landOverlay,
+	mirrorArms,
+	mirrorPose,
+	tuckOf,
+} from './ben-moves.ts';
 import type { Actor, FrameContext, ModelSet, SpriteDraw } from './types.ts';
 
-/** How tall the standing sprite is drawn, in tiles; the model is scaled so his crown reaches it. */
-const standHeight = 1.5;
-/** How long a turn between facing left and right takes, in seconds. */
-const turnSeconds = 0.1;
+/** How tall the standing sprite is drawn, in tiles. */
+const spriteHeight = 1.5;
+/**
+ * How much taller than the sprite's box the model stands. The sprite is chunky, with a helmet as wide as the tile, while
+ * the model is slim, so at the sprite's height he reads much smaller than the sprite does; this gives him its presence.
+ * His soles stay on the box's bottom edge and his head rises above its top.
+ */
+const presence = 1.28;
+/** The smallest part of him, as a radius in sprite pixels, that still casts a shadow. */
+const smallestShadowCaster = 1.1;
+const standHeight = spriteHeight * presence;
 /** How far short of a dead side view he stays, so the camera sees some of his face, in radians. */
 const cameraTurn = 0.45;
+/** The turn between facing left and right is a spring: its natural frequency in radians a second, and its damping ratio. */
+const turnFrequency = 38;
+const turnDamping = 0.72;
 /** The sim's launch speed for a standing jump, in tiles a second; it maps vertical speed onto the jump pose. */
 const jumpSpeed = 20.5;
 /** The length of the sim's mantle, and of the pogo's squash frame, in seconds. */
@@ -30,22 +51,33 @@ const runCrouch = 0.8;
 /** How much longer than the model's own rung spacing a climb cycle is stretched. */
 const climbStretch = 2;
 /** How far the pogo's body is raised on a longer spring so the stick reads at the sprite's height, in model pixels. */
-const pogoRaise = 5.5;
-/** The most the pose is allowed to be wrong about the feet before the stand pose takes over, in tiles a second. */
+const pogoRaise = 5.5 / presence;
+/** The slowest vertical and horizontal travel, in tiles a second, that counts as airborne and as running. */
 const airSpeed = 1.5;
 const runSpeed = 0.5;
+/** How long the landing squash lasts, and how much of it is the drop, in seconds. */
+const landSeconds = 0.26;
+const landDrop = 0.055;
+/** How long the Stunner stays raised after a shot that the sprite does not show, such as one from the pogo stick. */
+const shotHold = 0.28;
 
 const sides = [1, -1] as const;
 const tau = Math.PI * 2;
 
 export type Mode =
-	'stand' | 'lookUp' | 'lookDown' | 'run' | 'air' | 'land' | 'pogo' | 'climb' | 'mantle' | 'dead';
+	'stand' | 'lookUp' | 'lookDown' | 'run' | 'air' | 'pogo' | 'climb' | 'mantle' | 'dead';
 
 /** A figure and the pose state kept on it, for the one place the sim draws Ben. */
 export interface BenActor extends Actor {
 	readonly fig: Fig;
 	/** The pose mode chosen on the last update, for tooling and tests. */
 	readonly mode: Mode;
+	/** The idle pose playing on the last update, or null. */
+	readonly idlePose: IdlePose | null;
+	/** The world X, in tiles, of each stance foot's goal on the last run frame (his left foot first), or NaN. */
+	readonly stanceX: readonly number[];
+	/** The hand the Stunner is in on the last update: -1 his right, 1 his left. */
+	readonly gunSide: number;
 	/** The way he faces along X on the last update: 1 right, -1 left, 0 square to the camera or climbing. */
 	heading(): number;
 	/** The height of his lowest sole above the sprite's bottom edge on the last update, in tiles. */
@@ -67,6 +99,9 @@ class Snap {
 const wrap = (angle: number): number => angle - tau * Math.round(angle / tau);
 const clamp = (x: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, x));
 const ease = (k: number): number => smoothstep(k);
+/** The landing squash's depth `t` seconds after touching down: a quick drop, then a springy release. */
+const landCurve = (t: number): number =>
+	t < landDrop ? ease(t / landDrop) : 1 - ease((t - landDrop) / (landSeconds - landDrop));
 
 const pool: BenFigure[] = [];
 
@@ -75,6 +110,8 @@ class BenFigure implements BenActor {
 	readonly fig: Fig;
 	readonly object = new THREE.Group();
 	mode: Mode = 'stand';
+	idlePose: IdlePose | null = null;
+	gunSide = -1;
 	private readonly scale: number;
 	private readonly joints: THREE.Object3D[];
 	private readonly digits: THREE.Object3D[] = [];
@@ -89,6 +126,10 @@ class BenFigure implements BenActor {
 	}[] = [];
 	private tint = 0xffffff;
 	private opacity = 1;
+	private readonly rng = new Rng(0x5eed);
+	private readonly idle = new Idle(this.rng);
+	private readonly blink = new Blink(this.rng);
+	private readonly gait = new Gait();
 	/* Poses read at start: where the pose's mantle body sits when the hands let go, and the climb's period. */
 	private readonly mantleBodyZ: number;
 	private readonly climbPeriod = 1.92;
@@ -99,12 +140,15 @@ class BenFigure implements BenActor {
 	private y = 0;
 	private vx = 0;
 	private vy = 0;
+	private ax = 0;
+	private slope = 0;
 	private clock = 0;
 	private runCycles = 0;
 	private climbCycles = 0;
 	private airV = 0;
 	private fallTime = 0;
-	private landT = 1;
+	private peakFall = 0;
+	private landT = landSeconds;
 	private landAmount = 1;
 	private peak = 14;
 	private squashT = 1;
@@ -112,11 +156,11 @@ class BenFigure implements BenActor {
 	private poseKey = '';
 	private fadeT = 1;
 	private fadeLength = 0.09;
-	/* Facing. */
+	private lean = 0;
+	private snapOff = 0;
+	/* Facing: the turn is a spring so it has weight, and the head leads it. */
 	private yaw = 0;
-	private yawFrom = 0;
-	private yawTo = 0;
-	private turnT = 1;
+	private yawVel = 0;
 	private face = 1;
 	/* The Stunner: aim is 0 forwards, 1 up, -1 down; kick is the recoil, 1 at the shot and falling to 0. */
 	private aim = 0;
@@ -144,7 +188,7 @@ class BenFigure implements BenActor {
 		}
 		this.snap = new Snap(this.digits.length);
 		this.scratch = new Snap(this.digits.length);
-		/* The model is measured in sprite pixels: scale so the standing crown reaches the sprite's drawn height. */
+		/* The model is measured in sprite pixels: scale so the standing crown reaches the standing height. */
 		applyPose(fig, poses.stand(0, fig), 0);
 		fig.turn.updateMatrixWorld(true);
 		this.scale = standHeight / (fig.loc(fig.J._crown).y + 0.4);
@@ -154,6 +198,15 @@ class BenFigure implements BenActor {
 		fig.turn.traverse((node) => {
 			const mesh = node as THREE.Mesh;
 			if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+			/* He is about three hundred meshes, and each shadow caster is drawn a second time. Only his body and his
+			   larger parts cast: an eye, a finger or an ink shell adds nothing to the shadow on the ground. */
+			if (mesh.castShadow && !(mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+				mesh.geometry.computeBoundingSphere();
+				const reach =
+					(mesh.geometry.boundingSphere?.radius ?? 0) *
+					Math.max(mesh.scale.x, mesh.scale.y, mesh.scale.z);
+				if (mesh.userData.ol || reach < smallestShadowCaster) mesh.castShadow = false;
+			}
 			const material = mesh.material as THREE.Material & { color?: THREE.Color };
 			if (material === inkMaterial || !material.color) return;
 			if (this.paint.some((entry) => entry.material === material)) return;
@@ -162,6 +215,10 @@ class BenFigure implements BenActor {
 				base: material.color.clone(),
 			});
 		});
+	}
+
+	get stanceX(): readonly number[] {
+		return this.gait.stanceX;
 	}
 
 	/* ---------- bone snapshots, for fading between poses ---------- */
@@ -227,10 +284,22 @@ class BenFigure implements BenActor {
 		o.freeCan = undefined;
 		o.rootDrop = 0;
 		const fig = this.fig;
+		if (o.gun) this.holdGun(this.gunSide);
 		applyPose(fig, o, this.clock);
 		fig.shots = [];
 		fig.props.glow.visible = false;
 		applyFace(fig, o.face || face, gaze);
+	}
+
+	/** Puts the Stunner in the hand on the camera's side: his right facing right, his left facing left. */
+	private holdGun(side: number): void {
+		const fig = this.fig,
+			hand = fig.J['hand' + side],
+			gun = fig.X.gun;
+		if (gun.parent !== hand) {
+			hand.add(gun);
+			gun.position.x = (side < 0 ? 1 : -1) * Math.abs(gun.position.x);
+		}
 	}
 
 	/** Raises everything of the pogo pose by `dh` pixels above the stick's tip and lengthens the spring to meet it. */
@@ -245,55 +314,26 @@ class BenFigure implements BenActor {
 		if (o.pogo) o.pogo.pegH += dh;
 	}
 
-	/** Throws his arms up as he takes off and out as he comes down, which the standalone jump pose only hints at. */
-	private flail(o: PoseOut): void {
-		const A = this.fig.d.A,
-			rise = clamp(this.vy / jumpSpeed, 0, 1),
-			fall = clamp(-this.vy / jumpSpeed, 0, 1);
-		for (const s of sides) {
-			const rel = o.hands[s].rel;
-			if (!rel) continue;
-			rel[0] += s * (0.8 + 1.4 * fall);
-			rel[1] += A * (0.45 + 0.45 * rise + 0.2 * fall);
-			rel[2] += 1.5 * rise;
+	/** Holds the Stunner out along the aim, in the right hand and mirrored to the left when he faces left. */
+	private aimGun(o: PoseOut, offHand: boolean, mirrorAll: boolean): void {
+		aimArms(this.fig, o, this.aim, this.kick, offHand);
+		if (this.gunSide > 0) {
+			if (mirrorAll) mirrorPose(o);
+			else mirrorArms(o);
 		}
-		o.chest[0] += 0.08 * rise;
+		/* Aiming up, his face turns out to the camera so the helmet's brim does not hide it. */
+		if (this.aim === 1) o.head[1] -= this.face * 0.4;
 	}
 
-	/** Arm goals for the Stunner: forwards, or up or down along the sprite's aim, with `kick` of recoil. */
-	private aimArms(o: PoseOut): void {
-		const A = this.fig.d.A,
-			k = this.kick,
-			reach = A * 0.96 - 2.2 * k,
-			elevation = this.aim === 1 ? 1.25 : this.aim === -1 ? -1.2 : 0;
-		const gun: HandGoal =
-			this.aim === 0
-				? {
-						rel: [0.9, -0.5 + 1.6 * k, A * 0.96 - 2.2 * k],
-						hint: [-0.7, -1, -0.2],
-						grip: 1.2,
-					}
-				: {
-						rel: [
-							0.6,
-							reach * Math.sin(elevation) + (this.aim === 1 ? 0.3 : -0.2),
-							reach * Math.cos(elevation) + 0.5,
-						],
-						hint: [-1, this.aim === 1 ? 0.3 : -0.3, -0.2],
-						grip: 1.2,
-					};
-		o.hands[-1] = gun;
-		o.hands[1] = {
-			rel: [0.5 + 0.6 * k, -A * 0.78 + 0.8 * k, -1.4 - 0.8 * k],
-			hint: [0.6, 0, -1],
-			grip: 1,
-		};
-		if (this.aim !== 0) {
-			o.chest[0] += this.aim === 1 ? -0.14 : 0.16;
-			o.head[0] += this.aim === 1 ? -0.3 : 0.22;
+	/** The height of his lowest sole above the model's ground, in model pixels. */
+	private lowestSole(): number {
+		const fig = this.fig;
+		let low = Infinity;
+		for (const s of sides) {
+			low = Math.min(low, fig.loc(fig.J['foot' + s]).y - fig.P.ank);
+			low = Math.min(low, fig.loc(fig.J['_toe' + s]).y - 0.4);
 		}
-		o.gun = true;
-		o.flash = k > 0.6;
+		return low;
 	}
 
 	/* ---------- one frame ---------- */
@@ -313,17 +353,22 @@ class BenFigure implements BenActor {
 		const dx = fresh ? 0 : draw.x - this.x,
 			dy = fresh ? 0 : draw.y - this.y;
 		if (fresh) {
-			this.vx = this.vy = 0;
+			this.vx = this.vy = this.ax = this.slope = 0;
 			this.fadeT = this.fadeLength;
-			this.landT = 1;
+			this.landT = landSeconds;
 			this.squashT = 1;
 			this.gunHold = 0;
 			this.kick = 0;
 			this.fallTime = 0;
+			this.lean = 0;
+			this.yawVel = 0;
+			this.gait.reset();
 		} else {
-			const a = 1 - Math.exp(-el / 0.025);
+			const a = 1 - Math.exp(-el / 0.025),
+				before = this.vx;
 			this.vx += (dx / el - this.vx) * a;
 			this.vy += (dy / el - this.vy) * a;
+			this.ax += ((this.vx - before) / el - this.ax) * (1 - Math.exp(-el / 0.06));
 		}
 		this.seen = true;
 		this.lastTime = frame.time;
@@ -350,87 +395,116 @@ class BenFigure implements BenActor {
 		else if (name === 'ben_lookUp') mode = 'lookUp';
 		else if (name === 'ben_lookDown') mode = 'lookDown';
 		else mode = 'stand';
-		if (
-			this.mode === 'air' &&
-			(mode === 'stand' || mode === 'lookUp' || mode === 'lookDown') &&
-			!fresh
-		) {
+		const grounded = mode === 'stand' || mode === 'lookUp' || mode === 'lookDown' || mode === 'run';
+		if (mode === 'air') {
+			if (this.mode !== 'air') this.peakFall = 0;
+			this.peakFall = Math.max(this.peakFall, -this.vy);
+		} else if (this.mode === 'air' && grounded && !fresh && this.peakFall > 4) {
 			this.landT = 0;
-			this.landAmount = clamp(-this.airVy / jumpSpeed, 0.35, 1);
+			this.landAmount = clamp(this.peakFall / jumpSpeed, 0.3, 1.1);
 		}
-		if (mode === 'air') this.airVy = Math.min(this.vy, 0) || this.airVy;
-		if (this.landT < 0.16 && (mode === 'stand' || mode === 'lookUp' || mode === 'lookDown')) {
-			this.landT += el;
-			if (this.landT < 0.16) mode = 'land';
-		} else if (this.landT < 0.16) this.landT = 1;
-		const gunMode = ['stand', 'lookUp', 'lookDown', 'run', 'air', 'land'].includes(mode);
+		if (this.landT < landSeconds) this.landT += el;
+		const squash =
+			grounded && this.landT < landSeconds ? landCurve(this.landT) * this.landAmount : 0;
 
-		/* The Stunner: raised while the shoot sprites show and a moment after, kicked by each shot. */
-		let bubble = false;
+		/* The Stunner: raised while the shoot sprites show and a moment after, kicked by each shot. A shot the sprite does not
+		   show, from the pogo stick, is found from the bubble that appears beside him. */
+		let bubble = false,
+			bubbleAim = 0;
 		for (const other of frame.draws) {
-			if (
-				other.name === 'bubble' &&
-				Math.abs(other.x - draw.x) < 0.9 &&
-				Math.abs(other.y - draw.y) < 1.2
-			) {
+			if (other.name !== 'bubble') continue;
+			const sideways = other.x - draw.x,
+				up = other.y - bottom;
+			if (Math.abs(sideways) < 1.5 && up > -0.5 && up < 2.2) {
 				bubble = true;
+				bubbleAim = Math.abs(sideways) < 0.3 ? (up > 1 ? 1 : -1) : 0;
 				break;
 			}
 		}
+		const newBubble = bubble && !this.bubbleNear;
 		if (aimSprite !== null) {
 			this.aim = aimSprite;
 			this.gunHold = 0.12;
-			if (!this.shooting || (bubble && !this.bubbleNear)) this.kick = 1;
+			if (!this.shooting || newBubble) this.kick = 1;
+		} else if (mode === 'pogo' && newBubble) {
+			this.aim = bubbleAim;
+			this.gunHold = shotHold;
+			this.kick = 1;
 		} else this.gunHold -= el;
 		this.shooting = aimSprite !== null;
 		this.bubbleNear = bubble;
 		this.kick = Math.max(0, this.kick - el / 0.14);
-		const gun = gunMode && this.gunHold > 0;
-
-		/* Facing: a smooth turn between left and right, never quite side-on; climbing faces into the scene. */
+		const gun = (grounded || mode === 'air' || mode === 'pogo') && this.gunHold > 0;
 		this.face = draw.flip ? -1 : 1;
-		const targetYaw =
-			mode === 'climb' ? Math.PI - this.face * 0.4 : this.face * (Math.PI / 2 - cameraTurn);
-		if (fresh) this.yaw = this.yawFrom = this.yawTo = targetYaw;
-		else if (Math.abs(wrap(targetYaw - this.yawTo)) > 1e-6) {
-			this.yawFrom = this.yaw;
-			this.yawTo = this.yawFrom + wrap(targetYaw - this.yawFrom);
-			this.turnT = 0;
-		}
-		this.turnT = Math.min(turnSeconds, this.turnT + el);
-		this.yaw = this.yawFrom + (this.yawTo - this.yawFrom) * ease(this.turnT / turnSeconds);
+		if (gun) this.gunSide = this.face > 0 ? -1 : 1;
 
-		/* A new mode fades in from the bones as they were shown. */
-		const key = mode + (gun ? '+gun' : '');
+		/* Idle life: the standing Ben plays a pose from the model after a few seconds, and any input ends it at once. */
+		this.idle.update(el, mode === 'stand' && !gun && squash === 0 && !fresh);
+		const idlePose = mode === 'stand' && !gun ? this.idle.pose : null;
+
+		/* Facing: a spring between left and right, never quite side-on; climbing faces into the scene. */
+		const towardCamera = idlePose === 'tip' || idlePose === 'rock' ? 0.4 : 0;
+		const targetYaw =
+			mode === 'climb'
+				? Math.PI - this.face * 0.4
+				: this.face * (Math.PI / 2 - cameraTurn - towardCamera);
+		if (fresh) {
+			this.yaw = targetYaw;
+			this.yawVel = 0;
+		}
+		const aimYaw = this.yaw + wrap(targetYaw - this.yaw),
+			steps = Math.max(1, Math.ceil(el / 0.004)),
+			h = el / steps;
+		for (let i = 0; i < steps; i++) {
+			this.yawVel +=
+				(turnFrequency * turnFrequency * (aimYaw - this.yaw) -
+					2 * turnDamping * turnFrequency * this.yawVel) *
+				h;
+			this.yaw += this.yawVel * h;
+		}
+		const lead = clamp(aimYaw - this.yaw, -1.2, 1.2);
+
+		/* A new pose fades in from the bones as they were shown. */
+		const key = mode + (gun ? '+gun' : '') + (idlePose ?? '');
 		if (key !== this.poseKey) {
 			if (!fresh && this.poseKey !== '') {
 				this.capture(this.snap, this.snapOff);
 				this.fadeT = 0;
 				this.fadeLength =
-					mode === 'mantle' || this.mode === 'mantle' ? 0.05 : mode === 'land' ? 0.05 : 0.09;
+					mode === 'mantle' || this.mode === 'mantle' ? 0.05 : idlePose ? 0.35 : 0.09;
 			}
 			this.poseKey = key;
 		}
 		this.mode = mode;
+		this.idlePose = idlePose;
 
 		/* The pose itself. */
 		let off = 0;
 		let gaze: readonly number[] = [0, 0];
 		let zShift = 0;
 		let rootZ = 0;
+		let leanTarget = 0;
+		const speed = clamp((this.vx * this.face) / 7, -1, 1);
 		switch (mode) {
 			case 'stand':
 			case 'lookUp':
-			case 'lookDown':
-			case 'land': {
+			case 'lookDown': {
 				let o: PoseOut;
-				if (mode === 'land') {
-					const u = 0.7 + 0.22 * (this.landT / 0.16);
-					o = poses.jump(1.9 * u, fig);
-					o.py = fig.d.standY - (fig.d.standY - o.py) * this.landAmount;
-				} else if (gun) {
+				let face: string = poseFaces.stand;
+				if (gun) {
 					o = poses.fire(this.fireTime(), fig);
-				} else o = poses.stand(this.clock, fig);
+					this.aimGun(o, true, true);
+					face = poseFaces.fire;
+				} else if (idlePose) {
+					o = poses[idlePose](this.idle.time, fig);
+					if (idlePose === 'tip' && this.face < 0) mirrorPose(o);
+					face = poseFaces[idlePose];
+					gaze = poseGazes[idlePose] ?? [0, 0];
+				} else {
+					o = poses.stand(this.clock, fig);
+					const look = idleLife(o, this.clock, this.face);
+					gaze = [-this.face * 0.9 * look, 0];
+				}
 				if (mode === 'lookUp') {
 					o.head[0] = -0.4;
 					o.neck[0] = -0.12;
@@ -442,12 +516,20 @@ class BenFigure implements BenActor {
 					o.chest[0] = 0.08;
 					gaze = [0, -1];
 				}
-				if (gun) this.aimArms(o);
-				this.put(o, gun ? poseFaces.fire : poseFaces.stand, gun ? [0, 0] : gaze);
+				if (squash > 0) landOverlay(o, squash);
+				o.head[1] += 0.45 * lead;
+				this.put(o, face, gun ? [0, 0] : gaze);
 				break;
 			}
 			case 'run': {
-				if (!fresh) this.runCycles = (this.runCycles + Math.abs(dx) / this.strideTiles()) % 1000;
+				if (!fresh) {
+					const along = Math.max(0.5, Math.abs(Math.sin(this.yaw)));
+					this.runCycles = (this.runCycles + Math.abs(dx) / (this.strideTiles() * along)) % 1000;
+				}
+				if (this.slope !== 0 || Math.abs(this.vx) > 2) {
+					const raw = Math.abs(this.vx) > 2 ? clamp(this.vy / this.vx, -1.2, 1.2) : 0;
+					this.slope += (raw - this.slope) * (1 - Math.exp(-el / 0.05));
+				}
 				const o = poses.run(this.runCycles / 1.4, fig);
 				for (const s of sides) {
 					const abs = o.feet[s].abs;
@@ -456,35 +538,53 @@ class BenFigure implements BenActor {
 					if (rel) rel[2] *= 1.25;
 				}
 				o.py -= runCrouch;
-				if (gun) this.aimArms(o);
+				o.prot[0] += 0.5 * Math.atan(this.slope * this.face);
+				this.gait.apply(o, this.runCycles, {
+					x: draw.x,
+					yaw: this.yaw,
+					scale: S,
+					slope: this.slope,
+					face: this.face,
+					toe: fig.P.shoeL * 0.68,
+					heel: -fig.P.shoeL * 0.3,
+					ankle: fig.P.ank,
+				});
+				if (gun) this.aimGun(o, true, false);
+				if (squash > 0) landOverlay(o, squash);
+				o.head[1] += 0.45 * lead;
 				this.put(o, poseFaces.run, poseGazes.run ?? [0, 0]);
+				leanTarget = -clamp(this.vx / 7, -1, 1) * 0.05 - clamp(this.ax / 60, -1, 1) * 0.09;
 				break;
 			}
-			case 'air':
-			case 'dead': {
-				const target = clamp(0.5 - this.vy / (2 * jumpSpeed), 0.02, 0.98);
-				if (mode === 'dead') {
-					const o = poses.fall(this.clock * 2.2, fig);
-					o.face = 'shout';
-					this.put(o, 'shout', [0, 0]);
-					off = o.lift + 2.16;
-					break;
-				}
+			case 'air': {
+				const target = clamp(0.5 - this.vy / (2 * jumpSpeed), 0, 1);
 				this.airV += (target - this.airV) * (1 - Math.exp(-el / 0.03));
 				if (this.vy < -1) this.fallTime += el;
 				else this.fallTime = 0;
-				const long = ease((this.fallTime - 0.45) / 0.3);
-				const jump = poses.jump(1.9 * (0.24 + 0.46 * this.airV), fig);
-				if (gun) this.aimArms(jump);
-				else this.flail(jump);
-				this.put(jump, poseFaces.jump, [0, 0]);
-				off = jump.lift - 0.3;
-				if (long > 0.01 && !gun) {
-					this.capture(this.scratch, off);
-					const fall = poses.fall(this.clock, fig);
-					this.put(fall, poseFaces.fall, poseGazes.fall);
-					off = this.mix(this.scratch, long, fall.lift + 2.16);
+				const panic = ease((this.fallTime - 0.5) / 0.35),
+					o = airPose(fig, this.airV, this.clock, gun ? 0 : panic, speed, -this.face);
+				if (gun) this.aimGun(o, true, false);
+				o.head[1] += 0.45 * lead;
+				this.put(o, poseFaces.jump, poseGazes.fall ?? [0, 0]);
+				off = this.lowestSole() - 1.5 * tuckOf(this.airV);
+				leanTarget = -this.vx * 0.008;
+				break;
+			}
+			case 'dead': {
+				const o = poses.fall(this.clock * 2.2, fig),
+					flap = this.clock * 16;
+				for (const s of sides) {
+					const hand = o.hands[s].rel,
+						foot = o.feet[s].rel;
+					if (hand) {
+						hand[1] += 4 * Math.sin(flap + s * 1.3);
+						hand[0] += s * 2 * Math.cos(flap * 0.8 + s);
+					}
+					if (foot) foot[2] += 3 * Math.sin(flap * 0.9 + s * 2);
 				}
+				o.face = 'shout';
+				this.put(o, 'shout', [0, 0.6]);
+				off = o.lift + 2.16;
 				break;
 			}
 			case 'pogo': {
@@ -512,8 +612,10 @@ class BenFigure implements BenActor {
 				}
 				const o = poses.pogo(u / 1.25, fig);
 				this.raisePogo(o, pogoRaise);
+				if (gun) this.aimGun(o, false, false);
 				this.put(o, poseFaces.pogo, poseGazes.pogo);
 				off = o.lift;
+				leanTarget = -clamp(this.vx / 7, -1, 1) * 0.16;
 				break;
 			}
 			case 'climb': {
@@ -568,6 +670,14 @@ class BenFigure implements BenActor {
 				break;
 			}
 		}
+		if (mode !== 'run') {
+			this.slope *= Math.exp(-el / 0.1);
+			if (this.mode !== 'run') this.gait.reset();
+		}
+		if (grounded && mode !== 'run') {
+			/* Turning on the spot leans him into the new direction, then rights him as the spring settles. */
+			leanTarget += clamp(-this.yawVel / 9, -1, 1) * 0.13;
+		}
 		this.wasMantle = mode === 'mantle';
 		this.wasPogo = mode === 'pogo';
 
@@ -578,14 +688,22 @@ class BenFigure implements BenActor {
 		}
 		this.snapOff = off;
 
-		/* Blink, as the bench does. */
-		const blink = (this.clock + 2) % 3.7 < 0.12;
-		fig.X.eyes.scale.y = blink ? 0.12 : 1;
-		fig.X.eyes.position.y = blink ? 3.55 * 0.88 : 0;
+		/* Blink, at irregular gaps. */
+		const shut = this.blink.update(el) > 0;
+		fig.X.eyes.scale.y = shut ? 0.12 : 1;
+		fig.X.eyes.position.y = shut ? 3.55 * 0.88 : 0;
 
-		/* Place the figure with his lowest sole on the sprite's bottom edge, turned and tilted as the sim says. */
-		this.object.position.set(draw.x, draw.y, 0);
-		this.object.rotation.set(0, 0, draw.rot);
+		/* Lean into his travel about his soles, then place the figure with his lowest sole on the sprite's bottom edge, turned
+		   as the sim says. */
+		this.lean += (leanTarget - this.lean) * (1 - Math.exp(-el / 0.05));
+		const lean = mode === 'dead' || mode === 'climb' || mode === 'mantle' ? 0 : this.lean,
+			half = draw.h / 2;
+		this.object.position.set(
+			draw.x - half * Math.sin(lean),
+			draw.y - half + half * Math.cos(lean),
+			0,
+		);
+		this.object.rotation.set(0, 0, draw.rot + lean);
 		fig.turn.rotation.y = this.yaw;
 		fig.turn.position.set(0, -draw.h / 2 - off * S, zShift);
 		fig.root.position.z = rootZ;
@@ -593,15 +711,12 @@ class BenFigure implements BenActor {
 		this.setPaint(draw.tint, draw.alpha);
 	}
 
-	private snapOff = 0;
-	private airVy = -jumpSpeed;
-
 	/** The pose time of the fire pose for the current recoil: 0 at rest, and back along its recoil curve. */
 	private fireTime(): number {
 		return this.kick > 0 ? (0.18 + 0.34 * (1 - this.kick)) / 0.9 : 0;
 	}
 
-	/** How far the run pose carries a planted foot in one cycle, in tiles. */
+	/** How far the run pose carries a planted foot in one cycle, in tiles of travel square to the view. */
 	private strideTiles(): number {
 		return 5 * 0.29 * this.fig.d.Lg * strideStretch * this.scale;
 	}

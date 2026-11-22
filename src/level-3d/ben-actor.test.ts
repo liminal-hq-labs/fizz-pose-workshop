@@ -48,6 +48,7 @@ const frameOf = (draw: SpriteDraw, time: number): FrameContext => ({
 	time,
 	dt: 1 / 60,
 	ben: { x: draw.x, y: draw.y },
+	camera: { x: draw.x, y: draw.y, z: 21 },
 	draws: [draw],
 });
 const make = (draw: SpriteDraw): BenActor => benModels.create('ben', draw) as BenActor;
@@ -107,7 +108,7 @@ test('his feet stay on the sprite edge through a run, a jump and a pogo bounce',
 	ben.dispose?.();
 });
 
-test('flipping the sprite turns him round, smoothly and through about a tenth of a second', () => {
+test('flipping the sprite turns him round with weight, settling within a third of a second', () => {
 	const right = drawOf('ben_stand', 3, 2),
 		left = drawOf('ben_stand', 3, 2, true),
 		ben = make(right);
@@ -120,7 +121,8 @@ test('flipping the sprite turns him round, smoothly and through about a tenth of
 	// One frame into the turn he has moved, but not all the way round.
 	expect(second).toBeLessThan(first);
 	expect(second).toBeGreaterThan(-first);
-	for (let i = 0; i < 12; i++) ben.update(left, frameOf(left, (time += 1 / 60)));
+	// The turn is a spring: it settles within a third of a second.
+	for (let i = 0; i < 20; i++) ben.update(left, frameOf(left, (time += 1 / 60)));
 	expect(ben.heading()).toBe(-1);
 	expect(ben.fig.turn.rotation.y).toBeCloseTo(-first, 3);
 	ben.dispose?.();
@@ -169,4 +171,199 @@ test('a dead Ben tumbles with the sprite and his rig survives the sim hiding him
 	expect(again.object.rotation.z).toBeCloseTo(1.2, 6);
 	expect(again.mode).toBe('dead');
 	again.dispose?.();
+});
+
+const world = (ben: BenActor, object: THREE.Object3D): THREE.Vector3 => {
+	ben.object.updateMatrixWorld(true);
+	return new THREE.Vector3().setFromMatrixPosition(object.matrixWorld);
+};
+/** Runs him along the ground and returns the largest slide of any foot's heel or toe while it bears weight, in tiles. */
+function stanceSlide(speed: number, slope: number, flip: boolean): number {
+	const at = (i: number): SpriteDraw => {
+		const x = 20 + (flip ? -1 : 1) * ((i * speed) / 60);
+		return { ...drawOf('ben_run1', x, 5 + slope * (x - 20), flip) };
+	};
+	const ben = make(at(0)),
+		heel = new THREE.Vector3(),
+		toe = new THREE.Vector3(),
+		open: ({ tag: string; x0: number; worst: number } | null)[] = [null, null];
+	let worst = 0,
+		time = 0;
+	for (let i = 0; i < 200; i++) {
+		const draw = at(i);
+		ben.update(draw, frameOf(draw, (time += 1 / 60)));
+		ben.object.updateMatrixWorld(true);
+		for (let k = 0; k < 2; k++) {
+			const foot = ben.fig.J['foot' + (k === 0 ? 1 : -1)],
+				ground = (px: number): number => draw.y - draw.h / 2 + slope * (px - draw.x);
+			heel.set(0, -ben.fig.P.ank, -0.3 * ben.fig.P.shoeL);
+			toe.set(0, -ben.fig.P.ank, 0.65 * ben.fig.P.shoeL);
+			foot.localToWorld(heel);
+			foot.localToWorld(toe);
+			const onHeel = heel.y - ground(heel.x) < 0.02 && heel.y <= toe.y,
+				onToe = !onHeel && toe.y - ground(toe.x) < 0.02,
+				point = onHeel ? heel : toe,
+				tag = onHeel ? 'heel' : 'toe',
+				run = open[k];
+			if (i > 90 && (onHeel || onToe)) {
+				if (run && run.tag === tag) run.worst = Math.max(run.worst, Math.abs(point.x - run.x0));
+				else open[k] = { tag, x0: point.x, worst: 0 };
+				// A run of a few frames or more is a stance, not a swing foot skimming the ground.
+				const now = open[k];
+				if (now && now.worst > worst && i - 90 > 3) worst = now.worst;
+			} else open[k] = null;
+		}
+	}
+	ben.dispose?.();
+	return worst;
+}
+
+test('a stance foot stays planted: its heel or toe slides under a sixth of a tile on the flat and on a slope', () => {
+	expect(stanceSlide(7, 0, false)).toBeLessThan(0.17);
+	expect(stanceSlide(7, 0, true)).toBeLessThan(0.17);
+	expect(stanceSlide(4, 0, false)).toBeLessThan(0.17);
+	expect(stanceSlide(7, 0.4, false)).toBeLessThan(0.17);
+	expect(stanceSlide(7, -0.4, true)).toBeLessThan(0.17);
+});
+
+test('the planted stance goal holds its world X from touchdown to lift-off', () => {
+	const at = (i: number): SpriteDraw => drawOf('ben_run1', 20 + (i * 7) / 60, 5),
+		ben = make(at(0));
+	let time = 0,
+		longest = 0,
+		held = 0,
+		last = NaN;
+	for (let i = 0; i < 160; i++) {
+		const draw = at(i);
+		ben.update(draw, frameOf(draw, (time += 1 / 60)));
+		const now = ben.stanceX[0];
+		if (i > 60 && Math.abs(now - last) < 1e-6) held++;
+		else held = 0;
+		longest = Math.max(longest, held);
+		last = now;
+	}
+	expect(longest).toBeGreaterThanOrEqual(3);
+	ben.dispose?.();
+});
+
+test('he stands about a quarter taller than the sprite box, with his soles on its bottom edge', () => {
+	const draw = drawOf('ben_stand', 10, 5),
+		ben = make(draw);
+	for (let i = 0; i < 6; i++) ben.update(draw, frameOf(draw, i / 60));
+	const crown = world(ben, ben.fig.J._crown).y - 5;
+	expect(crown).toBeGreaterThan(1.7);
+	expect(crown).toBeLessThan(1.95);
+	expect(Math.abs(ben.soleHeight(draw))).toBeLessThan(0.05);
+	ben.dispose?.();
+});
+
+/** A bubble the sim has just spawned beside him. */
+const bubbleBeside = (draw: SpriteDraw, ahead: number, rise = 0.85): SpriteDraw => ({
+	...draw,
+	name: 'bubble',
+	x: draw.x + ahead,
+	y: draw.y - draw.h / 2 + rise,
+	w: 1,
+	h: 1,
+});
+
+test('a bubble beside him on the pogo stick raises the Stunner in his hand, and it goes away again', () => {
+	const stick = drawOf('ben_pogo', 10, 5),
+		ben = make(stick);
+	let time = 0;
+	for (let i = 0; i < 10; i++) ben.update(stick, frameOf(stick, (time += 1 / 60)));
+	expect(ben.fig.X.gun.visible).toBe(false);
+	ben.update(stick, {
+		...frameOf(stick, (time += 1 / 60)),
+		draws: [stick, bubbleBeside(stick, 0.9)],
+	});
+	expect(ben.fig.X.gun.visible).toBe(true);
+	expect(ben.mode).toBe('pogo');
+	for (let i = 0; i < 30; i++) ben.update(stick, frameOf(stick, (time += 1 / 60)));
+	expect(ben.fig.X.gun.visible).toBe(false);
+	ben.dispose?.();
+});
+
+test('facing left while firing leaves the Stunner on the camera side of his body, and facing right too', () => {
+	for (const flip of [false, true]) {
+		const draw = drawOf('ben_shoot', 10, 5, flip),
+			ben = make(drawOf('ben_stand', 10, 5, flip));
+		for (let i = 0; i < 12; i++) ben.update(draw, frameOf(draw, i / 60));
+		const gun = world(ben, ben.fig.X.gun),
+			pelvis = world(ben, ben.fig.J.pelvis),
+			head = world(ben, ben.fig.J.head);
+		// The camera is at +Z: the gun is nearer to it than his hips, and out ahead of his head.
+		expect(gun.z).toBeGreaterThan(pelvis.z + 0.05);
+		expect((gun.x - head.x) * (flip ? -1 : 1)).toBeGreaterThan(0.3);
+		expect(ben.gunSide).toBe(flip ? 1 : -1);
+		ben.dispose?.();
+	}
+});
+
+test('aimed up, the Stunner is held ahead of his face rather than beside it, so the face stays in view', () => {
+	for (const flip of [false, true]) {
+		const draw = drawOf('ben_aimUp', 10, 5, flip),
+			ben = make(drawOf('ben_stand', 10, 5, flip));
+		for (let i = 0; i < 14; i++) ben.update(draw, frameOf(draw, i / 60));
+		const gun = world(ben, ben.fig.X.gun),
+			head = world(ben, ben.fig.J.head);
+		expect(gun.y).toBeGreaterThan(head.y);
+		expect((gun.x - head.x) * (flip ? -1 : 1)).toBeGreaterThan(0.2);
+		ben.dispose?.();
+	}
+});
+
+test('landing squashes him, standing or running, and he comes back up', () => {
+	for (const name of ['ben_stand', 'ben_run1']) {
+		const ben = make(drawOf('ben_stand', 0, 5));
+		let time = 0,
+			x = 0;
+		const put = (n: string, y: number): number => {
+			const draw = drawOf(n, (x += n === 'ben_run1' || n === 'ben_jump' ? 0.1 : 0), y);
+			ben.update(draw, frameOf(draw, (time += 1 / 60)));
+			return ben.fig.J.pelvis.position.y;
+		};
+		for (let i = 0; i < 20; i++) put('ben_stand', 5);
+		const rest = name === 'ben_stand' ? put('ben_stand', 5) : NaN;
+		let y = 5,
+			v = 20.5,
+			low = Infinity,
+			after = 0;
+		for (let i = 0; i < 90 && after < 40; i++) {
+			v -= 1;
+			y += v / 60;
+			if (y > 5) {
+				put('ben_jump', y);
+				continue;
+			}
+			y = 5;
+			after++;
+			low = Math.min(low, put(name, 5));
+		}
+		const settled = put(name, 5);
+		if (name === 'ben_stand') {
+			expect(low).toBeLessThan(rest - 1.5);
+			expect(Math.abs(settled - rest)).toBeLessThan(0.6);
+		} else expect(low).toBeLessThan(settled - 1);
+		ben.dispose?.();
+	}
+});
+
+test('standing still, he plays an idle pose after a few seconds and drops it the moment he moves', () => {
+	const draw = drawOf('ben_stand', 3, 3),
+		ben = make(draw);
+	let time = 0,
+		first = -1;
+	for (let i = 0; i < 60 * 5.5; i++) {
+		ben.update(draw, frameOf(draw, (time += 1 / 60)));
+		if (ben.idlePose && first < 0) first = time;
+	}
+	expect(first).toBeGreaterThan(2);
+	expect(first).toBeLessThan(8);
+	expect(ben.idlePose).not.toBeNull();
+	// An idle that is still playing at the sim's twenty-second joke would be too late: none starts that late.
+	const run = drawOf('ben_run1', 3.1, 3);
+	ben.update(run, frameOf(run, (time += 1 / 60)));
+	expect(ben.idlePose).toBeNull();
+	ben.dispose?.();
 });
