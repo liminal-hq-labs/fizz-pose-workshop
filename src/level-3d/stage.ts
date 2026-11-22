@@ -207,7 +207,11 @@ export class Stage {
 			target = close
 				? new THREE.Vector3(frame.ben.x, frame.ben.y, 0)
 				: new THREE.Vector3(this.view.x, this.view.y + 0.6, 0);
-		this.camera.position.set(target.x - 1 / this.zoom, target.y + 2.6 / this.zoom, cameraDistance / this.zoom);
+		this.camera.position.set(
+			target.x - 1 / this.zoom,
+			target.y + 2.6 / this.zoom,
+			cameraDistance / this.zoom,
+		);
 		this.camera.lookAt(target);
 		const sun = this.scene.getObjectByName('sun') as THREE.DirectionalLight;
 		sun.position.set(target.x - 8, target.y + 16, 14);
