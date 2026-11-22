@@ -246,16 +246,55 @@ test('the planted stance goal holds its world X from touchdown to lift-off', () 
 	ben.dispose?.();
 });
 
-test('he stands about a quarter taller than the sprite box, with his soles on its bottom edge', () => {
+test('he stands about a third taller than the sprite box, with his soles on its bottom edge', () => {
 	const draw = drawOf('ben_stand', 10, 5),
 		ben = make(draw);
 	for (let i = 0; i < 6; i++) ben.update(draw, frameOf(draw, i / 60));
-	const crown = world(ben, ben.fig.J._crown).y - 5;
-	expect(crown).toBeGreaterThan(1.7);
-	expect(crown).toBeLessThan(1.95);
+	ben.object.updateMatrixWorld(true);
+	const helmet = new THREE.Box3().setFromObject(helmetOf(ben));
+	// The helmet's top, not the crown marker, is the top of him: about two tiles for a sprite of one and a half.
+	expect(helmet.max.y - 5).toBeGreaterThan(1.98);
+	expect(helmet.max.y - 5).toBeLessThan(2.08);
 	expect(Math.abs(ben.soleHeight(draw))).toBeLessThan(0.05);
 	ben.dispose?.();
 });
+
+test('on the pogo stick he keeps his proportion to the sprite through a bounce, with the tip on the ground at the bottom', () => {
+	const ben = make(drawOf('ben_pogo', 10, 5)),
+		helmet = new THREE.Box3();
+	let time = 0,
+		low = Infinity,
+		high = 0;
+	// A figure created on the pogo stick takes a few frames to settle into its first pose.
+	for (let i = 0; i < 8; i++)
+		ben.update(drawOf('ben_pogo', 10, 5), frameOf(drawOf('ben_pogo', 10, 5), (time += 1 / 60)));
+	for (let i = 0; i < 80; i++) {
+		const t = (i % 40) / 60,
+			draw = drawOf(
+				i % 40 < 7 ? 'ben_pogo2' : 'ben_pogo',
+				10,
+				5 + Math.max(0, 14 * t - 30 * t * t),
+			);
+		ben.update(draw, frameOf(draw, (time += 1 / 60)));
+		ben.object.updateMatrixWorld(true);
+		helmet.setFromObject(helmetOf(ben));
+		// From the stick's tip to the top of the helmet: four thirds of the sprite's two tiles.
+		const total = helmet.max.y - world(ben, ben.fig.props.pogo).y;
+		low = Math.min(low, total);
+		high = Math.max(high, total);
+		if (i % 40 === 0) expect(Math.abs(tipHeight(ben, draw))).toBeLessThan(0.05);
+	}
+	expect(low).toBeGreaterThan(2.55);
+	expect(high).toBeLessThan(2.75);
+	ben.dispose?.();
+});
+
+/** The helmet's group, which every Ben has. */
+function helmetOf(ben: BenActor): THREE.Object3D {
+	const helmet = ben.fig.X.helmet;
+	if (!helmet) throw new Error('no helmet');
+	return helmet;
+}
 
 /** A bubble the sim has just spawned beside him. */
 const bubbleBeside = (draw: SpriteDraw, ahead: number, rise = 0.85): SpriteDraw => ({

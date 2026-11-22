@@ -27,9 +27,10 @@ import type { Actor, FrameContext, ModelSet, SpriteDraw } from './types.ts';
 /** How tall the standing sprite is drawn, in tiles. */
 const spriteHeight = 1.5;
 /**
- * How much taller than the sprite's box the model stands. The sprite is chunky, with a helmet as wide as the tile, while
- * the model is slim, so at the sprite's height he reads much smaller than the sprite does; this gives him its presence.
- * His soles stay on the box's bottom edge and his head rises above its top.
+ * How much taller than the sprite's box the model stands: about 2 tiles against the sprite's 1.5, a third larger. The
+ * sprite is chunky, with a helmet as wide as the tile, while the model is slim and reads much smaller at the sprite's own
+ * height. The enemies and pickups are scaled by the same factor, so the cast stays in proportion. His soles stay on the
+ * box's bottom edge and his head rises above its top.
  */
 const presence = 1.28;
 /** The smallest part of him, as a radius in sprite pixels, that still casts a shadow. */
@@ -50,8 +51,14 @@ const strideStretch = 1.8;
 const runCrouch = 0.8;
 /** How much longer than the model's own rung spacing a climb cycle is stretched. */
 const climbStretch = 2;
-/** How far the pogo's body is raised on a longer spring so the stick reads at the sprite's height, in model pixels. */
-const pogoRaise = 5.5 / presence;
+/**
+ * How far the pogo's body is raised on a longer spring so the stick, tip to helmet, keeps the same
+ * proportion to the sprite's two tiles as he does to his own, in model
+ * pixels: `pogoRaise` when the spring is at rest, and `pogoSquashRaise` more at the deepest squash, so the total stays the
+ * same height through the bounce while the spring itself still visibly compresses.
+ */
+const pogoRaise = 6.8;
+const pogoSquashRaise = 5.1;
 /** The slowest vertical and horizontal travel, in tiles a second, that counts as airborne and as running. */
 const airSpeed = 1.5;
 const runSpeed = 0.5;
@@ -303,7 +310,8 @@ class BenFigure implements BenActor {
 	}
 
 	/** Raises everything of the pogo pose by `dh` pixels above the stick's tip and lengthens the spring to meet it. */
-	private raisePogo(o: PoseOut, dh: number): void {
+	private raisePogo(o: PoseOut): void {
+		const dh = pogoRaise + pogoSquashRaise * ((o.pogo?.c ?? 0) / 2);
 		o.py += dh;
 		for (const s of sides) {
 			for (const goal of [o.hands[s], o.feet[s]] as (HandGoal | FootGoal)[]) {
@@ -611,7 +619,7 @@ class BenFigure implements BenActor {
 					u = 0.36 + 0.64 * this.airV;
 				}
 				const o = poses.pogo(u / 1.25, fig);
-				this.raisePogo(o, pogoRaise);
+				this.raisePogo(o);
 				if (gun) this.aimGun(o, false, false);
 				this.put(o, poseFaces.pogo, poseGazes.pogo);
 				off = o.lift;
