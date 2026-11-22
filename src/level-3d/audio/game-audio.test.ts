@@ -1,0 +1,1353 @@
+// Tests for the game audio manager: its Undertone playback, built-in synth fallback, Enhanced route, master chain and mix stage.
+//
+// (c) Copyright 2026 Liminal HQ, Scott Morris
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+//
+// Ported from packages/engine/src/audio.test.ts of liminal-hq/lieutenant-fizz at commit 94f354d, with `vitest` replaced by
+// `bun:test`. The live-tuning tests are left out with the tuning method.
+
+import * as Undertone from '@liminal-hq/undertone';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test';
+import { FakeAudioContext, type FakeNode } from './fake-audio-context.ts';
+import type { AudioPatterns } from './audio-types.ts';
+import { GameAudio, type UndertoneModule } from './game-audio.ts';
+import { buildVoice } from './undertone-voice.ts';
+import { MASTER, MASTER_DEFAULTS, ROOM_SEND_SCALE, type RoomProfile } from './master.ts';
+import { PART_PAN } from './sound-field.ts';
+
+const realWindow = globalThis.window;
+const stubWindow = (value: unknown): void => void Object.assign(globalThis, { window: value });
+const realDocument = (globalThis as { document?: unknown }).document;
+const unstubWindow = (): void =>
+	void Object.assign(globalThis, { window: realWindow, document: realDocument });
+
+const panDefaults = structuredClone(PART_PAN);
+
+const patterns: AudioPatterns = {
+	sfx: {
+		jump: [{ n: 'c4', w: 'square', g: 0.3, slide: 0.1 }],
+		zap: [
+			{ n: 'white', g: 0.2, hpf: 4000 },
+			{ n: 'e4', g: 0.2, lpf: 2000, nudge: 0.02 },
+		],
+	},
+	music: {
+		title: {
+			bpm: 120,
+			parts: [
+				{ notes: 'c3 [e3 g3]', w: 'sawtooth', g: 0.2, room: 0.4, delay: 0.3 },
+				{ notes: 'white*4', noise: true, g: 0.1, hpf: 6000 },
+			],
+		},
+		other: { bpm: 90, parts: [{ notes: 'a3 c4', w: 'square', g: 0.2 }] },
+	},
+	captionSfx: { '*boing*': 'jump' },
+};
+
+/** The same tracks with roles: a panned lead, a centred bass and a noise part with no role. */
+const roled: AudioPatterns = {
+	...patterns,
+	music: {
+		title: {
+			bpm: 120,
+			parts: [
+				{ notes: 'c4 e4', w: 'sawtooth', g: 0.2, role: 'lead' },
+				{ notes: 'c2 g2', g: 0.2, role: 'bass' },
+			],
+		},
+	},
+};
+
+const FakeContext = FakeAudioContext;
+type FakeContext = FakeAudioContext;
+
+const listeners = new Map<string, () => void>();
+
+beforeEach(() => {
+	FakeContext.instances = [];
+	listeners.clear();
+	stubWindow({
+		AudioContext: FakeContext,
+		addEventListener: (type: string, fn: () => void) => listeners.set(type, fn),
+		removeEventListener: (type: string) => listeners.delete(type),
+	});
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+	unstubWindow();
+});
+
+/** Runs the fake clock on and lets the promises it settles finish. */
+async function tick(ms: number): Promise<void> {
+	vi.advanceTimersByTime(ms);
+	for (let i = 0; i < 6; i++) await Promise.resolve();
+}
+
+const flush = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
+
+/** Unlocks the context the way a first click does, and waits for the context to report running. */
+async function unlockAudio(): Promise<FakeContext> {
+	listeners.get('pointerdown')!();
+	await flush();
+	return FakeContext.instances[0]!;
+}
+
+describe('GameAudio with Undertone', () => {
+	it('also unlocks on a touch release, since Chrome ignores a touch pointerdown', async () => {
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		listeners.get('pointerup')!();
+		await flush();
+		expect(FakeContext.instances[0]!.resume).toHaveBeenCalledTimes(1);
+		audio.dispose();
+		expect(listeners.has('pointerup')).toBe(false);
+	});
+
+	it('creates no AudioContext until the first input, then resumes it', async () => {
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		expect(FakeContext.instances).toHaveLength(0);
+		expect(audio.backend).toBe('Undertone 0.2');
+		const ctx = await unlockAudio();
+		expect(ctx.resume).toHaveBeenCalledTimes(1);
+		expect(listeners.has('keydown')).toBe(true);
+		audio.dispose();
+		expect(listeners.size).toBe(0);
+	});
+
+	it('creates and resumes the context at boot when asked to, keeping the gesture fallback', async () => {
+		const audio = new GameAudio(patterns, async () => Undertone, { unlockAtBoot: true });
+		await flush();
+		expect(FakeContext.instances).toHaveLength(1);
+		expect(FakeContext.instances[0]!.resume).toHaveBeenCalledTimes(1);
+		expect(listeners.has('pointerdown')).toBe(true);
+		expect(listeners.has('keydown')).toBe(true);
+		audio.dispose();
+	});
+
+	it('leaves the boot context suspended when the page is already hidden, resuming on return', async () => {
+		Object.assign(globalThis, { document: { visibilityState: 'hidden' } });
+		const audio = new GameAudio(patterns, async () => Undertone, { unlockAtBoot: true });
+		await flush();
+		const ctx = FakeContext.instances[0]!;
+		expect(ctx.resume).not.toHaveBeenCalled();
+		expect(ctx.state).toBe('suspended');
+		listeners.get('pointerdown')!();
+		expect(ctx.resume).not.toHaveBeenCalled();
+		audio.setActive(true);
+		expect(ctx.resume).toHaveBeenCalledTimes(1);
+		audio.dispose();
+	});
+
+	it('starts music requested after a boot unlock without waiting for a gesture', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(patterns, async () => Undertone, { unlockAtBoot: true });
+		await flush();
+		audio.playMusic('title');
+		expect(loop).toHaveBeenCalled();
+		audio.dispose();
+	});
+
+	it('plays effects (including high-pass ones) through Undertone once unlocked', async () => {
+		const play = vi.spyOn(Undertone.Pattern.prototype, 'play').mockImplementation(() => {});
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		audio.play('jump');
+		expect(play).not.toHaveBeenCalled();
+		const ctx = await unlockAudio();
+		audio.play('jump');
+		audio.play('zap');
+		audio.caption('*boing*');
+		audio.caption('no such caption');
+		expect(play).toHaveBeenCalledTimes(3);
+		expect(play.mock.calls[0]![0]).toEqual({ ctx } as never);
+		audio.sfx = false;
+		audio.play('jump');
+		expect(play).toHaveBeenCalledTimes(3);
+	});
+
+	it('starts music requested before unlock as a loop at the track bpm', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		audio.playMusic('title');
+		expect(loop).not.toHaveBeenCalled();
+		const ctx = await unlockAudio();
+		expect(loop).toHaveBeenCalledTimes(1);
+		expect(loop.mock.calls[0]![0]).toEqual({ ctx, bpm: 120 } as never);
+	});
+
+	it('stops the loop when music changes or is switched off', async () => {
+		const stop = vi.fn();
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop });
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.playMusic('title');
+		audio.playMusic('title');
+		expect(loop).toHaveBeenCalledTimes(1);
+		audio.setMusic(false);
+		expect(stop).toHaveBeenCalledTimes(1);
+		audio.setMusic(true);
+		expect(loop).toHaveBeenCalledTimes(2);
+		audio.playMusic(null);
+		expect(stop).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe('GameAudio music fades', () => {
+	const fadeNodes = (ctx: FakeContext): FakeNode[] =>
+		ctx.nodes.filter(
+			(n) => n.kind === 'gain' && n.gain.calls.some((c) => c.method === 'linearRampToValueAtTime'),
+		);
+
+	it('lets one track fade out as the next fades in, and stops the old one when the fade is done', async () => {
+		vi.useFakeTimers();
+		try {
+			const stops = [vi.fn(), vi.fn()];
+			let n = 0;
+			vi.spyOn(Undertone.Pattern.prototype, 'loop').mockImplementation(() => ({
+				stop: stops[n++ % 2]!,
+			}));
+			const audio = new GameAudio(patterns, async () => Undertone, { musicFades: true });
+			await tick(0);
+			listeners.get('pointerdown')!();
+			await tick(0);
+			const ctx = FakeContext.instances[0]!;
+			audio.playMusic('title');
+			audio.playMusic('other', false, 1.5);
+			// Both loops are playing while the old one fades out.
+			expect(stops[0]).not.toHaveBeenCalled();
+			expect(fadeNodes(ctx)).toHaveLength(2);
+			await tick(1700);
+			expect(stops[0]).toHaveBeenCalledTimes(1);
+			expect(stops[1]).not.toHaveBeenCalled();
+			audio.dispose();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('stops the old track at once without a fade, and does nothing special unless fades are on', async () => {
+		const stop = vi.fn();
+		vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop });
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.playMusic('title');
+		audio.playMusic('other', false, 2);
+		expect(stop).toHaveBeenCalledTimes(1);
+		expect(fadeNodes(ctx)).toHaveLength(0);
+	});
+
+	it('takes a finished loop’s gain out of the graph, and stops a fading loop at once when music is turned off', async () => {
+		vi.useFakeTimers();
+		try {
+			const stops = [vi.fn(), vi.fn(), vi.fn()];
+			let n = 0;
+			vi.spyOn(Undertone.Pattern.prototype, 'loop').mockImplementation(() => ({
+				stop: stops[n++ % 3]!,
+			}));
+			const audio = new GameAudio(patterns, async () => Undertone, { musicFades: true });
+			await tick(0);
+			listeners.get('pointerdown')!();
+			await tick(0);
+			const ctx = FakeContext.instances[0]!;
+			const disconnects = (): number =>
+				ctx.nodes.filter((node) => (node as unknown as { disconnected?: boolean }).disconnected)
+					.length;
+			for (const node of ctx.nodes) {
+				(node as unknown as { disconnect: () => void }).disconnect = () => {
+					(node as unknown as { disconnected: boolean }).disconnected = true;
+				};
+			}
+			audio.playMusic('title');
+			audio.playMusic('other', false, 1);
+			await tick(1300);
+			expect(stops[0]).toHaveBeenCalledTimes(1);
+			// The new loop's gain is made after the nodes above were patched, so patch it too, then turn the music off
+			// while another fade is still going.
+			for (const node of ctx.nodes) {
+				(node as unknown as { disconnect: () => void }).disconnect = () => {
+					(node as unknown as { disconnected: boolean }).disconnected = true;
+				};
+			}
+			audio.playMusic('title', false, 5);
+			audio.setMusic(false);
+			expect(stops[1]).toHaveBeenCalledTimes(1);
+			expect(disconnects()).toBeGreaterThanOrEqual(1);
+			audio.dispose();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('stops tracks still fading out when the audio is disposed', async () => {
+		vi.useFakeTimers();
+		try {
+			const stop = vi.fn();
+			vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop });
+			const audio = new GameAudio(patterns, async () => Undertone, { musicFades: true });
+			await tick(0);
+			listeners.get('pointerdown')!();
+			await tick(0);
+			audio.playMusic('title');
+			audio.playMusic('other', false, 5);
+			audio.dispose();
+			expect(stop).toHaveBeenCalledTimes(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});
+
+describe('GameAudio volume', () => {
+	it('restarts the music loop when the music volume changes, and clamps it', async () => {
+		const stop = vi.fn();
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop });
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.playMusic('title');
+		expect(loop).toHaveBeenCalledTimes(1);
+		audio.setMusicVolume(0.5);
+		expect(audio.musicVol).toBe(0.5);
+		expect(stop).toHaveBeenCalledTimes(1);
+		expect(loop).toHaveBeenCalledTimes(2);
+		audio.setMusicVolume(0.5);
+		expect(loop).toHaveBeenCalledTimes(2);
+		audio.setMusicVolume(7);
+		expect(audio.musicVol).toBe(1);
+		audio.setMusicVolume(-1);
+		expect(audio.musicVol).toBe(0);
+	});
+
+	it('does not restart the loop when music is set to the state it is already in', async () => {
+		const stop = vi.fn();
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop });
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.playMusic('title');
+		audio.setMusic(true);
+		audio.setMusic(true);
+		expect(loop).toHaveBeenCalledTimes(1);
+		expect(stop).not.toHaveBeenCalled();
+		// A volume change restarts it once, and setting the state again afterwards does not add a second.
+		audio.setMusicVolume(0.5);
+		audio.setMusic(true);
+		expect(loop).toHaveBeenCalledTimes(2);
+	});
+
+	it('does not start music for a volume change while music is off', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.playMusic('title');
+		audio.setMusic(false);
+		audio.setMusicVolume(0.25);
+		expect(loop).toHaveBeenCalledTimes(1);
+	});
+
+	it('builds effects again at a new sound volume and clamps it', async () => {
+		const play = vi.spyOn(Undertone.Pattern.prototype, 'play').mockImplementation(() => {});
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.play('jump');
+		audio.setSfxVolume(0.25);
+		expect(audio.sfxVol).toBe(0.25);
+		audio.play('jump');
+		expect(play).toHaveBeenCalledTimes(2);
+		audio.setSfxVolume(3);
+		expect(audio.sfxVol).toBe(1);
+	});
+});
+
+describe('GameAudio effects style', () => {
+	const styled: AudioPatterns = {
+		...patterns,
+		sfxEnhanced: {
+			jump: [
+				{ n: 'c4', hz: 262, w: 'square', g: 0.3 },
+				{ n: 'c4', hz: 300, w: 'square', g: 0.3, nudge: 0.025, lpenv: 3000, lpd: 0.05 },
+			],
+		},
+	};
+
+	/** The voices of each effect played, as Undertone events (one entry per effect played). */
+	function played(): Record<string, unknown>[][] {
+		const out: Record<string, unknown>[][] = [];
+		vi.spyOn(Undertone.Pattern.prototype, 'play').mockImplementation(function (
+			this: Undertone.Pattern<Undertone.ControlPatch>,
+		) {
+			out.push(
+				this.query({ begin: new Undertone.Fraction(0), end: new Undertone.Fraction(1) })
+					.filter((h) => Undertone.hasOnset(h))
+					.map((h) => ({ ...h.value }) as Record<string, unknown>),
+			);
+		});
+		return out;
+	}
+
+	it('plays the Classic voices until Enhanced is chosen, and Enhanced after', async () => {
+		const out = played();
+		const audio = new GameAudio(styled, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		expect(audio.sfxStyle).toBe('classic');
+		audio.play('jump');
+		audio.setSfxStyle('enhanced');
+		audio.play('jump');
+		audio.setSfxStyle('classic');
+		audio.play('jump');
+		expect(out.map((voices) => voices.length)).toEqual([1, 2, 1]);
+	});
+
+	it('gives a voice an exact pitch and a filter envelope', async () => {
+		const out = played();
+		const audio = new GameAudio(styled, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.setSfxStyle('enhanced');
+		audio.play('jump');
+		const [first, second] = out[0]!;
+		expect(first).toMatchObject({ pitch: 262 });
+		expect(second).toMatchObject({ pitch: 300, filterEnvAmount: 3000, filterDecay: 0.05 });
+	});
+
+	it('plays an effect with no Enhanced version as Classic', async () => {
+		const out = played();
+		const audio = new GameAudio(styled, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.setSfxStyle('enhanced');
+		audio.play('zap');
+		expect(out[0]).toHaveLength(2);
+	});
+
+	it('plays Classic when there are no Enhanced voices at all', async () => {
+		const out = played();
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.setSfxStyle('enhanced');
+		audio.play('jump');
+		expect(out[0]).toHaveLength(1);
+	});
+
+	it('does not change the music or the audio mode', async () => {
+		const audio = new GameAudio(styled, async () => Undertone);
+		await flush();
+		audio.setSfxStyle('enhanced');
+		expect(audio.mode).toBe('classic');
+	});
+});
+
+describe('GameAudio music style', () => {
+	const withSong: AudioPatterns = {
+		...patterns,
+		songs: {
+			title: {
+				bpm: 90,
+				cycles: [1, 2],
+				streams: [
+					[
+						{ notes: 'c4', g: 0.2 },
+						{ notes: 'e4', g: 0.2 },
+					],
+					[null, { notes: 'g4', g: 0.2, lpf: 2000, lpenv: 3000 }],
+				],
+			},
+		},
+	};
+
+	/** The number of notes the looped pattern starts in each of its first three cycles. */
+	function notesPerCycle(loop: { mock: { contexts: unknown[] } }): number[] {
+		const pattern = loop.mock.contexts[0] as Undertone.Pattern<Undertone.ControlPatch>;
+		return [0, 1, 2].map(
+			(cycle) =>
+				pattern
+					.query({ begin: new Undertone.Fraction(cycle), end: new Undertone.Fraction(cycle + 1) })
+					.filter((h) => Undertone.hasOnset(h)).length,
+		);
+	}
+
+	it('plays the track until Enhanced is chosen, and the song after', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(withSong, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		expect(audio.musicStyle).toBe('classic');
+		audio.playMusic('title');
+		expect(loop.mock.calls[0]![0]).toEqual({ ctx, bpm: 120 } as never);
+		audio.setMusicStyle('enhanced');
+		expect(loop).toHaveBeenCalledTimes(2);
+		expect(loop.mock.calls[1]![0]).toEqual({ ctx, bpm: 90 } as never);
+	});
+
+	it('arranges each stream across the sections, with a rest where it has no part', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(withSong, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.setMusicStyle('enhanced');
+		audio.playMusic('title');
+		// One note in the first bar (the second stream rests), two in each of the next two.
+		expect(notesPerCycle(loop)).toEqual([1, 2, 2]);
+	});
+
+	it('restarts the running music on the new style, and only then', async () => {
+		const stop = vi.fn();
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop });
+		const audio = new GameAudio(withSong, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.setMusicStyle('enhanced');
+		expect(loop).not.toHaveBeenCalled();
+		audio.playMusic('title');
+		audio.setMusicStyle('enhanced');
+		expect(loop).toHaveBeenCalledTimes(1);
+		audio.setMusicStyle('classic');
+		expect(stop).toHaveBeenCalledTimes(1);
+		expect(loop).toHaveBeenCalledTimes(2);
+		expect(loop.mock.calls[1]![0]).toMatchObject({ bpm: 120 });
+	});
+
+	it('plays a track with no song as the track, in either style', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.setMusicStyle('enhanced');
+		audio.playMusic('title');
+		expect(loop.mock.calls[0]![0]).toMatchObject({ bpm: 120 });
+	});
+
+	it('plays the track if Undertone has no arrange', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(withSong, async () => ({
+			note: Undertone.note,
+			sound: Undertone.sound,
+			stack: Undertone.stack,
+		}));
+		await flush();
+		await unlockAudio();
+		audio.setMusicStyle('enhanced');
+		audio.playMusic('title');
+		expect(loop.mock.calls[0]![0]).toMatchObject({ bpm: 120 });
+	});
+});
+
+describe('GameAudio music while Undertone loads at boot', () => {
+	/** A loader the test settles by hand. */
+	function controlledLoad(): {
+		load: () => Promise<typeof Undertone>;
+		resolve: () => void;
+		reject: () => void;
+	} {
+		let resolve!: (m: typeof Undertone) => void;
+		let reject!: (e: unknown) => void;
+		const p = new Promise<typeof Undertone>((a, b) => {
+			resolve = a;
+			reject = b;
+		});
+		return {
+			load: () => p,
+			resolve: () => resolve(Undertone),
+			reject: () => reject(new Error('x')),
+		};
+	}
+	const synthNodes = (ctx: FakeContext): number =>
+		ctx.nodes.filter((n) => n.kind === 'oscillator' || n.kind === 'bufferSource').length;
+
+	it('holds music back until Undertone arrives, then starts exactly one Undertone loop', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const c = controlledLoad();
+		const audio = new GameAudio(patterns, c.load, { unlockAtBoot: true });
+		const ctx = FakeContext.instances[0]!;
+		audio.playMusic('title');
+		await flush();
+		expect(loop).not.toHaveBeenCalled();
+		expect(synthNodes(ctx)).toBe(0);
+		c.resolve();
+		await flush();
+		expect(loop).toHaveBeenCalledTimes(1);
+		expect(synthNodes(ctx)).toBe(0);
+		audio.dispose();
+	});
+
+	it('on the web starts music on the first gesture even while Undertone is still loading', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const c = controlledLoad();
+		const audio = new GameAudio(patterns, c.load);
+		audio.playMusic('title');
+		listeners.get('pointerdown')!();
+		const ctx = FakeContext.instances[0]!;
+		expect(loop).not.toHaveBeenCalled();
+		expect(synthNodes(ctx)).toBeGreaterThan(0);
+		audio.dispose();
+	});
+
+	it('on the web switches the running built-in loop to Undertone once it arrives', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const c = controlledLoad();
+		const audio = new GameAudio(patterns, c.load);
+		audio.playMusic('title');
+		listeners.get('pointerdown')!();
+		expect(loop).not.toHaveBeenCalled();
+		c.resolve();
+		await flush();
+		expect(loop).toHaveBeenCalledTimes(1);
+		audio.dispose();
+	});
+
+	it('on the web leaves a silent or stopped track alone when Undertone arrives', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const c = controlledLoad();
+		const audio = new GameAudio(patterns, c.load);
+		audio.playMusic('title');
+		audio.setMusic(false);
+		listeners.get('pointerdown')!();
+		c.resolve();
+		await flush();
+		expect(loop).not.toHaveBeenCalled();
+		audio.dispose();
+	});
+
+	it('starts the built-in loop once, after the load fails', async () => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const c = controlledLoad();
+		const audio = new GameAudio(patterns, c.load, { unlockAtBoot: true });
+		const ctx = FakeContext.instances[0]!;
+		audio.playMusic('title');
+		expect(synthNodes(ctx)).toBe(0);
+		c.reject();
+		await flush();
+		expect(loop).not.toHaveBeenCalled();
+		expect(synthNodes(ctx)).toBeGreaterThan(0);
+		const after = synthNodes(ctx);
+		await flush();
+		expect(synthNodes(ctx)).toBe(after);
+		audio.dispose();
+	});
+
+	it('does not start the track twice when a gesture arrives mid-load', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const c = controlledLoad();
+		const audio = new GameAudio(patterns, c.load, { unlockAtBoot: true });
+		audio.playMusic('title');
+		listeners.get('pointerdown')!();
+		listeners.get('keydown')!();
+		expect(loop).not.toHaveBeenCalled();
+		c.resolve();
+		await flush();
+		expect(loop).toHaveBeenCalledTimes(1);
+		audio.dispose();
+	});
+
+	it('drops a held track when music changes to none or is switched off before the load', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const c = controlledLoad();
+		const audio = new GameAudio(patterns, c.load, { unlockAtBoot: true });
+		audio.playMusic('title');
+		audio.playMusic(null);
+		c.resolve();
+		await flush();
+		expect(loop).not.toHaveBeenCalled();
+		audio.playMusic('title');
+		expect(loop).toHaveBeenCalledTimes(1);
+		audio.dispose();
+	});
+});
+
+describe('GameAudio fallback', () => {
+	it('uses the built-in synth when Undertone fails to load', async () => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const play = vi.spyOn(Undertone.Pattern.prototype, 'play').mockImplementation(() => {});
+		const audio = new GameAudio(patterns, async () => {
+			throw new Error('offline');
+		});
+		await flush();
+		expect(audio.backend).toBe('Built-in synth');
+		const ctx = await unlockAudio();
+		const osc = vi.fn();
+		const createOscillator = vi.fn(() => {
+			osc();
+			return {
+				type: 'sine',
+				frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+				connect: vi.fn(),
+				start: vi.fn(),
+				stop: vi.fn(),
+			};
+		});
+		Object.assign(ctx, {
+			createOscillator,
+			createGain: () => ({
+				gain: {
+					value: 0,
+					setValueAtTime: vi.fn(),
+					linearRampToValueAtTime: vi.fn(),
+				},
+				connect: vi.fn(),
+			}),
+		});
+		audio.play('jump');
+		expect(play).not.toHaveBeenCalled();
+		expect(osc).toHaveBeenCalledTimes(1);
+	});
+
+	it('falls back per sound when Undertone throws while playing', async () => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const broken: UndertoneModule = {
+			...Undertone,
+			stack: () => {
+				throw new Error('boom');
+			},
+		};
+		const audio = new GameAudio(patterns, async () => broken);
+		await flush();
+		const ctx = await unlockAudio();
+		const createOscillator = vi.fn();
+		Object.assign(ctx, { createOscillator });
+		expect(() => audio.play('jump')).not.toThrow();
+		expect(createOscillator).toHaveBeenCalled();
+	});
+});
+
+/** Every node type Classic must never create for a sound effect. */
+const ENHANCEMENT_KINDS = ['panner', 'compressor', 'convolver', 'merger'];
+
+describe('GameAudio Classic path', () => {
+	it('plays an effect with exactly { ctx } and sends each voice straight to the destination', async () => {
+		const play = vi.spyOn(Undertone.Pattern.prototype, 'play');
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.play('jump');
+		audio.play('zap');
+		expect(play).toHaveBeenCalledTimes(2);
+		for (const call of play.mock.calls) {
+			expect(Object.keys(call[0]!)).toEqual(['ctx']);
+			expect(call[0]!.ctx as unknown).toBe(ctx);
+		}
+		// One voice in jump and two in zap, each ending on the real destination.
+		const direct = ctx.all('gain').filter((g) => g.out.includes(ctx.destination));
+		expect(direct).toHaveLength(3);
+		for (const kind of ENHANCEMENT_KINDS) expect(ctx.all(kind), kind).toHaveLength(0);
+	});
+
+	it('loops music with exactly { ctx, bpm } and creates no panner or compressor', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop');
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.playMusic('title');
+		expect(loop).toHaveBeenCalledTimes(1);
+		expect(Object.keys(loop.mock.calls[0]![0]!)).toEqual(['ctx', 'bpm']);
+		expect(loop.mock.calls[0]![0]!.ctx as unknown).toBe(ctx);
+		expect(loop.mock.calls[0]![0]!.bpm).toBe(120);
+		expect(ctx.all('panner')).toHaveLength(0);
+		expect(ctx.all('compressor')).toHaveLength(0);
+		// The only extra nodes are the room send's convolver, which feeds the real destination.
+		for (const c of ctx.all('convolver')) expect(c.out).toContain(ctx.destination);
+		audio.dispose();
+	});
+
+	it('gives the built-in synth the real destination and builds nothing else on unlock', async () => {
+		const audio = new GameAudio(patterns, async () => {
+			throw new Error('offline');
+		});
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		await flush();
+		const ctx = await unlockAudio();
+		// The synth's echo line and its feedback gain, and nothing for any enhancement.
+		expect(ctx.nodes.map((n) => n.kind)).toEqual(['delay', 'gain']);
+		expect(ctx.all('delay')[0]!.out).toContain(ctx.destination);
+		audio.play('zap');
+		const direct = ctx.all('gain').filter((g) => g.out.includes(ctx.destination));
+		expect(direct).toHaveLength(2);
+		for (const kind of ENHANCEMENT_KINDS) expect(ctx.all(kind), kind).toHaveLength(0);
+		audio.dispose();
+	});
+});
+
+describe('GameAudio Enhanced path', () => {
+	/**
+	 * The master's gains, found by following the chain: the buses are the gains that feed the sum
+	 * (the node before the first filter), in the order the master made them, and the trim is what
+	 * the limiter feeds.
+	 */
+	const buses = (ctx: FakeContext) => {
+		const sum = ctx.nodes.find((n) => n.out.includes(ctx.all('biquad')[0]!))!;
+		const [sfx, music] = ctx.all('gain').filter((g) => g.out.includes(sum));
+		return { sfx: sfx!, music: music!, trim: ctx.all('compressor')[1]!.out[0]! };
+	};
+
+	/** The mix stage after a music bus: `bus -> level -> lpf -> mix -> master music bus`. */
+	const mixChain = (bus: FakeNode) => {
+		const level = bus.out[0]!;
+		const lpf = level.out[0]!;
+		const mix = lpf.out[0]!;
+		return { level, lpf, mix };
+	};
+
+	/** The voice gains an effect left on `to`: every gain that connects straight to that node. */
+	const voicesInto = (ctx: FakeContext, to: unknown) =>
+		ctx.all('gain').filter((g) => g.out.includes(to as never));
+
+	it('is Classic until it is told otherwise, and plays unplaced Enhanced sounds at the centre', async () => {
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		expect(audio.mode).toBe('classic');
+		const ctx = await unlockAudio();
+		audio.setMode('enhanced');
+		audio.play('jump');
+		const [panner] = ctx.all('panner');
+		expect(panner!.pan.value).toBe(0);
+		const [emitter] = voicesInto(ctx, panner);
+		expect(emitter!.gain.value).toBeCloseTo(Math.SQRT2, 12);
+	});
+
+	it('routes a placed effect through its own emitter: voices, then gain, panner and destination', async () => {
+		const play = vi.spyOn(Undertone.Pattern.prototype, 'play');
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMode('enhanced');
+		audio.play('zap', { pan: 0.42, gain: 0.5 });
+		const [panner] = ctx.all('panner');
+		const [emitter] = voicesInto(ctx, panner);
+		expect(panner!.pan.value).toBe(0.42);
+		expect(emitter!.gain.value).toBeCloseTo(0.5 * Math.SQRT2, 12);
+		expect(panner!.out).toEqual([buses(ctx).sfx]);
+		// zap has two voices and both end on the emitter. Only the master's trim reaches the destination.
+		const voices = voicesInto(ctx, emitter);
+		expect(voices).toHaveLength(2);
+		for (const v of voices) expect(v.out).toEqual([emitter]);
+		expect(voicesInto(ctx, ctx.destination)).toEqual([buses(ctx).trim]);
+		// Undertone was handed a routed context whose destination is the emitter, not the real context.
+		const arg = play.mock.calls[0]![0]!;
+		expect(arg.ctx).not.toBe(ctx);
+		expect(arg.ctx!.destination).toBe(emitter);
+		expect(audio.emitters).toBe(1);
+	});
+
+	it('connects each call’s voices to that call’s emitter, not to an earlier one', async () => {
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMode('enhanced');
+		audio.play('zap', { pan: -0.6, gain: 0.4 });
+		audio.play('jump', { pan: 0.6, gain: 1 });
+		const [p1, p2] = ctx.all('panner');
+		const [e1] = voicesInto(ctx, p1);
+		const [e2] = voicesInto(ctx, p2);
+		expect(e1).not.toBe(e2);
+		expect(p1!.pan.value).toBe(-0.6);
+		expect(p2!.pan.value).toBe(0.6);
+		expect(voicesInto(ctx, e1)).toHaveLength(2);
+		expect(voicesInto(ctx, e2)).toHaveLength(1);
+	});
+
+	it('places a caption’s effect, and ignores the place in Classic', async () => {
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.caption('*boing*', { pan: 0.5, gain: 1 });
+		expect(ctx.all('panner')).toHaveLength(0);
+		audio.setMode('enhanced');
+		audio.caption('*boing*', { pan: 0.5, gain: 1 });
+		expect(ctx.all('panner')).toHaveLength(1);
+		expect(ctx.all('panner')[0]!.pan.value).toBe(0.5);
+	});
+
+	it('restores the exact Classic path when switched back', async () => {
+		const play = vi.spyOn(Undertone.Pattern.prototype, 'play');
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.play('jump');
+		audio.setMode('enhanced');
+		audio.play('jump', { pan: 0.3, gain: 1 });
+		audio.setMode('classic');
+		audio.play('jump', { pan: 0.3, gain: 1 });
+		expect(play).toHaveBeenCalledTimes(3);
+		expect(Object.keys(play.mock.calls[2]![0]!)).toEqual(['ctx']);
+		expect(play.mock.calls[2]![0]!.ctx as unknown).toBe(ctx);
+		expect(play.mock.calls[2]![0]).toEqual(play.mock.calls[0]![0]);
+		// Only the one panner from the Enhanced call exists; both Classic voices end on the destination,
+		// beside the master's trim, which stays for a moment after the switch.
+		expect(ctx.all('panner')).toHaveLength(1);
+		const direct = voicesInto(ctx, ctx.destination).filter((g) => g !== buses(ctx).trim);
+		expect(direct).toHaveLength(2);
+		expect(audio.emitters).toBe(1);
+	});
+
+	it('loops Enhanced music through a routed context into a music bus on the destination', async () => {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMode('enhanced');
+		audio.playMusic('title');
+		const arg = loop.mock.calls[0]![0]!;
+		expect(Object.keys(arg)).toEqual(['ctx', 'bpm']);
+		expect(arg.bpm).toBe(120);
+		expect(arg.ctx).not.toBe(ctx);
+		const bus = arg.ctx!.destination as unknown as FakeNode;
+		const chain = mixChain(bus);
+		expect(chain.lpf.kind).toBe('biquad');
+		expect(chain.mix.out).toEqual([buses(ctx).music]);
+		// The music bus is built once, and the next loop reuses it.
+		audio.playMusic('title', true);
+		expect(loop.mock.calls[1]![0]!.ctx).toBe(arg.ctx);
+		expect(voicesInto(ctx, ctx.destination)).toEqual([buses(ctx).trim]);
+	});
+
+	it('pans only the panned parts, with the make-up gain on those and not on the centred ones', async () => {
+		const play = vi.spyOn(Undertone.Pattern.prototype, 'play').mockImplementation(() => {});
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop');
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		await unlockAudio();
+		audio.setMode('enhanced');
+		audio.playMusic('title');
+		expect(loop).toHaveBeenCalledTimes(1);
+		expect(play).not.toHaveBeenCalled();
+		// Build the same stack by hand and inspect its events: bass (centred) has no pan, lead has one.
+		const bass = buildVoice(Undertone, roled.music['title']!.parts[1]!, 1, true, true);
+		const lead = buildVoice(Undertone, roled.music['title']!.parts[0]!, 1, true, true);
+		const first = (p: typeof bass) =>
+			p.query({ begin: new Undertone.Fraction(0), end: new Undertone.Fraction(1) })[0]!.value;
+		expect(first(bass)).not.toHaveProperty('pan');
+		expect(first(bass).gainLevel).toBeCloseTo(0.2, 12);
+		expect(first(lead).pan).toBe(PART_PAN.lead as number);
+		expect(first(lead).gainLevel).toBeCloseTo(0.2 * Math.SQRT2, 12);
+		audio.dispose();
+	});
+
+	it('restarts the music loop on the new route when the mode changes mid-track', async () => {
+		const stop = vi.fn();
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop });
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.playMusic('title');
+		expect(loop.mock.calls[0]![0]).toEqual({ ctx, bpm: 120 } as never);
+		audio.setMode('enhanced');
+		expect(stop).toHaveBeenCalledTimes(1);
+		expect(loop).toHaveBeenCalledTimes(2);
+		expect(loop.mock.calls[1]![0]!.ctx).not.toBe(ctx);
+		audio.setMode('enhanced');
+		expect(loop).toHaveBeenCalledTimes(2);
+		audio.setMode('classic');
+		expect(stop).toHaveBeenCalledTimes(2);
+		expect(loop.mock.calls[2]![0]).toEqual({ ctx, bpm: 120 } as never);
+		// Without music playing, switching starts nothing.
+		audio.playMusic(null);
+		audio.setMode('enhanced');
+		expect(loop).toHaveBeenCalledTimes(3);
+	});
+
+	it('plays the built-in synth’s music through the bus, panned like Undertone', async () => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		vi.useFakeTimers();
+		try {
+			const audio = new GameAudio(roled, async () => {
+				throw new Error('offline');
+			});
+			await tick(0);
+			listeners.get('pointerdown')!();
+			await tick(0);
+			const ctx = FakeContext.instances[0]!;
+			audio.setMode('enhanced');
+			audio.playMusic('title');
+			const panners = ctx.all('panner');
+			expect(panners.length).toBeGreaterThan(0);
+			// Only the lead is panned, at its role's pan, and it ends on the music bus.
+			for (const p of panners) {
+				expect(p.pan.value).toBe(PART_PAN.lead as number);
+				expect(p.out).toHaveLength(1);
+				expect(mixChain(p.out[0]!).mix.out).toEqual([buses(ctx).music]);
+			}
+			// The centred bass goes straight to the bus, and nothing but the bus reaches the destination.
+			expect(voicesInto(ctx, ctx.destination)).toEqual([buses(ctx).trim]);
+			audio.dispose();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('plays the music as Classic if the context cannot build the bus', async () => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		ctx.createGain = () => {
+			throw new Error('unsupported');
+		};
+		audio.setMode('enhanced');
+		audio.playMusic('title');
+		expect(loop.mock.calls[0]![0]).toEqual({ ctx, bpm: 120 } as never);
+	});
+
+	it('sends the built-in synth’s voices through the emitter too', async () => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const audio = new GameAudio(patterns, async () => {
+			throw new Error('offline');
+		});
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMode('enhanced');
+		audio.play('zap', { pan: -0.2, gain: 1 });
+		const [panner] = ctx.all('panner');
+		const [emitter] = voicesInto(ctx, panner);
+		expect(voicesInto(ctx, emitter)).toHaveLength(2);
+		expect(voicesInto(ctx, ctx.destination)).toEqual([buses(ctx).trim]);
+		audio.dispose();
+	});
+
+	it('plays as Classic if the context cannot build a panner', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const play = vi.spyOn(Undertone.Pattern.prototype, 'play');
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		ctx.createStereoPanner = () => {
+			throw new Error('unsupported');
+		};
+		audio.setMode('enhanced');
+		audio.play('jump', { pan: 0.3, gain: 1 });
+		expect(warn).toHaveBeenCalled();
+		expect(play.mock.calls[0]![0]).toEqual({ ctx } as never);
+		// The one voice, and the trim of the master that was built before the panner failed.
+		expect(voicesInto(ctx, ctx.destination)).toHaveLength(2);
+	});
+});
+
+describe('GameAudio master chain', () => {
+	const compressors = (ctx: FakeContext) => ctx.all('compressor');
+
+	afterEach(() => {
+		vi.useRealTimers();
+		Object.assign(MASTER, structuredClone(MASTER_DEFAULTS));
+		Object.assign(PART_PAN, structuredClone(panDefaults));
+	});
+
+	it('is not built by unlocking, by Classic sound or by Classic music', async () => {
+		vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.play('jump');
+		audio.playMusic('title');
+		expect(compressors(ctx)).toHaveLength(0);
+		expect(audio.masterBuilt).toBe(false);
+	});
+
+	it('is built on the first Enhanced sound or music, once, and shared by both', async () => {
+		vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMode('enhanced');
+		expect(compressors(ctx)).toHaveLength(0);
+		audio.play('jump');
+		expect(compressors(ctx)).toHaveLength(2);
+		audio.play('zap');
+		audio.playMusic('title');
+		expect(compressors(ctx)).toHaveLength(2);
+		// One room reverb: two convolver slots (for crossfades), built once.
+		expect(ctx.all('convolver')).toHaveLength(2);
+		expect(audio.masterBuilt).toBe(true);
+	});
+
+	it('is detached two seconds after switching to Classic, and kept if Enhanced returns first', async () => {
+		vi.useFakeTimers();
+		const audio = new GameAudio(roled, async () => Undertone);
+		await tick(0);
+		listeners.get('pointerdown')!();
+		await tick(0);
+		const ctx = FakeContext.instances[0]!;
+		audio.setMode('enhanced');
+		audio.play('jump');
+		const trim = compressors(ctx)[1]!.out[0]!;
+		expect(trim.out).toEqual([ctx.destination]);
+
+		audio.setMode('classic');
+		await tick(1999);
+		expect(audio.masterBuilt).toBe(true);
+		await tick(1);
+		expect(audio.masterBuilt).toBe(false);
+		for (const n of ctx.nodes.filter((n) => n.out.includes(ctx.destination as never))) {
+			expect(n.kind).not.toBe('gain');
+		}
+		expect(trim.out).toEqual([]);
+
+		// Coming back builds a fresh chain; leaving and returning inside two seconds keeps it.
+		audio.setMode('enhanced');
+		audio.play('jump');
+		expect(compressors(ctx)).toHaveLength(4);
+		audio.setMode('classic');
+		await tick(1500);
+		audio.setMode('enhanced');
+		await tick(5000);
+		expect(audio.masterBuilt).toBe(true);
+		audio.play('jump');
+		expect(compressors(ctx)).toHaveLength(4);
+		audio.dispose();
+		expect(audio.masterBuilt).toBe(false);
+	});
+
+	it('plays Enhanced sound unmastered if the context cannot build the chain', async () => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const audio = new GameAudio(patterns, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		ctx.createDynamicsCompressor = () => {
+			throw new Error('unsupported');
+		};
+		audio.setMode('enhanced');
+		audio.play('jump', { pan: 0.3, gain: 1 });
+		expect(ctx.all('panner')[0]!.out).toEqual([ctx.destination]);
+		expect(audio.masterBuilt).toBe(false);
+	});
+
+	describe('rooms', () => {
+		const room: RoomProfile = {
+			seconds: 1.8,
+			coarseSeconds: 1.2,
+			sfxSend: 0.22,
+			musicSend: 0.08,
+			hpf: 300,
+			lpf: 6500,
+			predelay: 0.028,
+			damping: 0.25,
+			seed: 3,
+		};
+		const lengthOf = (c: { buffer: unknown }): number =>
+			(c.buffer as { getChannelData(i: number): Float32Array }).getChannelData(0).length;
+
+		it('keeps a room set before the chain exists and builds the chain in it', async () => {
+			const audio = new GameAudio(roled, async () => Undertone);
+			await flush();
+			const ctx = await unlockAudio();
+			audio.setMode('enhanced');
+			audio.setRoom(room);
+			expect(compressors(ctx)).toHaveLength(0);
+			audio.play('jump');
+			const [a, b] = ctx.all('convolver');
+			expect(lengthOf(a!)).toBe(Math.round(ctx.sampleRate * 1.8));
+			expect(b!.buffer).toBeNull();
+			expect(a!.out[0]!.gain.calls).toEqual([]);
+		});
+
+		it('crossfades a room set while the chain is running', async () => {
+			const audio = new GameAudio(roled, async () => Undertone);
+			await flush();
+			const ctx = await unlockAudio();
+			audio.setMode('enhanced');
+			audio.play('jump');
+			audio.setRoom(room);
+			const [a, b] = ctx.all('convolver');
+			expect(lengthOf(b!)).toBe(Math.round(ctx.sampleRate * 1.8));
+			expect(a!.out[0]!.gain.curves).toHaveLength(1);
+			expect(b!.out[0]!.gain.curves).toHaveLength(1);
+		});
+
+		it('builds nothing in Classic, remembers the room, and applies it when Enhanced returns', async () => {
+			vi.useFakeTimers();
+			const audio = new GameAudio(roled, async () => Undertone);
+			await tick(0);
+			listeners.get('pointerdown')!();
+			await tick(0);
+			const ctx = FakeContext.instances[0]!;
+			audio.setRoom(room);
+			audio.play('jump');
+			audio.playMusic('title');
+			expect(ctx.extras()).toEqual([]);
+			expect(audio.masterBuilt).toBe(false);
+
+			// Enhanced builds the chain in the remembered room.
+			audio.setMode('enhanced');
+			audio.play('jump');
+			expect(lengthOf(ctx.all('convolver')[0]!)).toBe(Math.round(ctx.sampleRate * 1.8));
+
+			// Back to Classic keeps the chain for a moment; a room set then is stored, not heard, and the
+			// chain moves to it when Enhanced returns.
+			audio.setMode('classic');
+			audio.setRoom({ ...room, seed: 9 });
+			expect(ctx.all('convolver')[0]!.out[0]!.gain.curves).toHaveLength(0);
+			audio.setMode('enhanced');
+			expect(ctx.all('convolver')[1]!.out[0]!.gain.curves).toHaveLength(1);
+		});
+	});
+});
+
+describe('GameAudio mix stage', () => {
+	const PAUSE = { lpf: 900, gain: 0.7 };
+	const OPEN = { lpf: 20000, gain: 1 };
+	/** What an open cutoff becomes on the fake context (44.1 kHz): its Nyquist frequency. */
+	const NYQUIST = 22050;
+
+	/** Starts Enhanced music and returns the context and the mix nodes of its bus. */
+	async function enhancedMusic(p: AudioPatterns = roled) {
+		const loop = vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(p, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMode('enhanced');
+		audio.playMusic('title');
+		const bus = loop.mock.calls[0]![0]!.ctx!.destination as unknown as FakeNode;
+		const level = bus.out[0]!;
+		const lpf = level.out[0]!;
+		const mix = lpf.out[0]!;
+		// Building the bus set its starting values; the tests look at what happens after.
+		for (const p of [level.gain, lpf.frequency, mix.gain]) p.calls.length = 0;
+		return { audio, ctx, loop, bus, level, lpf, mix };
+	}
+
+	const calls = (p: { calls: { method: string; args: number[] }[] }) =>
+		p.calls.map((c) => [c.method, ...c.args]);
+
+	it('builds the bus as bus, level, a flat low-pass, mix gain, with the mix open', async () => {
+		const { lpf, level, mix } = await enhancedMusic();
+		expect(lpf.kind).toBe('biquad');
+		expect(lpf.type).toBe('lowpass');
+		expect(lpf.Q.value).toBe(0);
+		expect(lpf.frequency.value).toBe(NYQUIST);
+		expect(level.gain.value).toBe(1);
+		expect(mix.gain.value).toBe(1);
+	});
+
+	it('glides into the pause muffle from the current time and back out slowly', async () => {
+		const { audio, ctx, lpf, mix } = await enhancedMusic();
+		ctx.state = 'running';
+		ctx.currentTime = 10;
+		audio.setMix(PAUSE);
+		expect(calls(lpf.frequency)).toEqual([
+			['cancelScheduledValues', 10],
+			['setValueAtTime', NYQUIST, 10],
+			['exponentialRampToValueAtTime', 900, 10.18],
+		]);
+		expect(calls(mix.gain)).toEqual([
+			['cancelScheduledValues', 10],
+			['setValueAtTime', 1, 10],
+			['linearRampToValueAtTime', 0.7, 10.18],
+		]);
+		// Resume halfway through the close: the open starts from where the close had got to.
+		ctx.currentTime = 10.06;
+		lpf.frequency.calls.length = 0;
+		audio.setMix(OPEN);
+		const [cancel, set, ramp] = calls(lpf.frequency);
+		expect(cancel).toEqual(['cancelScheduledValues', 10.06]);
+		expect(set![0]).toBe('setValueAtTime');
+		expect(set![1]).toBeCloseTo(7114, -1);
+		expect(ramp![1]).toBe(NYQUIST);
+		expect(ramp![2]).toBeCloseTo(10.41, 10);
+	});
+
+	it('ignores a mix it already has, and reports it', async () => {
+		const { audio, ctx, lpf } = await enhancedMusic();
+		ctx.state = 'running';
+		audio.setMix(OPEN);
+		expect(lpf.frequency.calls).toEqual([]);
+		audio.setMix(PAUSE);
+		expect(audio.mixState).toEqual({ ...PAUSE, applied: true });
+	});
+
+	it('applies a mix asked for before the bus exists without a ramp when it is built', async () => {
+		vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMode('enhanced');
+		audio.setMix(PAUSE);
+		expect(audio.mixState.applied).toBe(false);
+		audio.playMusic('title');
+		const lpf = ctx.all('biquad')[ctx.all('biquad').length - 1]!;
+		expect(lpf.frequency.value).toBe(900);
+		expect(calls(lpf.frequency).some((c) => String(c[0]).endsWith('RampToValueAtTime'))).toBe(
+			false,
+		);
+		expect(ctx.all('gain').some((g) => g.gain.value === 0.7)).toBe(true);
+		expect(audio.mixState).toEqual({ ...PAUSE, applied: true });
+	});
+
+	it('keeps a mix asked for in Classic and applies it at once when Enhanced returns', async () => {
+		const { audio, ctx, lpf, mix } = await enhancedMusic();
+		ctx.state = 'running';
+		audio.setMode('classic');
+		audio.setMix(PAUSE);
+		expect(audio.mixState.applied).toBe(false);
+		expect(lpf.frequency.value).toBe(NYQUIST);
+		audio.setMode('enhanced');
+		expect(lpf.frequency.value).toBe(900);
+		expect(mix.gain.value).toBe(0.7);
+		expect(calls(lpf.frequency).some((c) => String(c[0]).endsWith('RampToValueAtTime'))).toBe(
+			false,
+		);
+	});
+
+	it('changes the mix at once while the page is hidden, so it is in place on return', async () => {
+		const { audio, ctx, lpf, mix } = await enhancedMusic();
+		ctx.state = 'running';
+		ctx.currentTime = 4;
+		audio.setActive(false);
+		audio.setMix(PAUSE);
+		expect(calls(lpf.frequency)).toEqual([
+			['cancelScheduledValues', 4],
+			['setValueAtTime', 900, 4],
+		]);
+		expect(mix.gain.value).toBe(0.7);
+		audio.setActive(true);
+		ctx.currentTime = 4.5;
+		audio.setMix(OPEN);
+		expect(calls(lpf.frequency).pop()).toEqual(['exponentialRampToValueAtTime', NYQUIST, 4.85]);
+	});
+
+	it('puts the music volume on the bus in Enhanced, with no restart', async () => {
+		const { audio, ctx, loop, level } = await enhancedMusic();
+		ctx.currentTime = 2;
+		audio.setMusicVolume(0.5);
+		expect(loop).toHaveBeenCalledTimes(1);
+		expect(calls(level.gain).slice(-2)).toEqual([
+			['cancelScheduledValues', 2],
+			['setTargetAtTime', 0.5, 2, 0.02],
+		]);
+		expect(audio.musicVol).toBe(0.5);
+	});
+
+	it('builds the music at the stored volume on the level gain, and restarts in Classic as before', async () => {
+		vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMusicVolume(0.4);
+		audio.setMode('enhanced');
+		audio.playMusic('title');
+		const lpf = ctx.all('biquad').at(-1)!;
+		const level = ctx.nodes.find((n) => n.out.includes(lpf))!;
+		expect(level.gain.value).toBe(0.4);
+	});
+
+	it('builds the Classic path with no extra nodes after setMix, and the mix stays stored', async () => {
+		vi.spyOn(Undertone.Pattern.prototype, 'loop').mockReturnValue({ stop: vi.fn() });
+		const audio = new GameAudio(roled, async () => Undertone);
+		await flush();
+		const ctx = await unlockAudio();
+		audio.setMix(PAUSE);
+		audio.playMusic('title');
+		audio.play('jump');
+		audio.setMix(OPEN);
+		expect(ctx.extras()).toEqual([]);
+		expect(ctx.all('biquad')).toEqual([]);
+		expect(audio.masterBuilt).toBe(false);
+	});
+});

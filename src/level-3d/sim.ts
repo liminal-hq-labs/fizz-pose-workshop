@@ -20,6 +20,7 @@ export const Input = {
 export const State = {
 	lives: 0,
 	score: 1,
+	nextLife: 2,
 	ammo: 3,
 	keyRed: 8,
 	playerX: 13,
@@ -31,7 +32,14 @@ export const State = {
 /** Sim modes. */
 export const Mode = { none: 0, attract: 1, map: 2, level: 3 } as const;
 /** Event kinds worth showing. */
-export const SimEvent = { caption: 1, toast: 3, levelComplete: 4, died: 5, gameOver: 6 } as const;
+export const SimEvent = {
+	caption: 1,
+	toast: 3,
+	levelComplete: 4,
+	died: 5,
+	gameOver: 6,
+	levelStart: 11,
+} as const;
 /** One thing the sim reported: a kind and up to five numbers whose meaning depends on it. */
 export interface SimEventRecord {
 	kind: number;
@@ -130,6 +138,20 @@ export class LevelSim {
 		return new LevelSim(instance.exports as unknown as Exports, sheet);
 	}
 
+	/** Where the sim's own camera looked in the last frame, in tiles: sounds are placed against it. */
+	readonly camera = { x: 0, y: 0 };
+
+	/** Loads the level again without starting a new game: lives, snack points and Fizz ammo carry over, as after a death in the game. */
+	reenter(level: number): void {
+		this.x.enter_level(level);
+		this.x.set_view(12, 7);
+	}
+
+	/** Sets the lives, for a fall the sim itself does not notice. */
+	setLives(lives: number): void {
+		this.x.state_set(State.lives, lives);
+	}
+
 	/** Starts a new game in a level. Crater Fields is 0. */
 	enter(level: number): void {
 		this.x.game_new();
@@ -203,6 +225,8 @@ export class LevelSim {
 			draw.order = i;
 		}
 		into.length = count;
+		this.camera.x = out[1];
+		this.camera.y = out[2];
 		return { cameraX: out[1], cameraY: out[2], count };
 	}
 }
