@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import {
 	Eye,
 	Motion,
@@ -19,14 +20,17 @@ import {
 	seedOf,
 } from './parts.ts';
 
-const beads = 8;
+const beads = 8,
+	/** The model is built a little slimmer than the sprite art, whose ring is the widest part. The art's centre sits 1/16 tile above the sprite's, which the profiles below already allow for. */
+	wk = 0.83,
+	hk = 0.93;
 
 let topGeometry: THREE.BufferGeometry | null = null;
 let bottomGeometry: THREE.BufferGeometry | null = null;
 
 function profile(points: readonly [number, number][]): THREE.BufferGeometry {
 	return new THREE.LatheGeometry(
-		points.map(([r, y]) => new THREE.Vector2(r, y)),
+		points.map(([r, y]) => new THREE.Vector2(r * wk, y * hk)),
 		32,
 	);
 }
@@ -68,18 +72,25 @@ export function createDrone(first: SpriteDraw): Actor {
 		ringBeads: THREE.Mesh[] = [],
 		pulses: THREE.Mesh[] = [],
 		pulseMaterials: THREE.MeshBasicMaterial[] = [];
+	root.scale.setScalar(castScale);
 	root.add(craft);
 
 	part(craft, tint, top(), ega.pink, { ink: 0.025 });
 	part(craft, tint, bottom(), ega.purple, { ink: 0.025 });
-	part(craft, tint, new THREE.TorusGeometry(0.435, 0.05, 10, 40).rotateX(Math.PI / 2), ega.yellow, {
-		emissive: 0x665500,
-		ink: 0.02,
-	});
+	part(
+		craft,
+		tint,
+		new THREE.TorusGeometry(0.435 * wk, 0.045, 10, 40).rotateX(Math.PI / 2),
+		ega.yellow,
+		{
+			emissive: 0x665500,
+			ink: 0.02,
+		},
+	);
 	for (let i = 0; i < beads; i++) {
 		const a = (i / beads) * Math.PI * 2,
-			bead = part(ring, tint, ellipsoid(0.055, 0.055, 0.055), i % 2 ? ega.white : ega.yellow, {
-				pos: [Math.cos(a) * 0.46, 0, Math.sin(a) * 0.46],
+			bead = part(ring, tint, ellipsoid(0.05, 0.05, 0.05), i % 2 ? ega.white : ega.yellow, {
+				pos: [Math.cos(a) * 0.46 * wk, 0, Math.sin(a) * 0.46 * wk],
 				ink: 0.015,
 				emissive: 0x888844,
 			});
@@ -87,21 +98,24 @@ export function createDrone(first: SpriteDraw): Actor {
 	}
 	craft.add(ring);
 	/* The grey cap and its little yellow button crown the dome. */
-	part(craft, tint, new THREE.CylinderGeometry(0.07, 0.085, 0.14, 14), ega.grey, {
-		pos: [0, 0.4, 0],
+	part(craft, tint, new THREE.CylinderGeometry(0.06, 0.075, 0.13, 14), ega.grey, {
+		pos: [0, 0.4 * hk, 0],
 		ink: 0.02,
 	});
-	part(craft, tint, ellipsoid(0.09, 0.04, 0.09), ega.yellow, { pos: [0, 0.48, 0], ink: 0.015 });
+	part(craft, tint, ellipsoid(0.08, 0.04, 0.08), ega.yellow, {
+		pos: [0, 0.48 * hk, 0],
+		ink: 0.015,
+	});
 
 	const eyes = [
-		new Eye(craft, tint, 0.1, [-0.15, 0.15, 0.31]),
-		new Eye(craft, tint, 0.1, [0.15, 0.15, 0.31]),
+		new Eye(craft, tint, 0.09, [-0.13, 0.14, 0.27]),
+		new Eye(craft, tint, 0.09, [0.13, 0.14, 0.27]),
 	];
 	eyes[0].root.rotation.y = -0.3;
 	eyes[1].root.rotation.y = 0.3;
 
 	/* Rings of gravity ripple down from under the drone. Each has its own material so it can fade. */
-	const ripple = new THREE.TorusGeometry(0.4, 0.012, 6, 36).rotateX(Math.PI / 2);
+	const ripple = new THREE.TorusGeometry(0.4 * wk, 0.012, 6, 36).rotateX(Math.PI / 2);
 	for (let i = 0; i < 2; i++) {
 		const material = new THREE.MeshBasicMaterial({
 				color: ega.cyan,

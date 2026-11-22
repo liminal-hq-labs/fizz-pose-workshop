@@ -5,11 +5,12 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import { candy, clamp, ease, ellipsoid, phaseOf } from './shared.ts';
 
-/** The sprite is 8 pixels, half a tile, and the bubble fills most of it. */
+/** The sprite is 8 pixels, half a tile, and the bubble's art is 6 pixels of it; the model quivers a little past that. */
 const spriteWidth = 0.5,
-	radius = 0.21,
+	radius = 0.17,
 	trailLength = 4;
 
 let shellMaterial: THREE.ShaderMaterial | null = null;
@@ -78,6 +79,7 @@ export function createBubble(first: SpriteDraw): Actor {
 		bit.scale.setScalar(radius * (0.7 - i * 0.12));
 		trailing.push(bit);
 	}
+	root.scale.setScalar(castScale);
 	root.add(body, ...trailing);
 
 	let ready = false,

@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import {
 	Eye,
 	Motion,
@@ -22,7 +23,9 @@ import {
 } from './parts.ts';
 
 const headRadius = 0.37,
-	stemHeight = 0.34,
+	stemHeight = 0.28,
+	/** The bulb is wider than it is tall, as in the sprite, so a stem shows below it. */
+	flatten = 0.82,
 	/** The sim's puff is the last second of a three second cycle; the pod starts to swell about 0.8 s before it. */
 	idleSeconds = 2,
 	swellSeconds = 0.8,
@@ -39,8 +42,8 @@ function stem(): THREE.BufferGeometry {
 /** A leaf blade that grows out along +X from its base. */
 function leaf(): THREE.BufferGeometry {
 	leafGeometry ??= new THREE.SphereGeometry(1, 20, 12)
-		.scale(0.2, 0.035, 0.085)
-		.translate(0.17, 0, 0);
+		.scale(0.13, 0.03, 0.06)
+		.translate(0.11, 0, 0);
 	return leafGeometry;
 }
 
@@ -56,16 +59,17 @@ export function createPod(first: SpriteDraw): Actor {
 		mouthHole = new THREE.Group(),
 		outward = new THREE.Vector3(),
 		forward = new THREE.Vector3(0, 0, 1);
+	root.scale.setScalar(castScale);
 	root.add(turn);
 	turn.add(stalk);
 	stalk.add(head);
 
 	const stemMesh = part(stalk, tint, stem(), ega.darkGreen, { ink: 0.02 });
-	stemMesh.scale.set(1, stemHeight + 0.06, 1);
+	stemMesh.scale.set(1, stemHeight + 0.1, 1);
 	const leaves: THREE.Mesh[] = [];
 	for (const side of [-1, 1]) {
 		const blade = part(turn, tint, leaf(), ega.green, { ink: 0.018 });
-		blade.position.set(side * 0.03, 0.08, 0.02);
+		blade.position.set(side * 0.03, 0.1, 0.02);
 		blade.scale.x = side;
 		leaves.push(blade);
 	}
@@ -118,6 +122,7 @@ export function createPod(first: SpriteDraw): Actor {
 			emissive: 0x663366,
 		});
 		bubble.visible = false;
+		bubble.userData.effect = true;
 		burst.push(bubble);
 	}
 
@@ -159,8 +164,8 @@ export function createPod(first: SpriteDraw): Actor {
 			wilt = ease(wilt, stunned ? 1 : 0, 5, dt);
 			const rest = Math.sin(t * 1.7 + seed * 6),
 				squeeze = popped,
-				sy = 1 + swell * 0.1 - squeeze * 0.2 + rest * 0.012,
-				sxz = 1 + swell * 0.08 + squeeze * 0.14 - rest * 0.006;
+				sy = flatten * (1 + swell * 0.06 - squeeze * 0.16 + rest * 0.012),
+				sxz = 1 + swell * 0.03 - rest * 0.006;
 			head.scale.set(sxz, sy, sxz);
 			sway = ease(
 				sway,
@@ -171,14 +176,19 @@ export function createPod(first: SpriteDraw): Actor {
 			stalk.rotation.z = sway + wilt * 0.12;
 			/* A wilted pod bows its head right down towards the front; the stem bends over. */
 			stalk.rotation.x = wilt * 0.35;
-			head.position.set(0, stemHeight + headRadius * 0.95 - wilt * 0.06 - squeeze * 0.03, 0);
+			head.position.set(
+				0,
+				stemHeight + headRadius * flatten * 0.95 - wilt * 0.06 - squeeze * 0.05,
+				0,
+			);
 			head.rotation.z = wilt * 0.45;
 			head.rotation.x = wilt * 0.3;
 			antenna.scale.setScalar(Math.max(popped, 0.001) * (1 + Math.sin(t * 30) * 0.05));
 			antenna.rotation.z = Math.sin(t * 14) * 0.2 * popped;
 			mouthHole.scale.set(1 + popped * 0.9, 0.4 + popped * 1.5 + swell * 0.4, 1);
-			leaves[0].rotation.z = 0.5 - rest * 0.04 - wilt * 0.7 + swell * 0.15;
-			leaves[1].rotation.z = 0.5 + rest * 0.04 - wilt * 0.7 + swell * 0.15;
+			/* The leaves droop outward from the stem's foot; the left one is mirrored, so it turns the other way. */
+			leaves[0].rotation.z = 0.3 + rest * 0.04 + wilt * 0.5 - swell * 0.15;
+			leaves[1].rotation.z = -(0.3 - rest * 0.04 + wilt * 0.5 - swell * 0.15);
 
 			lookAtHero(draw.x, draw.y + 0.9, 0.25, frame.ben, 12);
 			for (let i = 0; i < eyes.length; i++) {
@@ -196,10 +206,10 @@ export function createPod(first: SpriteDraw): Actor {
 				if (!live) continue;
 				const side = i % 2 ? 1 : -1,
 					angle = 0.3 + ((i >> 1) / 3) * 0.9,
-					run = 1.1 * Math.sqrt(k) + (i >> 1) * 0.1;
+					run = 0.8 * Math.sqrt(k) + (i >> 1) * 0.08;
 				bubble.position.set(
 					side * Math.cos(angle) * run * 0.9,
-					stemHeight + headRadius + 0.1 + Math.sin(angle) * run * 0.6 - k * k * 0.45,
+					stemHeight + headRadius * flatten + 0.1 + Math.sin(angle) * run * 0.6 - k * k * 0.45,
 					0.05 * (i - 3),
 				);
 				bubble.scale.setScalar(Math.max(0.05, (1 - k) * (0.7 + 0.2 * (i % 3))));

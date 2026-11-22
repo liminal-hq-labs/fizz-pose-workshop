@@ -5,11 +5,12 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import { inked, toon } from '../toon.ts';
 import { createPickup } from './pickup.ts';
 import { candy, ellipsoid, scatter } from './shared.ts';
 
-const rx = 0.3,
+const rx = 0.28,
 	ry = 0.38,
 	rz = 0.2;
 
@@ -41,7 +42,7 @@ function speckleGeometry(): THREE.BufferGeometry {
 function build(body: THREE.Group): void {
 	body.add(inked(ellipsoid(rx, ry, rz), toon(candy.yellow, { emissive: 0x332200 }), 0.03));
 	for (const end of [-1, 1]) {
-		const crimp = inked(ellipsoid(0.35, 0.07, 0.1), toon(candy.red, { emissive: 0x331111 }), 0.025);
+		const crimp = inked(ellipsoid(0.29, 0.07, 0.1), toon(candy.red, { emissive: 0x331111 }), 0.025);
 		crimp.position.y = end * 0.4;
 		body.add(crimp);
 	}
@@ -60,5 +61,5 @@ function build(body: THREE.Group): void {
 }
 
 export function createCheezie(first: SpriteDraw): Actor {
-	return createPickup({ build, glow: 0xffaa22, reach: 0.5 }, first);
+	return createPickup({ build, glow: 0xffaa22, reach: 0.5, centre: -0.031 / castScale }, first);
 }

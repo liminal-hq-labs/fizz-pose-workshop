@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import {
 	Motion,
 	Tint,
@@ -21,7 +22,7 @@ import {
 	seedOf,
 } from './parts.ts';
 
-const radius = 0.43,
+const radius = 0.41,
 	/** Marshmallows turn less than the others so the face stays in view. */
 	turnAngle = 0.62;
 
@@ -51,6 +52,7 @@ export function createMarsh(first: SpriteDraw): Actor {
 		face = new THREE.Group(),
 		outward = new THREE.Vector3(),
 		forward = new THREE.Vector3(0, 0, 1);
+	root.scale.setScalar(castScale);
 	root.add(turn);
 	turn.add(body);
 	body.add(face);
@@ -80,7 +82,7 @@ export function createMarsh(first: SpriteDraw): Actor {
 	face.position.z = radius * 0.97;
 
 	let yaw = (first.flip ? 1 : -1) * turnAngle,
-		squish = first.name === 'marsh1' ? -0.36 : 0.04,
+		squish = first.name === 'marsh1' ? -0.36 : -0.07,
 		jelly = 0,
 		wasLow = squish < 0;
 
@@ -102,7 +104,7 @@ export function createMarsh(first: SpriteDraw): Actor {
 			if (low && !wasLow) jelly = 1;
 			wasLow = low;
 			jelly = ease(jelly, 0, 5, dt);
-			const target = (low ? -0.36 : 0.03) + clamp(motion.vy * 0.018, -0.12, 0.2);
+			const target = (low ? -0.36 : -0.07) + clamp(motion.vy * 0.018, -0.1, 0.12);
 			squish = ease(squish, target, 20, dt);
 			const wobble = jelly * Math.sin(t * 26) * 0.07,
 				sy = 1 + squish + wobble,

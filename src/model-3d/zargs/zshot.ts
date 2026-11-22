@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import { Motion, Tint, clamp, ease, ega, ellipsoid, part, release, seedOf } from './parts.ts';
 
 const sparks = 3;
@@ -16,16 +17,17 @@ export function createZshot(first: SpriteDraw): Actor {
 		root = new THREE.Group(),
 		bolt = new THREE.Group(),
 		trail: THREE.Mesh[] = [];
+	root.scale.setScalar(castScale);
 	root.add(bolt);
-	part(bolt, tint, ellipsoid(0.2, 0.2, 0.2), ega.red, { emissive: 0x992222, ink: 0.018 });
-	part(bolt, tint, ellipsoid(0.12, 0.12, 0.12), ega.yellow, {
+	part(bolt, tint, ellipsoid(0.175, 0.175, 0.175), ega.red, { emissive: 0x992222, ink: 0.018 });
+	part(bolt, tint, ellipsoid(0.105, 0.105, 0.105), ega.yellow, {
 		emissive: 0xffff55,
 		ink: 0,
-		pos: [0, 0, 0.12],
+		pos: [0, 0, 0.11],
 	});
 	for (let i = 0; i < sparks; i++)
 		trail.push(
-			part(bolt, tint, ellipsoid(0.07, 0.07, 0.07), i % 2 ? ega.yellow : ega.red, {
+			part(bolt, tint, ellipsoid(0.05, 0.05, 0.05), i % 2 ? ega.yellow : ega.red, {
 				emissive: 0x883333,
 				ink: 0,
 			}),
@@ -45,13 +47,15 @@ export function createZshot(first: SpriteDraw): Actor {
 			/* The bolt points along its flight and lengthens with its speed; a still bolt stays round. */
 			const speed = Math.hypot(motion.vx, motion.vy);
 			if (speed > 0.5) angle = Math.atan2(motion.vy, motion.vx);
-			stretch = ease(stretch, 1 + clamp(speed * 0.06, 0, 0.6), 12, dt);
+			stretch = ease(stretch, 1 + clamp(speed * 0.04, 0, 0.4), 12, dt);
 			bolt.rotation.z = angle;
 			const pulse = 1 + Math.sin(t * 24 + seed * 6) * 0.1;
 			bolt.scale.set(stretch * pulse, pulse, pulse);
 			for (let i = 0; i < trail.length; i++) {
+				/* A bolt that is not moving sheds no sparks. */
+				trail[i].visible = speed > 0.5;
 				const k = (i + 1) / trail.length;
-				trail[i].position.set(-0.22 - k * 0.3, Math.sin(t * 18 + i * 2 + seed * 5) * 0.06, 0);
+				trail[i].position.set(-0.18 - k * 0.09, Math.sin(t * 18 + i * 2 + seed * 5) * 0.06, 0);
 				trail[i].scale.setScalar(1 - k * 0.7);
 			}
 		},

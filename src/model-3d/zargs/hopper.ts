@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import {
 	Eye,
 	Motion,
@@ -22,7 +23,9 @@ import {
 	threeQuarter,
 } from './parts.ts';
 
-const bodyRadius = 0.36,
+/** The model, boots and all, is a touch smaller than the sprite art before the cast scale is applied. */
+const fit = 0.91,
+	bodyRadius = 0.36,
 	bootHeight = 0.09;
 
 let legGeometry: THREE.BufferGeometry | null = null;
@@ -42,6 +45,7 @@ export function createHopper(first: SpriteDraw): Actor {
 		rock = new THREE.Group(),
 		body = new THREE.Group(),
 		eyeSpot = new THREE.Vector3(0, 0.3, 1).normalize().multiplyScalar(bodyRadius * 0.86);
+	root.scale.setScalar(castScale * fit);
 	root.add(turn);
 	turn.add(rock);
 	rock.add(body);

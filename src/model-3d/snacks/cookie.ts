@@ -9,6 +9,9 @@ import { inked, toon } from '../toon.ts';
 import { createPickup } from './pickup.ts';
 import { candy, ellipsoid, lathe, scatter } from './shared.ts';
 
+/** The model is a little smaller than the sprite art before the cast scale is applied. */
+const fit = 0.94;
+
 let discGeometry: THREE.BufferGeometry | null = null,
 	fudgeGeometry: THREE.BufferGeometry | null = null,
 	chipGeometry: THREE.BufferGeometry | null = null;
@@ -42,6 +45,7 @@ function build(body: THREE.Group): void {
 	}
 	const cookie = new THREE.Group();
 	cookie.rotation.x = Math.PI / 2;
+	cookie.scale.setScalar(fit);
 	cookie.add(inked(discGeometry, toon(candy.brown, { emissive: 0x2a1200 }), 0.03));
 	for (const side of [1, -1]) {
 		const fudge = new THREE.Mesh(fudgeGeometry, toon(candy.darkRed, { emissive: 0x330000 }));

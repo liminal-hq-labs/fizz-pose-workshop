@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import { clamp, ellipsoid, phaseOf, sparkleGeometry } from './shared.ts';
 
 const blobs = 7,
@@ -63,7 +64,7 @@ export function createPuff(first: SpriteDraw): Actor {
 				t = frame.time;
 			/* Puffs sit in front of the creatures they hide. */
 			root.position.set(draw.x, draw.y, 0.4);
-			root.scale.setScalar(draw.w);
+			root.scale.setScalar(draw.w * castScale);
 			if (draw.tint !== tint) {
 				tint = draw.tint;
 				cloudMaterial.color.setHex(tint);

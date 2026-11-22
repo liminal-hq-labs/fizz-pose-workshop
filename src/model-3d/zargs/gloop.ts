@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import {
 	Eye,
 	Motion,
@@ -23,6 +24,13 @@ import {
 	threeQuarter,
 } from './parts.ts';
 
+/**
+ * The model is drawn a little narrower and lower than the sprite art, which the stalks and the eye rise out of; the cast
+ * scale then takes it to the hero's proportions.
+ */
+const fitWidth = 0.97,
+	fitHeight = 0.96;
+
 let segmentGeometry: THREE.BufferGeometry | null = null;
 
 /** A unit-length stalk segment that rises from the origin; scaled in Y to set its length. */
@@ -39,15 +47,15 @@ class Stalk {
 
 	constructor(tint: Tint, size: number, eyeRadius: number) {
 		const lower = part(this.root, tint, segment(), ega.green, { ink: 0.018 });
-		lower.scale.set(size, 0.26 * size, size);
-		this.elbow.position.y = 0.26 * size;
+		lower.scale.set(size, 0.2 * size, size);
+		this.elbow.position.y = 0.2 * size;
 		this.root.add(this.elbow);
 		part(this.elbow, tint, ellipsoid(0.052 * size, 0.052 * size, 0.052 * size), ega.green, {
 			ink: 0.018,
 		});
 		const upper = part(this.elbow, tint, segment(), ega.green, { ink: 0.018 });
-		upper.scale.set(size, 0.2 * size, size);
-		this.eye = new Eye(this.elbow, tint, eyeRadius, [0, 0.2 * size + eyeRadius * 0.55, 0]);
+		upper.scale.set(size, 0.16 * size, size);
+		this.eye = new Eye(this.elbow, tint, eyeRadius, [0, 0.16 * size + eyeRadius * 0.55, 0]);
 	}
 
 	/** `lean` tilts the whole stalk forward and `bend` hooks the upper part further over. */
@@ -67,6 +75,7 @@ export function createGloop(first: SpriteDraw): Actor {
 		tall = new Stalk(tint, 1, 0.13),
 		small = new Stalk(tint, 0.78, 0.09);
 	root.add(turn);
+	root.scale.set(castScale * fitWidth, castScale * fitHeight, castScale * fitWidth);
 	turn.add(body, tall.root, small.root);
 
 	part(body, tint, ellipsoid(0.34, 0.25, 0.47), ega.green, { pos: [0, 0.26, 0] });
@@ -124,7 +133,7 @@ export function createGloop(first: SpriteDraw): Actor {
 			const moving = clamp(Math.abs(motion.vx) / 1.5, 0, 1),
 				ripple = Math.sin(t * 11 + seed * 6) * 0.03 * moving,
 				pant = stunned ? Math.sin(t * 5) * 0.03 : 0,
-				sy = 1.14 - 0.5 * stretch + pant,
+				sy = 1.14 - 0.32 * stretch + pant,
 				sz = 0.93 + 0.2 * stretch + ripple,
 				sx = 0.98 + 0.08 * stretch;
 			body.scale.set(sx, sy, sz);

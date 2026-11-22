@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
+import { castScale } from '../cast-scale.ts';
 import {
 	candy,
 	clamp,
@@ -25,9 +26,20 @@ export interface PickupLook {
 	reach?: number;
 	/** The turning rate in radians a second. */
 	spin?: number;
+	/**
+	 * Where the middle of the sprite's art sits above the sprite's centre, in the model's own units (the sprite's tiles divided by
+	 * the cast scale), for art that is not centred in its box.
+	 */
+	centre?: number;
 }
 
-const twinkleEvery = 2.6,
+/**
+ * The halo's width in the model's units, which the cast scale makes about 1.4 tiles: a pickup's neighbours in a row are a
+ * tile away, and their halos should only just touch.
+ */
+const haloSize = 1.05,
+	haloStrength = 0.45,
+	twinkleEvery = 2.6,
 	twinkleFor = 0.5;
 /** How long the pop lasts when a pickup is collected, in seconds, and how many sparkles fly out. */
 const popFor = 0.28,
@@ -41,11 +53,12 @@ export function createPickup(look: PickupLook, first: SpriteDraw): Actor {
 	const phase = phaseOf(first.x, first.y),
 		root = new THREE.Group(),
 		body = new THREE.Group(),
-		halo = new THREE.Mesh(glowGeometry(), glowMaterial(look.glow, 0.5)),
+		halo = new THREE.Mesh(glowGeometry(), glowMaterial(look.glow, haloStrength)),
 		twinkle = new THREE.Mesh(sparkleGeometry(), sparkleMaterial(candy.white, true)),
 		reach = look.reach ?? 0.5,
 		spin = look.spin ?? 1.2;
 	look.build(body);
+	body.position.y = look.centre ?? 0;
 	let fading: THREE.Material[] = [],
 		sparks: THREE.Mesh[] = [];
 	halo.position.z = -0.25;
@@ -59,11 +72,11 @@ export function createPickup(look: PickupLook, first: SpriteDraw): Actor {
 		update(draw, frame) {
 			const t = frame.time;
 			root.position.set(draw.x, draw.y, 0);
-			root.scale.setScalar(draw.w);
+			root.scale.setScalar(draw.w * castScale);
 			body.rotation.y = t * spin + phase;
 			body.rotation.z = Math.sin(t * 1.7 + phase) * 0.07;
 			body.rotation.x = Math.sin(t * 1.3 + phase * 2) * 0.05;
-			halo.scale.setScalar(2 + Math.sin(t * 2.6 + phase) * 0.18);
+			halo.scale.setScalar(haloSize + Math.sin(t * 2.6 + phase) * 0.1);
 			const clock = (t + phase * 0.6) / twinkleEvery,
 				cycle = Math.floor(clock),
 				local = (clock - cycle) * (twinkleEvery / twinkleFor);
@@ -117,7 +130,7 @@ export function createPickup(look: PickupLook, first: SpriteDraw): Actor {
 			body.scale.setScalar(1 + 0.9 * out);
 			for (const material of fading)
 				material.opacity = (material.userData.base as number) * (1 - p);
-			halo.scale.setScalar(2 + 1.6 * out);
+			halo.scale.setScalar(haloSize + 1.2 * out);
 			for (let i = 0; i < sparks.length; i++) {
 				const spark = sparks[i],
 					a: number = spark.userData.angle,

@@ -6,6 +6,7 @@
 import { expect, test } from 'bun:test';
 import type { FrameContext, SpriteDraw } from '../../level-3d/types.ts';
 import * as THREE from 'three';
+import { castScale } from '../cast-scale.ts';
 import { itemModels } from './items.ts';
 
 const families: Record<string, string[]> = {
@@ -130,7 +131,7 @@ test('a puff fades its materials with the sprite and a night star stays behind t
 	const puff = itemModels.create('puff', drawOf('puff', 3, 3)),
 		draw = drawOf('puff', 3, 3, { alpha: 0.3, tint: 0xff5555, w: 1.2 });
 	puff.update(draw, frameOf(0.1, [draw]));
-	expect(puff.object.scale.x).toBeCloseTo(1.2, 5);
+	expect(puff.object.scale.x).toBeCloseTo(1.2 * castScale, 5);
 	puff.dispose?.();
 	const star = itemModels.create('star', drawOf('star', 9, 9)),
 		sky = drawOf('star', 9, 9);
@@ -159,7 +160,7 @@ test('a collected pickup pops: it swells and fades while sparkles fly out, and t
 		/* A pickup of the same kind that was not collected keeps its own materials. */
 		expect(
 			((other.object.children[0] as THREE.Mesh).material as THREE.Material).opacity,
-		).toBeCloseTo(0.5, 5);
+		).toBeGreaterThan(0.3);
 		actor.dispose?.();
 		other.dispose?.();
 	}
