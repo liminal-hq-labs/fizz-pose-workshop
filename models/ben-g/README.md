@@ -27,3 +27,7 @@ Props (the pogo stick, ladder, ledge, telephone, loose can, musical notes and fi
 - **Godot, Unity, Unreal.** Import `ben-g-toon.glb` as a glTF scene. Keep back-face culling on for the `Ink` material and leave the materials unlit.
 
 `renders/` holds stills from the viewer, saved by `bun run model:render-g`.
+
+## Printing
+
+[`print/`](print/) holds printable versions: one solid, four filament colours, and a kit of single-colour pieces. See [its README](print/README.md).
