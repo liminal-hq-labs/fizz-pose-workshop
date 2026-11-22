@@ -6,7 +6,7 @@ Three versions of the cartoon Ben for a 3D printer, built by `bun run model:prin
 |---|---|---|
 | `ben-g-solid.stl` | Any, one colour | Ben and his base as a single solid. |
 | `ben-g-four-colour.3mf` | A multi-material printer (AMS, MMU, tool changer) | One model in five parts that fit together exactly: helmet green, shirt red, jeans blue, skin and white, and the base. |
-| `ben-g-kit.3mf` | Any, one colour at a time | Ten separate pieces in their assembled positions, each to print in one filament, with holes for alignment pins. |
+| `ben-g-kit.3mf` | Any, one colour at a time | Ten separate pieces in their assembled positions, each to print in one filament, with holes for alignment pins. The helmet lifts off the head as its own piece. |
 
 ![The solid](preview-solid.png)
 
@@ -47,7 +47,9 @@ The base is a fifth part so it can take any of the four. Open the file as one ob
 
 The small details (eyes, belt, badge, stripes) are relief on the piece they sit on, to paint or leave. The pieces divide where the colours change, so most joins are flat or gently curved faces that print well face down. Split the file into its objects in the slicer and turn each piece onto its best face.
 
-Nine joins have a 2 mm hole on each side for a pin cut from 1.75 mm filament: base to each runner, each runner to the jeans, jeans to shirt, each arm to the shirt, shirt to head, and head to helmet. The holes run up to 4 mm into each piece, less where the piece is thin, so cut each pin a little shorter than its two holes together (the build prints each length). The Stunner glues to his right hip without a pin.
+The helmet is a cap of its own: it parts from the head along the inside of its shell, so the head is a smooth dome and the helmet seats over it, located by a small bump under each vent.
+
+Eight joins have a 2 mm hole on each side for a pin cut from 1.75 mm filament: base to each runner, each runner to the jeans, jeans to shirt, each arm to the shirt, and shirt to head. The holes run up to 4 mm into each piece, less where the piece is thin, so cut each pin a little shorter than its two holes together (the build prints each length). The helmet and the Stunner glue on without pins.
 
 ## Other sizes
 

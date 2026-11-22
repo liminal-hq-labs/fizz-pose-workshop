@@ -58,6 +58,7 @@ const kitFamilies = [
 	{ name: 'runner', colour: RED },
 	{ name: 'base', colour: BASE },
 	{ name: 'stunner', colour: RED },
+	{ name: 'head', colour: SKIN },
 ] as const;
 /** The alignment pins are offcuts of 1.75 mm filament in 2 mm holes, up to 4 mm into each piece. */
 const pin = { hole: 2.0, deepest: 4, shallowest: 1.6, wall: 1.1 };
@@ -129,6 +130,8 @@ export function benGPrintSoup(height: number): Soup {
 			for (; o; o = o.parent) if (!o.visible) return false;
 			return true;
 		};
+	/* Skin above the collar belongs to the head piece; skin below it is an arm. */
+	const neckline = f.J.neck.getWorldPosition(new THREE.Vector3()).y - 0.03;
 	f.root.traverse((o) => {
 		if (!isMesh(o) || !shown(o) || o.userData.ol || o === f.marker) return;
 		const material = o.material;
@@ -145,12 +148,13 @@ export function benGPrintSoup(height: number): Soup {
 			family = (hex: number): number => {
 				if (isSkinned(o))
 					return hex === C.skin
-						? 2
+						? v.y > neckline
+							? 8
+							: 2
 						: hex === C.jeans || hex === C.jeansD || hex === C.stripe
 							? 4
 							: 3;
-				if (joint === 'head') if (tints || hex === C.rim) return 1;
-				if (joint === 'head') return 2;
+				if (joint === 'head') return tints || hex === C.rim ? 1 : 8;
 				if (gear) return 7;
 				return joint.startsWith('hand') || joint.startsWith('arm')
 					? 2
@@ -263,7 +267,12 @@ export function buildBenGPrint(height: number, voxel: number): BenGPrint {
 			mesh,
 		})),
 		minimum = Math.pow(height * 0.045, 3) / Math.pow(voxel, 3),
-		pieces = components(spread(exposedLabels(soup, 'piece', grid, occ), grid), occ, grid, minimum),
+		pieces = components(
+			spread(exposedLabels(soup, 'piece', grid, occ, [1, 8]), grid),
+			occ,
+			grid,
+			minimum,
+		),
 		drilled = drillPins(
 			pieces.labels,
 			occ,
@@ -282,9 +291,7 @@ export function buildBenGPrint(height: number, voxel: number): BenGPrint {
 			.map((part, _, all) => {
 				const twins = all.filter((other) => other.family === part.family),
 					side = twins.length > 1 ? (part.at[0] > 0 ? '-left' : '-right') : '',
-					head = part.family.name === 'skin' && part.at[2] > height * 0.7,
-					name =
-						part.family.name === 'skin' ? (head ? 'head' : 'arm' + side) : part.family.name + side;
+					name = (part.family.name === 'skin' ? 'arm' : part.family.name) + side;
 				return { name, colour: printColours[part.family.colour - 1].colour, mesh: part.mesh };
 			}),
 		pins = drilled.pins.map((p) => ({

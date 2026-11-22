@@ -148,13 +148,15 @@ export function rasterise(soup: Soup, g: Grid): Raster {
 /**
  * The label of each voxel the solid's outer surface passes through. Only samples that lie on that surface count, tested by
  * stepping half a voxel along the triangle's normal into open air, so a surface buried under another one never speckles
- * the colour above it, and the bodies divide along what can be seen.
+ * the colour above it, and the bodies divide along what can be seen. Labels listed in `buried` count wherever they are,
+ * for pieces that should part along a hidden surface.
  */
 export function exposedLabels(
 	soup: Soup,
 	which: 'colour' | 'piece',
 	g: Grid,
 	occ: Float32Array,
+	buried: readonly number[] = [],
 ): Uint8Array {
 	const labels = soup[which];
 	const { nx, ny, nz } = g,
@@ -174,7 +176,11 @@ export function exposedLabels(
 		};
 	eachSample(soup, g, (x, y, z, normal, corner) => {
 		if (!labels[corner]) return;
-		if (read(x + 0.5 * normal[0], y + 0.5 * normal[1], z + 0.5 * normal[2]) > 0.34) return;
+		if (
+			!buried.includes(labels[corner]) &&
+			read(x + 0.5 * normal[0], y + 0.5 * normal[1], z + 0.5 * normal[2]) > 0.34
+		)
+			return;
 		out[Math.round(x) + nx * (Math.round(y) + ny * Math.round(z))] = labels[corner];
 	});
 	return out;
