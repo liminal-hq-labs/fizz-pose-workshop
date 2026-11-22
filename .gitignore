@@ -8,3 +8,4 @@ playwright-report/
 .claude/settings.local.json
 .DS_Store
 *.log
+models/ben-g/print/stl/
