@@ -62,6 +62,26 @@ export class Mesher {
 		return this.tri(a, b, c, colour).tri(a, c, d, colour);
 	}
 
+	/** A triangle with a colour at each corner, which blend across it. */
+	triC(a: V3, b: V3, c: V3, ca: number, cb: number, cc: number): this {
+		const corners: [V3, number][] = [
+			[a, ca],
+			[b, cb],
+			[c, cc],
+		];
+		for (const [p, colour] of corners) {
+			scratch.setHex(colour);
+			this.positions.push(p[0], p[1], p[2]);
+			this.colours.push(scratch.r, scratch.g, scratch.b);
+		}
+		return this;
+	}
+
+	/** A quadrilateral with a colour at each corner, in the order of its points. */
+	quadC(a: V3, b: V3, c: V3, d: V3, ca: number, cb: number, cc: number, cd: number): this {
+		return this.triC(a, b, c, ca, cb, cc).triC(a, c, d, ca, cc, cd);
+	}
+
 	/** An axis-aligned box. Colours may differ per face group. */
 	box(
 		x0: number,

@@ -19,7 +19,9 @@ import {
 } from './features.ts';
 import {
 	blockGeometry,
+	blockTile,
 	fillGeometry,
+	groundTile,
 	platformGeometry,
 	slopeGeometry,
 	slopeHeights,
@@ -29,6 +31,7 @@ import {
 } from './ground.ts';
 import { glowGeometry, glowMaterial as haloMaterial } from '../snacks/shared.ts';
 import { tileHash } from './hash.ts';
+import type { Surroundings } from './surroundings.ts';
 import {
 	chocolateMaterial,
 	chocolateTime,
@@ -171,6 +174,9 @@ function exitActor(family: 'exitBot' | 'exitTop', first: SpriteDraw): Actor {
 	return tileActor(group, first);
 }
 
+/** The widest a crystal cluster turns about its own axis, in radians: small, so it stays inside its cell. */
+const crystalYaw = 0.24;
+
 const batch = new TileBatch();
 
 /** How a family's tiles are drawn in the batch, for the families that go in it. */
@@ -178,23 +184,37 @@ function batched(
 	family: string,
 	first: SpriteDraw,
 ): { look: Look; geometry: THREE.BufferGeometry; info: TileInfo; yaw: number } | null {
-	const solid = (look: Look, geometry: THREE.BufferGeometry, top = 0.5) => ({
+	const solid = (
+		look: Look,
+		geometry: THREE.BufferGeometry,
+		edges: readonly [number, number],
+		build: (around: Surroundings) => THREE.BufferGeometry,
+		top = 0.5,
+	) => ({
 		look,
 		geometry,
 		yaw: 0,
-		info: { solidTop: top },
+		info: { solidTop: top, edges, build },
 	});
+	const shaped = (hl: number, hr: number, crust: boolean) => (around: Surroundings) =>
+		groundTile({ hl, hr, crust }, first.x, first.y, around);
 	if (isSlope(family)) {
 		const [hl, hr] = slopeHeights[family];
-		return solid('ground', slopeGeometry(family, variantOf(first)), -0.5 + (hl + hr) / 2);
+		return solid(
+			'ground',
+			slopeGeometry(family, variantOf(first)),
+			[hl, hr],
+			shaped(hl, hr, true),
+			-0.5 + (hl + hr) / 2,
+		);
 	}
 	switch (family) {
 		case 'fill':
-			return solid('fill', fillGeometry(variantOf(first)));
+			return solid('fill', fillGeometry(variantOf(first)), [1, 1], shaped(1, 1, false));
 		case 'top':
-			return solid('ground', topGeometry(variantOf(first)));
+			return solid('ground', topGeometry(variantOf(first)), [1, 1], shaped(1, 1, true));
 		case 'block':
-			return solid('ground', blockGeometry());
+			return solid('ground', blockGeometry(), [1, 1], (around) => blockTile(around.below));
 		case 'plat':
 			return { look: 'prop', geometry: platformGeometry(), yaw: 0, info: {} };
 		case 'spike':
@@ -203,7 +223,7 @@ function batched(
 			return {
 				look: 'glow',
 				geometry: crystalGeometry(),
-				yaw: (tileHash(first.x, first.y, 5) - 0.5) * 0.9,
+				yaw: (tileHash(first.x, first.y, 5) - 0.5) * crystalYaw,
 				info: {},
 			};
 		case 'chocTop':
@@ -278,7 +298,7 @@ export const terrainModels: ModelSet = {
 			case 'crystal': {
 				const mesh = tileMesh(crystalGeometry(), glowMaterial, { cast: true, receive: true }),
 					actor = tileActor(mesh, first);
-				mesh.rotation.y = (tileHash(first.x, first.y, 5) - 0.5) * 0.9;
+				mesh.rotation.y = (tileHash(first.x, first.y, 5) - 0.5) * crystalYaw;
 				mesh.updateMatrix();
 				return actor;
 			}

@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import type { Placed } from '../../level-3d/types.ts';
 import { chasmGeometry, massifGeometry } from './chasm.ts';
+import type { Surroundings } from './surroundings.ts';
 import {
 	chocolateMaterial,
 	glowMaterial,
@@ -40,6 +41,10 @@ export interface TileInfo {
 	solidTop?: number;
 	/** True for tiles of a pool, which is a pit that is filled in. */
 	pool?: boolean;
+	/** For solid tiles: the height of the left and right edge of the surface, as fractions of the tile, so neighbours can join. */
+	edges?: readonly [number, number];
+	/** Builds the tile's geometry for what is around it; the batch calls it again when the neighbours change. */
+	build?: (around: Surroundings) => THREE.BufferGeometry;
 }
 
 interface Part {
@@ -49,6 +54,8 @@ interface Part {
 	y: number;
 	yaw: number;
 	info: TileInfo;
+	/** The signature of the surroundings `geometry` was built for, when `info.build` made it. */
+	sig?: string;
 }
 
 interface Chunk {
@@ -57,6 +64,11 @@ interface Chunk {
 	meshes: THREE.Mesh[];
 	dirty: boolean;
 	wallKey: string;
+}
+
+/** A key for the tile whose centre is at (x, y). */
+function cellKey(x: number, y: number): number {
+	return (Math.floor(x) + 100000) * 8192 + Math.floor(y) + 4096;
 }
 
 /** Copies `parts` into one geometry, moving each to its tile. All the geometries must carry the same attributes. */
@@ -109,6 +121,8 @@ export class TileBatch {
 	private readonly ends: THREE.Mesh[] = [];
 	private endsKey = '';
 	private columnsDirty = false;
+	/** The solid tiles by column and row, for tiles to look at their neighbours. */
+	private readonly cells = new Map<number, Part>();
 
 	constructor() {
 		this.root.name = 'crater terrain';
@@ -140,13 +154,61 @@ export class TileBatch {
 		chunk.parts.add(part);
 		chunk.dirty = true;
 		if (info.solidTop !== undefined || info.pool) this.columnsDirty = true;
+		if (info.edges) {
+			this.cells.set(cellKey(x, y), part);
+			this.touchNeighbours(x);
+		}
 		return {
 			remove: () => {
 				chunk.parts.delete(part);
 				chunk.dirty = true;
 				if (info.solidTop !== undefined || info.pool) this.columnsDirty = true;
+				if (info.edges) {
+					if (this.cells.get(cellKey(x, y)) === part) this.cells.delete(cellKey(x, y));
+					this.touchNeighbours(x);
+				}
+				if (part.sig !== undefined) part.geometry.dispose();
 			},
 		};
+	}
+
+	/** Marks the chunks either side of a column dirty, since a tile there may take its shape from this one. */
+	private touchNeighbours(x: number): void {
+		for (const dx of [-1, 1]) {
+			const chunk = this.chunks.get(Math.floor((x + dx) / chunkTiles));
+			if (chunk) chunk.dirty = true;
+		}
+	}
+
+	/** What stands around a tile, read from the solid tiles the batch holds. */
+	private around(part: Part): Surroundings {
+		const { x, y } = part,
+			at = (dx: number, dy: number): Part | undefined => this.cells.get(cellKey(x + dx, y + dy)),
+			left = at(-1, 0),
+			right = at(1, 0),
+			upLeft = at(-1, 1),
+			upRight = at(1, 1);
+		return {
+			leftH: left?.info.edges?.[1] ?? 0,
+			rightH: right?.info.edges?.[0] ?? 0,
+			wallL: (upLeft?.info.edges?.[1] ?? 0) >= 0.5,
+			wallR: (upRight?.info.edges?.[0] ?? 0) >= 0.5,
+			below: at(0, -1) !== undefined,
+		};
+	}
+
+	/** Builds the geometry of every tile whose surroundings have changed since it was last built. */
+	private rebuildTiles(chunk: Chunk): void {
+		for (const part of chunk.parts) {
+			const build = part.info.build;
+			if (!build) continue;
+			const around = this.around(part),
+				sig = `${around.leftH}|${around.rightH}|${around.wallL}|${around.wallR}|${around.below}`;
+			if (sig === part.sig) continue;
+			if (part.sig !== undefined) part.geometry.dispose();
+			part.geometry = build(around);
+			part.sig = sig;
+		}
 	}
 
 	/** Rebuilds what changed since the last call. */
@@ -227,6 +289,7 @@ export class TileBatch {
 	}
 
 	private rebuild(chunk: Chunk, open: Map<number, number> | null): void {
+		this.rebuildTiles(chunk);
 		for (const mesh of chunk.meshes) {
 			mesh.geometry.dispose();
 			this.root.remove(mesh);

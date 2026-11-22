@@ -7,8 +7,9 @@ import * as THREE from 'three';
 import { Mesher, shade, type V3 } from './mesher.ts';
 import { palette } from './palette.ts';
 import { rng } from './hash.ts';
+import { depth } from '../toon.ts';
 
-const half = 1.5;
+const half = depth.lane / 2;
 const cache = new Map<string, THREE.BufferGeometry>();
 
 function cached(key: string, make: () => THREE.BufferGeometry): THREE.BufferGeometry {
@@ -27,54 +28,52 @@ function withLocal(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
 	return geometry;
 }
 
-/** A square-based pyramid standing on the plane y, base anticlockwise seen from above. */
-function spike(
-	m: Mesher,
-	x: number,
-	y: number,
-	z: number,
-	r: number,
-	h: number,
-	base: number,
-): void {
-	m.pyramid(
-		[
-			[x - r, y, z + r],
-			[x + r, y, z + r],
-			[x + r, y, z - r],
-			[x - r, y, z - r],
-		],
-		[x, y + h, z],
-		[base, shade(base, 0.72), shade(base, 1.25), shade(base, 0.9)],
-	);
-}
-
-/** A bed of rusty spikes on a plate: four across and three deep, filling the lane. */
+/**
+ * A row of small sharp spikes, as drawn: four across the tile, each a quarter tile wide at its foot and half a tile tall,
+ * standing on the bottom of the cell with no plate under them. They run three deep across the lane, and each is rust on its
+ * lit side and red on the other, like the sprite.
+ */
 export function spikeGeometry(): THREE.BufferGeometry {
 	return cached('spike', () => {
-		const m = new Mesher();
-		m.box(-0.5, -0.5, -1.4, 0.5, -0.3, 1.4, palette.spikeBase, { back: false, bottom: false });
-		for (let row = 0; row < 2; row++)
-			for (let i = 0; i < 2; i++) {
-				const x = -0.25 + i * 0.5,
-					z = -0.6 + row * 1.2,
-					h = 0.58 + ((i * 3 + row * 5) % 4) * 0.03;
-				spike(m, x, -0.3, z, 0.2, h, palette.spikeRed);
-				/* A pale tip so the points catch the eye. */
-				const tip = -0.3 + h - 0.18;
+		const m = new Mesher(),
+			r = 0.118,
+			base = -0.5,
+			rise = 0.5;
+		for (const z of [-0.5, 0, 0.5])
+			for (let i = 0; i < 4; i++) {
+				const x = -0.375 + i * 0.25,
+					tip = rise;
 				m.pyramid(
 					[
-						[x - 0.06, tip, z + 0.06],
-						[x + 0.06, tip, z + 0.06],
-						[x + 0.06, tip, z - 0.06],
-						[x - 0.06, tip, z - 0.06],
+						[x - r, base, z + r],
+						[x + r, base, z + r],
+						[x + r, base, z - r],
+						[x - r, base, z - r],
 					],
-					[x, -0.3 + h, z],
+					[x, base + tip, z],
+					[
+						palette.spikeBase,
+						palette.spikeRed,
+						shade(palette.spikeRed, 0.7),
+						shade(palette.spikeBase, 1.25),
+					],
+				);
+				/* A bright edge on the point, so the sharp end catches the eye. */
+				const t = base + tip * 0.72,
+					k = 0.28 * r;
+				m.pyramid(
+					[
+						[x - k, t, z + k],
+						[x + k, t, z + k],
+						[x + k, t, z - k],
+						[x - k, t, z - k],
+					],
+					[x, base + tip, z],
 					[
 						palette.spikeLight,
+						shade(palette.spikeLight, 0.85),
 						shade(palette.spikeLight, 0.8),
 						palette.spikeLight,
-						shade(palette.spikeLight, 0.9),
 					],
 				);
 			}
@@ -90,7 +89,7 @@ export function chocolateTopGeometry(): THREE.BufferGeometry {
 	return cached('chocTop', () => {
 		const m = new Mesher(),
 			nx = 8,
-			nz = 12,
+			nz = 8,
 			x = (i: number): number => -0.5 + i / nx,
 			z = (j: number): number => half - (j * 2 * half) / nz;
 		for (let i = 0; i < nx; i++) {
@@ -240,10 +239,10 @@ function exitFrame(m: Mesher): void {
 		m.box(
 			a,
 			-0.5,
-			-0.35,
+			-0.2,
 			b,
 			0.5,
-			0.35,
+			0.2,
 			{ top: palette.greenLight, front: palette.green, side: palette.green },
 			{
 				back: false,
@@ -260,10 +259,10 @@ export function exitBottomGeometry(): THREE.BufferGeometry {
 		m.box(
 			-0.38,
 			-0.5,
-			-0.35,
+			-0.2,
 			0.38,
 			0.5,
-			-0.15,
+			0,
 			{ top: palette.wood, front: palette.wood, side: palette.wood },
 			{
 				back: false,
@@ -273,12 +272,12 @@ export function exitBottomGeometry(): THREE.BufferGeometry {
 				right: false,
 			},
 		);
-		m.box(-0.025, -0.5, -0.15, 0.025, 0.5, -0.13, palette.woodDark, {
+		m.box(-0.025, -0.5, 0, 0.025, 0.5, 0.02, palette.woodDark, {
 			back: false,
 			bottom: false,
 			top: false,
 		});
-		m.box(0.2, -0.05, -0.15, 0.3, 0.05, -0.08, palette.knob, { back: false });
+		m.box(0.2, -0.05, 0, 0.3, 0.05, 0.07, palette.knob, { back: false });
 		return m.build();
 	});
 }
@@ -288,13 +287,13 @@ export function exitTopGeometry(): THREE.BufferGeometry {
 	return cached('exitTop', () => {
 		const m = new Mesher();
 		exitFrame(m);
-		m.box(-0.38, -0.5, -0.35, 0.38, -0.2, -0.15, palette.wood, {
+		m.box(-0.38, -0.5, -0.2, 0.38, -0.2, 0, palette.wood, {
 			back: false,
 			bottom: false,
 			left: false,
 			right: false,
 		});
-		m.box(-0.38, -0.2, -0.35, 0.38, 0.5, -0.15, palette.black, {
+		m.box(-0.38, -0.2, -0.2, 0.38, 0.5, 0, palette.black, {
 			back: false,
 			bottom: false,
 			left: false,
@@ -325,7 +324,7 @@ export function exitLettersGeometry(): THREE.BufferGeometry {
 					if (on !== '1') return;
 					const x = left + (index * 4 + c) * dx,
 						y = top - r * dy;
-					m.box(x, y - dy, -0.15, x + dx, y, -0.09, palette.yellow, { back: false, bottom: false });
+					m.box(x, y - dy, 0, x + dx, y, 0.06, palette.yellow, { back: false, bottom: false });
 				}),
 			);
 		});
@@ -360,7 +359,7 @@ function crystal(
 	}
 }
 
-/** A cluster of five pink and white crystals standing on the ground. */
+/** A cluster of five pink and white crystals on the ground, 0.82 wide and 0.88 tall like the sprite. */
 export function crystalGeometry(): THREE.BufferGeometry {
 	return cached('crystal', () => {
 		const m = new Mesher(),
@@ -372,11 +371,11 @@ export function crystalGeometry(): THREE.BufferGeometry {
 				palette.white,
 				palette.crystalLight,
 			];
-		crystal(m, 0, -0.1, 0.17, 0.95, 0.02, c);
-		crystal(m, -0.26, 0.1, 0.12, 0.6, -0.09, [c[2], c[0], c[1], c[2], c[0], c[4]]);
-		crystal(m, 0.25, 0.05, 0.13, 0.72, 0.08, [c[1], c[3], c[2], c[0], c[1], c[4]]);
-		crystal(m, 0.06, 0.4, 0.08, 0.38, 0.03, c);
-		crystal(m, -0.12, -0.45, 0.1, 0.8, -0.03, [c[0], c[2], c[1], c[4], c[0], c[2]]);
+		crystal(m, 0, -0.05, 0.15, 0.88, 0.02, c);
+		crystal(m, -0.24, 0.1, 0.13, 0.58, -0.08, [c[2], c[0], c[1], c[2], c[0], c[4]]);
+		crystal(m, 0.24, 0.05, 0.13, 0.68, 0.07, [c[1], c[3], c[2], c[0], c[1], c[4]]);
+		crystal(m, 0.08, 0.25, 0.08, 0.36, 0.03, c);
+		crystal(m, -0.13, -0.28, 0.1, 0.72, -0.03, [c[0], c[2], c[1], c[4], c[0], c[2]]);
 		return m.build();
 	});
 }

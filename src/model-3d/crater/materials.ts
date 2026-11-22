@@ -94,7 +94,7 @@ vTop = step(0.4, aLocal.y);
 float wave = sin(chocWorld.x * 1.7 + uTime * 0.9) * 0.5 + sin(chocWorld.z * 2.3 - uTime * 0.7 + chocWorld.x * 0.6) * 0.5;
 vWave = wave;
 vec4 bub = chocBubble(chocWorld.xz, uTime);
-transformed.y += vTop * (wave * 0.03 - 0.05 + bub.x * 0.7);`,
+transformed.y += vTop * (wave * 0.03 - 0.11 + bub.x * 0.7);`,
 		);
 	shader.fragmentShader = shader.fragmentShader
 		.replace('#include <common>', '#include <common>' + declarations)
@@ -125,4 +125,4 @@ vec3 bubbleLight = vec3(0.9, 0.6, 0.38) * (bubble.w * 0.8 + bubble.z * 0.6);
 totalEmissiveRadiance += onTop * gloss + heat + bubbleLight + vec3(0.012, 0.003, 0.0) * (1.0 - onTop);`,
 		);
 };
-chocolateMaterial.customProgramCacheKey = () => 'crater-chocolate-2';
+chocolateMaterial.customProgramCacheKey = () => 'crater-chocolate-3';

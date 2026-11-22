@@ -6,8 +6,20 @@
 import { describe, expect, test } from 'bun:test';
 import * as THREE from 'three';
 import type { FrameContext, SpriteDraw } from '../../level-3d/types.ts';
+import { depth } from '../toon.ts';
+import {
+	crystalGeometry,
+	doorGeometry,
+	exitBottomGeometry,
+	exitTopGeometry,
+	spikeGeometry,
+} from './features.ts';
 import {
 	blockGeometry,
+	blockTile,
+	groundTile,
+	platformGeometry,
+	walkBand,
 	fillGeometry,
 	slopeGeometry,
 	slopeHeights,
@@ -18,6 +30,7 @@ import {
 } from './ground.ts';
 import { mergeTiles } from './batch.ts';
 import { terrainModels } from './terrain.ts';
+import { enclosed } from './surroundings.ts';
 
 const spriteNames = [
 	'craterFill',
@@ -190,7 +203,7 @@ describe('slopes meet the game collision', () => {
 			const geometry = slopeGeometry(shape, 0),
 				position = geometry.getAttribute('position');
 			for (let i = 0; i < position.count; i++) {
-				if (Math.abs(position.getZ(i)) > 0.8) continue;
+				if (Math.abs(position.getZ(i)) > walkBand - 0.05) continue;
 				expect(position.getY(i) + 0.5).toBeLessThanOrEqual(
 					slopeSurface(shape, position.getX(i) + 0.5) + 1e-6,
 				);
@@ -349,5 +362,176 @@ describe('backdrop', () => {
 		expect(at(55, 50)).toBeCloseTo(rest, 6);
 		expect(at(40, 60)).not.toBeCloseTo(rest, 3);
 		actor.dispose?.();
+	});
+});
+
+/** The bounding box of a geometry, optionally only of the vertices within `zMax` of the middle of the lane. */
+function boxOf(geometry: THREE.BufferGeometry, zMax = Infinity): THREE.Box3 {
+	const position = geometry.getAttribute('position'),
+		box = new THREE.Box3(),
+		v = new THREE.Vector3();
+	for (let i = 0; i < position.count; i++) {
+		v.fromBufferAttribute(position, i);
+		if (Math.abs(v.z) <= zMax) box.expandByPoint(v);
+	}
+	return box;
+}
+
+describe('pieces match their art', () => {
+	test('the lane is 1.75 deep and the ground fills it', () => {
+		expect(depth.lane).toBe(1.75);
+		const box = boxOf(topGeometry(0));
+		expect(box.min.z).toBeCloseTo(-depth.lane / 2, 6);
+		expect(box.max.z).toBeLessThan(depth.lane / 2 + 0.1);
+	});
+
+	test('spikes are half a tile tall, stand on the bottom of the cell and fill its width', () => {
+		const box = boxOf(spikeGeometry());
+		expect(box.min.y).toBeCloseTo(-0.5, 6);
+		expect(box.max.y - box.min.y).toBeLessThanOrEqual(0.5 + 1e-6);
+		expect(box.max.y - box.min.y).toBeGreaterThan(0.45);
+		expect(box.max.x - box.min.x).toBeGreaterThan(0.9);
+		expect(box.min.x).toBeGreaterThanOrEqual(-0.5);
+		expect(box.max.x).toBeLessThanOrEqual(0.5);
+	});
+
+	test('the ledge hangs 0.375 from the top of its cell, ends on the cell edges and is shallower than the ground', () => {
+		const box = boxOf(platformGeometry());
+		expect(box.max.y).toBeCloseTo(0.5, 6);
+		expect(box.min.y).toBeCloseTo(0.125, 6);
+		expect(box.min.x).toBeCloseTo(-0.5, 6);
+		expect(box.max.x).toBeCloseTo(0.5, 6);
+		expect(box.max.z - box.min.z).toBeLessThanOrEqual(depth.shelf + 0.05);
+		expect(box.max.z - box.min.z).toBeLessThan(depth.lane);
+	});
+
+	test('the block fills its cell exactly, top at the cell top', () => {
+		for (const resting of [true, false]) {
+			const box = boxOf(blockTile(resting));
+			expect(box.min.x).toBeCloseTo(-0.5, 6);
+			expect(box.max.x).toBeCloseTo(0.5, 6);
+			expect(box.min.y).toBeCloseTo(-0.5, 6);
+			expect(box.max.y - 0.5).toBeLessThan(1e-6);
+		}
+		const floating = boxOf(blockTile(false));
+		expect(floating.max.z - floating.min.z).toBeLessThan(boxOf(blockTile(true)).max.z * 2);
+	});
+
+	test('the crystal is within 10 percent of the art, 0.81 wide and 0.88 tall, and stays in its cell when turned', () => {
+		const box = boxOf(crystalGeometry());
+		expect(box.min.y).toBeCloseTo(-0.5, 6);
+		expect(Math.abs(box.max.y - box.min.y - 0.875)).toBeLessThan(0.0875);
+		expect(Math.abs(box.max.x - box.min.x - 0.8125)).toBeLessThan(0.08);
+		const turned = box.clone().applyMatrix4(new THREE.Matrix4().makeRotationY(0.12));
+		expect(turned.min.x).toBeGreaterThanOrEqual(-0.5);
+		expect(turned.max.x).toBeLessThanOrEqual(0.5);
+	});
+
+	test('the door is a tile wide and two tall, and the exit halves are a tile each', () => {
+		const door = boxOf(doorGeometry());
+		expect(door.max.x - door.min.x).toBeCloseTo(1, 6);
+		expect(door.max.y - door.min.y).toBeCloseTo(2, 6);
+		for (const geometry of [exitBottomGeometry(), exitTopGeometry()]) {
+			const box = boxOf(geometry);
+			expect(box.max.x - box.min.x).toBeCloseTo(1, 6);
+			expect(box.max.y - box.min.y).toBeCloseTo(1, 6);
+		}
+	});
+});
+
+describe('ground tiles stay in their cell and walk at the collision height', () => {
+	const shapes = [
+		...(Object.keys(slopeHeights) as SlopeName[]).map((name) => ({
+			name,
+			hl: slopeHeights[name][0],
+			hr: slopeHeights[name][1],
+		})),
+		{ name: 'top', hl: 1, hr: 1 },
+	];
+	test('no vertex of a ground or fill tile leaves its cell in X, in any variant or surrounding', () => {
+		const around = [
+			{ leftH: 0, rightH: 0, wallL: true, wallR: true, below: false },
+			{ leftH: 1, rightH: 1, wallL: false, wallR: false, below: true },
+			{ leftH: 0, rightH: 1, wallL: true, wallR: false, below: true },
+		];
+		for (const shape of shapes)
+			for (const s of around)
+				for (let v = 0; v < variantCount; v++) {
+					const box = boxOf(
+						groundTile({ hl: shape.hl, hr: shape.hr, crust: true }, 40.5 + v, 6.5, s),
+					);
+					expect(box.min.x).toBeGreaterThanOrEqual(-0.5 - 1e-6);
+					expect(box.max.x).toBeLessThanOrEqual(0.5 + 1e-6);
+					expect(box.min.y).toBeGreaterThanOrEqual(-0.5 - 1e-6);
+				}
+		for (let v = 0; v < variantCount; v++) {
+			const box = boxOf(groundTile({ hl: 1, hr: 1, crust: false }, 40.5 + v, 6.5, around[0]));
+			expect(box.min.x).toBeGreaterThanOrEqual(-0.5 - 1e-6);
+			expect(box.max.x).toBeLessThanOrEqual(0.5 + 1e-6);
+			expect(box.max.y).toBeLessThanOrEqual(0.5 + 1e-6);
+		}
+	});
+
+	test('the walking strip of a top tile is exactly at the top of its cell, and only blades, pebbles and sprinkles stand above it', () => {
+		for (let v = 0; v < variantCount; v++) {
+			const walking = boxOf(
+				groundTile(
+					{ hl: 1, hr: 1, crust: true },
+					20.5 + v,
+					3.5,
+					enclosed({ hl: 1, hr: 1, crust: true }),
+				),
+				walkBand - 0.05,
+			);
+			expect(walking.max.y).toBeCloseTo(0.5, 6);
+			const whole = boxOf(topGeometry(v));
+			expect(whole.max.y).toBeLessThan(0.5 + 0.2);
+		}
+	});
+
+	test('the ends of a run sit on the cell boundary: end faces are at x = +/-0.5', () => {
+		const end = groundTile({ hl: 1, hr: 1, crust: true }, 10.5, 6.5, {
+				leftH: 0,
+				rightH: 1,
+				wallL: false,
+				wallR: false,
+				below: true,
+			}),
+			position = end.getAttribute('position');
+		let onEdge = 0;
+		for (let i = 0; i < position.count; i++) if (Math.abs(position.getX(i) + 0.5) < 1e-6) onEdge++;
+		expect(onEdge).toBeGreaterThan(8);
+		expect(boxOf(end).min.x).toBeCloseTo(-0.5, 6);
+	});
+
+	test('batched tiles around a gap end exactly on the cell boundaries', () => {
+		const frame = frameOf([]),
+			handles = [0, 1, 2, 5, 6, 7].map((x) =>
+				terrainModels.place!('top', draw('craterTop', 700.5 + x, 3.5))!,
+			),
+			fills = [0, 1, 2, 5, 6, 7].map((x) =>
+				terrainModels.place!('fill', draw('craterFill', 700.5 + x, 2.5))!,
+			);
+		terrainModels.sync?.(frame);
+		const ground = terrainModels.root!.children.filter((child) =>
+				child.name.startsWith('crater ground'),
+			),
+			box = new THREE.Box3();
+		for (const mesh of ground) {
+			const b = boxOf((mesh as THREE.Mesh).geometry);
+			if (b.min.x > 690 && b.max.x < 720) box.union(b);
+		}
+		/* The ground on the left of the gap ends at 703, the ground on its right starts at 705. */
+		const xs: number[] = [];
+		for (const mesh of ground) {
+			const position = (mesh as THREE.Mesh).geometry.getAttribute('position');
+			for (let i = 0; i < position.count; i++)
+				if (position.getX(i) > 702.9 && position.getX(i) < 705.1) xs.push(position.getX(i));
+		}
+		expect(xs.length).toBeGreaterThan(0);
+		expect(Math.max(...xs.filter((x) => x < 704))).toBeCloseTo(703, 6);
+		expect(Math.min(...xs.filter((x) => x > 704))).toBeCloseTo(705, 6);
+		for (const handle of [...handles, ...fills]) handle.remove();
+		terrainModels.sync?.(frame);
 	});
 });

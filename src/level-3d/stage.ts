@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import * as THREE from 'three';
+import { depth } from '../model-3d/toon.ts';
 import { Roster, type RosterStats } from './roster.ts';
 import { LevelSim, type SpriteSheet, stepSeconds } from './sim.ts';
 import type { FrameContext, ModelSet, SpriteDraw } from './types.ts';
@@ -16,8 +17,8 @@ const baseFov = 32;
 const maxFov = 56;
 /** The fewest tiles of the level's middle plane the view may show across, however narrow the screen. */
 const minViewTiles = 14;
-/** The camera's offset from the point it looks at, at the base distance: a little left and above, so the ground's top shows. */
-const cameraOffset = { x: -0.8, y: 2.2 };
+/** The camera's offset from the point it looks at, at the base distance: a little left and above: low enough to read as a side view, high enough that the ground's top shows. */
+const cameraOffset = { x: -0.8, y: 1.2 };
 /** How far above the sim's camera position the view looks, so Ben stands a little below the middle of the frame. */
 const lookRise = 0.9;
 /** How far Ben may stand from the middle of the frame, as a share of the half view: sideways, below it and above it. */
@@ -251,8 +252,9 @@ export class Stage {
 			right = new THREE.Vector3(sunOffset.z, 0, -sunOffset.x).normalize(),
 			up = new THREE.Vector3().crossVectors(right, sunOffset).normalize().negate();
 		/* The box must cover the visible ground and the lane's depth, as seen along the light. */
-		const w = right.x * (halfW + 1) + right.z * 1.5 + 0.5,
-			h = Math.abs(up.x) * (halfW + 1) + up.y * (halfH + 1.5) + Math.abs(up.z) * 1.5 + 0.5,
+		const reach = depth.lane / 2 + 0.3,
+			w = right.x * (halfW + 1) + right.z * reach + 0.5,
+			h = Math.abs(up.x) * (halfW + 1) + up.y * (halfH + 1.5) + Math.abs(up.z) * reach + 0.5,
 			key = `${w.toFixed(2)}|${h.toFixed(2)}`;
 		if (key !== this.shadowKey) {
 			this.shadowKey = key;

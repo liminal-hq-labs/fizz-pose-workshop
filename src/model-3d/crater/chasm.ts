@@ -4,13 +4,10 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import type * as THREE from 'three';
-import { rockColour } from './ground.ts';
-import { lattice, rng } from './hash.ts';
+import { half, strataColour } from './ground.ts';
+import { lattice } from './hash.ts';
 import { Mesher, shade, type V3 } from './mesher.ts';
 import { palette } from './palette.ts';
-
-/** Half the depth of the ground strip. */
-const half = 1.5;
 
 /** A point of a rock face grid: the same column and row always give the same bulge, so neighbouring faces join. */
 function bulge(ix: number, iy: number, salt: number, amount: number): number {
@@ -23,19 +20,28 @@ function bulge(ix: number, iy: number, salt: number, amount: number): number {
  */
 export function chasmGeometry(column: number, top: number, bottom: number): THREE.BufferGeometry {
 	const m = new Mesher(),
-		rnd = rng(column * 7919 + 13),
 		rows = Math.ceil(top - bottom),
 		y = (j: number): number => Math.max(bottom, top - j),
-		point = (i: number, j: number): V3 => [column + i, y(j), -half + bulge(column + i, j, 61, 0.3)];
+		point = (i: number, j: number): V3 => [
+			column + i,
+			y(j),
+			-half + bulge(column + i, j, 61, 0.14),
+		];
 	for (let j = rows - 1; j >= 0; j--) {
 		const depth = Math.min(1, (top - (y(j) + y(j + 1)) / 2) / 5),
-			dim = 1 - 0.78 * depth * depth;
-		m.quad(
+			dim = 0.62 * (1 - 0.8 * depth);
+		/* Strata run on through every column of a row, each stratum lit at its top and dark at its foot. */
+		const row = Math.floor((y(j) + y(j + 1)) / 2),
+			base = shade(strataColour(row, 0), (0.86 + 0.1 * lattice(column, row, 3)) * dim);
+		m.quadC(
 			point(0, j + 1),
 			point(1, j + 1),
 			point(1, j),
 			point(0, j),
-			shade(rockColour(rnd), 0.8 * dim),
+			shade(base, 0.8),
+			shade(base, 0.8),
+			shade(base, 1.08),
+			shade(base, 1.08),
 		);
 	}
 	return m.build();
@@ -53,7 +59,6 @@ export function massifGeometry(
 	top: number,
 ): THREE.BufferGeometry {
 	const m = new Mesher(),
-		rnd = rng(side * 4001 + 17),
 		height = Math.min(top, 34),
 		rows = Math.ceil(height - bottom),
 		x0 = side < 0 ? edge - width : edge,
@@ -61,17 +66,23 @@ export function massifGeometry(
 		point = (i: number, j: number): V3 => [
 			x0 + i,
 			y(j),
-			half + (i === 0 || i === width ? 0 : bulge(i, j, 62, 0.3) - 0.1),
+			half + (i === 0 || i === width ? 0 : bulge(i, j, 62, 0.16) - 0.04),
 		];
 	for (let i = 0; i < width; i++)
-		for (let j = 0; j < rows; j++)
-			m.quad(
+		for (let j = 0; j < rows; j++) {
+			const row = Math.floor(y(j)),
+				base = shade(strataColour(row, 0), 0.9 + 0.1 * lattice(x0 + i, row, 4));
+			m.quadC(
 				point(i, j),
 				point(i + 1, j),
 				point(i + 1, j + 1),
 				point(i, j + 1),
-				shade(rockColour(rnd), 0.95),
+				shade(base, 0.82),
+				shade(base, 0.82),
+				shade(base, 1.08),
+				shade(base, 1.08),
 			);
+		}
 	m.quad(
 		[x0, height, half + 0.06],
 		[x0 + width, height, half + 0.06],
