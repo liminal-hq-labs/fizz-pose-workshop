@@ -4,19 +4,48 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import * as THREE from 'three';
+import { Roster, type RosterStats } from './roster.ts';
 import { LevelSim, type SpriteSheet, stepSeconds } from './sim.ts';
-import type { Actor, FrameContext, ModelSet, SpriteDraw } from './types.ts';
+import type { FrameContext, ModelSet, SpriteDraw } from './types.ts';
 
-/** How far the camera stands from the level, in tiles: close enough that the view is about as wide as the game's. */
-const cameraDistance = 21;
-/** How far a moving sprite may travel in a frame and still be the same actor, in tiles. */
-const sameActorReach = 2.5;
+/** How far the camera stands from the level on a wide screen, in tiles: close, so the characters read at a glance. */
+const cameraDistance = 16;
+/** The camera's vertical field of view on a wide screen, in degrees. */
+const baseFov = 32;
+/** The widest field of view the camera takes on a narrow screen before it pulls back instead, in degrees. */
+const maxFov = 56;
+/** The fewest tiles of the level's middle plane the view may show across, however narrow the screen. */
+const minViewTiles = 14;
+/** The camera's offset from the point it looks at, at the base distance: a little left and above, so the ground's top shows. */
+const cameraOffset = { x: -0.8, y: 2.2 };
+/** How far above the sim's camera position the view looks, so Ben stands a little below the middle of the frame. */
+const lookRise = 0.9;
+/** How far Ben may stand from the middle of the frame, as a share of the half view: sideways, below it and above it. */
+const leadX = 0.4,
+	leadDown = 0.5,
+	leadUp = 0.25;
 
-interface Live {
-	actor: Actor;
-	x: number;
-	y: number;
-	seen: number;
+function clamp(value: number, low: number, high: number): number {
+	return Math.min(high, Math.max(low, value));
+}
+/** The sun's offset from the point it lights. */
+const sunOffset = new THREE.Vector3(-8, 16, 14);
+const shadowSize = 1536;
+
+/**
+ * The camera's field of view and distance for a screen shape and zoom. The camera stands at `cameraDistance`, with the
+ * base field of view, unless that would show fewer than `minViewTiles` across; then it widens the field of view, and when
+ * that reaches `maxFov` it pulls back as well.
+ */
+export function framing(aspect: number, zoom = 1): { fov: number; distance: number } {
+	const distance = cameraDistance / zoom,
+		half = minViewTiles / zoom / 2,
+		needed = half / (distance * aspect),
+		base = Math.tan((baseFov * Math.PI) / 360);
+	if (needed <= base) return { fov: baseFov, distance };
+	const fov = (2 * Math.atan(needed) * 180) / Math.PI;
+	if (fov <= maxFov) return { fov, distance };
+	return { fov: maxFov, distance: half / (Math.tan((maxFov * Math.PI) / 360) * aspect) };
 }
 
 /**
@@ -72,150 +101,173 @@ export interface StageOptions {
 	held: () => number;
 }
 
+/** What the stage measured on its last frame, as plain numbers for a debug readout. */
+export interface StageStats extends RosterStats {
+	/** Milliseconds `sync` took: reading the sim's list, matching actors and updating them. */
+	syncMs: number;
+	/** Draw calls in the last render, shadow pass included. */
+	calls: number;
+	/** Triangles in the last render, shadow pass included. */
+	triangles: number;
+	geometries: number;
+	programs: number;
+	/** Frames a second, smoothed over about a second of `tick` calls. */
+	fps: number;
+}
+
 /** The scene, the camera and the pool of actors. */
 export class Stage {
 	readonly scene = new THREE.Scene();
-	readonly camera = new THREE.PerspectiveCamera(32, 16 / 9, 0.5, 400);
+	readonly camera = new THREE.PerspectiveCamera(baseFov, 16 / 9, 0.5, 400);
 	readonly renderer: THREE.WebGLRenderer;
 	readonly draws: SpriteDraw[] = [];
 	/** Sprite names drawn by the flat fallback this frame, for tooling that reports missing models. */
-	readonly unmodelled = new Set<string>();
+	readonly unmodelled: Set<string>;
+	/** Counts from the last frame: actors, draw calls, triangles, milliseconds in `sync`. Read it, do not write it. */
+	readonly stats: StageStats = {
+		fixedActors: 0,
+		placedTiles: 0,
+		movingActors: 0,
+		leaving: 0,
+		sprites: 0,
+		reconciles: 0,
+		syncMs: 0,
+		calls: 0,
+		triangles: 0,
+		geometries: 0,
+		programs: 0,
+		fps: 0,
+	};
 	/** When true the stage does not advance the sim, so tooling can pose a frame. */
 	paused = false;
 	/** How much closer than usual the camera stands; 2 is twice as close, centred on Ben. */
 	zoom = 1;
-	private readonly sets: readonly ModelSet[];
-	private readonly fixed = new Map<string, Live>();
-	private readonly moving = new Map<string, Live[]>();
-	private readonly owner = new Map<
-		string,
-		{ set: ModelSet; family: string; fixed: boolean } | null
-	>();
+	private readonly roster: Roster;
 	private readonly fallback: ModelSet;
-	private frameNumber = 0;
+	private readonly sun: THREE.DirectionalLight;
 	private carry = 0;
 	private last = 0;
 	private time = 0;
-	private view = { x: 12, y: 7 };
+	private smoothDt = 0;
+	private shadowKey = '';
+	private readonly target = new THREE.Vector3();
+	private readonly frame: FrameContext = {
+		time: 0,
+		dt: 0,
+		ben: { x: 0, y: 0 },
+		camera: { x: 0, y: 0, z: cameraDistance },
+		draws: this.draws,
+	};
 
 	constructor(private readonly options: StageOptions) {
-		this.sets = options.sets;
 		this.fallback = flatSprites(options.sheet, options.sheetImage);
+		this.roster = new Roster(this.scene, options.sets, this.fallback);
+		this.unmodelled = this.roster.unmodelled;
 		this.renderer = new THREE.WebGLRenderer({ canvas: options.canvas, antialias: true });
 		this.renderer.shadowMap.enabled = true;
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		this.scene.background = new THREE.Color(0x1a1030);
+		/* A little haze that starts behind the level, so the backdrop's layers separate with distance. */
+		this.scene.fog = new THREE.Fog(0xd864b8, 26, 260);
 		this.scene.add(new THREE.HemisphereLight(0xdfe6ff, 0x4a3050, 1.5));
-		const sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
+		const sun = (this.sun = new THREE.DirectionalLight(0xfff1dc, 2.4));
 		sun.name = 'sun';
-		sun.position.set(-8, 16, 14);
+		sun.position.copy(sunOffset);
 		sun.castShadow = true;
-		sun.shadow.mapSize.set(2048, 2048);
-		sun.shadow.camera.left = -22;
-		sun.shadow.camera.right = 22;
-		sun.shadow.camera.top = 16;
-		sun.shadow.camera.bottom = -16;
-		sun.shadow.camera.far = 80;
+		sun.shadow.mapSize.set(shadowSize, shadowSize);
+		sun.shadow.camera.near = 1;
+		sun.shadow.camera.far = 56;
 		sun.shadow.bias = -0.0015;
 		this.scene.add(sun, sun.target);
 	}
 
-	private claim(name: string): { set: ModelSet; family: string; fixed: boolean } | null {
-		let hit = this.owner.get(name);
-		if (hit !== undefined) return hit;
-		hit = null;
-		for (const set of this.sets) {
-			const family = set.family(name);
-			if (family !== null) {
-				hit = { set, family, fixed: set.fixed?.(family) ?? false };
-				break;
-			}
-		}
-		this.owner.set(name, hit);
-		return hit;
-	}
-
-	private make(set: ModelSet, family: string, draw: SpriteDraw): Live {
-		const actor = set.create(family, draw);
-		this.scene.add(actor.object);
-		return { actor, x: draw.x, y: draw.y, seen: this.frameNumber };
-	}
-
-	private drop(live: Live): void {
-		live.actor.dispose?.();
-		this.scene.remove(live.actor.object);
-	}
-
 	/** Reads the sim's frame and brings the actors into line with it. */
 	sync(alpha: number, dt: number): void {
-		const sim = this.options.sim,
-			view = sim.frame(alpha, this.draws),
-			ben = this.draws.find((draw) => draw.name.startsWith('ben_')),
-			frame: FrameContext = {
-				time: this.time,
-				dt,
-				ben: ben ? { x: ben.x, y: ben.y } : { x: view.cameraX, y: view.cameraY },
-				draws: this.draws,
-			};
-		this.frameNumber++;
-		this.unmodelled.clear();
-		this.view = { x: view.cameraX, y: view.cameraY };
-		for (const draw of this.draws) {
-			const claimed = this.claim(draw.name),
-				set = claimed?.set ?? this.fallback,
-				family = claimed?.family ?? draw.name;
-			if (!claimed) this.unmodelled.add(draw.name);
-			let live: Live | undefined;
-			if (claimed?.fixed) {
-				const key = `${family}|${draw.x.toFixed(2)}|${draw.y.toFixed(2)}`;
-				live = this.fixed.get(key);
-				if (!live) this.fixed.set(key, (live = this.make(set, family, draw)));
-			} else {
-				const key = `${set.name}|${family}`;
-				let list = this.moving.get(key);
-				if (!list) this.moving.set(key, (list = []));
-				let best = sameActorReach * sameActorReach;
-				for (const other of list) {
-					if (other.seen === this.frameNumber) continue;
-					const d = (other.x - draw.x) ** 2 + (other.y - draw.y) ** 2;
-					if (d < best) {
-						best = d;
-						live = other;
-					}
-				}
-				if (!live) list.push((live = this.make(set, family, draw)));
+		const started = performance.now(),
+			view = this.options.sim.frame(alpha, this.draws),
+			draws = this.draws;
+		let ben: SpriteDraw | undefined;
+		/* Ben is drawn near the end of the list. */
+		for (let i = draws.length - 1; i >= 0; i--)
+			if (draws[i].name.startsWith('ben_')) {
+				ben = draws[i];
+				break;
 			}
-			live.seen = this.frameNumber;
-			live.x = draw.x;
-			live.y = draw.y;
-			live.actor.update(draw, frame);
-		}
-		for (const [key, live] of this.fixed)
-			if (live.seen !== this.frameNumber) {
-				this.drop(live);
-				this.fixed.delete(key);
-			}
-		for (const list of this.moving.values())
-			for (let i = list.length - 1; i >= 0; i--)
-				if (list[i].seen !== this.frameNumber) {
-					this.drop(list[i]);
-					list.splice(i, 1);
-				}
+		const frame = this.frame,
+			close = this.zoom > 1,
+			look = this.target;
+		frame.time = this.time;
+		frame.dt = dt;
+		frame.ben.x = ben ? ben.x : view.cameraX;
+		frame.ben.y = ben ? ben.y : view.cameraY;
 		/* The camera follows the sim's own, pulled back and raised a little so the level reads as a place. Zoomed in, it
-		   centres on Ben instead. */
-		const close = this.zoom > 1,
-			target = close
-				? new THREE.Vector3(frame.ben.x, frame.ben.y, 0)
-				: new THREE.Vector3(this.view.x, this.view.y + 0.6, 0);
+		   centres on Ben instead. It is placed before any actor is updated, so models see this frame's view. */
+		const { fov, distance } = framing(this.camera.aspect, this.zoom),
+			scale = distance / cameraDistance;
+		if (close) look.set(frame.ben.x, frame.ben.y, 0);
+		else {
+			/* The sim frames a wider view than this one, and holds it still at the level's ends, which can leave Ben at
+			   the edge or off screen. Keep him within a share of the half view of the centre. */
+			const halfH = distance * Math.tan((fov * Math.PI) / 360),
+				halfW = halfH * this.camera.aspect;
+			look.set(
+				clamp(view.cameraX, frame.ben.x - halfW * leadX, frame.ben.x + halfW * leadX),
+				clamp(
+					view.cameraY + lookRise,
+					frame.ben.y - halfH * leadUp,
+					frame.ben.y + halfH * leadDown,
+				),
+				0,
+			);
+		}
+		if (Math.abs(this.camera.fov - fov) > 1e-6) {
+			this.camera.fov = fov;
+			this.camera.updateProjectionMatrix();
+		}
 		this.camera.position.set(
-			target.x - 1 / this.zoom,
-			target.y + 2.6 / this.zoom,
-			cameraDistance / this.zoom,
+			look.x + cameraOffset.x * scale,
+			look.y + cameraOffset.y * scale,
+			distance,
 		);
-		this.camera.lookAt(target);
-		const sun = this.scene.getObjectByName('sun') as THREE.DirectionalLight;
-		sun.position.set(target.x - 8, target.y + 16, 14);
-		sun.target.position.copy(target);
+		this.camera.lookAt(look);
+		frame.camera.x = this.camera.position.x;
+		frame.camera.y = this.camera.position.y;
+		frame.camera.z = distance;
+		this.roster.sync(draws, frame);
+		this.aimSun(look, fov, distance);
+		Object.assign(this.stats, this.roster.stats);
+		this.stats.syncMs = performance.now() - started;
+	}
+
+	/**
+	 * Points the sun at the strip of level in view and fits its shadow box to it, snapped to whole shadow texels so
+	 * shadows do not swim as the camera moves.
+	 */
+	private aimSun(look: THREE.Vector3, fov: number, distance: number): void {
+		const halfH = distance * Math.tan((fov * Math.PI) / 360),
+			halfW = halfH * this.camera.aspect,
+			cam = this.sun.shadow.camera,
+			/* The sun looks along -sunOffset; these are the shadow camera's right and up in the world. */
+			right = new THREE.Vector3(sunOffset.z, 0, -sunOffset.x).normalize(),
+			up = new THREE.Vector3().crossVectors(right, sunOffset).normalize().negate();
+		/* The box must cover the visible ground and the lane's depth, as seen along the light. */
+		const w = right.x * (halfW + 1) + right.z * 1.5 + 0.5,
+			h = Math.abs(up.x) * (halfW + 1) + up.y * (halfH + 1.5) + Math.abs(up.z) * 1.5 + 0.5,
+			key = `${w.toFixed(2)}|${h.toFixed(2)}`;
+		if (key !== this.shadowKey) {
+			this.shadowKey = key;
+			cam.left = -w;
+			cam.right = w;
+			cam.top = h;
+			cam.bottom = -h;
+			cam.updateProjectionMatrix();
+		}
+		const textel = (2 * w) / shadowSize,
+			texelUp = (2 * h) / shadowSize,
+			snapR = Math.round(look.dot(right) / textel) * textel - look.dot(right),
+			snapU = Math.round(look.dot(up) / texelUp) * texelUp - look.dot(up);
+		this.sun.target.position.copy(look).addScaledVector(right, snapR).addScaledVector(up, snapU);
+		this.sun.position.copy(this.sun.target.position).add(sunOffset);
 	}
 
 	resize(): void {
@@ -226,6 +278,20 @@ export class Stage {
 		this.renderer.setSize(width, height, false);
 		this.camera.aspect = width / height;
 		this.camera.updateProjectionMatrix();
+	}
+
+	private render(dt: number): void {
+		this.renderer.render(this.scene, this.camera);
+		const info = this.renderer.info,
+			stats = this.stats;
+		stats.calls = info.render.calls;
+		stats.triangles = info.render.triangles;
+		stats.geometries = info.memory.geometries;
+		stats.programs = info.programs?.length ?? 0;
+		if (dt > 0) {
+			this.smoothDt = this.smoothDt ? this.smoothDt * 0.95 + dt * 0.05 : dt;
+			stats.fps = 1 / this.smoothDt;
+		}
 	}
 
 	/** One animation frame: steps the sim as often as real time asks, then draws. */
@@ -242,7 +308,7 @@ export class Stage {
 			}
 		}
 		this.sync(this.paused ? 0 : this.carry / stepSeconds, dt);
-		this.renderer.render(this.scene, this.camera);
+		this.render(dt);
 	}
 
 	/** Advances the sim by whole steps with fixed input and draws once, for tooling and tests. */
@@ -250,6 +316,6 @@ export class Stage {
 		for (let i = 0; i < steps; i++) this.options.sim.step(held);
 		this.time += steps * stepSeconds;
 		this.sync(0, steps * stepSeconds);
-		this.renderer.render(this.scene, this.camera);
+		this.render(0);
 	}
 }

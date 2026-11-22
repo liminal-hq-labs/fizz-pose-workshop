@@ -36,7 +36,7 @@ function drawOf(name: string, x: number, y: number, extra: Partial<SpriteDraw> =
 }
 
 function frameOf(time: number, draws: SpriteDraw[]): FrameContext {
-	return { time, dt: 1 / 60, ben: { x: 3, y: 5 }, draws };
+	return { time, dt: 1 / 60, ben: { x: 3, y: 5 }, camera: { x: 3, y: 5, z: 16 }, draws };
 }
 
 test('every sprite maps to its family, and both frames of a creature share one', () => {
@@ -83,8 +83,20 @@ test('each creature builds, follows its sprite through both frames and stuns, an
 test('a creature that is not drawn for a while keeps working when it returns with a long frame', () => {
 	const actor = enemyModels.create('hopper', drawOf('hopper0', 0, 4.5));
 	const draw = drawOf('hopper1', 5, 6);
-	actor.update(draw, { time: 1, dt: 0.1, ben: { x: 9, y: 4 }, draws: [draw] });
-	actor.update(draw, { time: 1, dt: 0, ben: { x: 9, y: 4 }, draws: [draw] });
+	actor.update(draw, {
+		time: 1,
+		dt: 0.1,
+		ben: { x: 9, y: 4 },
+		camera: { x: 9, y: 4, z: 16 },
+		draws: [draw],
+	});
+	actor.update(draw, {
+		time: 1,
+		dt: 0,
+		ben: { x: 9, y: 4 },
+		camera: { x: 9, y: 4, z: 16 },
+		draws: [draw],
+	});
 	expect(Number.isFinite(actor.object.position.y)).toBe(true);
 	actor.dispose?.();
 });

@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import type { Actor, ModelSet, SpriteDraw } from '../../level-3d/types.ts';
 import { backdropActor } from './backdrop.ts';
+import { TileBatch, type Look, type TileInfo } from './batch.ts';
 import {
 	chocolateDeepGeometry,
 	chocolateTopGeometry,
@@ -26,6 +27,7 @@ import {
 	type SlopeName,
 	variantCount,
 } from './ground.ts';
+import { glowGeometry, glowMaterial as haloMaterial } from '../snacks/shared.ts';
 import { tileHash } from './hash.ts';
 import {
 	chocolateMaterial,
@@ -111,6 +113,10 @@ function tileActor(
 	};
 }
 
+/** How long the door takes to give way, in seconds, and how much of that it spends shaking before it drops. */
+const doorExit = 0.7,
+	doorShake = 0.22;
+
 function doorActor(first: SpriteDraw): Actor {
 	const group = new THREE.Group(),
 		mesh = tileMesh(doorGeometry(), propMaterial, { cast: true, receive: true });
@@ -129,6 +135,19 @@ function doorActor(first: SpriteDraw): Actor {
 			);
 			mesh.visible = !below;
 		},
+		/* Opened with the key: it rattles, then drops into the ground like a portcullis. */
+		leave: () => (mesh.visible ? doorExit : 0),
+		leaving(elapsed) {
+			group.matrixAutoUpdate = true;
+			const shake = Math.min(1, elapsed / doorShake),
+				drop = Math.max(0, (elapsed - doorShake) / (doorExit - doorShake));
+			group.position.set(
+				first.x + (elapsed < doorShake ? Math.sin(elapsed * 90) * 0.04 * (1 - shake * 0.3) : 0),
+				first.y - drop * drop * 2.2,
+				0,
+			);
+			group.rotation.z = elapsed < doorShake ? Math.sin(elapsed * 70) * 0.01 : 0;
+		},
 	};
 }
 
@@ -140,15 +159,74 @@ function exitActor(family: 'exitBot' | 'exitTop', first: SpriteDraw): Actor {
 			receive: true,
 		}),
 	);
-	if (family === 'exitTop')
+	if (family === 'exitTop') {
 		group.add(tileMesh(exitLettersGeometry(), unlitMaterial, { cast: false, receive: false }));
+		/* A warm glow over the doorway, so the way out reads from across the level. */
+		const halo = new THREE.Mesh(glowGeometry(), haloMaterial(0xffd84a, 0.55));
+		halo.position.set(0, -0.6, 0.5);
+		halo.scale.setScalar(3.6);
+		halo.renderOrder = -1;
+		group.add(halo);
+	}
 	return tileActor(group, first);
+}
+
+const batch = new TileBatch();
+
+/** How a family's tiles are drawn in the batch, for the families that go in it. */
+function batched(
+	family: string,
+	first: SpriteDraw,
+): { look: Look; geometry: THREE.BufferGeometry; info: TileInfo; yaw: number } | null {
+	const solid = (look: Look, geometry: THREE.BufferGeometry, top = 0.5) => ({
+		look,
+		geometry,
+		yaw: 0,
+		info: { solidTop: top },
+	});
+	if (isSlope(family)) {
+		const [hl, hr] = slopeHeights[family];
+		return solid('ground', slopeGeometry(family, variantOf(first)), -0.5 + (hl + hr) / 2);
+	}
+	switch (family) {
+		case 'fill':
+			return solid('fill', fillGeometry(variantOf(first)));
+		case 'top':
+			return solid('ground', topGeometry(variantOf(first)));
+		case 'block':
+			return solid('ground', blockGeometry());
+		case 'plat':
+			return { look: 'prop', geometry: platformGeometry(), yaw: 0, info: {} };
+		case 'spike':
+			return { look: 'prop', geometry: spikeGeometry(), yaw: 0, info: {} };
+		case 'crystal':
+			return {
+				look: 'glow',
+				geometry: crystalGeometry(),
+				yaw: (tileHash(first.x, first.y, 5) - 0.5) * 0.9,
+				info: {},
+			};
+		case 'chocTop':
+			return { look: 'chocolate', geometry: chocolateTopGeometry(), yaw: 0, info: { pool: true } };
+		case 'chocDeep':
+			return { look: 'chocolate', geometry: chocolateDeepGeometry(), yaw: 0, info: { pool: true } };
+	}
+	return null;
 }
 
 export const terrainModels: ModelSet = {
 	name: 'terrain',
 	family: (spriteName) => families[spriteName] ?? null,
 	fixed: (family) => family !== 'backdrop',
+	root: batch.root,
+	place(family, first) {
+		const tile = batched(family, first);
+		return tile ? batch.add(tile.look, tile.geometry, first.x, first.y, tile.yaw, tile.info) : null;
+	},
+	sync(frame) {
+		chocolateTime.value = frame.time;
+		batch.flush();
+	},
 	create(family, first) {
 		if (family === 'backdrop') return backdropActor();
 		if (family === 'door') return doorActor(first);

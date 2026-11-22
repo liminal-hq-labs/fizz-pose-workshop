@@ -41,6 +41,11 @@ export interface FrameContext {
 	dt: number;
 	/** Where Ben is, in tiles. */
 	ben: { x: number; y: number };
+	/**
+	 * Where the camera is, in tiles (X right, Y up, Z towards the viewer), for anything that should follow the view rather
+	 * than Ben: parallax layers, the sky dome, haze. It is placed before any actor is updated, so it is this frame's.
+	 */
+	camera: { x: number; y: number; z: number };
 	/** Every sprite drawn this frame, in order. */
 	draws: readonly SpriteDraw[];
 }
@@ -54,8 +59,25 @@ export interface Actor {
 	 * `draw.x` and `draw.y` (Z is depth, towards the camera) and react to the name, flip, tint and alpha.
 	 */
 	update(draw: SpriteDraw, frame: FrameContext): void;
-	/** Called when the sim stops drawing the sprite, before the object is removed. Free geometry made per actor. */
+	/**
+	 * Called when the sim stops drawing the sprite, such as a snack being collected or a door opening. Returns how many
+	 * seconds the object should stay in the scene for a short exit, or 0 (or nothing) to go at once. It is not called when
+	 * the level restarts or the sprite is far from the camera.
+	 */
+	leave?(frame: FrameContext): number;
+	/**
+	 * Called every frame while the object is staying for its exit, with the seconds since `leave` and the duration it
+	 * returned. The last call has `elapsed >= duration`, after which the stage disposes the actor.
+	 */
+	leaving?(elapsed: number, duration: number, frame: FrameContext): void;
+	/** Called when the object is removed from the scene, after any exit. Free geometry made per actor. */
 	dispose?(): void;
+}
+
+/** A tile a model set drew for itself, as part of a batch, rather than as an actor of its own. */
+export interface Placed {
+	/** Takes the tile out of the batch. */
+	remove(): void;
 }
 
 /** A group of related models, such as the terrain or the enemies. */
@@ -70,7 +92,17 @@ export interface ModelSet {
 	create(family: string, first: SpriteDraw): Actor;
 	/**
 	 * Families whose members never move, such as terrain tiles. The stage matches them by position, which is cheaper and
-	 * exact. Everything else is matched to the nearest actor of its family from the frame before.
+	 * exact, and calls `update` on their actors once, for the first sprite, and never again. Everything else is matched to
+	 * the nearest actor of its family from the frame before and updated every frame.
 	 */
 	fixed?(family: string): boolean;
+	/**
+	 * For fixed families: draws the tile into a batch the set owns (reached through `root`) and returns a handle, or
+	 * returns null to have the stage make an actor with `create` instead. Lets a set draw a thousand tiles in a few meshes.
+	 */
+	place?(family: string, first: SpriteDraw): Placed | null;
+	/** An object the stage adds to the scene once, for what `place` draws. */
+	root?: THREE.Object3D;
+	/** Called once a frame after the actors are brought into line, to flush batches and set shared uniforms. */
+	sync?(frame: FrameContext): void;
 }

@@ -15,6 +15,7 @@
   --columns n, --gap tiles, --distance tiles   gallery layout
   --size WxH    picture size, default 1600x900
   --zoom f      move the level camera closer (2 is twice as close)
+  --stats       print the stage's counts for the picture: draw calls, triangles, actors, milliseconds in sync
   Prints the sprites that still have no 3D model.
 */
 
@@ -78,6 +79,11 @@ try {
 			{ at, hold, steps, zoom },
 		);
 		console.log('no model yet:', missing || '(none)');
+		if (flag('stats') !== undefined)
+			console.log(
+				'stats:',
+				JSON.stringify(await page.evaluate('window.level.stage.stats ?? null')),
+			);
 	}
 	await page.screenshot({ path: out });
 	console.log('wrote', out);

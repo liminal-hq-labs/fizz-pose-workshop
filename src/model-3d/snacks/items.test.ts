@@ -5,6 +5,7 @@
 
 import { expect, test } from 'bun:test';
 import type { FrameContext, SpriteDraw } from '../../level-3d/types.ts';
+import * as THREE from 'three';
 import { itemModels } from './items.ts';
 
 const families: Record<string, string[]> = {
@@ -42,7 +43,7 @@ function drawOf(name: string, x: number, y: number, extra: Partial<SpriteDraw> =
 }
 
 function frameOf(time: number, draws: SpriteDraw[], dt = 1 / 60): FrameContext {
-	return { time, dt, ben: { x: 3, y: 5 }, draws };
+	return { time, dt, ben: { x: 3, y: 5 }, camera: { x: 3, y: 8, z: 16 }, draws };
 }
 
 test('every sprite maps to its family, and the stars frames share one', () => {
@@ -135,4 +136,38 @@ test('a puff fades its materials with the sprite and a night star stays behind t
 		sky = drawOf('star', 9, 9);
 	star.update(sky, frameOf(0.1, [sky]));
 	expect(star.object.position.z).toBeLessThan(0);
+});
+
+test('a collected pickup pops: it swells and fades while sparkles fly out, and the shared materials stay untouched', () => {
+	for (const family of ['cheezie', 'choc', 'cookie', 'soda', 'keyRed']) {
+		const draw = drawOf(family, 9.5, 4.5),
+			actor = itemModels.create(family, draw),
+			other = itemModels.create(family, draw);
+		actor.update(draw, frameOf(1, [draw]));
+		const seconds = actor.leave?.(frameOf(1, [])) ?? 0;
+		expect(seconds).toBeGreaterThan(0.15);
+		expect(seconds).toBeLessThan(0.4);
+		const body = actor.object.children[1],
+			halo = actor.object.children[0] as THREE.Mesh,
+			sparkles = actor.object.children.length;
+		expect(sparkles).toBeGreaterThan(3);
+		actor.leaving?.(0, seconds, frameOf(1, []));
+		const early = body.scale.x;
+		actor.leaving?.(seconds * 0.9, seconds, frameOf(1, []));
+		expect(body.scale.x).toBeGreaterThan(early + 0.4);
+		expect((halo.material as THREE.Material).opacity).toBeLessThan(0.1);
+		/* A pickup of the same kind that was not collected keeps its own materials. */
+		expect(
+			((other.object.children[0] as THREE.Mesh).material as THREE.Material).opacity,
+		).toBeCloseTo(0.5, 5);
+		actor.dispose?.();
+		other.dispose?.();
+	}
+});
+
+test('effects and creatures that are not pickups have no exit', () => {
+	for (const family of ['puff', 'bubble', 'star']) {
+		const actor = itemModels.create(family, drawOf(family, 3, 3));
+		expect(actor.leave).toBeUndefined();
+	}
 });

@@ -3,7 +3,7 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import { Mesher, shade, type V3 } from './mesher.ts';
 import { palette } from './palette.ts';
 import { rng } from './hash.ts';
@@ -14,6 +14,16 @@ const cache = new Map<string, THREE.BufferGeometry>();
 function cached(key: string, make: () => THREE.BufferGeometry): THREE.BufferGeometry {
 	let geometry = cache.get(key);
 	if (!geometry) cache.set(key, (geometry = make()));
+	return geometry;
+}
+
+/** Gives a geometry an `aLocal` attribute: its vertices' positions in the tile, which merging into a chunk would otherwise lose. */
+function withLocal(geometry: THREE.BufferGeometry): THREE.BufferGeometry {
+	const position = geometry.getAttribute('position');
+	geometry.setAttribute(
+		'aLocal',
+		new THREE.Float32BufferAttribute(Float32Array.from(position.array), 3),
+	);
 	return geometry;
 }
 
@@ -100,22 +110,24 @@ export function chocolateTopGeometry(): THREE.BufferGeometry {
 					palette.chocolateTop,
 				);
 		}
-		return m.build();
+		return withLocal(m.build());
 	});
 }
 
 /** The body of a chocolate pool: one front face; the shader draws the streaks. */
 export function chocolateDeepGeometry(): THREE.BufferGeometry {
 	return cached('chocDeep', () =>
-		new Mesher()
-			.quad(
-				[-0.5, -0.5, half],
-				[0.5, -0.5, half],
-				[0.5, 0.5, half],
-				[-0.5, 0.5, half],
-				palette.chocolate,
-			)
-			.build(),
+		withLocal(
+			new Mesher()
+				.quad(
+					[-0.5, -0.5, half],
+					[0.5, -0.5, half],
+					[0.5, 0.5, half],
+					[-0.5, 0.5, half],
+					palette.chocolate,
+				)
+				.build(),
+		),
 	);
 }
 

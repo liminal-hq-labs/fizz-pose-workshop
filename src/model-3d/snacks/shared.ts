@@ -29,7 +29,7 @@ export function ellipsoid(rx: number, ry: number, rz: number): THREE.BufferGeome
 	const key = `${rx}|${ry}|${rz}`;
 	let geometry = ellipsoids.get(key);
 	if (!geometry) {
-		geometry = new THREE.SphereGeometry(1, 28, 18);
+		geometry = new THREE.SphereGeometry(1, 20, 12);
 		geometry.scale(rx, ry, rz);
 		ellipsoids.set(key, geometry);
 	}

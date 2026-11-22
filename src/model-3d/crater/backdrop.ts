@@ -7,7 +7,8 @@ import * as THREE from 'three';
 import type { Actor, FrameContext } from '../../level-3d/types.ts';
 import { lattice, noise2, rng } from './hash.ts';
 import { Mesher, mix, shade } from './mesher.ts';
-import { propMaterial } from './materials.ts';
+import { propMaterial, skyBodyMaterial } from './materials.ts';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 /** A part of the backdrop that trails the camera by a fraction, so near layers slide past faster than far ones. */
 interface Layer {
@@ -110,7 +111,7 @@ function makePlanet(): THREE.Object3D {
 				const t = (y / 14 + 1) * 2.5 + Math.sin(y * 0.9) * 0.2;
 				return bands[Math.min(bands.length - 1, Math.max(0, Math.floor(t)))];
 			}),
-			propMaterial,
+			skyBodyMaterial,
 		),
 		ringGeometry = new THREE.RingGeometry(19, 28, 64, 1),
 		ring = new THREE.Mesh(
@@ -123,6 +124,7 @@ function makePlanet(): THREE.Object3D {
 				side: THREE.DoubleSide,
 				transparent: true,
 				opacity: 0.82,
+				fog: false,
 			}),
 		);
 	ring.rotation.x = Math.PI / 2 - 0.35;
@@ -138,33 +140,37 @@ function makeMoon(radius: number, colour: number): THREE.Object3D {
 		paint(new THREE.SphereGeometry(radius, 20, 14), (x, y, z) =>
 			shade(colour, 0.85 + 0.25 * noise2(x * 0.5 + 9, y * 0.5 + z * 0.5, 5)),
 		),
-		propMaterial,
+		skyBodyMaterial,
 	);
 	return moon;
 }
 
-/** Puffs of cotton-candy cloud: flattened spheres in a lumpy row. */
+/** Puffs of cotton-candy cloud: flattened spheres in a lumpy row, merged into one mesh. */
 function makeCloud(seed: number): THREE.Object3D {
 	const rand = rng(seed),
-		group = new THREE.Group(),
 		puffs = 4 + Math.floor(rand() * 3),
-		material = new THREE.MeshBasicMaterial({
+		parts: THREE.BufferGeometry[] = [];
+	for (let i = 0; i < puffs; i++) {
+		const r = 5 + rand() * 6,
+			puff = paint(new THREE.SphereGeometry(1, 14, 10), (_x, y) =>
+				mix(0xff9ad0, 0xffe6f8, (y + 1) / 2),
+			);
+		puff.scale(r * 1.5, r * 0.55, r * 0.7);
+		puff.translate((i - puffs / 2) * 8 + rand() * 4, rand() * 2.5, rand() * 6);
+		parts.push(puff);
+	}
+	const merged = mergeGeometries(parts);
+	for (const part of parts) part.dispose();
+	return new THREE.Mesh(
+		merged,
+		new THREE.MeshBasicMaterial({
 			vertexColors: true,
 			transparent: true,
 			opacity: 0.88,
 			depthWrite: false,
-		});
-	for (let i = 0; i < puffs; i++) {
-		const r = 5 + rand() * 6,
-			puff = new THREE.Mesh(
-				paint(new THREE.SphereGeometry(1, 14, 10), (_x, y) => mix(0xff9ad0, 0xffe6f8, (y + 1) / 2)),
-				material,
-			);
-		puff.scale.set(r * 1.5, r * 0.55, r * 0.7);
-		puff.position.set((i - puffs / 2) * 8 + rand() * 4, rand() * 2.5, rand() * 6);
-		group.add(puff);
-	}
-	return group;
+			fog: false,
+		}),
+	);
 }
 
 interface RangeOptions {
@@ -411,9 +417,11 @@ class Backdrop {
 			this.clouds.push({ object: cloud, base: i * 52, speed: 0.5 + lattice(i, 9) * 0.6, y });
 			this.root.add(cloud);
 		}
-		this.add(makeFarMountains(), 0.55, 0.85, 0, -14, -130);
-		this.add(makeMidMountains(), 0.3, 0.7, 0, -9, -55);
-		this.add(makeHills(), 0.12, 0.5, 0, -2, -17);
+		/* Vertical parallax is gentle: the layers follow the camera's height closely, the nearer ones a little less. The
+		   offsets keep each layer where it stood on screen for a camera at the usual height of 6 above the lowest ground. */
+		this.add(makeFarMountains(), 0.55, 0.95, 0, -14.6, -130);
+		this.add(makeMidMountains(), 0.3, 0.9, 0, -10.2, -55);
+		this.add(makeHills(), 0.12, 0.8, 0, -3.8, -17);
 	}
 
 	private add(
@@ -429,8 +437,13 @@ class Backdrop {
 		this.layers.push({ object, fx, fy, ox, oy, oz });
 	}
 
+	/**
+	 * Slides the layers with the camera, not with Ben, so they hold still when he jumps with the view held. The camera
+	 * stands a little left of and above the point it looks at; the offsets here bring the layers' zero to where Ben stands.
+	 */
 	follow(frame: FrameContext): void {
-		const { x, y } = frame.ben,
+		const x = frame.camera.x + cameraBehind.x,
+			y = frame.camera.y - cameraBehind.y,
 			stamp = frame.time * 1000 + x * 7 + y * 13;
 		if (stamp === this.stamp) return;
 		this.stamp = stamp;
@@ -447,6 +460,9 @@ class Backdrop {
 		}
 	}
 }
+
+/** How far the stage's camera stands left of and above the spot Ben usually stands at, in tiles. */
+const cameraBehind = { x: 0.8, y: 3.1 };
 
 let backdrop: Backdrop | null = null;
 let users = 0;

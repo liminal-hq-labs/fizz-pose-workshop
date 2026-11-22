@@ -38,7 +38,7 @@ function cached(key: string, make: () => THREE.BufferGeometry): THREE.BufferGeom
 	return geometry;
 }
 
-function rockColour(rnd: () => number): number {
+export function rockColour(rnd: () => number): number {
 	const r = rnd(),
 		base =
 			r < 0.4

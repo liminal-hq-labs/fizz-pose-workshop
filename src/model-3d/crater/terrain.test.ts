@@ -16,6 +16,7 @@ import {
 	variantCount,
 	type SlopeName,
 } from './ground.ts';
+import { mergeTiles } from './batch.ts';
 import { terrainModels } from './terrain.ts';
 
 const spriteNames = [
@@ -60,7 +61,7 @@ function draw(name: string, x: number, y: number): SpriteDraw {
 }
 
 function frameOf(draws: SpriteDraw[]): FrameContext {
-	return { time: 1.5, dt: 1 / 60, ben: { x: 10, y: 6 }, draws };
+	return { time: 1.5, dt: 1 / 60, ben: { x: 10, y: 6 }, camera: { x: 10, y: 9, z: 16 }, draws };
 }
 
 describe('terrain families', () => {
@@ -228,5 +229,125 @@ describe('winding', () => {
 			}
 			expect(inward).toBe(0);
 		}
+	});
+});
+
+describe('door exit', () => {
+	test('the lower door sprite drops into the ground when it leaves, and the upper one goes at once', () => {
+		const lower = draw('doorRed', 171.5, 6.5),
+			upper = draw('doorRed', 171.5, 7.5),
+			frame = frameOf([lower, upper]),
+			low = terrainModels.create('door', lower),
+			high = terrainModels.create('door', upper);
+		low.update(lower, frame);
+		high.update(upper, frame);
+		const seconds = low.leave?.(frame) ?? 0;
+		expect(seconds).toBeGreaterThan(0.3);
+		expect(high.leave?.(frame)).toBe(0);
+		low.leaving?.(0, seconds, frame);
+		const start = low.object.position.y;
+		low.leaving?.(seconds, seconds, frame);
+		expect(low.object.position.y).toBeLessThan(start - 1.5);
+		expect(low.object.position.x).toBeCloseTo(171.5, 5);
+	});
+});
+
+describe('batched terrain', () => {
+	const frame = frameOf([]);
+
+	test('a thousand tiles take a handful of meshes, and removing one rebuilds only its chunk', () => {
+		const handles: { remove(): void }[] = [],
+			before = terrainModels.root?.children.length ?? 0;
+		for (let x = 0; x < 100; x++)
+			for (let y = 0; y < 10; y++) {
+				const name = y === 9 ? 'craterTop' : 'craterFill',
+					tile = draw(name, 800.5 + x, y + 0.5),
+					placed = terrainModels.place?.(terrainModels.family(name)!, tile);
+				expect(placed).not.toBeNull();
+				handles.push(placed!);
+			}
+		terrainModels.sync?.(frame);
+		const meshes = (terrainModels.root?.children.length ?? 0) - before;
+		expect(meshes).toBeGreaterThan(0);
+		expect(meshes).toBeLessThan(40);
+		const triangles = (): number =>
+			terrainModels
+				.root!.children.filter(
+					(child) => child.name.includes(' 5') || child.name.includes('crater '),
+				)
+				.reduce(
+					(sum, child) =>
+						sum + ((child as THREE.Mesh).geometry.getAttribute('position').count || 0),
+					0,
+				);
+		const full = triangles();
+		handles[0].remove();
+		terrainModels.sync?.(frame);
+		expect(triangles()).toBeLessThan(full);
+		for (const handle of handles) handle.remove();
+		terrainModels.sync?.(frame);
+		expect(terrainModels.root?.children.length).toBe(before);
+	});
+
+	test('families drawn as actors, such as the door and the exit, are not placed', () => {
+		for (const name of ['doorRed', 'exitBot', 'exitTop', 'mtnTop'])
+			expect(terrainModels.place?.(terrainModels.family(name)!, draw(name, 5.5, 5.5))).toBeNull();
+	});
+
+	test('a pit between two tiles of ground gets a wall behind it, and a pool has the chocolate attribute for its shader', () => {
+		const handles = [
+			...[0, 1, 2, 5, 6, 7].map((x) =>
+				terrainModels.place!('top', draw('craterTop', 900.5 + x, 3.5))!,
+			),
+			terrainModels.place!('chocTop', draw('chocTop0', 903.5, 2.5))!,
+		];
+		terrainModels.sync?.(frame);
+		const names = terrainModels.root!.children.map((child) => child.name);
+		expect(names.some((name) => name.startsWith('crater wall'))).toBe(true);
+		const pool = terrainModels.root!.children.find((child) =>
+			child.name.startsWith('crater chocolate'),
+		)!;
+		expect((pool as THREE.Mesh).geometry.getAttribute('aLocal')).toBeDefined();
+		for (const handle of handles) handle.remove();
+		terrainModels.sync?.(frame);
+	});
+
+	test('merged tiles sit where their sprites are', () => {
+		const geometry = mergeTiles([
+			{ geometry: topGeometry(0), x: 10, y: 2, yaw: 0 },
+			{ geometry: topGeometry(0), x: 20, y: 4, yaw: 0 },
+		]);
+		geometry.computeBoundingBox();
+		expect(geometry.boundingBox!.min.x).toBeGreaterThan(9);
+		expect(geometry.boundingBox!.max.x).toBeLessThan(21);
+		expect(geometry.getAttribute('position').count).toBe(
+			topGeometry(0).getAttribute('position').count * 2,
+		);
+		expect(geometry.getAttribute('normal').count).toBe(geometry.getAttribute('position').count);
+	});
+});
+
+describe('backdrop', () => {
+	test('the parallax follows the camera and not Ben', () => {
+		const scene = new THREE.Scene(),
+			actor = terrainModels.create('backdrop', draw('mtnTop', 10, 5)),
+			sprite = draw('mtnTop', 10, 5);
+		scene.add(actor.object);
+		const at = (ben: number, camera: number): number => {
+			const frame: FrameContext = {
+				time: 1,
+				dt: 0,
+				ben: { x: ben, y: 6 },
+				camera: { x: camera, y: 9, z: 16 },
+				draws: [],
+			};
+			actor.update(sprite, frame);
+			const root = scene.children.find((child) => child.name === 'crater backdrop')!;
+			return root.children.reduce((sum, child) => sum + child.position.x, 0);
+		};
+		const rest = at(40, 50);
+		expect(at(55, 50)).toBeCloseTo(rest, 6);
+		expect(at(40, 60)).not.toBeCloseTo(rest, 3);
+		actor.dispose?.();
 	});
 });

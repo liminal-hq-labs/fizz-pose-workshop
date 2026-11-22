@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
 import {
 	candy,
+	clamp,
 	glowGeometry,
 	glowMaterial,
 	phaseOf,
@@ -28,6 +29,9 @@ export interface PickupLook {
 
 const twinkleEvery = 2.6,
 	twinkleFor = 0.5;
+/** How long the pop lasts when a pickup is collected, in seconds, and how many sparkles fly out. */
+const popFor = 0.28,
+	popSparks = 8;
 
 /**
  * Builds the actor for a pickup. The sim already bobs pickups up and down in the sprite's position, so the model only
@@ -42,6 +46,8 @@ export function createPickup(look: PickupLook, first: SpriteDraw): Actor {
 		reach = look.reach ?? 0.5,
 		spin = look.spin ?? 1.2;
 	look.build(body);
+	let fading: THREE.Material[] = [],
+		sparks: THREE.Mesh[] = [];
 	halo.position.z = -0.25;
 	halo.renderOrder = -1;
 	twinkle.position.z = 0.35;
@@ -70,6 +76,63 @@ export function createPickup(look: PickupLook, first: SpriteDraw): Actor {
 				twinkle.rotation.z = local * 1.5;
 			} else twinkle.visible = false;
 		},
-		dispose: () => root.clear(),
+		/*
+		 * Collected: the model swells and fades while a ring of sparkles flies out. The materials are shared, so the body
+		 * and halo get their own fading copies for the pop; the outline shell just goes.
+		 */
+		leave() {
+			body.traverse((part) => {
+				const mesh = part as THREE.Mesh;
+				if (!mesh.isMesh) return;
+				if (mesh.userData.ink) {
+					mesh.visible = false;
+					return;
+				}
+				const copy = (mesh.material as THREE.Material).clone();
+				copy.transparent = true;
+				copy.userData.base = copy.opacity;
+				mesh.material = copy;
+				fading.push(copy);
+			});
+			const haloCopy = halo.material.clone();
+			halo.material = haloCopy;
+			haloCopy.userData.base = haloCopy.opacity;
+			fading.push(haloCopy);
+			twinkle.visible = false;
+			for (let i = 0; i < popSparks; i++) {
+				const spark = new THREE.Mesh(
+					sparkleGeometry(),
+					sparkleMaterial(i % 2 ? candy.white : look.glow, true),
+				);
+				spark.position.z = 0.4;
+				spark.userData.angle = (i / popSparks) * Math.PI * 2 + phase;
+				sparks.push(spark);
+				root.add(spark);
+			}
+			return popFor;
+		},
+		leaving(elapsed, duration) {
+			const p = clamp(elapsed / duration, 0, 1),
+				out = 1 - (1 - p) * (1 - p);
+			body.scale.setScalar(1 + 0.9 * out);
+			for (const material of fading)
+				material.opacity = (material.userData.base as number) * (1 - p);
+			halo.scale.setScalar(2 + 1.6 * out);
+			for (let i = 0; i < sparks.length; i++) {
+				const spark = sparks[i],
+					a: number = spark.userData.angle,
+					reach = 0.3 + 0.75 * out * (i % 2 ? 0.8 : 1);
+				spark.position.x = Math.cos(a) * reach;
+				spark.position.y = Math.sin(a) * reach;
+				spark.scale.setScalar((i % 2 ? 0.34 : 0.46) * Math.sin(Math.min(1, p * 1.1) * Math.PI));
+				spark.rotation.z = a + p * 2;
+			}
+		},
+		dispose() {
+			for (const material of fading) material.dispose();
+			fading = [];
+			sparks = [];
+			root.clear();
+		},
 	};
 }
