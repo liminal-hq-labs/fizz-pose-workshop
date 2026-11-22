@@ -7,6 +7,8 @@ import * as THREE from 'three';
 import { LevelSim, type SpriteSheet, stepSeconds } from './sim.ts';
 import type { Actor, FrameContext, ModelSet, SpriteDraw } from './types.ts';
 
+/** How far the camera stands from the level, in tiles: close enough that the view is about as wide as the game's. */
+const cameraDistance = 21;
 /** How far a moving sprite may travel in a frame and still be the same actor, in tiles. */
 const sameActorReach = 2.5;
 
@@ -205,7 +207,7 @@ export class Stage {
 			target = close
 				? new THREE.Vector3(frame.ben.x, frame.ben.y, 0)
 				: new THREE.Vector3(this.view.x, this.view.y + 0.6, 0);
-		this.camera.position.set(target.x - 1.2 / this.zoom, target.y + 3.2 / this.zoom, 27 / this.zoom);
+		this.camera.position.set(target.x - 1 / this.zoom, target.y + 2.6 / this.zoom, cameraDistance / this.zoom);
 		this.camera.lookAt(target);
 		const sun = this.scene.getObjectByName('sun') as THREE.DirectionalLight;
 		sun.position.set(target.x - 8, target.y + 16, 14);

@@ -126,6 +126,12 @@ The cartoon model lives in `src/model-3d/ben-g/`: `rig.ts` builds the figure fro
 
 Four of the model’s idles are sprite rigs in the catalogue, drawn by `bun run draw:performances` from the side-view skin: checking the wrist computer, pulling out its aerial, tipping the helmet and rocking on his heels. `bun run draw:model-poses` renders the poses the skin cannot draw yet (head scratch, helmet spin, pogo draw and Stunner reload) through the same sprite converter as the turntable reference and saves them as 22 first-draft frames in four loops, each helmeted frame carrying the hand-drawn standing head; run `bun run generate` afterwards. It needs Chromium (`CHROMIUM_PATH`).
 
+## Crater Fields in 3D
+
+Run `bun run dev` and open `/crater-fields.html` to play the first level of Episode 1 in 3D. The page runs the game’s own simulation, vendored as WebAssembly in `vendor/lieutenant-fizz/` (see [its note](vendor/lieutenant-fizz/README.md) for where it came from), so the rules, the level and the enemies are the game’s; the page only draws. Each frame the simulation lists the sprites to draw, and `src/level-3d/stage.ts` keeps a 3D actor alive for each one, drawing any sprite with no model as the flat sprite it is. The game’s sound words (`boing`, `fzzt`, `crunch`) float where they happen, in the Fizz font.
+
+The models are grouped so each set can be used on its own: `src/model-3d/crater/` (ground, slopes, hazards, door, exit and backdrop), `src/model-3d/zargs/` (the enemies, one file each), `src/model-3d/snacks/` (pickups and effects, one file each) and `src/model-3d/toon.ts` (the shared cartoon look). `src/level-3d/ben-actor.ts` drives the cartoon Ben from the hero’s sprite, and `src/level-3d/types.ts` is the contract a model set implements. Controls: arrows or A and D to run, Space to jump, C to pogo, X to fire, R to restart; touch buttons appear on a phone. `bun scripts/shoot-level.ts` takes headless screenshots of the level or of a model gallery (`--gallery`); it needs Chromium (`CHROMIUM_PATH`).
+
 [Ben’s character sheet](docs/BEN_CHARACTER_SHEET.md) records the agreed cartoon design for the model: locked proportions and colours, the features still being refined and the questions that remain open.
 
 ## Contributing and repository identity
