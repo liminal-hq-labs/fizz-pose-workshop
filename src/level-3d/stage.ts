@@ -80,6 +80,8 @@ export class Stage {
 	readonly unmodelled = new Set<string>();
 	/** When true the stage does not advance the sim, so tooling can pose a frame. */
 	paused = false;
+	/** How much closer than usual the camera stands; 2 is twice as close, centred on Ben. */
+	zoom = 1;
 	private readonly sets: readonly ModelSet[];
 	private readonly fixed = new Map<string, Live>();
 	private readonly moving = new Map<string, Live[]>();
@@ -197,9 +199,13 @@ export class Stage {
 					this.drop(list[i]);
 					list.splice(i, 1);
 				}
-		/* The camera follows the sim's own, pulled back and raised a little so the level reads as a place. */
-		const target = new THREE.Vector3(this.view.x, this.view.y + 0.6, 0);
-		this.camera.position.set(target.x - 1.2, target.y + 3.2, 27);
+		/* The camera follows the sim's own, pulled back and raised a little so the level reads as a place. Zoomed in, it
+		   centres on Ben instead. */
+		const close = this.zoom > 1,
+			target = close
+				? new THREE.Vector3(frame.ben.x, frame.ben.y, 0)
+				: new THREE.Vector3(this.view.x, this.view.y + 0.6, 0);
+		this.camera.position.set(target.x - 1.2 / this.zoom, target.y + 3.2 / this.zoom, 27 / this.zoom);
 		this.camera.lookAt(target);
 		const sun = this.scene.getObjectByName('sun') as THREE.DirectionalLight;
 		sun.position.set(target.x - 8, target.y + 16, 14);

@@ -17,7 +17,10 @@ export interface SpriteDraw {
 	/** The drawn width and height in tiles, always positive. A 16 pixel sprite at scale 1 is 1 tile. */
 	w: number;
 	h: number;
-	/** True when the sim mirrored the sprite: a character then faces left instead of right. */
+	/**
+	 * True when the sim mirrored the sprite. Which way that faces depends on the art: Ben's sprites are drawn facing
+	 * right, the enemies' facing left, so a flipped Ben faces left and a flipped enemy faces right.
+	 */
 	flip: boolean;
 	/** Rotation in radians, anticlockwise. */
 	rot: number;

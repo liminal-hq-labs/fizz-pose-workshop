@@ -71,14 +71,8 @@ try {
 				const level = (window as unknown as { level: any }).level;
 				if (at) level.sim.teleport(at[0], at[1]);
 				const held = hold.reduce((bits: number, name: string) => bits | level.Input[name], 0);
+				level.stage.zoom = zoom;
 				level.stage.advance(steps, held);
-				if (zoom !== 1) {
-					const camera = level.stage.camera,
-						ben = level.stage.draws.find((draw: { name: string }) => draw.name.startsWith('ben_'));
-					camera.position.set(ben.x - 0.6, ben.y + 1.2, 27 / zoom);
-					camera.lookAt(ben.x, ben.y, 0);
-					level.stage.renderer.render(level.stage.scene, camera);
-				}
 				return [...level.stage.unmodelled].join(' ');
 			},
 			{ at, hold, steps, zoom },
