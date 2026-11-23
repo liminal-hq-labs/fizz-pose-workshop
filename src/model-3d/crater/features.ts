@@ -453,9 +453,21 @@ function crystal(
 	}
 }
 
-/** A cluster of five pink and white crystals on the ground, 0.82 wide and 0.88 tall like the sprite. */
-export function crystalGeometry(): THREE.BufferGeometry {
-	return cached('crystal', () => {
+/** How far behind the middle of the lane a crystal cluster stands: its back just inside the ground's far edge. */
+const crystalDepth = -(depth.lane / 2 - 0.235);
+/** The cluster is half as deep as it is wide, so all of it fits behind him inside the lane. */
+const crystalFlatten = 0.5;
+/** How many ways a crystal cluster is turned about its own axis, and the widest turn in radians. */
+export const crystalTurns = 5;
+const crystalYaw = 0.24;
+
+/**
+ * A cluster of five pink and white crystals on the ground, 0.82 wide and 0.88 tall like the sprite, in one of
+ * `crystalTurns` slightly different turns. The turn is small, so the cluster stays inside its cell.
+ */
+export function crystalGeometry(turn = 0): THREE.BufferGeometry {
+	const yaw = (turn / (crystalTurns - 1) - 0.5) * crystalYaw;
+	return cached(`crystal${turn}`, () => {
 		const m = new Mesher(),
 			c = [
 				palette.crystalPink,
@@ -476,6 +488,7 @@ export function crystalGeometry(): THREE.BufferGeometry {
 		crystal(m, -0.05, 0.4, 0.04, 0.17, 0.01, [c[4], c[0], c[1]]);
 		crystal(m, 0.14, -0.33, 0.04, 0.13, 0.02, [c[2], c[1], c[0]]);
 		crystal(m, -0.33, -0.3, 0.035, 0.11, -0.02, [c[0], c[4], c[2]]);
-		return m.build();
+		/* The crystals are scenery, not something he touches: they stand at the back of the lane, behind him. */
+		return m.build().rotateY(yaw).scale(1, 1, crystalFlatten).translate(0, 0, crystalDepth);
 	});
 }

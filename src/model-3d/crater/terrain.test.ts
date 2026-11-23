@@ -9,6 +9,7 @@ import type { FrameContext, SpriteDraw } from '../../level-3d/types.ts';
 import { depth } from '../toon.ts';
 import {
 	crystalGeometry,
+	crystalTurns,
 	doorGeometry,
 	exitBottomGeometry,
 	exitTopGeometry,
@@ -420,14 +421,18 @@ describe('pieces match their art', () => {
 		expect(floating.max.z - floating.min.z).toBeLessThan(boxOf(blockTile(true)).max.z * 2);
 	});
 
-	test('the crystal is within 10 percent of the art, 0.81 wide and 0.88 tall, and stays in its cell when turned', () => {
-		const box = boxOf(crystalGeometry());
-		expect(box.min.y).toBeCloseTo(-0.5, 6);
-		expect(Math.abs(box.max.y - box.min.y - 0.875)).toBeLessThan(0.0875);
-		expect(Math.abs(box.max.x - box.min.x - 0.8125)).toBeLessThan(0.08);
-		const turned = box.clone().applyMatrix4(new THREE.Matrix4().makeRotationY(0.12));
-		expect(turned.min.x).toBeGreaterThanOrEqual(-0.5);
-		expect(turned.max.x).toBeLessThanOrEqual(0.5);
+	test('the crystal is within 10 percent of the art, 0.81 wide and 0.88 tall, in its cell and behind the hero in every turn', () => {
+		for (let turn = 0; turn < crystalTurns; turn++) {
+			const box = boxOf(crystalGeometry(turn));
+			expect(box.min.y).toBeCloseTo(-0.5, 6);
+			expect(Math.abs(box.max.y - box.min.y - 0.875)).toBeLessThan(0.0875);
+			expect(Math.abs(box.max.x - box.min.x - 0.8125)).toBeLessThan(0.1);
+			expect(box.min.x).toBeGreaterThanOrEqual(-0.5);
+			expect(box.max.x).toBeLessThanOrEqual(0.5);
+			/* It is scenery at the back of the lane: nothing of it reaches the plane he runs on. */
+			expect(box.max.z).toBeLessThan(-0.4);
+			expect(box.min.z).toBeGreaterThanOrEqual(-depth.lane / 2);
+		}
 	});
 
 	test('the door is a tile wide and two tall, and the exit halves are a tile each', () => {

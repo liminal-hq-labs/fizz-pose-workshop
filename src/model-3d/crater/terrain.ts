@@ -12,6 +12,7 @@ import {
 	chocolateDeepGeometry,
 	chocolateTopGeometry,
 	crystalGeometry,
+	crystalTurns,
 	doorGeometry,
 	exitBottomGeometry,
 	exitLettersGeometry,
@@ -116,9 +117,6 @@ function exitActor(family: 'exitBot' | 'exitTop', first: SpriteDraw): Actor {
 	return tileActor(group, first);
 }
 
-/** The widest a crystal cluster turns about its own axis, in radians: small, so it stays inside its cell. */
-const crystalYaw = 0.24;
-
 const batch = new TileBatch(craterTheme);
 
 /** How a family's tiles are drawn in the batch, for the families that go in it. */
@@ -134,8 +132,8 @@ function batched(family: string, first: SpriteDraw): BatchedTile | null {
 		case 'crystal':
 			return {
 				look: 'glow',
-				geometry: crystalGeometry(),
-				yaw: (tileHash(x, y, 5) - 0.5) * crystalYaw,
+				geometry: crystalGeometry(Math.floor(tileHash(x, y, 5) * crystalTurns) % crystalTurns),
+				yaw: 0,
 				info: {},
 			};
 		case 'chocTop':
@@ -182,11 +180,16 @@ export const terrainModels: ModelSet = {
 					first,
 				);
 			case 'crystal': {
-				const mesh = tileMesh(crystalGeometry(), glowMaterial, { cast: true, receive: true }),
-					actor = tileActor(mesh, first);
-				mesh.rotation.y = (tileHash(first.x, first.y, 5) - 0.5) * crystalYaw;
-				mesh.updateMatrix();
-				return actor;
+				return tileActor(
+					tileMesh(
+						crystalGeometry(
+							Math.floor(tileHash(first.x, first.y, 5) * crystalTurns) % crystalTurns,
+						),
+						glowMaterial,
+						{ cast: true, receive: true },
+					),
+					first,
+				);
 			}
 		}
 		throw new Error(`terrain has no model for the family ${family}`);
