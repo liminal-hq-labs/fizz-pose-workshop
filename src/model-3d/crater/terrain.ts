@@ -23,6 +23,7 @@ import {
 	fillGeometry,
 	groundTile,
 	platformGeometry,
+	platformTile,
 	slopeGeometry,
 	slopeHeights,
 	topGeometry,
@@ -121,7 +122,10 @@ const doorExit = 0.7,
 	doorShake = 0.22;
 
 function doorActor(first: SpriteDraw): Actor {
-	const group = new THREE.Group(),
+	/* `first` is a pooled record the reader refills every frame: keep what the door needs from it now. */
+	const x = first.x,
+		y = first.y,
+		group = new THREE.Group(),
 		mesh = tileMesh(doorGeometry(), propMaterial, { cast: true, receive: true });
 	group.add(mesh);
 	pin(group, first);
@@ -145,8 +149,8 @@ function doorActor(first: SpriteDraw): Actor {
 			const shake = Math.min(1, elapsed / doorShake),
 				drop = Math.max(0, (elapsed - doorShake) / (doorExit - doorShake));
 			group.position.set(
-				first.x + (elapsed < doorShake ? Math.sin(elapsed * 90) * 0.04 * (1 - shake * 0.3) : 0),
-				first.y - drop * drop * 2.2,
+				x + (elapsed < doorShake ? Math.sin(elapsed * 90) * 0.04 * (1 - shake * 0.3) : 0),
+				y - drop * drop * 2.2,
 				0,
 			);
 			group.rotation.z = elapsed < doorShake ? Math.sin(elapsed * 70) * 0.01 : 0;
@@ -184,6 +188,9 @@ function batched(
 	family: string,
 	first: SpriteDraw,
 ): { look: Look; geometry: THREE.BufferGeometry; info: TileInfo; yaw: number } | null {
+	/* The draw is a pooled record that is refilled later, and the builders below run later: copy the position now. */
+	const x = first.x,
+		y = first.y;
 	const solid = (
 		look: Look,
 		geometry: THREE.BufferGeometry,
@@ -197,7 +204,7 @@ function batched(
 		info: { solidTop: top, edges, build },
 	});
 	const shaped = (hl: number, hr: number, crust: boolean) => (around: Surroundings) =>
-		groundTile({ hl, hr, crust }, first.x, first.y, around);
+		groundTile({ hl, hr, crust }, x, y, around);
 	if (isSlope(family)) {
 		const [hl, hr] = slopeHeights[family];
 		return solid(
@@ -214,16 +221,23 @@ function batched(
 		case 'top':
 			return solid('ground', topGeometry(variantOf(first)), [1, 1], shaped(1, 1, true));
 		case 'block':
-			return solid('ground', blockGeometry(), [1, 1], (around) => blockTile(around.below));
+			return solid('ground', blockGeometry(), [1, 1], (around) =>
+				blockTile(around.below, { x, y }, { leftH: around.leftH, rightH: around.rightH }),
+			);
 		case 'plat':
-			return { look: 'prop', geometry: platformGeometry(), yaw: 0, info: {} };
+			return {
+				look: 'prop',
+				geometry: platformGeometry(),
+				yaw: 0,
+				info: { build: () => platformTile(x, y) },
+			};
 		case 'spike':
 			return { look: 'prop', geometry: spikeGeometry(), yaw: 0, info: {} };
 		case 'crystal':
 			return {
 				look: 'glow',
 				geometry: crystalGeometry(),
-				yaw: (tileHash(first.x, first.y, 5) - 0.5) * crystalYaw,
+				yaw: (tileHash(x, y, 5) - 0.5) * crystalYaw,
 				info: {},
 			};
 		case 'chocTop':

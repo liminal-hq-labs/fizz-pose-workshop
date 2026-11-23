@@ -21,6 +21,8 @@ export const palette = {
 	blockFront: 0xe058e0,
 	blockPanel: 0xff6bff,
 	blockEdge: 0xffe6ff,
+	blockViolet: 0xb64ee0,
+	blockMortar: 0x6b1f78,
 	cyan: 0x55f0f0,
 	cyanDark: 0x2cb5c0,
 	ledge: 0x5a50ff,

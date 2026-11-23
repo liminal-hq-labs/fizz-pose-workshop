@@ -14,7 +14,7 @@ export const depth = {
 	/** Terrain runs from `-lane / 2` to `lane / 2` in Z, so characters stand in the middle of a strip of ground. */
 	lane: 1.75,
 	/** How deep floating ledges and blocks are, centred on Z = 0: shallower than the ground, so they read as platforms. */
-	shelf: 1.2,
+	shelf: 0.8,
 	/** The nearest the backdrop may come; everything behind the level sits at or beyond this Z. */
 	backdrop: -7,
 } as const;
