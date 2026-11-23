@@ -1,0 +1,43 @@
+<!doctype html>
+<!--
+  Crater Fields in 3D: the first level of Episode 1, run by the game's own simulation and drawn with 3D models.
+
+  (c) Copyright 2026 Liminal HQ, Scott Morris
+  SPDX-License-Identifier: Apache-2.0 OR MIT
+-->
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Crater Fields in 3D</title>
+<link rel="stylesheet" href="/src/level-3d/level.css">
+</head>
+<body>
+<canvas id="gl" aria-label="Crater Fields, the first level of Lieutenant Fizz, in 3D"></canvas>
+<div class="hud" id="hud" aria-live="polite"></div>
+<div class="toast panel" id="toast" role="status" hidden></div>
+<div class="card panel" id="card" role="dialog" aria-live="assertive" hidden></div>
+<div class="card panel" id="paused" role="dialog" aria-label="Paused" hidden><h2>Paused</h2><p class="action">Press P or Escape to carry on</p></div>
+<div class="top-buttons">
+  <button id="pause" type="button" aria-pressed="false">Pause</button>
+  <button id="mute" type="button" aria-pressed="false">Sound on</button>
+</div>
+<div class="sound-hint" id="sound-hint">Press any key or tap for sound</div>
+<div class="keys" id="keys">Arrows or A D to run · Space to jump · C to pogo · X to fire the Fizz Stunner · P to pause · M to mute · R to restart</div>
+<div class="pad" id="pad" aria-label="Touch controls">
+  <div class="pad-side">
+    <button data-input="left" aria-label="Left">◀</button>
+    <button data-input="right" aria-label="Right">▶</button>
+    <button data-input="up" aria-label="Up">▲</button>
+    <button data-input="down" aria-label="Down">▼</button>
+  </div>
+  <div class="pad-side">
+    <button data-input="pogo" aria-label="Pogo">Pogo</button>
+    <button data-input="fire" aria-label="Fire">Fizz</button>
+    <button data-input="jump" aria-label="Jump">Jump</button>
+  </div>
+</div>
+<div class="labels" id="labels"></div>
+<script type="module" src="/src/level-3d/main.ts"></script>
+</body>
+</html>

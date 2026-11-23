@@ -1,0 +1,304 @@
+/*
+  Layout for the 3D level page: a full-window canvas with a heads-up line, a toast and touch controls.
+
+  (c) Copyright 2026 Liminal HQ, Scott Morris
+  SPDX-License-Identifier: Apache-2.0 OR MIT
+*/
+@font-face {
+	font-family: 'Fizz';
+	font-weight: 400;
+	src: url('../../vendor/lieutenant-fizz/fonts/fizz-regular.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Fizz';
+	font-weight: 700;
+	src: url('../../vendor/lieutenant-fizz/fonts/fizz-bold.woff2') format('woff2');
+}
+html,
+body {
+	margin: 0;
+	height: 100%;
+	background: #120a24;
+	color: #fff;
+	font:
+		600 15px/1.3 ui-monospace,
+		'SF Mono',
+		Menlo,
+		Consolas,
+		monospace;
+	overflow: hidden;
+	overscroll-behavior: none;
+}
+#gl {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	display: block;
+	touch-action: none;
+}
+/* The game's whole-pixel type: every size comes from --n, so each glyph pixel of the Fizz font is --n CSS pixels. */
+:root {
+	--n: 3;
+	--s: 2;
+	--panel: rgb(12 12 16 / 82%);
+	--border: rgb(255 255 255 / 10%);
+	--text: #e0e0e0;
+	--dim: #7c8796;
+	--accent: #ffaa40;
+	--muted: #b4bfce;
+	--font: 'Fizz', ui-monospace, monospace;
+}
+.panel,
+.hud,
+.toast,
+.card,
+.cap,
+.top-buttons,
+.sound-hint {
+	font-family: var(--font);
+	font-synthesis: none;
+	font-kerning: none;
+	letter-spacing: 0;
+	text-rendering: optimizeSpeed;
+	-webkit-font-smoothing: none;
+	font-size: calc(11px * var(--n));
+	line-height: calc(13px * var(--n));
+	color: var(--text);
+}
+.panel {
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	box-shadow: 0 4px 24px rgb(0 0 0 / 45%);
+	backdrop-filter: blur(6px);
+}
+[hidden] {
+	display: none !important;
+}
+.hud {
+	position: fixed;
+	top: max(16px, env(safe-area-inset-top));
+	left: max(16px, env(safe-area-inset-left));
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--n) * 2px);
+	pointer-events: none;
+}
+.hud .pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: calc(var(--n) * 2px);
+	align-items: center;
+}
+.hud .pill {
+	display: inline-flex;
+	align-items: center;
+	gap: calc(var(--n) * 2px);
+	padding: 2px calc(var(--n) * 4px) 2px calc(var(--n) * 2px);
+	border-radius: 999px;
+	background: rgb(20 20 25 / 55%);
+	border: 1px solid rgb(255 255 255 / 14%);
+	backdrop-filter: blur(10px);
+	font-weight: 700;
+}
+.hud .pill b {
+	font-weight: 700;
+	min-width: 1ch;
+}
+.hud .badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: calc(var(--n) * 2px);
+	align-items: center;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	text-shadow: calc(var(--n) * 1px) calc(var(--n) * 1px) 0 #000;
+}
+.hud .lbl {
+	color: var(--dim);
+}
+.hud .badge {
+	display: inline-flex;
+	align-items: center;
+	gap: calc(var(--n) * 1px);
+	padding: 0 calc(var(--n) * 3px) 0 calc(var(--n) * 1px);
+	border-radius: 999px;
+	border: 1px solid currentcolor;
+	background: rgb(12 12 16 / 55%);
+}
+/* A sprite cut out of the sheet: --w and --h in sheet pixels, --x and --y its top left, shown at --s times. */
+.ico {
+	display: block;
+	flex: none;
+	width: calc(var(--w) * var(--s) * 1px);
+	height: calc(var(--h) * var(--s) * 1px);
+	background-image: var(--sheet);
+	background-size: calc(1024px * var(--s));
+	background-position: calc(var(--x) * var(--s) * -1px) calc(var(--y) * var(--s) * -1px);
+	image-rendering: pixelated;
+}
+.badge .ico {
+	width: calc(var(--w) * var(--n) * 0.5px);
+	height: calc(var(--h) * var(--n) * 0.5px);
+	background-size: calc(1024px * var(--n) * 0.5);
+	background-position: calc(var(--x) * var(--n) * -0.5px) calc(var(--y) * var(--n) * -0.5px);
+}
+.toast {
+	position: fixed;
+	top: max(20px, env(safe-area-inset-top));
+	left: 0;
+	right: 0;
+	margin: 0 auto;
+	width: max-content;
+	max-width: calc(100vw - 32px);
+	box-sizing: border-box;
+	padding: calc(var(--n) * 3px) calc(var(--n) * 6px);
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	text-align: center;
+	pointer-events: none;
+}
+.card {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	box-sizing: border-box;
+	width: max-content;
+	max-width: min(calc(100vw - 32px), 640px);
+	padding: calc(var(--n) * 5px) calc(var(--n) * 8px);
+	text-align: center;
+}
+.card h2 {
+	margin: 0 0 calc(var(--n) * 3px);
+	font-size: calc(11px * (var(--n) + 1));
+	line-height: calc(13px * (var(--n) + 1));
+	font-weight: 700;
+}
+.card .text {
+	margin: 0;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	color: var(--muted);
+}
+.card .action {
+	margin: calc(var(--n) * 4px) 0 0;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	color: var(--accent);
+}
+#card {
+	pointer-events: auto;
+}
+#paused {
+	pointer-events: none;
+}
+.top-buttons {
+	position: fixed;
+	top: max(16px, env(safe-area-inset-top));
+	right: max(16px, env(safe-area-inset-right));
+	display: flex;
+	gap: 8px;
+}
+.top-buttons button {
+	font: inherit;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	padding: 2px calc(var(--n) * 4px);
+	border-radius: 999px;
+	border: 1px solid rgb(255 255 255 / 14%);
+	background: rgb(20 20 25 / 55%);
+	color: var(--muted);
+	cursor: pointer;
+}
+.top-buttons button[aria-pressed='true'] {
+	color: var(--accent);
+}
+.sound-hint {
+	position: fixed;
+	top: max(16px, env(safe-area-inset-top));
+	right: max(16px, env(safe-area-inset-right));
+	margin-top: calc(13px * var(--n) + 8px);
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	color: var(--dim);
+	text-shadow: calc(var(--n) * 1px) calc(var(--n) * 1px) 0 #000;
+	pointer-events: none;
+}
+.confetti {
+	position: fixed;
+	top: 0;
+	width: calc(var(--n) * 3px);
+	height: calc(var(--n) * 3px);
+	pointer-events: none;
+}
+.keys {
+	position: fixed;
+	bottom: max(10px, env(safe-area-inset-bottom));
+	left: 0;
+	right: 0;
+	text-align: center;
+	font-size: 12px;
+	opacity: 0.75;
+	text-shadow: 0 1px 0 #000;
+	pointer-events: none;
+}
+.pad {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: max(16px, env(safe-area-inset-bottom));
+	display: none;
+	justify-content: space-between;
+	padding: 0 14px;
+	pointer-events: none;
+}
+.pad-side {
+	display: flex;
+	gap: 10px;
+	align-items: flex-end;
+}
+.pad button {
+	pointer-events: auto;
+	min-width: 58px;
+	height: 58px;
+	border-radius: 16px;
+	border: 2px solid rgb(255 255 255 / 55%);
+	background: rgb(20 12 40 / 55%);
+	color: #fff;
+	font: inherit;
+	touch-action: none;
+	user-select: none;
+}
+.pad button.held {
+	background: rgb(255 227 77 / 45%);
+}
+@media (pointer: coarse) {
+	.pad {
+		display: flex;
+	}
+	.keys {
+		display: none;
+	}
+}
+.labels span {
+	position: fixed;
+	transform: translate(-50%, 0);
+	font-size: 11px;
+	background: rgb(0 0 0 / 55%);
+	padding: 1px 5px;
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+/* A sound caption, as in the game: bold Fizz in the word's colour with one hard drop shadow, no outline. */
+.cap {
+	position: fixed;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	font-weight: 700;
+	text-shadow: calc((var(--n) - 1) * 1px) calc((var(--n) - 1) * 1px) 0 #000;
+	white-space: nowrap;
+	pointer-events: none;
+}

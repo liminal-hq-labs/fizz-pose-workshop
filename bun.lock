@@ -5,6 +5,7 @@
     "": {
       "name": "classic-fizz-pose-workshop",
       "dependencies": {
+        "@liminal-hq/undertone": "^0.2.0",
         "gifenc": "1.0.3",
         "pngjs": "7.0.0",
         "three": "0.187.0",
@@ -22,6 +23,8 @@
   },
   "packages": {
     "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.12.0", "", {}, "sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow=="],
+
+    "@liminal-hq/undertone": ["@liminal-hq/undertone@0.2.0", "", {}, "sha512-2y93+93xlz83H27fI5/q2ed4e6fJSpmjxhn2aJ0akUsJlW9vuh8YteqzE4iNOgf3nwAdpw1266dCbReofjjsJw=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.156.0", "", {}, "sha512-1Duyg48TdJNdyhEB8Xn1L36bT9Pv6GUtlKjHxOys8xkaF/rQq3XJE+bAurSK/AgIz5mGFsb77cn9Pb20+WCScw=="],
 
