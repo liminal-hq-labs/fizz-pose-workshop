@@ -4,12 +4,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 import * as THREE from 'three';
-import { applyPose } from '../model-3d/ben-g/apply.ts';
-import { applyFace, poseFaces, poseGazes } from '../model-3d/ben-g/faces.ts';
-import { poses, smoothstep } from '../model-3d/ben-g/poses.ts';
-import { buildRig } from '../model-3d/ben-g/rig.ts';
-import { inkMaterial } from '../model-3d/ben-g/shared.ts';
-import { benGSpec, defaultOptions } from '../model-3d/ben-g/spec.ts';
+import { poseFaces, poseGazes } from '../model-3d/ben-g/faces.ts';
+import { poses } from '../model-3d/ben-g/poses.ts';
 import type { Fig, FootGoal, HandGoal, PoseOut } from '../model-3d/ben-g/types.ts';
 import { Gait } from './ben-gait.ts';
 import { Blink, Idle, Rng, type IdlePose } from './ben-idle.ts';
@@ -20,35 +16,20 @@ import {
 	landOverlay,
 	mirrorArms,
 	mirrorPose,
+	runPose,
+	strideTiles,
 	tuckOf,
 } from './ben-moves.ts';
+import { BenRig, Turn, clamp, ease, sides, type Snap } from './ben-rig.ts';
 import type { Actor, FrameContext, ModelSet, SpriteDraw } from './types.ts';
 
-/** How tall the standing sprite is drawn, in tiles. */
-const spriteHeight = 1.5;
-/**
- * How much taller than the sprite's box the model stands: about 2 tiles against the sprite's 1.5, a third larger. The
- * sprite is chunky, with a helmet as wide as the tile, while the model is slim and reads much smaller at the sprite's own
- * height. The enemies and pickups are scaled by the same factor, so the cast stays in proportion. His soles stay on the
- * box's bottom edge and his head rises above its top.
- */
-const presence = 1.28;
-/** The smallest part of him, as a radius in sprite pixels, that still casts a shadow. */
-const smallestShadowCaster = 1.1;
-const standHeight = spriteHeight * presence;
 /** How far short of a dead side view he stays, so the camera sees some of his face, in radians. */
 const cameraTurn = 0.45;
-/** The turn between facing left and right is a spring: its natural frequency in radians a second, and its damping ratio. */
-const turnFrequency = 38;
-const turnDamping = 0.72;
 /** The sim's launch speed for a standing jump, in tiles a second; it maps vertical speed onto the jump pose. */
 const jumpSpeed = 20.5;
 /** The length of the sim's mantle, and of the pogo's squash frame, in seconds. */
 const mantleSeconds = 0.3;
 const squashSeconds = 0.12;
-/** How much longer than the model's own stride the run cycle is stretched, and how far the hips sink to allow it. */
-const strideStretch = 1.8;
-const runCrouch = 0.8;
 /** How much longer than the model's own rung spacing a climb cycle is stretched. */
 const climbStretch = 2;
 /**
@@ -67,9 +48,6 @@ const landSeconds = 0.26;
 const landDrop = 0.055;
 /** How long the Stunner stays raised after a shot that the sprite does not show, such as one from the pogo stick. */
 const shotHold = 0.28;
-
-const sides = [1, -1] as const;
-const tau = Math.PI * 2;
 
 export type Mode =
 	'stand' | 'lookUp' | 'lookDown' | 'run' | 'air' | 'pogo' | 'climb' | 'mantle' | 'dead';
@@ -91,21 +69,6 @@ export interface BenActor extends Actor {
 	soleHeight(draw: SpriteDraw): number;
 }
 
-/** The bones, finger curls and offsets of one displayed frame, kept so the next pose can fade in from it. */
-class Snap {
-	readonly q = new Float64Array(17 * 4);
-	readonly p = new Float64Array(3);
-	readonly chest = new Float64Array(2);
-	readonly digits: Float64Array;
-	off = 0;
-	constructor(digits: number) {
-		this.digits = new Float64Array(digits);
-	}
-}
-
-const wrap = (angle: number): number => angle - tau * Math.round(angle / tau);
-const clamp = (x: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, x));
-const ease = (k: number): number => smoothstep(k);
 /** The landing squash's depth `t` seconds after touching down: a quick drop, then a springy release. */
 const landCurve = (t: number): number =>
 	t < landDrop ? ease(t / landDrop) : 1 - ease((t - landDrop) / (landSeconds - landDrop));
@@ -119,20 +82,10 @@ class BenFigure implements BenActor {
 	mode: Mode = 'stand';
 	idlePose: IdlePose | null = null;
 	gunSide = -1;
+	private readonly rig: BenRig;
 	private readonly scale: number;
-	private readonly joints: THREE.Object3D[];
-	private readonly digits: THREE.Object3D[] = [];
 	private readonly snap: Snap;
-	private readonly scratch: Snap;
-	private readonly tmpQ = new THREE.Quaternion();
 	private readonly tmpV = new THREE.Vector3();
-	private readonly tmpColour = new THREE.Color();
-	private readonly paint: {
-		material: THREE.Material & { color: THREE.Color };
-		base: THREE.Color;
-	}[] = [];
-	private tint = 0xffffff;
-	private opacity = 1;
 	private readonly rng = new Rng(0x5eed);
 	private readonly idle = new Idle(this.rng);
 	private readonly blink = new Blink(this.rng);
@@ -166,8 +119,7 @@ class BenFigure implements BenActor {
 	private lean = 0;
 	private snapOff = 0;
 	/* Facing: the turn is a spring so it has weight, and the head leads it. */
-	private yaw = 0;
-	private yawVel = 0;
+	private readonly turn = new Turn();
 	private face = 1;
 	/* The Stunner: aim is 0 forwards, 1 up, -1 down; kick is the recoil, 1 at the shot and falling to 0. */
 	private aim = 0;
@@ -185,128 +137,21 @@ class BenFigure implements BenActor {
 	private wasSquash = false;
 
 	constructor() {
-		const vents = typeof document === 'undefined' ? 'mesh' : defaultOptions.vents;
-		this.fig = buildRig(benGSpec({ vents }));
-		const fig = this.fig;
-		fig.props.glow.visible = false;
-		this.joints = fig.jointList;
-		for (const s of sides) {
-			this.digits.push(...fig.X.fingers[s], fig.X.thumbs[s]);
-		}
-		this.snap = new Snap(this.digits.length);
-		this.scratch = new Snap(this.digits.length);
-		/* The model is measured in sprite pixels: scale so the standing crown reaches the standing height. */
-		applyPose(fig, poses.stand(0, fig), 0);
-		fig.turn.updateMatrixWorld(true);
-		this.scale = standHeight / (fig.loc(fig.J._crown).y + 0.4);
-		fig.turn.scale.setScalar(this.scale);
-		this.mantleBodyZ = poses.ledge(0.54 * 6.5, fig).pz;
-		this.object.add(fig.turn);
-		fig.turn.traverse((node) => {
-			const mesh = node as THREE.Mesh;
-			if (!mesh.isMesh || Array.isArray(mesh.material)) return;
-			/* He is about three hundred meshes, and each shadow caster is drawn a second time. Only his body and his
-			   larger parts cast: an eye, a finger or an ink shell adds nothing to the shadow on the ground. */
-			if (mesh.castShadow && !(mesh as THREE.SkinnedMesh).isSkinnedMesh) {
-				mesh.geometry.computeBoundingSphere();
-				const reach =
-					(mesh.geometry.boundingSphere?.radius ?? 0) *
-					Math.max(mesh.scale.x, mesh.scale.y, mesh.scale.z);
-				if (mesh.userData.ol || reach < smallestShadowCaster) mesh.castShadow = false;
-			}
-			const material = mesh.material as THREE.Material & { color?: THREE.Color };
-			if (material === inkMaterial || !material.color) return;
-			if (this.paint.some((entry) => entry.material === material)) return;
-			this.paint.push({
-				material: material as THREE.Material & { color: THREE.Color },
-				base: material.color.clone(),
-			});
-		});
+		this.rig = new BenRig();
+		this.fig = this.rig.fig;
+		this.scale = this.rig.scale;
+		this.snap = this.rig.snapshot();
+		this.mantleBodyZ = poses.ledge(0.54 * 6.5, this.fig).pz;
+		this.object.add(this.fig.turn);
 	}
 
 	get stanceX(): readonly number[] {
 		return this.gait.stanceX;
 	}
 
-	/* ---------- bone snapshots, for fading between poses ---------- */
-
-	private capture(into: Snap, off: number): void {
-		const joints = this.joints;
-		for (let i = 0; i < joints.length; i++) {
-			const q = joints[i].quaternion;
-			into.q[i * 4] = q.x;
-			into.q[i * 4 + 1] = q.y;
-			into.q[i * 4 + 2] = q.z;
-			into.q[i * 4 + 3] = q.w;
-		}
-		const pelvis = this.fig.J.pelvis.position;
-		into.p[0] = pelvis.x;
-		into.p[1] = pelvis.y;
-		into.p[2] = pelvis.z;
-		const scale = this.fig.J.chest.scale;
-		into.chest[0] = scale.y;
-		into.chest[1] = scale.z;
-		for (let i = 0; i < this.digits.length; i++) into.digits[i] = this.digits[i].rotation.z;
-		into.off = off;
-	}
-
-	/** Moves the figure's bones from `from` (weight 0) to where they are now (weight 1); returns the blended offset. */
-	private mix(from: Snap, k: number, off: number): number {
-		const joints = this.joints;
-		const q = this.tmpQ;
-		for (let i = 0; i < joints.length; i++) {
-			q.set(from.q[i * 4], from.q[i * 4 + 1], from.q[i * 4 + 2], from.q[i * 4 + 3]);
-			q.slerp(joints[i].quaternion, k);
-			joints[i].quaternion.copy(q);
-		}
-		const pelvis = this.fig.J.pelvis.position;
-		pelvis.set(
-			from.p[0] + (pelvis.x - from.p[0]) * k,
-			from.p[1] + (pelvis.y - from.p[1]) * k,
-			from.p[2] + (pelvis.z - from.p[2]) * k,
-		);
-		const scale = this.fig.J.chest.scale;
-		scale.set(
-			1,
-			from.chest[0] + (scale.y - from.chest[0]) * k,
-			from.chest[1] + (scale.z - from.chest[1]) * k,
-		);
-		for (let i = 0; i < this.digits.length; i++) {
-			const d = this.digits[i].rotation;
-			d.z = from.digits[i] + (d.z - from.digits[i]) * k;
-		}
-		return from.off + (off - from.off) * k;
-	}
-
-	/* ---------- putting a pose on the figure ---------- */
-
-	/** Applies a pose with the props the world supplies, and the model's own shot bubbles, taken out. */
+	/** Applies a pose with the props the world supplies; see `BenRig.put`. */
 	private put(o: PoseOut, face: string, gaze: readonly number[]): void {
-		o.shotId = undefined;
-		o.ladder = undefined;
-		o.ledge = undefined;
-		o.phone = undefined;
-		o.notes = false;
-		o.pogoFree = undefined;
-		o.freeCan = undefined;
-		o.rootDrop = 0;
-		const fig = this.fig;
-		if (o.gun) this.holdGun(this.gunSide);
-		applyPose(fig, o, this.clock);
-		fig.shots = [];
-		fig.props.glow.visible = false;
-		applyFace(fig, o.face || face, gaze);
-	}
-
-	/** Puts the Stunner in the hand on the camera's side: his right facing right, his left facing left. */
-	private holdGun(side: number): void {
-		const fig = this.fig,
-			hand = fig.J['hand' + side],
-			gun = fig.X.gun;
-		if (gun.parent !== hand) {
-			hand.add(gun);
-			gun.position.x = (side < 0 ? 1 : -1) * Math.abs(gun.position.x);
-		}
+		this.rig.put(o, face, gaze, this.clock, this.gunSide);
 	}
 
 	/** Raises everything of the pogo pose by `dh` pixels above the stick's tip and lengthens the spring to meet it. */
@@ -369,7 +214,7 @@ class BenFigure implements BenActor {
 			this.kick = 0;
 			this.fallTime = 0;
 			this.lean = 0;
-			this.yawVel = 0;
+			this.turn.vel = 0;
 			this.gait.reset();
 		} else {
 			const a = 1 - Math.exp(-el / 0.025),
@@ -456,27 +301,15 @@ class BenFigure implements BenActor {
 			mode === 'climb'
 				? Math.PI - this.face * 0.4
 				: this.face * (Math.PI / 2 - cameraTurn - towardCamera);
-		if (fresh) {
-			this.yaw = targetYaw;
-			this.yawVel = 0;
-		}
-		const aimYaw = this.yaw + wrap(targetYaw - this.yaw),
-			steps = Math.max(1, Math.ceil(el / 0.004)),
-			h = el / steps;
-		for (let i = 0; i < steps; i++) {
-			this.yawVel +=
-				(turnFrequency * turnFrequency * (aimYaw - this.yaw) -
-					2 * turnDamping * turnFrequency * this.yawVel) *
-				h;
-			this.yaw += this.yawVel * h;
-		}
-		const lead = clamp(aimYaw - this.yaw, -1.2, 1.2);
+		if (fresh) this.turn.snapTo(targetYaw);
+		this.turn.step(targetYaw, el);
+		const lead = this.turn.lead;
 
 		/* A new pose fades in from the bones as they were shown. */
 		const key = mode + (gun ? '+gun' : '') + (idlePose ?? '');
 		if (key !== this.poseKey) {
 			if (!fresh && this.poseKey !== '') {
-				this.capture(this.snap, this.snapOff);
+				this.rig.capture(this.snap, this.snapOff);
 				this.fadeT = 0;
 				this.fadeLength =
 					mode === 'mantle' || this.mode === 'mantle' ? 0.05 : idlePose ? 0.35 : 0.09;
@@ -531,25 +364,19 @@ class BenFigure implements BenActor {
 			}
 			case 'run': {
 				if (!fresh) {
-					const along = Math.max(0.5, Math.abs(Math.sin(this.yaw)));
-					this.runCycles = (this.runCycles + Math.abs(dx) / (this.strideTiles() * along)) % 1000;
+					const along = Math.max(0.5, Math.abs(Math.sin(this.turn.yaw)));
+					this.runCycles =
+						(this.runCycles + Math.abs(dx) / (strideTiles(this.fig, this.scale) * along)) % 1000;
 				}
 				if (this.slope !== 0 || Math.abs(this.vx) > 2) {
 					const raw = Math.abs(this.vx) > 2 ? clamp(this.vy / this.vx, -1.2, 1.2) : 0;
 					this.slope += (raw - this.slope) * (1 - Math.exp(-el / 0.05));
 				}
-				const o = poses.run(this.runCycles / 1.4, fig);
-				for (const s of sides) {
-					const abs = o.feet[s].abs;
-					if (abs) abs[2] = (abs[2] + 0.3) * strideStretch - 0.3;
-					const rel = o.hands[s].rel;
-					if (rel) rel[2] *= 1.25;
-				}
-				o.py -= runCrouch;
+				const o = runPose(fig, this.runCycles);
 				o.prot[0] += 0.5 * Math.atan(this.slope * this.face);
 				this.gait.apply(o, this.runCycles, {
 					x: draw.x,
-					yaw: this.yaw,
+					yaw: this.turn.yaw,
 					scale: S,
 					slope: this.slope,
 					face: this.face,
@@ -684,7 +511,7 @@ class BenFigure implements BenActor {
 		}
 		if (grounded && mode !== 'run') {
 			/* Turning on the spot leans him into the new direction, then rights him as the spring settles. */
-			leanTarget += clamp(-this.yawVel / 9, -1, 1) * 0.13;
+			leanTarget += clamp(-this.turn.vel / 9, -1, 1) * 0.13;
 		}
 		this.wasMantle = mode === 'mantle';
 		this.wasPogo = mode === 'pogo';
@@ -692,14 +519,13 @@ class BenFigure implements BenActor {
 		/* Fade from the previous mode's bones. */
 		if (this.fadeT < this.fadeLength) {
 			this.fadeT += el;
-			off = this.mix(this.snap, ease(this.fadeT / this.fadeLength), off);
+			off = this.rig.mix(this.snap, ease(this.fadeT / this.fadeLength), off);
 		}
 		this.snapOff = off;
 
 		/* Blink, at irregular gaps. */
 		const shut = this.blink.update(el) > 0;
-		fig.X.eyes.scale.y = shut ? 0.12 : 1;
-		fig.X.eyes.position.y = shut ? 3.55 * 0.88 : 0;
+		this.rig.blink(shut);
 
 		/* Lean into his travel about his soles, then place the figure with his lowest sole on the sprite's bottom edge, turned
 		   as the sim says. */
@@ -712,37 +538,16 @@ class BenFigure implements BenActor {
 			0,
 		);
 		this.object.rotation.set(0, 0, draw.rot + lean);
-		fig.turn.rotation.y = this.yaw;
+		fig.turn.rotation.y = this.turn.yaw;
 		fig.turn.position.set(0, -draw.h / 2 - off * S, zShift);
 		fig.root.position.z = rootZ;
 		this.object.updateMatrixWorld(true);
-		this.setPaint(draw.tint, draw.alpha);
+		this.rig.setPaint(draw.tint, draw.alpha);
 	}
 
 	/** The pose time of the fire pose for the current recoil: 0 at rest, and back along its recoil curve. */
 	private fireTime(): number {
 		return this.kick > 0 ? (0.18 + 0.34 * (1 - this.kick)) / 0.9 : 0;
-	}
-
-	/** How far the run pose carries a planted foot in one cycle, in tiles of travel square to the view. */
-	private strideTiles(): number {
-		return 5 * 0.29 * this.fig.d.Lg * strideStretch * this.scale;
-	}
-
-	private setPaint(tint: number, alpha: number): void {
-		if (tint === this.tint && alpha === this.opacity) return;
-		this.tint = tint;
-		this.opacity = alpha;
-		this.tmpColour.setHex(tint);
-		for (const { material, base } of this.paint) {
-			material.color.copy(base).multiply(this.tmpColour);
-			const faded = alpha < 0.999;
-			if (material.transparent !== faded) {
-				material.transparent = faded;
-				material.needsUpdate = true;
-			}
-			material.opacity = alpha;
-		}
 	}
 
 	heading(): number {

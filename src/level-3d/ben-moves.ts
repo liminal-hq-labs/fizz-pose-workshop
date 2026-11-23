@@ -3,7 +3,7 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-import { eachSide, poseBase, smoothstep } from '../model-3d/ben-g/poses.ts';
+import { eachSide, poseBase, poses, smoothstep } from '../model-3d/ben-g/poses.ts';
 import type { Fig, HandGoal, PoseOut } from '../model-3d/ben-g/types.ts';
 
 const clamp = (x: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, x));
@@ -207,4 +207,29 @@ export function idleLife(o: PoseOut, clock: number, glance: number): number {
 		look = smoothstep((phase - 0.5) / 0.08) * (1 - smoothstep((phase - 0.72) / 0.08));
 	o.head[1] = 0.12 * Math.sin(clock * 0.45) + glance * 0.5 * look;
 	return glance * look;
+}
+
+/** How much longer than the model's own stride the run cycle is stretched, and how far the hips sink to allow it. */
+export const strideStretch = 1.8;
+const runCrouch = 0.8;
+
+/** How far the stretched run pose carries a planted foot in one cycle, in tiles of travel square to the view. */
+export function strideTiles(fig: Fig, scale: number): number {
+	return 5 * 0.29 * fig.d.Lg * strideStretch * scale;
+}
+
+/**
+ * The run pose at `cycles` strides, stretched to the longer stride the game's pace needs: the feet reach further, the hips
+ * sink to allow it and the arms swing a little wider. The caller plants the feet on the ground.
+ */
+export function runPose(fig: Fig, cycles: number): PoseOut {
+	const o = poses.run(cycles / 1.4, fig);
+	for (const s of [1, -1]) {
+		const abs = o.feet[s].abs;
+		if (abs) abs[2] = (abs[2] + 0.3) * strideStretch - 0.3;
+		const rel = o.hands[s].rel;
+		if (rel) rel[2] *= 1.25;
+	}
+	o.py -= runCrouch;
+	return o;
 }
