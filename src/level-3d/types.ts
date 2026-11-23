@@ -46,6 +46,14 @@ export interface FrameContext {
 	 * than Ben: parallax layers, the sky dome, haze. It is placed before any actor is updated, so it is this frame's.
 	 */
 	camera: { x: number; y: number; z: number };
+	/**
+	 * What the sim is showing: a side-on level, or the overworld seen from above. In a level the scene's Y is up and Z is
+	 * depth. On the overworld the sim's X and Y are the ground plane, north is +Y, and the scene's +Z is up: models there
+	 * stand along Z. Absent when a caller has no sim, such as a test.
+	 */
+	mode?: 'level' | 'map';
+	/** The level being played, by the sim's id: Crater Fields is 0, Meteor Mesa 3. Absent on the overworld. */
+	level?: number;
 	/** Every sprite drawn this frame, in order. */
 	draws: readonly SpriteDraw[];
 }
