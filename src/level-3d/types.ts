@@ -88,7 +88,10 @@ export interface ModelSet {
 	 * family (`gloop0` and `gloop1` are both `gloop`), so one actor lives across them and sees the name change.
 	 */
 	family(spriteName: string): string | null;
-	/** Makes an actor for the first sprite of a family member. */
+	/**
+	 * Makes an actor for the first sprite of a family member. The `first` record is reused for another sprite on the next
+	 * frame, as every `SpriteDraw` is, so copy what the actor needs from it now and do not read it again later.
+	 */
 	create(family: string, first: SpriteDraw): Actor;
 	/**
 	 * Families whose members never move, such as terrain tiles. The stage matches them by position, which is cheaper and
