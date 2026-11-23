@@ -1,22 +1,22 @@
-// Tests for the Enhanced music: the Crater Fields song and its depth.
+// Tests for the Enhanced music: the overworld, Crater Fields and Meteor Mesa songs and their depth.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 //
-// Adapted from episodes/episode-1/src/audio/songs.test.ts of liminal-hq/lieutenant-fizz at commit 94f354d, for the one cue this page has.
+// Adapted from episodes/episode-1/src/audio/songs.test.ts of liminal-hq/lieutenant-fizz at commit 94f354d, for the three cues this page has.
 
 import { describe, expect, it } from 'bun:test';
 import { MUSIC, PATTERNS } from './patterns.ts';
 import { buildSongs } from './songs.ts';
 
-const CUES = ['crater'];
+const CUES = ['crater', 'sky', 'map'];
 const songs = PATTERNS.songs!;
 const seconds = (id: string): number =>
 	(songs[id]!.cycles.reduce((a, b) => a + b, 0) * 240) / songs[id]!.bpm;
 
 describe('the Enhanced songs', () => {
-	it('has a song for the Crater Fields cue', () => {
-		expect(Object.keys(songs)).toEqual(CUES);
+	it('has a song for the Crater Fields, Meteor Mesa and overworld cues, and none for the rest', () => {
+		expect(Object.keys(songs).sort()).toEqual([...CUES].sort());
 		for (const id of CUES) expect(MUSIC[id]).toBeDefined();
 	});
 
@@ -49,8 +49,15 @@ describe('the Enhanced songs', () => {
 		}
 	});
 
-	it('ends the other songs on a one-bar fill that turns back into the intro', () => {
-		for (const id of CUES) {
+	it('starts the overworld straight on the tune, and runs its last section into the first', () => {
+		const song = songs['map']!;
+		const first = song.streams.map((stream) => stream[0]).filter((part) => part !== null);
+		expect(first.length).toBeGreaterThan(2);
+		expect(song.cycles[song.cycles.length - 1]).toBeGreaterThan(1);
+	});
+
+	it('ends the level songs on a one-bar fill that turns back into the intro', () => {
+		for (const id of CUES.filter((cue) => cue !== 'map')) {
 			const song = songs[id]!;
 			expect(song.cycles[song.cycles.length - 1], id).toBe(1);
 			expect(song.cycles[0], id).toBe(2);

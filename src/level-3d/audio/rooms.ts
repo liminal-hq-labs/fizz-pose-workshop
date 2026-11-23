@@ -1,15 +1,15 @@
-// The rooms Enhanced sound is heard in: the neutral room and the open air Crater Fields sits in.
+// The rooms Enhanced sound is heard in: the neutral room, the overworld's and the open air Crater Fields and Meteor Mesa sit in.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 //
 // Ported from episodes/episode-1/src/audio/rooms.ts of liminal-hq/lieutenant-fizz at commit 94f354d. The
-// other levels' rooms and the screen-to-room lookup are left out: this page has one level.
+// other levels' rooms and the screen-to-room lookup are left out: `levels.ts` names each level's room and the page picks the map's.
 
 import type { RoomProfile } from './master.ts';
 
 /** The kinds of place this page uses. */
-export type RoomName = 'neutral' | 'outdoor';
+export type RoomName = 'neutral' | 'map' | 'outdoor';
 
 /**
  * The rooms, as data to tune by ear. Lengths in seconds, `coarseSeconds` being the shorter length
@@ -30,6 +30,18 @@ export const ROOMS: Record<RoomName, RoomProfile> = {
 		predelay: 0.012,
 		damping: 0,
 		seed: 0,
+	},
+	// The overworld: close and dry.
+	map: {
+		seconds: 0.5,
+		coarseSeconds: 0.4,
+		sfxSend: 0.08,
+		musicSend: 0.06,
+		hpf: 300,
+		lpf: 4500,
+		predelay: 0.006,
+		damping: 0.5,
+		seed: 1,
 	},
 	// Open air: almost no room at all.
 	outdoor: {

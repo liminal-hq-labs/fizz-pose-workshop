@@ -22,6 +22,10 @@ export const State = {
 	score: 1,
 	nextLife: 2,
 	ammo: 3,
+	doneMask: 4,
+	mapX: 5,
+	mapY: 6,
+	hasMapPos: 7,
 	keyRed: 8,
 	playerX: 13,
 	playerY: 14,
@@ -38,6 +42,7 @@ export const SimEvent = {
 	levelComplete: 4,
 	died: 5,
 	gameOver: 6,
+	mapPrompt: 10,
 	levelStart: 11,
 } as const;
 /** One thing the sim reported: a kind and up to five numbers whose meaning depends on it. */
@@ -47,6 +52,11 @@ export interface SimEventRecord {
 	b: number;
 	c: number;
 }
+/** Half the view the sim frames in a level and on the map, in tiles: it clamps its camera this far inside the edges. */
+export const levelView = { w: 12, h: 7 } as const;
+export const mapView = { w: 8, h: 6 } as const;
+/** The map's size in tiles, north up: the sim's X runs east and Y north. */
+export const mapSize = { w: 60, h: 44 } as const;
 /** The sim's fixed step, in seconds. */
 export const stepSeconds = 1 / 60;
 
@@ -70,6 +80,7 @@ interface Exports {
 	events_clear(): void;
 	game_new(): void;
 	enter_level(id: number): void;
+	enter_map(): void;
 	set_view(halfW: number, halfH: number): void;
 	step(held: number): void;
 	render(alpha: number, flags: number): number;
@@ -144,7 +155,37 @@ export class LevelSim {
 	/** Loads the level again without starting a new game: lives, snack points and Fizz ammo carry over, as after a death in the game. */
 	reenter(level: number): void {
 		this.x.enter_level(level);
-		this.x.set_view(12, 7);
+		this.x.set_view(levelView.w, levelView.h);
+	}
+
+	/**
+	 * Puts the sim on the overworld, as the game does after a level: Ben stands where the sim last put him on the map
+	 * (the level's doorstep after one), the map prompt is raised again and a level just cleared throws its flag.
+	 */
+	enterMap(): void {
+		this.x.enter_map();
+		this.x.set_view(mapView.w, mapView.h);
+	}
+
+	/** Tells the sim a level has begun, so it frames the side view; the sim itself enters a level when Ben confirms at one. */
+	frameLevel(): void {
+		this.x.set_view(levelView.w, levelView.h);
+	}
+
+	/** Starts a new game with no scene: three lives, no snack points, nothing cleared, no map position. */
+	newGame(): void {
+		this.x.game_new();
+	}
+
+	/** Starts a new game on the overworld. */
+	newGameOnMap(): void {
+		this.newGame();
+		this.enterMap();
+	}
+
+	/** Sets one state value, for restoring a save and for tooling. */
+	setState(index: number, value: number): void {
+		this.x.state_set(index, value);
 	}
 
 	/** Sets the lives, for a fall the sim itself does not notice. */
@@ -156,7 +197,7 @@ export class LevelSim {
 	enter(level: number): void {
 		this.x.game_new();
 		this.x.enter_level(level);
-		this.x.set_view(12, 7);
+		this.x.set_view(levelView.w, levelView.h);
 	}
 
 	step(held: number): void {
@@ -171,7 +212,7 @@ export class LevelSim {
 		return this.x.state_get(index);
 	}
 
-	/** Places Ben, for tooling. */
+	/** Places Ben, for tooling and for a saved map position. On the map the sim also snaps its camera to him. */
 	teleport(x: number, y: number): void {
 		this.x.state_set(State.playerX, x);
 		this.x.state_set(State.playerY, y);

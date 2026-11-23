@@ -16,8 +16,8 @@ let saving = false;
 export default defineConfig({
   base: './',
   server: { host: '0.0.0.0', port: 5173, strictPort: true },
-  // The workshop, the cartoon Ben tuning bench and the 3D level are separate pages of one build.
-  build: { rollupOptions: { input: { index: root + 'index.html', 'ben-g': root + 'ben-g.html', 'crater-fields': root + 'crater-fields.html' } } },
+  // The workshop, the cartoon Ben tuning bench, the 3D game and its direct level page are separate pages of one build.
+  build: { rollupOptions: { input: { index: root + 'index.html', 'ben-g': root + 'ben-g.html', 'crater-fields': root + 'crater-fields.html', 'fizz-3d': root + 'fizz-3d.html' } } },
   plugins: [{
     name: 'sprite-project',
     configureServer(server) {
