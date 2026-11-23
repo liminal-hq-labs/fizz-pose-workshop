@@ -1,10 +1,10 @@
-// Episode 1's sound effects, the caption-to-effect table and the Crater Fields music, as voice data and mini-notation.
+// Episode 1's sound effects, the caption-to-effect table and the overworld, Crater Fields and Meteor Mesa music, as voice data and mini-notation.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 //
 // Ported from episodes/episode-1/src/audio/patterns.ts of liminal-hq/lieutenant-fizz at commit 94f354d. The music of the
-// other levels, the title, the cinematics, the boss and the opening titles are left out, as are the `pad` and `bell` part helpers only those tracks use.
+// other levels, the title, the cinematics, the boss and the opening titles are left out.
 
 import type { AudioPatterns, MusicPart, MusicTrack, SfxVoice } from './audio-types.ts';
 import { enhanceSfx } from './enhanced-sfx.ts';
@@ -211,7 +211,52 @@ const hats = (pat: string, g = 0.1): MusicPart =>
 	P(pat, { role: 'hats', noise: true, d: 0.03, s: 0, r: 0.01, g, hpf: 6000 });
 const snare = (pat: string, g = 0.28): MusicPart =>
 	P(pat, { role: 'snare', noise: true, d: 0.09, s: 0, r: 0.05, g, hpf: 1600 });
+const pad = (notes: string, o: Partial<MusicPart> = {}): MusicPart =>
+	P(notes, {
+		role: 'pad',
+		w: 'sine',
+		a: 0.6,
+		d: 0.5,
+		s: 0.7,
+		r: 1.1,
+		g: 0.07,
+		lpf: 1400,
+		room: 0.5,
+		...o,
+	});
+const bell = (notes: string, o: Partial<MusicPart> = {}): MusicPart =>
+	P(notes, {
+		role: 'bell',
+		w: 'sine',
+		a: 0.002,
+		d: 0.35,
+		s: 0.05,
+		r: 0.4,
+		g: 0.07,
+		delay: 0.4,
+		...o,
+	});
 export const MUSIC: Record<string, MusicTrack> = {
+	// Overworld: jaunty oom-pah walk in F.
+	map: {
+		bpm: 112,
+		parts: [
+			P(
+				'<[a4 c5 ~ a4 g4 ~ f4 ~] [g4 a#4 ~ g4 f4 ~ e4 ~] [f4 a4 c5 f5 e5 c5 a4 c5] [d5 ~ c5 ~ a#4 ~ g4 ~] [a4 c5 ~ a4 g4 ~ f4 ~] [g4 a#4 ~ d5 c5 ~ a4 ~] [a#4 d5 f5 d5 c5 a4 g4 e4] [f4 ~ c4 ~ f4 ~ ~ ~]>',
+				{ role: 'lead', g: 0.13, d: 0.16, s: 0.3 },
+			),
+			P(
+				'<[~ [a3,c4,f4] ~ [a3,c4,f4]] [~ [g3,c4,e4] ~ [g3,c4,e4]] [~ [a3,c4,f4] ~ [a3,c4,f4]] [~ [a#3,d4,f4] ~ [a#3,d4,f4]] [~ [a3,c4,f4] ~ [a3,c4,f4]] [~ [g3,c4,e4] ~ [g3,c4,e4]] [~ [a#3,d4,f4] ~ [g3,c4,e4]] [~ [a3,c4,f4] ~ ~]>',
+				{ role: 'counter', w: 'square', g: 0.03, lpf: 1400, d: 0.08, s: 0 },
+			),
+			P(
+				'<[f2 ~ c3 ~] [c2 ~ g2 ~] [f2 ~ c3 ~] [a#1 ~ f2 ~] [f2 ~ c3 ~] [c2 ~ g2 ~] [a#1 ~ c2 ~] [f2 c2 f2 ~]>',
+				{ role: 'bass', g: 0.3, s: 0.5 },
+			),
+			hats('~ white ~ white', 0.06),
+			kick('c1 ~ c1 ~', 0.4),
+		],
+	},
 	// Crater Fields: driving A-minor run-and-jump.
 	crater: {
 		bpm: 148,
@@ -235,6 +280,36 @@ export const MUSIC: Record<string, MusicTrack> = {
 			kick('c1 ~ ~ c1 c1 ~ ~ ~'),
 			snare('~ white ~ white'),
 			hats('white*8'),
+		],
+	},
+	// Open sky: bright, airy C major with a bouncing lead and a sparkle on top.
+	sky: {
+		bpm: 140,
+		parts: [
+			P(
+				'<[e5 g5 c6 g5 e5 g5 a5 g5] [d5 f5 b5 f5 d5 f5 g5 f5] [c5 e5 a5 e5 c5 e5 f5 e5] [d5 g5 b5 g5 a5 g5 f5 d5] [e5 g5 c6 g5 e6 c6 g5 e5] [f5 a5 c6 a5 f6 c6 a5 f5] [d5 f5 b5 d6 b5 g5 f5 d5] [c5 ~ e5 ~ g5 ~ c6 ~]>',
+				{ role: 'lead', w: 'square', g: 0.06, lpf: 2600, d: 0.09 },
+			),
+			bell(
+				'<[c6 ~ e6 ~ g6 ~ e6 ~] [b5 ~ d6 ~ g6 ~ d6 ~] [a5 ~ c6 ~ e6 ~ c6 ~] [a5 ~ c6 ~ f6 ~ c6 ~]>',
+				{
+					g: 0.04,
+					delay: 0.35,
+				},
+			),
+			pad(
+				'<[c4,e4,g4] [g3,b3,d4] [a3,c4,e4] [f3,a3,c4] [c4,e4,g4] [f3,a3,c4] [g3,b3,d4] [c4,e4,g4]>',
+				{
+					g: 0.045,
+					room: 0.4,
+				},
+			),
+			P(
+				'<[c2 ~ g2 ~] [g1 ~ d2 ~] [a1 ~ e2 ~] [f1 ~ c2 ~] [c2 ~ g2 ~] [f1 ~ c2 ~] [g1 ~ d2 ~] [c2 g1 c2 ~]>',
+				{ role: 'bass', g: 0.3, s: 0.5 },
+			),
+			kick('c1 ~ c1 ~', 0.5),
+			hats('~ white ~ white', 0.06),
 		],
 	},
 };

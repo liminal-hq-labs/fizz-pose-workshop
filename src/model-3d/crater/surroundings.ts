@@ -15,6 +15,9 @@ export interface Surroundings {
 	wallR: boolean;
 	/** True when there is solid ground directly below, so a block here rests on something. */
 	below: boolean;
+	/** For ledges: true when another ledge joins this one on the left or right. Absent for tiles that do not ask. */
+	joinL?: boolean;
+	joinR?: boolean;
 }
 
 /** The surface of a tile: its height at the left and right edge, as fractions of the tile, and whether it carries a grassy crust. */

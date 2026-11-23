@@ -82,6 +82,8 @@ export interface FaceSpec {
 	/** The colour of the joints between stones, and how a stone's colour is lit and shadowed at a point of the face. */
 	joint: number;
 	tone: (colour: number, u: number, v: number) => number;
+	/** The colour of the stone at a place in the wall; the crater's rock when absent. */
+	colour?: (a: number, b: number, face: number) => number;
 	/** How much of a stone's edge is bevelled: `lit` only its top and left, which catch the light; `flat` none, for far rock. */
 	bevelled: 'lit' | 'flat';
 }
@@ -166,7 +168,7 @@ function stone(
 		flushT = true;
 	}
 	if (b - a < 1e-4 || high - low < 1e-4) return;
-	const base = stoneColour(jointIndex, course, f.face),
+	const base = (f.colour ?? stoneColour)(jointIndex, course, f.face),
 		relief = stoneRelief * (0.3 + 0.7 * lattice(jointIndex, course, 230 + f.face)),
 		mid = (a + b) / 2,
 		fits = flat || (yb <= top(a) + 1e-9 && yb <= top(b) + 1e-9);

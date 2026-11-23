@@ -5,6 +5,8 @@
 
 import * as THREE from 'three';
 import type { Actor, FrameContext } from '../../level-3d/types.ts';
+import { daylight, isOpenSky } from '../sky/backdrop.ts';
+import { cameraBehind, sceneryActor, type Scenery } from './scenery.ts';
 import { lattice, noise2, rng } from './hash.ts';
 import { Mesher, mix, shade } from './mesher.ts';
 import { propMaterial, skyBodyMaterial } from './materials.ts';
@@ -397,7 +399,7 @@ function lollipop(
 	}
 }
 
-class Backdrop {
+class Backdrop implements Scenery {
 	readonly root = new THREE.Group();
 	private readonly layers: Layer[] = [];
 	private readonly clouds: { object: THREE.Object3D; base: number; speed: number; y: number }[] =
@@ -461,31 +463,13 @@ class Backdrop {
 	}
 }
 
-/** How far the stage's camera stands left of and above the spot Ben usually stands at, in tiles. */
-const cameraBehind = { x: 0.8, y: 3.1 };
-
-let backdrop: Backdrop | null = null;
-let users = 0;
+let dusk: Backdrop | null = null;
 
 /**
  * An actor for one of the sprites the game draws its parallax scenery with. The actor itself is empty; the first one
- * alive attaches the single shared 3D backdrop to the scene and every update moves it with Ben.
+ * alive attaches the single shared 3D backdrop to the scene and every update moves it with the camera. The open-sky
+ * levels get the daylight backdrop; every other level, and a frame that does not name its level, gets the crater's dusk.
  */
 export function backdropActor(): Actor {
-	const holder = new THREE.Group();
-	users++;
-	return {
-		object: holder,
-		update(_draw, frame) {
-			const scene = holder.parent;
-			if (!scene) return;
-			backdrop ??= new Backdrop();
-			if (backdrop.root.parent !== scene) scene.add(backdrop.root);
-			backdrop.follow(frame);
-		},
-		dispose() {
-			users--;
-			if (users <= 0) backdrop?.root.parent?.remove(backdrop.root);
-		},
-	};
+	return sceneryActor((frame) => (isOpenSky(frame.level) ? daylight() : (dusk ??= new Backdrop())));
 }

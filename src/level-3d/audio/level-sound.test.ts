@@ -5,7 +5,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test';
 import { FakeAudioContext } from './fake-audio-context.ts';
-import { LevelSound, muteKey, type StorageLike } from './level-sound.ts';
+import { LevelSound, muteKey, sceneFor, type StorageLike } from './level-sound.ts';
+import { ROOMS } from './rooms.ts';
 
 /** Runs the fake clock on and lets the promises it settles (a context resuming) finish. */
 async function tick(ms: number): Promise<void> {
@@ -71,6 +72,63 @@ describe('LevelSound', () => {
 		sound.startLevel();
 		expect(FakeAudioContext.instances[0]!.nodes.length).toBeGreaterThan(nodes);
 		sound.dispose();
+	});
+
+	it('picks the room and track of the overworld and of each level the page plays', () => {
+		expect(sceneFor('map')).toEqual({ mode: 'map', level: undefined, room: 'map', track: 'map' });
+		expect(sceneFor('level', 0)).toMatchObject({ room: 'outdoor', track: 'crater' });
+		expect(sceneFor('level', 3)).toMatchObject({ room: 'outdoor', track: 'sky' });
+		/* Zarg Lookout and the rest have no track ported: silence in the neutral room, not another level's tune. */
+		expect(sceneFor('level', 4)).toMatchObject({ room: 'neutral', track: null });
+		expect(sceneFor('level', 99)).toMatchObject({ room: 'neutral', track: null });
+	});
+
+	it('switches the music and the room as the scene changes, and keeps a track that is already playing', async () => {
+		const sound = make();
+		await unlock();
+		sound.setScene('map');
+		expect(sound.debug().track).toBe('map');
+		expect(sound.debug().scene).toMatchObject({ mode: 'map', room: 'map' });
+		const nodes = FakeAudioContext.instances[0]!.nodes.length;
+		sound.setScene('map');
+		expect(FakeAudioContext.instances[0]!.nodes.length).toBe(nodes);
+		sound.setScene('level', 0);
+		expect(sound.debug().track).toBe('crater');
+		sound.setScene('map');
+		expect(sound.debug().track).toBe('map');
+		sound.setScene('level', 3);
+		expect(sound.debug().track).toBe('sky');
+		expect(sound.debug().scene).toMatchObject({ mode: 'level', level: 3, room: 'outdoor' });
+		sound.setScene('level', 4);
+		expect(sound.debug().track).toBeNull();
+		sound.dispose();
+	});
+
+	it('restarts the track from the top when asked to, and opens the mix on a new scene', async () => {
+		const sound = make();
+		await unlock();
+		sound.setScene('level', 0);
+		sound.setScreen('card');
+		const nodes = FakeAudioContext.instances[0]!.nodes.length;
+		sound.setScene('level', 0, true);
+		expect(FakeAudioContext.instances[0]!.nodes.length).toBeGreaterThan(nodes);
+		expect(sound.audio.mixState).toMatchObject({ lpf: 20000, gain: 1 });
+		sound.dispose();
+	});
+
+	it('asks for the scene’s track before the audio unlocks, and plays it once it does', async () => {
+		const sound = make();
+		sound.setScene('map');
+		expect(sound.debug().track).toBeNull();
+		expect(sound.debug().scene!.track).toBe('map');
+		await unlock();
+		expect(sound.debug().track).toBe('map');
+		sound.dispose();
+	});
+
+	it('keeps the map’s room dry and close', () => {
+		expect(ROOMS.map.seconds).toBeLessThan(1);
+		expect(ROOMS.map.damping).toBeGreaterThan(0);
 	});
 
 	it('cues every caption word, shown or not, panned by where it happened', async () => {

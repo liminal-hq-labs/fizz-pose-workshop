@@ -10,23 +10,31 @@ function vertexToon(emissive = 0): THREE.MeshToonMaterial {
 	return new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: toonRamp, emissive });
 }
 
-/** Rock, crust and blocks: darkens with depth below the surface so pits and the lower ground sink into shadow. */
-export const groundMaterial = vertexToon();
-groundMaterial.onBeforeCompile = (shader) => {
-	shader.vertexShader = shader.vertexShader
-		.replace('#include <common>', '#include <common>\nvarying float vGroundY;')
-		.replace(
-			'#include <begin_vertex>',
-			'#include <begin_vertex>\nvGroundY = (modelMatrix * vec4(position, 1.0)).y;',
-		);
-	shader.fragmentShader = shader.fragmentShader
-		.replace('#include <common>', '#include <common>\nvarying float vGroundY;')
-		.replace(
-			'#include <color_fragment>',
-			'#include <color_fragment>\ndiffuseColor.rgb *= mix(0.5, 1.0, clamp((vGroundY + 0.5) / 7.0, 0.0, 1.0));',
-		);
-};
-groundMaterial.customProgramCacheKey = () => 'crater-ground';
+/**
+ * Rock, crust and blocks: darkens with depth below the surface, from full brightness at the top of the level down to
+ * `low` of it seven tiles under, so pits and the lower ground sink into shadow. `key` names the compiled program.
+ */
+export function groundMaterialOf(key: string, low: number): THREE.MeshToonMaterial {
+	const material = vertexToon();
+	material.onBeforeCompile = (shader) => {
+		shader.vertexShader = shader.vertexShader
+			.replace('#include <common>', '#include <common>\nvarying float vGroundY;')
+			.replace(
+				'#include <begin_vertex>',
+				'#include <begin_vertex>\nvGroundY = (modelMatrix * vec4(position, 1.0)).y;',
+			);
+		shader.fragmentShader = shader.fragmentShader
+			.replace('#include <common>', '#include <common>\nvarying float vGroundY;')
+			.replace(
+				'#include <color_fragment>',
+				`#include <color_fragment>\ndiffuseColor.rgb *= mix(${low.toFixed(2)}, 1.0, clamp((vGroundY + 0.5) / 7.0, 0.0, 1.0));`,
+			);
+	};
+	material.customProgramCacheKey = () => key;
+	return material;
+}
+
+export const groundMaterial = groundMaterialOf('crater-ground', 0.5);
 
 /** Plain vertex-coloured toon shading for props: spikes, doors, crystals, ledges. */
 export const propMaterial = vertexToon();

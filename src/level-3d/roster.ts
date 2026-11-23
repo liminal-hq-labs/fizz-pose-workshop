@@ -165,6 +165,28 @@ export class Roster {
 		this.scene.remove(actor.object);
 	}
 
+	/**
+	 * Drops every actor at once, with no exit, for a change of scene: nothing of the last scene may linger or animate out
+	 * over the next. Actors that were playing an exit are finished too. The next `sync` builds everything afresh.
+	 */
+	clear(): void {
+		for (const live of this.fixed.values()) {
+			if (live.placed) live.placed.remove();
+			else if (live.actor) this.finish(live.actor);
+		}
+		this.fixed.clear();
+		for (const family of this.byKey.values()) {
+			for (const moving of family.moving) this.finish(moving.actor);
+			family.moving.length = 0;
+		}
+		for (const exit of this.leaving) this.finish(exit.actor);
+		this.leaving.length = 0;
+		this.previousCount = 0;
+		this.lastBen = null;
+		const stats = this.stats;
+		stats.fixedActors = stats.placedTiles = stats.movingActors = stats.leaving = 0;
+	}
+
 	/** Brings the actors into line with this frame's sprites. */
 	sync(draws: readonly SpriteDraw[], frame: FrameContext): void {
 		const count = draws.length,

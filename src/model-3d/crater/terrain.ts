@@ -6,38 +6,26 @@
 import * as THREE from 'three';
 import type { Actor, ModelSet, SpriteDraw } from '../../level-3d/types.ts';
 import { backdropActor } from './backdrop.ts';
-import { TileBatch, type Look, type TileInfo } from './batch.ts';
+import { TileBatch } from './batch.ts';
+import { craterTheme } from './crater-theme.ts';
 import {
 	chocolateDeepGeometry,
 	chocolateTopGeometry,
 	crystalGeometry,
+	crystalTurns,
 	doorGeometry,
 	exitBottomGeometry,
 	exitLettersGeometry,
 	exitTopGeometry,
 	spikeGeometry,
 } from './features.ts';
-import {
-	blockGeometry,
-	blockTile,
-	fillGeometry,
-	groundTile,
-	platformGeometry,
-	platformTile,
-	slopeGeometry,
-	slopeHeights,
-	topGeometry,
-	type SlopeName,
-	variantCount,
-} from './ground.ts';
+import { batchedGround, groundActor, pin, tileActor, tileMesh, type BatchedTile } from './tiles.ts';
 import { glowGeometry, glowMaterial as haloMaterial } from '../snacks/shared.ts';
 import { tileHash } from './hash.ts';
-import type { Surroundings } from './surroundings.ts';
 import {
 	chocolateMaterial,
 	chocolateTime,
 	glowMaterial,
-	groundMaterial,
 	propMaterial,
 	unlitMaterial,
 } from './materials.ts';
@@ -67,55 +55,6 @@ const families: Readonly<Record<string, string>> = {
 	hillTop: 'backdrop',
 	fill: 'backdrop',
 };
-
-function isSlope(family: string): family is SlopeName {
-	return family in slopeHeights;
-}
-
-function variantOf(draw: SpriteDraw): number {
-	return Math.floor(tileHash(draw.x, draw.y) * variantCount) % variantCount;
-}
-
-/** Fixes an object to its tile: terrain never moves, so the matrix is built once and never recomputed. */
-function pin(object: THREE.Object3D, draw: SpriteDraw): void {
-	object.position.set(draw.x, draw.y, 0);
-	object.updateMatrix();
-	object.matrixAutoUpdate = false;
-}
-
-function tileMesh(
-	geometry: THREE.BufferGeometry,
-	material: THREE.Material,
-	shadows: { cast: boolean; receive: boolean },
-): THREE.Mesh {
-	const mesh = new THREE.Mesh(geometry, material);
-	mesh.castShadow = shadows.cast;
-	mesh.receiveShadow = shadows.receive;
-	return mesh;
-}
-
-/** An actor for a tile that stays where it is drawn. */
-function tileActor(
-	object: THREE.Object3D,
-	first: SpriteDraw,
-	tick?: (frameTime: number) => void,
-): Actor {
-	pin(object, first);
-	let x = first.x,
-		y = first.y;
-	return {
-		object,
-		update(draw, frame) {
-			if (draw.x !== x || draw.y !== y) {
-				x = draw.x;
-				y = draw.y;
-				object.matrixAutoUpdate = true;
-				pin(object, draw);
-			}
-			tick?.(frame.time);
-		},
-	};
-}
 
 /** How long the door takes to give way, in seconds, and how much of that it spends shaking before it drops. */
 const doorExit = 0.7,
@@ -178,66 +117,23 @@ function exitActor(family: 'exitBot' | 'exitTop', first: SpriteDraw): Actor {
 	return tileActor(group, first);
 }
 
-/** The widest a crystal cluster turns about its own axis, in radians: small, so it stays inside its cell. */
-const crystalYaw = 0.24;
-
-const batch = new TileBatch();
+const batch = new TileBatch(craterTheme);
 
 /** How a family's tiles are drawn in the batch, for the families that go in it. */
-function batched(
-	family: string,
-	first: SpriteDraw,
-): { look: Look; geometry: THREE.BufferGeometry; info: TileInfo; yaw: number } | null {
-	/* The draw is a pooled record that is refilled later, and the builders below run later: copy the position now. */
+function batched(family: string, first: SpriteDraw): BatchedTile | null {
+	const ground = batchedGround(family, first, craterTheme);
+	if (ground) return ground;
+	/* The draw is a pooled record that is refilled later: copy the position now. */
 	const x = first.x,
 		y = first.y;
-	const solid = (
-		look: Look,
-		geometry: THREE.BufferGeometry,
-		edges: readonly [number, number],
-		build: (around: Surroundings) => THREE.BufferGeometry,
-		top = 0.5,
-	) => ({
-		look,
-		geometry,
-		yaw: 0,
-		info: { solidTop: top, edges, build },
-	});
-	const shaped = (hl: number, hr: number, crust: boolean) => (around: Surroundings) =>
-		groundTile({ hl, hr, crust }, x, y, around);
-	if (isSlope(family)) {
-		const [hl, hr] = slopeHeights[family];
-		return solid(
-			'ground',
-			slopeGeometry(family, variantOf(first)),
-			[hl, hr],
-			shaped(hl, hr, true),
-			-0.5 + (hl + hr) / 2,
-		);
-	}
 	switch (family) {
-		case 'fill':
-			return solid('fill', fillGeometry(variantOf(first)), [1, 1], shaped(1, 1, false));
-		case 'top':
-			return solid('ground', topGeometry(variantOf(first)), [1, 1], shaped(1, 1, true));
-		case 'block':
-			return solid('ground', blockGeometry(), [1, 1], (around) =>
-				blockTile(around.below, { x, y }, { leftH: around.leftH, rightH: around.rightH }),
-			);
-		case 'plat':
-			return {
-				look: 'prop',
-				geometry: platformGeometry(),
-				yaw: 0,
-				info: { build: () => platformTile(x, y) },
-			};
 		case 'spike':
 			return { look: 'prop', geometry: spikeGeometry(), yaw: 0, info: {} };
 		case 'crystal':
 			return {
 				look: 'glow',
-				geometry: crystalGeometry(),
-				yaw: (tileHash(x, y, 5) - 0.5) * crystalYaw,
+				geometry: crystalGeometry(Math.floor(tileHash(x, y, 5) * crystalTurns) % crystalTurns),
+				yaw: 0,
 				info: {},
 			};
 		case 'chocTop':
@@ -275,46 +171,25 @@ export const terrainModels: ModelSet = {
 				chocolateTime.value = time;
 			});
 		}
-		if (isSlope(family))
-			return tileActor(
-				tileMesh(slopeGeometry(family, variantOf(first)), groundMaterial, {
-					cast: true,
-					receive: true,
-				}),
-				first,
-			);
+		const ground = groundActor(family, first, craterTheme);
+		if (ground) return ground;
 		switch (family) {
-			case 'fill':
-				return tileActor(
-					tileMesh(fillGeometry(variantOf(first)), groundMaterial, { cast: false, receive: true }),
-					first,
-				);
-			case 'top':
-				return tileActor(
-					tileMesh(topGeometry(variantOf(first)), groundMaterial, { cast: true, receive: true }),
-					first,
-				);
-			case 'block':
-				return tileActor(
-					tileMesh(blockGeometry(), groundMaterial, { cast: true, receive: true }),
-					first,
-				);
-			case 'plat':
-				return tileActor(
-					tileMesh(platformGeometry(), propMaterial, { cast: true, receive: true }),
-					first,
-				);
 			case 'spike':
 				return tileActor(
 					tileMesh(spikeGeometry(), propMaterial, { cast: true, receive: true }),
 					first,
 				);
 			case 'crystal': {
-				const mesh = tileMesh(crystalGeometry(), glowMaterial, { cast: true, receive: true }),
-					actor = tileActor(mesh, first);
-				mesh.rotation.y = (tileHash(first.x, first.y, 5) - 0.5) * crystalYaw;
-				mesh.updateMatrix();
-				return actor;
+				return tileActor(
+					tileMesh(
+						crystalGeometry(
+							Math.floor(tileHash(first.x, first.y, 5) * crystalTurns) % crystalTurns,
+						),
+						glowMaterial,
+						{ cast: true, receive: true },
+					),
+					first,
+				);
 			}
 		}
 		throw new Error(`terrain has no model for the family ${family}`);

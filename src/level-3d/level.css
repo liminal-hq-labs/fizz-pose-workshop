@@ -53,6 +53,7 @@ body {
 .hud,
 .toast,
 .card,
+.prompt,
 .cap,
 .top-buttons,
 .sound-hint {
@@ -191,6 +192,75 @@ body {
 #card {
 	pointer-events: auto;
 }
+/* The map's prompt for the landmark Ben stands at: low and centred, clear of the touch pad. */
+.prompt {
+	position: fixed;
+	left: 50%;
+	bottom: max(calc(var(--n) * 14px), env(safe-area-inset-bottom));
+	transform: translateX(-50%);
+	box-sizing: border-box;
+	width: max-content;
+	max-width: min(calc(100vw - 32px), 560px);
+	padding: calc(var(--n) * 4px) calc(var(--n) * 7px);
+	text-align: center;
+	pointer-events: none;
+}
+.prompt h2 {
+	margin: 0 0 calc(var(--n) * 2px);
+	font-size: calc(11px * var(--n));
+	line-height: calc(13px * var(--n));
+	font-weight: 700;
+}
+.prompt .text {
+	margin: 0;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	color: var(--muted);
+}
+.prompt .action {
+	margin: calc(var(--n) * 3px) 0 0;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	color: var(--accent);
+}
+/* The start card of the game page. */
+#start {
+	pointer-events: auto;
+}
+#start .save {
+	margin: calc(var(--n) * 3px) 0 0;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	color: var(--accent);
+}
+#start .choices {
+	display: flex;
+	gap: calc(var(--n) * 4px);
+	justify-content: center;
+	margin: calc(var(--n) * 5px) 0;
+}
+#start .choices button {
+	font: inherit;
+	font-size: calc(11px * (var(--n) - 1));
+	line-height: calc(13px * (var(--n) - 1));
+	padding: calc(var(--n) * 2px) calc(var(--n) * 7px);
+	border-radius: 999px;
+	border: 1px solid rgb(255 255 255 / 25%);
+	background: rgb(20 20 25 / 70%);
+	color: var(--text);
+	cursor: pointer;
+}
+#start .choices button:focus-visible,
+#start .choices button:hover,
+#start .choices button.primary {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+#start .controls-list {
+	max-width: 30em;
+	margin: 0 auto;
+	color: var(--dim);
+}
 #paused {
 	pointer-events: none;
 }
@@ -274,7 +344,15 @@ body {
 .pad button.held {
 	background: rgb(255 227 77 / 45%);
 }
+/* The touch pad shows only what the scene uses: the map has one button to go in, a level its three actions. */
+body[data-mode='map'] .pad [data-for='level'],
+body:not([data-mode='map']) .pad [data-for='map'] {
+	display: none;
+}
 @media (pointer: coarse) {
+	.prompt {
+		bottom: calc(max(16px, env(safe-area-inset-bottom)) + 74px);
+	}
 	.pad {
 		display: flex;
 	}

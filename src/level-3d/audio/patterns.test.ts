@@ -57,25 +57,36 @@ describe('the game sound data', () => {
 		expect(CAPTION_SFX['heave']).toBe('bonk');
 	});
 
-	it('has the Crater Fields tune: 148 BPM, six parts, each of eight bars or fewer', () => {
-		const crater = MUSIC['crater']!;
-		expect(crater.bpm).toBe(148);
-		expect(crater.parts).toHaveLength(6);
-		for (const part of crater.parts) {
-			const bars = new Set<number>();
-			for (let cycle = 0; cycle < 8; cycle++) {
-				const out: MiniEvent[] = [];
-				evalMini(parseMini(part.notes), 0, 1, cycle, out);
-				expect(out.length, part.notes).toBeGreaterThan(0);
-				for (const e of out) {
-					expect(e.t0).toBeGreaterThanOrEqual(0);
-					expect(e.t1).toBeLessThanOrEqual(1 + 1e-9);
-					if (!/^(white|pink|brown)$/.test(e.v)) expect(noteHz(e.v)).not.toBeNaN();
+	it.each([
+		['crater', 148, 6],
+		['sky', 140, 6],
+		['map', 112, 5],
+	])(
+		'has the %s tune: %i BPM, %i parts, each of eight bars or fewer that parse',
+		(id, bpm, parts) => {
+			const track = MUSIC[id]!;
+			expect(track.bpm).toBe(bpm);
+			expect(track.parts).toHaveLength(parts);
+			for (const part of track.parts) {
+				const bars = new Set<number>();
+				for (let cycle = 0; cycle < 8; cycle++) {
+					const out: MiniEvent[] = [];
+					evalMini(parseMini(part.notes), 0, 1, cycle, out);
+					expect(out.length, part.notes).toBeGreaterThan(0);
+					for (const e of out) {
+						expect(e.t0).toBeGreaterThanOrEqual(0);
+						expect(e.t1).toBeLessThanOrEqual(1 + 1e-9);
+						if (!/^(white|pink|brown)$/.test(e.v)) expect(noteHz(e.v)).not.toBeNaN();
+					}
+					bars.add(out.length);
 				}
-				bars.add(out.length);
+				expect(bars.size).toBeGreaterThan(0);
 			}
-			expect(bars.size).toBeGreaterThan(0);
-		}
+		},
+	);
+
+	it('has exactly the tracks the page plays: the overworld, Crater Fields and Meteor Mesa', () => {
+		expect(Object.keys(MUSIC).sort()).toEqual(['crater', 'map', 'sky']);
 	});
 
 	it('gives every effect an Enhanced version through the same table', () => {

@@ -1,4 +1,4 @@
-// The page's play flow: what happens after Ben dies, finishes the level, runs out of lives or the player pauses.
+// The page's play flow: what happens after Ben dies, finishes a level, runs out of lives or the player pauses.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
@@ -26,7 +26,12 @@ export interface FlowHooks {
 	pauseScreen(on: boolean): void;
 	/** Loads the level again, keeping the lives and snack points the sim holds. */
 	retry(): void;
-	/** Starts a new game: three lives and no snack points. */
+	/**
+	 * Goes back to the overworld and saves, as the game does after a death or a cleared level. A page that has no map
+	 * leaves it out: the flow then retries the level in place and offers to play a cleared level again.
+	 */
+	toMap?(): void;
+	/** Starts a new game: three lives and no snack points, on the overworld when the page has one. */
 	newGame(): void;
 	/** Throws the confetti of a cleared level. */
 	celebrate(): void;
@@ -45,9 +50,11 @@ export const fallLimit = -12;
 const plural = (n: number): string => `${n} ${n === 1 ? 'life' : 'lives'}`;
 
 /**
- * The sim raises DIED, GAME_OVER and LEVEL_COMPLETE and leaves the rest to the shell. The game goes back to its map;
- * this page has none, so a death shows a short card and loads the level again with the lives and snack points the sim
- * kept, a game over waits for a key to start a new game, and a cleared level celebrates and waits to be played again.
+ * The sim raises DIED, GAME_OVER and LEVEL_COMPLETE and leaves the rest to the shell. On the game page (the hooks have
+ * `toMap`) the flow does what the game does: a death shows a short card and goes back to the map with the life lost, a
+ * cleared level celebrates and waits for a key to go back to the map, and a game over waits for a key to start a new
+ * game. On a page with no map a death loads the level again with the lives and snack points the sim kept and a cleared
+ * level waits to be played again.
  */
 export class LevelFlow {
 	phase: Phase = 'play';
@@ -56,6 +63,11 @@ export class LevelFlow {
 	private armed = false;
 
 	constructor(private readonly hooks: FlowHooks) {}
+
+	/** True when the page has an overworld to go back to. */
+	private get overworld(): boolean {
+		return this.hooks.toMap !== undefined;
+	}
 
 	private clear(): void {
 		if (this.timer !== undefined) this.hooks.cancel(this.timer);
@@ -75,13 +87,13 @@ export class LevelFlow {
 		}, wait);
 	}
 
-	/** The sim raised DIED: `lives` are left. The level starts again after a short card. */
+	/** The sim raised DIED: `lives` are left. The map, or the level again, follows a short card. */
 	died(lives: number, level: string): void {
 		if (this.phase !== 'play') return;
 		this.phase = 'died';
 		this.cardUp({
 			title: 'Ben took a tumble',
-			text: `${level} starts again. ${plural(lives)} left — every 100 snack points earns another.`,
+			text: `${level} ${this.overworld ? 'sends you back to the map.' : 'starts again.'} ${plural(lives)} left — every 100 snack points earns another.`,
 			action: '',
 		});
 		this.timer = this.hooks.later(() => this.resume(), flowTimes.tumble);
@@ -95,14 +107,17 @@ export class LevelFlow {
 			{
 				title: 'Out of lives',
 				text: `You finished with ${score} snack points.`,
-				action: 'Press a key to start again',
+				action: this.overworld ? 'Press a key to start a new game' : 'Press a key to start again',
 			},
 			flowTimes.keyGuard,
 		);
 	}
 
-	/** The sim raised LEVEL_COMPLETE: the sim runs on a moment, as in the game, then the card comes up. */
-	complete(level: string, score: number): void {
+	/**
+	 * The sim raised LEVEL_COMPLETE: the sim runs on a moment, as in the game, then the card comes up. `note` is the
+	 * level's own line for the card, as the game shows; without one the card gives the score.
+	 */
+	complete(level: string, score: number, note?: string): void {
 		if (this.phase !== 'play') return;
 		this.phase = 'complete';
 		this.clear();
@@ -111,8 +126,8 @@ export class LevelFlow {
 			this.cardUp(
 				{
 					title: `${level} cleared!`,
-					text: `${score} snack points. Ben made it to the exit.`,
-					action: 'Press Enter to play again',
+					text: note || `${score} snack points. Ben made it to the exit.`,
+					action: this.overworld ? 'Press Enter for the map' : 'Press Enter to play again',
 				},
 				flowTimes.keyGuard,
 			);
@@ -120,6 +135,7 @@ export class LevelFlow {
 	}
 
 	private resume(): void {
+		if (this.overworld) return this.leaveToMap();
 		this.clear();
 		this.phase = 'play';
 		this.hooks.card(null);
@@ -128,14 +144,29 @@ export class LevelFlow {
 		this.hooks.freeze(false);
 	}
 
-	/** A key or a tap while a card waits: starts a new game. Returns whether it was used. */
+	/** Takes the player back to the overworld from a card, or from a level that ends with no card. */
+	leaveToMap(): void {
+		this.clear();
+		this.armed = false;
+		this.phase = 'play';
+		this.hooks.card(null);
+		this.hooks.muffle(false);
+		this.hooks.toMap?.();
+		this.hooks.freeze(false);
+	}
+
+	/**
+	 * A key or a tap while a card waits. After a game over it starts a new game; after a cleared level it goes back to the
+	 * map, or on a page with no map starts the level again. Returns whether it was used.
+	 */
 	press(): boolean {
 		if (!this.armed || (this.phase !== 'gameover' && this.phase !== 'complete')) return false;
-		this.restart();
+		if (this.phase === 'complete' && this.overworld) this.leaveToMap();
+		else this.restart();
 		return true;
 	}
 
-	/** Starts a new game from anywhere, as the R key does. */
+	/** Starts a new game from anywhere: the R key on a page with no map, and a game over on the game page. */
 	restart(): void {
 		this.clear();
 		this.armed = false;

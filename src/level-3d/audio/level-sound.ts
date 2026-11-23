@@ -1,16 +1,31 @@
-// The sound of the 3D level page: the game's effects and Crater Fields music, placed and mixed as the game does.
+// The sound of the 3D pages: the game's effects and the music of the overworld, Crater Fields and Meteor Mesa, placed and mixed as the game does.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+import { LEVELS, mapTrack } from '../levels.ts';
 import { GameAudio } from './game-audio.ts';
 import { mixFor, type ShellScreen } from './mix-states.ts';
 import { PATTERNS } from './patterns.ts';
-import { roomProfile } from './rooms.ts';
+import { roomProfile, type RoomName } from './rooms.ts';
 import { placeSound, type SoundAt } from './sound-field.ts';
 
-/** The music track Crater Fields plays (`LEVELS[0].track` in the game). */
-export const craterTrack = 'crater';
+/** What the sound is set for: the overworld or a level, the room it is heard in and the track playing there. */
+export interface SoundScene {
+	mode: 'map' | 'level';
+	/** The level's id in a level. */
+	level: number | undefined;
+	room: RoomName;
+	/** The music track asked for, or null when the scene has none. */
+	track: string | null;
+}
+
+/** The room and track the game gives the overworld or a level (`roomFor` and `musicFor` in the game). */
+export function sceneFor(mode: 'map' | 'level', level?: number): SoundScene {
+	if (mode === 'map') return { mode, level: undefined, room: 'map', track: mapTrack };
+	const info = level === undefined ? undefined : LEVELS[level];
+	return { mode, level, room: info?.room ?? 'neutral', track: info?.track ?? null };
+}
 
 /** Where the page keeps the mute setting. */
 export const muteKey = 'fizz-level-3d:muted';
@@ -57,6 +72,7 @@ export class LevelSound {
 	readonly cues: CueRecord[] = [];
 	private mutedNow = false;
 	private wasUnlocked = false;
+	private current: SoundScene | null = null;
 	private readonly listeners = new Set<() => void>();
 
 	constructor(private readonly options: LevelSoundOptions) {
@@ -91,10 +107,21 @@ export class LevelSound {
 		if (this.cues.length > 64) this.cues.shift();
 	}
 
-	/** Starts the level's music from the top, in the open mix. A level restart calls it again. */
-	startLevel(): void {
+	/**
+	 * Moves the sound to the overworld or a level: the room it is heard in and the music of the place, in the open mix.
+	 * The music carries on when the track is the one playing already, unless `restart` asks for it from the top.
+	 */
+	setScene(mode: 'map' | 'level', level?: number, restart = false): void {
+		const scene = sceneFor(mode, level);
+		this.current = scene;
+		this.audio.setRoom(roomProfile(scene.room, !!this.options.coarse));
 		this.setScreen('play');
-		this.audio.playMusic(craterTrack, true);
+		this.audio.playMusic(scene.track, restart);
+	}
+
+	/** Starts a level's music from the top, in the open mix. A level restart calls it again. */
+	startLevel(level = 0): void {
+		this.setScene('level', level, true);
 	}
 
 	/** Sets how the music is heard: open while playing, muffled behind a card. */
@@ -145,6 +172,8 @@ export class LevelSound {
 		ctx: string;
 		muted: boolean;
 		track: string | null;
+		/** What the sound was last set for: the track asked for, even while the music is muted or not unlocked yet. */
+		scene: SoundScene | null;
 		backend: string;
 		mode: string;
 		emitters: number;
@@ -154,6 +183,7 @@ export class LevelSound {
 			ctx: this.audio.ctxState,
 			muted: this.mutedNow,
 			track: this.audio.musicTrack,
+			scene: this.current,
 			backend: this.audio.backend,
 			mode: this.audio.mode,
 			emitters: this.audio.emitters,

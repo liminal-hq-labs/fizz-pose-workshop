@@ -6,14 +6,9 @@
 import * as THREE from 'three';
 import type { Placed } from '../../level-3d/types.ts';
 import { chasmGeometry, massifGeometry } from './chasm.ts';
+import { craterTheme } from './crater-theme.ts';
 import type { Surroundings } from './surroundings.ts';
-import {
-	chocolateMaterial,
-	glowMaterial,
-	groundMaterial,
-	propMaterial,
-	unlitMaterial,
-} from './materials.ts';
+import type { GroundTheme } from './theme.ts';
 
 /** How wide a chunk is, in tiles: wide enough for few draws, narrow enough that frustum culling skips the far ends. */
 export const chunkTiles = 16;
@@ -25,15 +20,21 @@ const floor = -10;
 /** The looks a tile can have; tiles of one look in one chunk share a mesh. */
 export type Look = 'ground' | 'fill' | 'prop' | 'glow' | 'chocolate' | 'unlit' | 'wall';
 
-const looks: Record<Look, { material: THREE.Material; cast: boolean; receive: boolean }> = {
-	ground: { material: groundMaterial, cast: true, receive: true },
-	fill: { material: groundMaterial, cast: false, receive: true },
-	wall: { material: groundMaterial, cast: false, receive: true },
-	prop: { material: propMaterial, cast: true, receive: true },
-	glow: { material: glowMaterial, cast: true, receive: true },
-	chocolate: { material: chocolateMaterial, cast: false, receive: false },
-	unlit: { material: unlitMaterial, cast: false, receive: false },
-};
+type LookSpec = { material: THREE.Material; cast: boolean; receive: boolean };
+
+/** How each look is drawn with a theme's materials, and whether it casts and receives shadows. */
+function looksOf(theme: GroundTheme): Record<Look, LookSpec> {
+	const { ground, prop, glow, chocolate, unlit } = theme.materials;
+	return {
+		ground: { material: ground, cast: true, receive: true },
+		fill: { material: ground, cast: false, receive: true },
+		wall: { material: ground, cast: false, receive: true },
+		prop: { material: prop, cast: true, receive: true },
+		glow: { material: glow, cast: true, receive: true },
+		chocolate: { material: chocolate, cast: false, receive: false },
+		unlit: { material: unlit, cast: false, receive: false },
+	};
+}
 
 /** What a tile says about the ground mass it belongs to, for the walls of the pits between them. */
 export interface TileInfo {
@@ -45,6 +46,8 @@ export interface TileInfo {
 	edges?: readonly [number, number];
 	/** Builds the tile's geometry for what is around it; the batch calls it again when the neighbours change. */
 	build?: (around: Surroundings) => THREE.BufferGeometry;
+	/** For tiles that join their own kind, such as ledges: a name, so the tile can ask whether the one beside it is the same. */
+	join?: string;
 }
 
 interface Part {
@@ -123,9 +126,11 @@ export class TileBatch {
 	private columnsDirty = false;
 	/** The solid tiles by column and row, for tiles to look at their neighbours. */
 	private readonly cells = new Map<number, Part>();
+	private readonly looks: Record<Look, LookSpec>;
 
-	constructor() {
-		this.root.name = 'crater terrain';
+	constructor(private readonly theme: GroundTheme = craterTheme) {
+		this.root.name = `${theme.name} terrain`;
+		this.looks = looksOf(theme);
 	}
 
 	/** Number of chunk meshes currently in the scene. */
@@ -154,7 +159,7 @@ export class TileBatch {
 		chunk.parts.add(part);
 		chunk.dirty = true;
 		if (info.solidTop !== undefined || info.pool) this.columnsDirty = true;
-		if (info.edges) {
+		if (info.edges || info.join) {
 			this.cells.set(cellKey(x, y), part);
 			this.touchNeighbours(x);
 		}
@@ -163,7 +168,7 @@ export class TileBatch {
 				chunk.parts.delete(part);
 				chunk.dirty = true;
 				if (info.solidTop !== undefined || info.pool) this.columnsDirty = true;
-				if (info.edges) {
+				if (info.edges || info.join) {
 					if (this.cells.get(cellKey(x, y)) === part) this.cells.delete(cellKey(x, y));
 					this.touchNeighbours(x);
 				}
@@ -188,12 +193,15 @@ export class TileBatch {
 			right = at(1, 0),
 			upLeft = at(-1, 1),
 			upRight = at(1, 1);
+		const join = part.info.join;
 		return {
 			leftH: left?.info.edges?.[1] ?? 0,
 			rightH: right?.info.edges?.[0] ?? 0,
 			wallL: (upLeft?.info.edges?.[1] ?? 0) >= 0.5,
 			wallR: (upRight?.info.edges?.[0] ?? 0) >= 0.5,
-			below: at(0, -1) !== undefined,
+			below: at(0, -1)?.info.edges !== undefined,
+			joinL: join !== undefined && left?.info.join === join,
+			joinR: join !== undefined && right?.info.join === join,
 		};
 	}
 
@@ -203,7 +211,7 @@ export class TileBatch {
 			const build = part.info.build;
 			if (!build) continue;
 			const around = this.around(part),
-				sig = `${around.leftH}|${around.rightH}|${around.wallL}|${around.wallR}|${around.below}`;
+				sig = `${around.leftH}|${around.rightH}|${around.wallL}|${around.wallR}|${around.below}|${around.joinL}|${around.joinR}`;
 			if (sig === part.sig) continue;
 			if (part.sig !== undefined) part.geometry.dispose();
 			part.geometry = build(around);
@@ -306,7 +314,7 @@ export class TileBatch {
 			const column = chunk.index * chunkTiles + c,
 				h = open ? open.get(column) : this.wallHeight(chunk, c);
 			if (h !== undefined && h > floor)
-				walls.push({ geometry: chasmGeometry(column, h, floor), x: 0, y: 0, yaw: 0 });
+				walls.push({ geometry: chasmGeometry(column, h, floor, this.theme), x: 0, y: 0, yaw: 0 });
 		}
 		for (const [look, parts] of byLook) this.mesh(chunk, look, parts);
 		if (walls.length) this.mesh(chunk, 'wall', walls);
@@ -323,12 +331,12 @@ export class TileBatch {
 		look: Look,
 		parts: readonly { geometry: THREE.BufferGeometry; x: number; y: number; yaw: number }[],
 	): void {
-		const spec = looks[look],
+		const spec = this.looks[look],
 			mesh = new THREE.Mesh(mergeTiles(parts), spec.material);
 		mesh.castShadow = spec.cast;
 		mesh.receiveShadow = spec.receive;
 		mesh.matrixAutoUpdate = false;
-		mesh.name = `crater ${look} ${chunk.index}`;
+		mesh.name = `${this.theme.name} ${look} ${chunk.index}`;
 		chunk.meshes.push(mesh);
 		this.root.add(mesh);
 	}
@@ -349,12 +357,12 @@ export class TileBatch {
 			[max + 1, rightTop, 1],
 		] as const) {
 			const mesh = new THREE.Mesh(
-				massifGeometry(side, from, massifWidth, floor, top),
-				groundMaterial,
+				massifGeometry(side, from, massifWidth, floor, top, this.theme),
+				this.theme.materials.ground,
 			);
 			mesh.receiveShadow = true;
 			mesh.matrixAutoUpdate = false;
-			mesh.name = `crater massif ${side}`;
+			mesh.name = `${this.theme.name} massif ${side}`;
 			this.ends.push(mesh);
 			this.root.add(mesh);
 		}
