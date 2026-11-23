@@ -24,6 +24,14 @@ const bevel = 0.016;
 /** How long a brick on the side of a block is, at most. */
 const sideLength = 0.45;
 
+/** What a theme gives its blocks: how a brick is coloured, the mortar between bricks, the highlight on their edges and their glints. */
+export interface BlockTheme {
+	colour(a: number, b: number, face: number): number;
+	mortar: number;
+	edge: number;
+	glint: number;
+}
+
 const brickColours = [
 	palette.blockFront,
 	palette.blockFront,
@@ -33,6 +41,14 @@ const brickColours = [
 	palette.blockViolet,
 	palette.blockTop,
 ] as const;
+
+/** The crater's blocks: candy bricks in pinks and violets over plum mortar. */
+export const craterBlocks: BlockTheme = {
+	colour: brickColour,
+	mortar: palette.blockMortar,
+	edge: palette.blockEdge,
+	glint: palette.white,
+};
 
 function mod(a: number, n: number): number {
 	return ((a % n) + n) % n;
@@ -50,6 +66,7 @@ function brickStyle(
 	relief: number,
 	flush: readonly [boolean, boolean, boolean, boolean],
 	lit: number,
+	edge: number,
 ): PadStyle {
 	const g = (on: boolean): number => (on ? 0 : gap),
 		b = (on: boolean): number => (on ? 0 : bevel);
@@ -61,10 +78,10 @@ function brickStyle(
 		foot: shade(base, 0.9 * lit),
 		crown: shade(base, 1.07 * lit),
 		edges: {
-			left: shade(mix(base, palette.blockEdge, 0.3), lit),
+			left: shade(mix(base, edge, 0.3), lit),
 			right: shade(base, 0.68 * lit),
 			bottom: shade(base, 0.55 * lit),
-			top: shade(mix(base, palette.blockEdge, 0.7), lit),
+			top: shade(mix(base, edge, 0.7), lit),
 		},
 	};
 }
@@ -86,11 +103,12 @@ export function blockMasonry(
 	wx: number,
 	wy: number,
 	sides: BlockSides,
+	theme: BlockTheme = craterBlocks,
 ): THREE.BufferGeometry {
 	const m = new Mesher(),
 		d = resting ? depth.lane / 2 : depth.shelf / 2,
 		row = Math.floor(wy),
-		mortar = palette.blockMortar;
+		mortar = theme.mortar;
 	/* The front: mortar at the face, and the courses of bricks on it. */
 	m.quad([-0.5, -0.5, d], [0.5, -0.5, d], [0.5, 0.5, d], [-0.5, 0.5, d], mortar);
 	const front: FaceMap = (u, v, w) => [u, v, d + w];
@@ -107,13 +125,13 @@ export function blockMasonry(
 			if (xb <= -0.5 + 1e-9 || xa >= 0.5 - 1e-9) continue;
 			const a = Math.max(xa, -0.5),
 				b = Math.min(xb, 0.5),
-				base = brickColour(n, course, 0),
+				base = theme.colour(n, course, 0),
 				relief = frontRelief * (0.65 + 0.35 * lattice(n, course, 320));
 			pad(
 				m,
 				front,
 				{ u0: a, v0, u1: b, v1 },
-				brickStyle(base, relief, [xa < -0.5 - 1e-9, xb > 0.5 + 1e-9, false, false], 1),
+				brickStyle(base, relief, [xa < -0.5 - 1e-9, xb > 0.5 + 1e-9, false, false], 1, theme.edge),
 			);
 			/* A glint on some bricks, like the shine on a sweet. */
 			if (lattice(n, course, 330) < 0.22 && b - a > 0.3)
@@ -122,7 +140,7 @@ export function blockMasonry(
 					front(a + 0.16, v1 - 0.06, relief + 0.001),
 					front(a + 0.16, v1 - 0.045, relief + 0.001),
 					front(a + 0.07, v1 - 0.045, relief + 0.001),
-					palette.white,
+					theme.glint,
 				);
 		}
 	}
@@ -145,10 +163,11 @@ export function blockMasonry(
 				top,
 				{ u0: Math.max(xa, -0.5), v0, u1: Math.min(xb, 0.5), v1 },
 				brickStyle(
-					shade(brickColour(n, row * rows + r, 1), 1.12),
+					shade(theme.colour(n, row * rows + r, 1), 1.12),
 					recess,
 					[xa < -0.5 - 1e-9, xb > 0.5 + 1e-9, false, false],
 					1,
+					theme.edge,
 				),
 			);
 		}
@@ -195,10 +214,11 @@ export function blockMasonry(
 					map,
 					{ u0: a, v0, u1: b, v1 },
 					brickStyle(
-						brickColour(i + side * 40, course, 2),
+						theme.colour(i + side * 40, course, 2),
 						recess,
 						[ua < -d + 1e-9, ub > d - 1e-9, false, false],
 						side < 0 ? 0.9 : 0.8,
+						theme.edge,
 					),
 				);
 			}
@@ -206,12 +226,6 @@ export function blockMasonry(
 	}
 	/* A block in the air has an underside, in the shade of the mortar. */
 	if (!resting)
-		m.quad(
-			[-0.5, -0.5, -d],
-			[0.5, -0.5, -d],
-			[0.5, -0.5, d],
-			[-0.5, -0.5, d],
-			shade(palette.blockMortar, 0.7),
-		);
+		m.quad([-0.5, -0.5, -d], [0.5, -0.5, -d], [0.5, -0.5, d], [-0.5, -0.5, d], shade(mortar, 0.7));
 	return m.build();
 }
