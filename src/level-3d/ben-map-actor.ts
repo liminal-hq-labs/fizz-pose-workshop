@@ -110,6 +110,8 @@ class BenMapFigure implements BenMapActor {
 
 	constructor() {
 		this.object.rotation.x = Math.PI / 2;
+		/* The stage draws his silhouette through anything that stands in front of him. */
+		this.object.userData.seeThrough = true;
 		this.tilt.rotation.order = 'YXZ';
 		this.object.add(this.tilt);
 		this.tilt.add(this.fig.turn);

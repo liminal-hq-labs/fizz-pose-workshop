@@ -48,12 +48,12 @@ describe('the map camera', () => {
 	const at = (camera: THREE.Camera, x: number, y: number): THREE.Vector3 =>
 		new THREE.Vector3(x, y, 0).project(camera);
 
-	test('stands south of the point it looks at and above it, looking down at 55 degrees', () => {
-		const offset = mapCameraOffset(16);
+	test('stands south of the point it looks at and above it, looking down at 63 degrees', () => {
+		const offset = mapCameraOffset(19);
 		expect(offset.x).toBe(0);
 		expect(offset.y).toBeLessThan(0);
-		expect(offset.length()).toBeCloseTo(16, 10);
-		expect(Math.atan2(offset.z, -offset.y) * (180 / Math.PI)).toBeCloseTo(55, 10);
+		expect(offset.length()).toBeCloseTo(19, 10);
+		expect(Math.atan2(offset.z, -offset.y) * (180 / Math.PI)).toBeCloseTo(63, 10);
 	});
 
 	test('north is up the screen and east is to the right', () => {
@@ -65,14 +65,14 @@ describe('the map camera', () => {
 		expect(Math.hypot(at(camera, 0, 0).x, at(camera, 0, 0).y)).toBeCloseTo(0, 6);
 	});
 
-	test('shows 14 to 18 tiles across the ground on a wide screen', () => {
+	test('shows 18 to 21 tiles across the ground on a wide screen', () => {
 		const camera = cameraFor(16 / 9),
-			right = at(camera, 8, 0),
-			left = at(camera, -8, 0);
-		/* Eight tiles either side of the middle fit inside the frame, and nine do not. */
+			right = at(camera, 9, 0),
+			left = at(camera, -9, 0);
+		/* Nine tiles either side of the middle fit inside the frame, and ten and a half do not. */
 		expect(right.x).toBeLessThan(1);
 		expect(left.x).toBeGreaterThan(-1);
-		expect(at(camera, 9.5, 0).x).toBeGreaterThan(1);
+		expect(at(camera, 10.5, 0).x).toBeGreaterThan(1);
 	});
 
 	test('foreshortens the ground going north by the sine of the pitch', () => {
@@ -90,12 +90,12 @@ describe('the map camera', () => {
 			expect(2 * distance * Math.tan((fov * Math.PI) / 360) * aspect).toBeGreaterThanOrEqual(13.99);
 			expect(fov).toBeLessThanOrEqual(56.0001);
 		}
-		expect(mapFraming(16 / 9)).toEqual({ fov: 32, distance: 16 });
-		expect(mapFraming(0.4).distance).toBeGreaterThan(16);
+		expect(mapFraming(16 / 9)).toEqual({ fov: 32, distance: 19 });
+		expect(mapFraming(0.4).distance).toBeGreaterThan(19);
 	});
 
 	test('zooming in brings the camera closer', () => {
-		expect(mapFraming(16 / 9, 2).distance).toBe(8);
+		expect(mapFraming(16 / 9, 2).distance).toBe(9.5);
 	});
 });
 

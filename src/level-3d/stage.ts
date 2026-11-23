@@ -34,17 +34,19 @@ const sunOffset = new THREE.Vector3(-8, 16, 14);
 /** The sun's offset on the map: south-west and high, so shadows fall north-east across the ground. */
 const mapSunOffset = new THREE.Vector3(-14, -10, 22);
 const shadowSize = 1536;
+/** The render layer of things that show through whatever stands in front of them. */
+const seeThroughLayer = 1;
 
 /** The overworld's camera: seen from the south, looking north and down. */
 const mapCamera = {
 	/** How far the camera stands from the point it looks at on a wide screen, in tiles. */
-	distance: 16,
+	distance: 19,
 	fov: 32,
 	maxFov: 56,
 	/** The fewest tiles of the ground the view may show across, however narrow the screen. */
 	minTiles: 14,
 	/** The angle the view looks down at, from horizontal, in degrees. */
-	pitch: 55,
+	pitch: 63,
 	/** How far Ben may stand from the middle of the frame, as a share of the half view. */
 	lead: 0.4,
 	/** The tallest thing on the map that casts a shadow, in tiles, for fitting the shadow box. */
@@ -105,7 +107,7 @@ export function framing(aspect: number, zoom = 1): { fov: number; distance: numb
 	);
 }
 
-/** The same for the map camera: about 16 tiles across on a wide screen, never fewer than 14. */
+/** The same for the map camera: about 19 tiles across on a wide screen, never fewer than 14. */
 export function mapFraming(aspect: number, zoom = 1): { fov: number; distance: number } {
 	return framingFor(mapCamera, aspect, zoom);
 }
@@ -193,6 +195,16 @@ export class Stage {
 	readonly camera = new THREE.PerspectiveCamera(baseFov, 16 / 9, 0.5, 400);
 	readonly renderer: THREE.WebGLRenderer;
 	readonly draws: SpriteDraw[] = [];
+	private readonly silhouette = new THREE.MeshBasicMaterial({
+		color: 0xfff6c8,
+		transparent: true,
+		opacity: 0.4,
+		depthFunc: THREE.GreaterDepth,
+		depthWrite: false,
+		stencilWrite: true,
+		stencilRef: 1,
+		stencilFunc: THREE.NotEqualStencilFunc,
+	});
 	/** Sprite names drawn by the flat fallback this frame, for tooling that reports missing models. */
 	readonly unmodelled: Set<string>;
 	/** Counts from the last frame: actors, draw calls, triangles, milliseconds in `sync`. Read it, do not write it. */
@@ -238,7 +250,11 @@ export class Stage {
 		this.fallback = flatSprites(options.sheet, options.sheetImage);
 		this.roster = new Roster(this.scene, options.sets, this.fallback);
 		this.unmodelled = this.roster.unmodelled;
-		this.renderer = new THREE.WebGLRenderer({ canvas: options.canvas, antialias: true });
+		this.renderer = new THREE.WebGLRenderer({
+			canvas: options.canvas,
+			antialias: true,
+			stencil: true,
+		});
 		this.renderer.shadowMap.enabled = true;
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		this.scene.background = new THREE.Color(0x1a1030);
@@ -486,6 +502,51 @@ export class Stage {
 		this.camera.updateProjectionMatrix();
 	}
 
+	/**
+	 * Draws anything marked `userData.seeThrough` a second time as a pale silhouette wherever something stands in front
+	 * of it, so Ben is never lost behind a tree on the map. The pass draws only what failed the depth test.
+	 */
+	private drawSeeThrough(): void {
+		let any = false;
+		for (const child of this.scene.children) {
+			if (!child.userData.seeThrough) continue;
+			any = true;
+			if (child.userData.seeThroughLayered) continue;
+			/* Each part marks the pixels it wins in the stencil, so the silhouette is drawn only where something else
+			   hides it, never over the nearer parts of the figure itself. */
+			child.traverse((part) => {
+				part.layers.enable(seeThroughLayer);
+				/* Drawn after everything else that is solid, so the stencil holds only the pixels it finally wins. */
+				part.renderOrder = 10;
+				const mesh = part as THREE.Mesh;
+				if (!mesh.isMesh) return;
+				for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+					material.stencilWrite = true;
+					material.stencilRef = 1;
+					material.stencilFunc = THREE.AlwaysStencilFunc;
+					material.stencilZPass = THREE.ReplaceStencilOp;
+				}
+			});
+			child.userData.seeThroughLayered = true;
+		}
+		if (!any) return;
+		const renderer = this.renderer,
+			clear = renderer.autoClear,
+			shadows = renderer.shadowMap.autoUpdate,
+			background = this.scene.background;
+		renderer.autoClear = false;
+		renderer.shadowMap.autoUpdate = false;
+		this.scene.background = null;
+		this.scene.overrideMaterial = this.silhouette;
+		this.camera.layers.set(seeThroughLayer);
+		renderer.render(this.scene, this.camera);
+		this.camera.layers.set(0);
+		this.scene.overrideMaterial = null;
+		this.scene.background = background;
+		renderer.shadowMap.autoUpdate = shadows;
+		renderer.autoClear = clear;
+	}
+
 	private render(dt: number): void {
 		this.renderer.render(this.scene, this.camera);
 		const info = this.renderer.info,
@@ -498,6 +559,7 @@ export class Stage {
 			this.smoothDt = this.smoothDt ? this.smoothDt * 0.95 + dt * 0.05 : dt;
 			stats.fps = 1 / this.smoothDt;
 		}
+		this.drawSeeThrough();
 	}
 
 	/** One animation frame: steps the sim as often as real time asks, then draws. */
