@@ -1,4 +1,4 @@
-// Checks that each creature's solid silhouette is its sprite's art size times the cast scale, and that its base sits where the art's does.
+// Checks that each creature's solid silhouette is its sprite's art size times the creature scale, and that its base sits where the art's does.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
@@ -6,7 +6,7 @@
 import { expect, test } from 'bun:test';
 import * as THREE from 'three';
 import type { SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { creatureScale } from '../cast-scale.ts';
 import { enemyModels } from './enemies.ts';
 
 /**
@@ -52,7 +52,7 @@ function solidBounds(root: THREE.Object3D): THREE.Box3 {
 	return box;
 }
 
-test('each creature is its art times the cast scale, in both frames, with its base where the art is', () => {
+test('each creature is its art times the creature scale, in both frames, with its base where the art is', () => {
 	const at = { x: 10, y: 6 };
 	for (const [name, a] of Object.entries(art)) {
 		const draw: SpriteDraw = {
@@ -89,13 +89,13 @@ test('each creature is its art times the cast scale, in both frames, with its ba
 			base = Math.min(base, box.min.y);
 		}
 		const bottom = at.y - a.box[1] / 2 + a.gap,
-			targetHeight = a.h * castScale,
+			targetHeight = a.h * creatureScale,
 			wantBase = standing.has(family(name))
 				? bottom + 1 / 16
 				: family(name) === 'spore'
 					? bottom
 					: bottom + a.h / 2 - targetHeight / 2;
-		expect(Math.abs(width / (a.w * castScale) - 1), `${name} width`).toBeLessThan(0.1);
+		expect(Math.abs(width / (a.w * creatureScale) - 1), `${name} width`).toBeLessThan(0.1);
 		expect(Math.abs(height / targetHeight - 1), `${name} height`).toBeLessThan(0.1);
 		expect(Math.abs(base - wantBase), `${name} base`).toBeLessThan(0.06);
 		actor.dispose?.();

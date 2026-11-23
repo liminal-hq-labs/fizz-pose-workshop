@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { creatureScale } from '../cast-scale.ts';
 import {
 	Motion,
 	Tint,
@@ -52,7 +52,7 @@ export function createMarsh(first: SpriteDraw): Actor {
 		face = new THREE.Group(),
 		outward = new THREE.Vector3(),
 		forward = new THREE.Vector3(0, 0, 1);
-	root.scale.setScalar(castScale);
+	root.scale.setScalar(creatureScale);
 	root.add(turn);
 	turn.add(body);
 	body.add(face);

@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { creatureScale } from '../cast-scale.ts';
 import { Motion, Tint, clamp, ease, ega, ellipsoid, part, release, seedOf } from './parts.ts';
 
 const sparks = 3;
@@ -17,7 +17,7 @@ export function createZshot(first: SpriteDraw): Actor {
 		root = new THREE.Group(),
 		bolt = new THREE.Group(),
 		trail: THREE.Mesh[] = [];
-	root.scale.setScalar(castScale);
+	root.scale.setScalar(creatureScale);
 	root.add(bolt);
 	part(bolt, tint, ellipsoid(0.175, 0.175, 0.175), ega.red, { emissive: 0x992222, ink: 0.018 });
 	part(bolt, tint, ellipsoid(0.105, 0.105, 0.105), ega.yellow, {

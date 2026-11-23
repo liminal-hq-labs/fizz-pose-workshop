@@ -9,7 +9,7 @@ import { inked, toon } from '../toon.ts';
 import { createPickup } from './pickup.ts';
 import { candy, ellipsoid, lathe, scatter } from './shared.ts';
 
-/** The model is a little smaller than the sprite art before the cast scale is applied. */
+/** The model is a little smaller than the sprite art before its scale factor is applied. */
 const fit = 0.94;
 
 let discGeometry: THREE.BufferGeometry | null = null,
@@ -59,5 +59,5 @@ function build(body: THREE.Group): void {
 }
 
 export function createCookie(first: SpriteDraw): Actor {
-	return createPickup({ build, glow: 0xffaa44, reach: 0.55, spin: 1.0 }, first);
+	return createPickup({ build, size: 0.875, glow: 0xffaa44, reach: 0.55, spin: 1.0 }, first);
 }

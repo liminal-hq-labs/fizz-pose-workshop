@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { collectibleScale } from '../cast-scale.ts';
 import { inked, toon } from '../toon.ts';
 import { createPickup } from './pickup.ts';
 import { candy, ellipsoid, scatter } from './shared.ts';
@@ -61,5 +61,8 @@ function build(body: THREE.Group): void {
 }
 
 export function createCheezie(first: SpriteDraw): Actor {
-	return createPickup({ build, glow: 0xffaa22, reach: 0.5, centre: -0.031 / castScale }, first);
+	return createPickup(
+		{ build, size: 0.94, glow: 0xffaa22, reach: 0.5, centre: -0.031 / collectibleScale },
+		first,
+	);
 }

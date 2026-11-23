@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { creatureScale } from '../cast-scale.ts';
 import { Tint, ease, ega, ellipsoid, part, release, seedOf } from './parts.ts';
 
 /** Where each bubble floats in the cluster, with its size, as x, y, z and radius. */
@@ -23,11 +23,11 @@ const bubbles: readonly [number, number, number, number][] = [
 /**
  * The layout's own extent runs about 0.79 wide and 0.77 tall around (0.015, 0.06). The two sprite frames are different
  * sizes, and the art's bottom sits higher in the first: each pose stretches the layout to its frame's art, in tiles of the
- * model's own units (the cast scale is applied on top).
+ * model's own units (the creature scale is applied on top, and is 1).
  */
 const poses = [
-	{ kx: 0.93, ky: 0.73, centre: 0.17 },
-	{ kx: 1.19, ky: 1.14, centre: 0.109 },
+	{ kx: 0.93, ky: 0.73, centre: 0.123 },
+	{ kx: 1.19, ky: 1.14, centre: 0 },
 ] as const;
 
 /** The soft halo round a cluster; shared by every cluster, never changed. */
@@ -52,7 +52,7 @@ export function createSpore(first: SpriteDraw): Actor {
 			}),
 		);
 	}
-	root.scale.setScalar(castScale);
+	root.scale.setScalar(creatureScale);
 	const glow = new THREE.Mesh(ellipsoid(0.55, 0.45, 0.4), halo);
 	root.add(glow);
 	let pulse = first.name === 'spore1' ? 1 : 0;

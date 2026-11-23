@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { creatureScale } from '../cast-scale.ts';
 import {
 	Eye,
 	Motion,
@@ -75,7 +75,7 @@ export function createGloop(first: SpriteDraw): Actor {
 		tall = new Stalk(tint, 1, 0.13),
 		small = new Stalk(tint, 0.78, 0.09);
 	root.add(turn);
-	root.scale.set(castScale * fitWidth, castScale * fitHeight, castScale * fitWidth);
+	root.scale.set(creatureScale * fitWidth, creatureScale * fitHeight, creatureScale * fitWidth);
 	turn.add(body, tall.root, small.root);
 
 	part(body, tint, ellipsoid(0.34, 0.25, 0.47), ega.green, { pos: [0, 0.26, 0] });

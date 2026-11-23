@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { collectibleScale } from '../cast-scale.ts';
 import {
 	candy,
 	clamp,
@@ -22,28 +22,38 @@ export interface PickupLook {
 	build(body: THREE.Group): void;
 	/** The colour of the halo behind the pickup. */
 	glow: number;
-	/** How far from the centre the twinkles may land, in tiles. */
+	/** The art's longest side in the model's own units, which sizes the halo so that it hugs the object. */
+	size: number;
+	/** How far from the centre the twinkles may land, in the model's own units. */
 	reach?: number;
 	/** The turning rate in radians a second. */
 	spin?: number;
 	/**
 	 * Where the middle of the sprite's art sits above the sprite's centre, in the model's own units (the sprite's tiles divided by
-	 * the cast scale), for art that is not centred in its box.
+	 * the collectible scale), for art that is not centred in its box.
 	 */
 	centre?: number;
 }
 
 /**
- * The halo's width in the model's units, which the cast scale makes about 1.4 tiles: a pickup's neighbours in a row are a
- * tile away, and their halos should only just touch.
+ * The halo is this many times the art's longest side, so it hugs the object whatever its size. At the collectible scale a
+ * neighbour in a row, a tile away, is more than a halo's width off, so halos only just touch.
  */
-const haloSize = 1.05,
+const haloFit = 1.35,
 	haloStrength = 0.45,
 	twinkleEvery = 2.6,
 	twinkleFor = 0.5;
-/** How long the pop lasts when a pickup is collected, in seconds, and how many sparkles fly out. */
-const popFor = 0.28,
-	popSparks = 8;
+/**
+ * The magnet that takes a collected pickup to Ben. Ben's sprite is 1.5 tiles tall and centred on the point the stage reports,
+ * so at his two tile scale his chest is about 0.35 tiles above that point. The pickup flies there over `flightFor` seconds,
+ * accelerating, then a burst of sparkles plays for the rest of `leaveFor`.
+ */
+const chestAbove = 0.35,
+	chestDepth = 0.6,
+	flightFor = 0.18,
+	leaveFor = 0.3,
+	arrivalSize = 0.04,
+	burstSparks = 6;
 
 /**
  * Builds the actor for a pickup. The sim already bobs pickups up and down in the sprite's position, so the model only
@@ -56,11 +66,14 @@ export function createPickup(look: PickupLook, first: SpriteDraw): Actor {
 		halo = new THREE.Mesh(glowGeometry(), glowMaterial(look.glow, haloStrength)),
 		twinkle = new THREE.Mesh(sparkleGeometry(), sparkleMaterial(candy.white, true)),
 		reach = look.reach ?? 0.5,
-		spin = look.spin ?? 1.2;
+		spin = look.spin ?? 1.2,
+		haloSize = look.size * haloFit;
 	look.build(body);
 	body.position.y = look.centre ?? 0;
-	let fading: THREE.Material[] = [],
-		sparks: THREE.Mesh[] = [];
+	let sparks: THREE.Mesh[] = [],
+		fromX = 0,
+		fromY = 0,
+		fromZ = 0;
 	halo.position.z = -0.25;
 	halo.renderOrder = -1;
 	twinkle.position.z = 0.35;
@@ -72,11 +85,11 @@ export function createPickup(look: PickupLook, first: SpriteDraw): Actor {
 		update(draw, frame) {
 			const t = frame.time;
 			root.position.set(draw.x, draw.y, 0);
-			root.scale.setScalar(draw.w * castScale);
+			root.scale.setScalar(draw.w * collectibleScale);
 			body.rotation.y = t * spin + phase;
 			body.rotation.z = Math.sin(t * 1.7 + phase) * 0.07;
 			body.rotation.x = Math.sin(t * 1.3 + phase * 2) * 0.05;
-			halo.scale.setScalar(haloSize + Math.sin(t * 2.6 + phase) * 0.1);
+			halo.scale.setScalar(haloSize * (1 + Math.sin(t * 2.6 + phase) * 0.08));
 			const clock = (t + phase * 0.6) / twinkleEvery,
 				cycle = Math.floor(clock),
 				local = (clock - cycle) * (twinkleEvery / twinkleFor);
@@ -85,65 +98,60 @@ export function createPickup(look: PickupLook, first: SpriteDraw): Actor {
 				twinkle.visible = true;
 				twinkle.position.x = Math.cos(a) * reach;
 				twinkle.position.y = Math.sin(a) * reach * 0.9 + 0.1;
-				twinkle.scale.setScalar(0.5 * Math.sin(local * Math.PI));
+				twinkle.scale.setScalar(0.45 * Math.sin(local * Math.PI));
 				twinkle.rotation.z = local * 1.5;
 			} else twinkle.visible = false;
 		},
 		/*
-		 * Collected: the model swells and fades while a ring of sparkles flies out. The materials are shared, so the body
-		 * and halo get their own fading copies for the pop; the outline shell just goes.
+		 * Collected: the pickup flies to Ben's chest, shrinking, and a burst of sparkles plays where it lands. Nothing is
+		 * cloned: the shared materials stay as they are and only the scales and positions move.
 		 */
 		leave() {
-			body.traverse((part) => {
-				const mesh = part as THREE.Mesh;
-				if (!mesh.isMesh) return;
-				if (mesh.userData.ink) {
-					mesh.visible = false;
-					return;
-				}
-				const copy = (mesh.material as THREE.Material).clone();
-				copy.transparent = true;
-				copy.userData.base = copy.opacity;
-				mesh.material = copy;
-				fading.push(copy);
-			});
-			const haloCopy = halo.material.clone();
-			halo.material = haloCopy;
-			haloCopy.userData.base = haloCopy.opacity;
-			fading.push(haloCopy);
+			fromX = root.position.x;
+			fromY = root.position.y;
+			fromZ = root.position.z;
 			twinkle.visible = false;
-			for (let i = 0; i < popSparks; i++) {
+			for (let i = 0; i < burstSparks; i++) {
 				const spark = new THREE.Mesh(
 					sparkleGeometry(),
 					sparkleMaterial(i % 2 ? candy.white : look.glow, true),
 				);
 				spark.position.z = 0.4;
-				spark.userData.angle = (i / popSparks) * Math.PI * 2 + phase;
+				spark.visible = false;
+				spark.userData.angle = (i / burstSparks) * Math.PI * 2 + phase;
 				sparks.push(spark);
 				root.add(spark);
 			}
-			return popFor;
+			return leaveFor;
 		},
-		leaving(elapsed, duration) {
-			const p = clamp(elapsed / duration, 0, 1),
-				out = 1 - (1 - p) * (1 - p);
-			body.scale.setScalar(1 + 0.9 * out);
-			for (const material of fading)
-				material.opacity = (material.userData.base as number) * (1 - p);
-			halo.scale.setScalar(haloSize + 1.2 * out);
+		leaving(elapsed, _duration, frame) {
+			const flight = clamp(elapsed / flightFor, 0, 1),
+				pull = flight * flight,
+				ben = frame.ben,
+				size = 1 - (1 - arrivalSize) * pull;
+			root.position.set(
+				fromX + (ben.x - fromX) * pull,
+				fromY + (ben.y + chestAbove - fromY) * pull,
+				fromZ + (chestDepth - fromZ) * pull,
+			);
+			body.rotation.y = frame.time * spin * 6 + phase;
+			body.scale.setScalar(size);
+			halo.scale.setScalar(haloSize * size);
+			const landed = flight >= 1,
+				burst = clamp((elapsed - flightFor) / (leaveFor - flightFor), 0, 1);
+			body.visible = halo.visible = !landed;
 			for (let i = 0; i < sparks.length; i++) {
 				const spark = sparks[i],
 					a: number = spark.userData.angle,
-					reach = 0.3 + 0.75 * out * (i % 2 ? 0.8 : 1);
-				spark.position.x = Math.cos(a) * reach;
-				spark.position.y = Math.sin(a) * reach;
-				spark.scale.setScalar((i % 2 ? 0.34 : 0.46) * Math.sin(Math.min(1, p * 1.1) * Math.PI));
-				spark.rotation.z = a + p * 2;
+					out = 0.15 + 0.5 * (1 - (1 - burst) * (1 - burst)) * (i % 2 ? 0.8 : 1);
+				spark.visible = landed && burst < 1;
+				spark.position.x = Math.cos(a) * out;
+				spark.position.y = Math.sin(a) * out;
+				spark.scale.setScalar((i % 2 ? 0.3 : 0.4) * Math.sin(burst * Math.PI));
+				spark.rotation.z = a + burst * 2;
 			}
 		},
 		dispose() {
-			for (const material of fading) material.dispose();
-			fading = [];
 			sparks = [];
 			root.clear();
 		},

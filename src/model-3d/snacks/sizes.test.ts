@@ -1,4 +1,4 @@
-// Checks that each pickup and effect is its sprite's art size times the cast scale, and that it sits where the art does.
+// Checks that each pickup and effect is its sprite's art size times its scale factor, and that it sits where the art does.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: Apache-2.0 OR MIT
@@ -6,7 +6,7 @@
 import { expect, test } from 'bun:test';
 import * as THREE from 'three';
 import type { SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { collectibleScale, creatureScale } from '../cast-scale.ts';
 import { itemModels } from './items.ts';
 
 /**
@@ -27,6 +27,10 @@ const art: Record<string, { box: [number, number]; w: number; h: number; gap: nu
 	stars1: { box: [1, 0.5], w: 0.75, h: 0.375, gap: 0.125 },
 };
 
+/** The factor each sprite is drawn at: the collectibles and Ben's fizz bubble, or the creatures' effects. */
+const factorOf = (name: string): number =>
+	name === 'puff' || name.startsWith('stars') ? creatureScale : collectibleScale;
+
 /** The bounds of every visible, opaque mesh that is part of the model itself rather than its outline or glow. */
 function solidBounds(root: THREE.Object3D): THREE.Box3 {
 	root.updateWorldMatrix(true, true);
@@ -46,7 +50,7 @@ function solidBounds(root: THREE.Object3D): THREE.Box3 {
 	return box;
 }
 
-test('each pickup and effect is its art times the cast scale, over a whole turn, about the art centre', () => {
+test('each pickup and effect is its art times its factor, over a whole turn, about the art centre', () => {
 	for (const [name, a] of Object.entries(art)) {
 		const draw: SpriteDraw = {
 				name,
@@ -85,10 +89,11 @@ test('each pickup and effect is its art times the cast scale, over a whole turn,
 			height = Math.max(height, box.max.y - box.min.y);
 			base = Math.min(base, box.min.y);
 		}
-		const targetHeight = a.h * castScale,
+		const factor = factorOf(name),
+			targetHeight = a.h * factor,
 			centre = draw.y - a.box[1] / 2 + a.gap + a.h / 2,
 			wantBase = centre - targetHeight / 2;
-		expect(Math.abs(width / (a.w * castScale) - 1), `${name} width`).toBeLessThan(0.1);
+		expect(Math.abs(width / (a.w * factor) - 1), `${name} width`).toBeLessThan(0.1);
 		expect(Math.abs(height / targetHeight - 1), `${name} height`).toBeLessThan(0.1);
 		expect(Math.abs(base - wantBase), `${name} base`).toBeLessThan(0.06);
 		actor.dispose?.();

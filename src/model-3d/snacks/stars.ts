@@ -5,13 +5,13 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { creatureScale } from '../cast-scale.ts';
 import { depth } from '../toon.ts';
 import { candy, clamp, ease, phaseOf, sparkleGeometry, sparkleMaterial } from './shared.ts';
 
 const orbiting = 3,
-	/** The art sits 1/16 tile above the middle of its box, which is 1/16 / castScale in the model's own units. */
-	centre = 1 / 16 / castScale;
+	/** The art sits 1/16 tile above the middle of its box, which is 1/16 / creatureScale in the model's own units. */
+	centre = 1 / 16 / creatureScale;
 
 /**
  * Three bright yellow stars on a tilted ring round the sprite's centre, which the sim puts above the stunned head. The sim
@@ -22,7 +22,7 @@ export function createDizzyStars(first: SpriteDraw): Actor {
 	const seed = phaseOf(first.x, first.y),
 		root = new THREE.Group(),
 		stars: THREE.Group[] = [];
-	root.scale.setScalar(castScale);
+	root.scale.setScalar(creatureScale);
 	for (let i = 0; i < orbiting; i++) {
 		const star = new THREE.Group(),
 			back = new THREE.Mesh(sparkleGeometry(), sparkleMaterial(candy.black, false)),

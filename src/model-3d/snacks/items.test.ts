@@ -6,7 +6,7 @@
 import { expect, test } from 'bun:test';
 import type { FrameContext, SpriteDraw } from '../../level-3d/types.ts';
 import * as THREE from 'three';
-import { castScale } from '../cast-scale.ts';
+import { creatureScale } from '../cast-scale.ts';
 import { itemModels } from './items.ts';
 
 const families: Record<string, string[]> = {
@@ -131,7 +131,7 @@ test('a puff fades its materials with the sprite and a night star stays behind t
 	const puff = itemModels.create('puff', drawOf('puff', 3, 3)),
 		draw = drawOf('puff', 3, 3, { alpha: 0.3, tint: 0xff5555, w: 1.2 });
 	puff.update(draw, frameOf(0.1, [draw]));
-	expect(puff.object.scale.x).toBeCloseTo(1.2 * castScale, 5);
+	expect(puff.object.scale.x).toBeCloseTo(1.2 * creatureScale, 5);
 	puff.dispose?.();
 	const star = itemModels.create('star', drawOf('star', 9, 9)),
 		sky = drawOf('star', 9, 9);
@@ -139,24 +139,50 @@ test('a puff fades its materials with the sprite and a night star stays behind t
 	expect(star.object.position.z).toBeLessThan(0);
 });
 
-test('a collected pickup pops: it swells and fades while sparkles fly out, and the shared materials stay untouched', () => {
-	for (const family of ['cheezie', 'choc', 'cookie', 'soda', 'keyRed']) {
+/** A frame with Ben at `(x, y)`, for following a collected pickup as he moves. */
+function benAt(x: number, y: number): FrameContext {
+	return { time: 1, dt: 1 / 60, ben: { x, y }, camera: { x: 3, y: 8, z: 16 }, draws: [] };
+}
+
+const chest = (ben: { x: number; y: number }): THREE.Vector3 =>
+	new THREE.Vector3(ben.x, ben.y + 0.35, 0);
+
+test('a collected pickup flies to Ben, shrinking, then bursts into sparkles, and the shared materials stay untouched', () => {
+	for (const family of ['cheezie', 'choc', 'cookie', 'soda', 'keyRed', 'keyBlue', 'keyGreen']) {
 		const draw = drawOf(family, 9.5, 4.5),
 			actor = itemModels.create(family, draw),
-			other = itemModels.create(family, draw);
+			other = itemModels.create(family, draw),
+			body = actor.object.children[1],
+			halo = actor.object.children[0] as THREE.Mesh;
 		actor.update(draw, frameOf(1, [draw]));
 		const seconds = actor.leave?.(frameOf(1, [])) ?? 0;
-		expect(seconds).toBeGreaterThan(0.15);
+		expect(seconds).toBeGreaterThan(0.2);
 		expect(seconds).toBeLessThan(0.4);
-		const body = actor.object.children[1],
-			halo = actor.object.children[0] as THREE.Mesh,
-			sparkles = actor.object.children.length;
-		expect(sparkles).toBeGreaterThan(3);
-		actor.leaving?.(0, seconds, frameOf(1, []));
-		const early = body.scale.x;
-		actor.leaving?.(seconds * 0.9, seconds, frameOf(1, []));
-		expect(body.scale.x).toBeGreaterThan(early + 0.4);
-		expect((halo.material as THREE.Material).opacity).toBeLessThan(0.1);
+		expect(actor.object.children.length).toBeGreaterThan(3);
+		/* Ben stands 6 tiles away, so the pickup has a way to go. */
+		const ben = { x: 3.5, y: 4.5 },
+			target = chest(ben),
+			steps = Math.round(seconds * 60);
+		let last = Infinity,
+			lastScale = Infinity;
+		for (let i = 1; i <= steps; i++) {
+			actor.leaving?.(i / 60, seconds, benAt(ben.x, ben.y));
+			const distance = Math.hypot(
+				actor.object.position.x - target.x,
+				actor.object.position.y - target.y,
+			);
+			expect(distance, `${family} step ${i}`).toBeLessThanOrEqual(last + 1e-9);
+			last = distance;
+			expect(body.scale.x).toBeLessThanOrEqual(lastScale + 1e-9);
+			lastScale = body.scale.x;
+		}
+		expect(last).toBeLessThan(1e-6);
+		expect(lastScale).toBeLessThan(0.2);
+		expect(body.visible).toBe(false);
+		expect(halo.visible).toBe(false);
+		/* The burst plays at the arrival point once the flight is over. */
+		actor.leaving?.(0.24, seconds, benAt(ben.x, ben.y));
+		expect(actor.object.children.filter((child) => child.visible).length).toBeGreaterThan(3);
 		/* A pickup of the same kind that was not collected keeps its own materials. */
 		expect(
 			((other.object.children[0] as THREE.Mesh).material as THREE.Material).opacity,
@@ -164,6 +190,35 @@ test('a collected pickup pops: it swells and fades while sparkles fly out, and t
 		actor.dispose?.();
 		other.dispose?.();
 	}
+});
+
+test('a collected pickup starts its flight slowly', () => {
+	const draw = drawOf('cheezie', 9.5, 4.5),
+		actor = itemModels.create('cheezie', draw);
+	actor.update(draw, frameOf(1, [draw]));
+	const seconds = actor.leave?.(frameOf(1, [])) ?? 0;
+	actor.leaving?.(1 / 60, seconds, benAt(3.5, 4.5));
+	/* Accelerating from rest: after a tenth of the flight it has covered only a sliver of the way. */
+	expect(actor.object.position.x).toBeGreaterThan(9.3);
+	actor.dispose?.();
+});
+
+test('a collected pickup follows Ben as he moves during the flight', () => {
+	const draw = drawOf('soda', 9.5, 4.5),
+		actor = itemModels.create('soda', draw);
+	actor.update(draw, frameOf(1, [draw]));
+	const seconds = actor.leave?.(frameOf(1, [])) ?? 0;
+	/* Ben runs away to the right and up a step while the pickup flies. */
+	let x = 8.5,
+		y = 4.5;
+	for (let i = 1; i <= Math.round(seconds * 60); i++) {
+		x += 6 / 60;
+		y += 0.5 / 60;
+		actor.leaving?.(i / 60, seconds, benAt(x, y));
+	}
+	expect(actor.object.position.x).toBeCloseTo(x, 5);
+	expect(actor.object.position.y).toBeCloseTo(y + 0.35, 5);
+	actor.dispose?.();
 });
 
 test('effects and creatures that are not pickups have no exit', () => {

@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { collectibleScale } from '../cast-scale.ts';
 import { inked, toon } from '../toon.ts';
 import { createPickup } from './pickup.ts';
 import { candy, ellipsoid, lathe } from './shared.ts';
@@ -16,7 +16,7 @@ let bodyGeometry: THREE.BufferGeometry | null = null,
 	bandGeometry: THREE.BufferGeometry | null = null,
 	tabGeometry: THREE.BufferGeometry | null = null;
 
-/** The model is a little smaller than the sprite art before the cast scale is applied. */
+/** The model is a little smaller than the sprite art before its scale factor is applied. */
 const fit = 0.95;
 
 function build(body: THREE.Group): void {
@@ -87,7 +87,14 @@ function build(body: THREE.Group): void {
 
 export function createSoda(first: SpriteDraw): Actor {
 	return createPickup(
-		{ build, glow: 0x55eeff, reach: 0.55, spin: 1.3, centre: -0.031 / castScale },
+		{
+			build,
+			size: 0.94,
+			glow: 0x55eeff,
+			reach: 0.55,
+			spin: 1.3,
+			centre: -0.031 / collectibleScale,
+		},
 		first,
 	);
 }

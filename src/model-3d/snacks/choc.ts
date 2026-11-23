@@ -42,5 +42,5 @@ function build(body: THREE.Group): void {
 }
 
 export function createChoc(first: SpriteDraw): Actor {
-	return createPickup({ build, glow: 0xffa040, reach: 0.55, spin: 1.1 }, first);
+	return createPickup({ build, size: 1, glow: 0xffa040, reach: 0.55, spin: 1.1 }, first);
 }

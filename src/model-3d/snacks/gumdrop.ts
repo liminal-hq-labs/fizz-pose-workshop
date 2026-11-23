@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { collectibleScale } from '../cast-scale.ts';
 import { inked, toon } from '../toon.ts';
 import { createPickup } from './pickup.ts';
 import { candy, ellipsoid, lathe, scatter, shade } from './shared.ts';
@@ -22,7 +22,7 @@ export const gumColours: Record<string, GumColour> = {
 	green: { gum: candy.green, glow: 0x44ff66 },
 };
 
-/** The dome's size in the model's own units: the sprite's art is 0.75 wide and 0.69 tall, and the cast scale is applied on top. */
+/** The dome's size in the model's own units: the sprite's art is 0.75 wide and 0.69 tall, and the collectible scale is applied on top. */
 const radius = 0.355,
 	height = 0.66,
 	bottom = -height / 2;
@@ -69,11 +69,12 @@ function sugar(): THREE.BufferGeometry {
 export function createGumdrop(first: SpriteDraw, colour: GumColour): Actor {
 	return createPickup(
 		{
+			size: 0.75,
 			glow: colour.glow,
 			reach: 0.5,
 			spin: 1.4,
 			/* The art sits 1/16 tile above the bottom of its box, which leaves its middle a little below the sprite's. */
-			centre: -0.094 / castScale,
+			centre: -0.094 / collectibleScale,
 			build(body) {
 				body.add(inked(dome(), toon(colour.gum, { emissive: shade(colour.gum, 0.25) }), 0.03));
 				body.add(new THREE.Mesh(sugar(), toon(candy.white, { emissive: 0x888888 })));

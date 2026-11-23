@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import type { Actor, SpriteDraw } from '../../level-3d/types.ts';
-import { castScale } from '../cast-scale.ts';
+import { creatureScale } from '../cast-scale.ts';
 import {
 	Eye,
 	Motion,
@@ -72,7 +72,7 @@ export function createDrone(first: SpriteDraw): Actor {
 		ringBeads: THREE.Mesh[] = [],
 		pulses: THREE.Mesh[] = [],
 		pulseMaterials: THREE.MeshBasicMaterial[] = [];
-	root.scale.setScalar(castScale);
+	root.scale.setScalar(creatureScale);
 	root.add(craft);
 
 	part(craft, tint, top(), ega.pink, { ink: 0.025 });
